@@ -1,0 +1,130 @@
+/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*enum  
+QTabBar::RoundedNorth			0	The normal rounded look above the pages
+QTabBar::RoundedSouth			1	The normal rounded look below the pages
+QTabBar::RoundedWest			2	The normal rounded look on the left side of the pages
+QTabBar::RoundedEast			3	The normal rounded look on the right side the pages
+QTabBar::TriangularNorth	4	Triangular tabs above the pages.
+QTabBar::TriangularSouth	5	Triangular tabs similar to those used in the Excel spreadsheet, for example
+QTabBar::TriangularWest		6	Triangular tabs on the left of the pages.
+QTabBar::TriangularEast		7	Triangular tabs on the right of the pages.
+*/
+
+QTabBar{
+    background-color: rgb(83, 83, 83);
+    
+}
+
+QTabBar::tab{
+    /*background-color: rgb(66, 66, 66);*/
+    /*background-color: rgb(66, 66, 255);*/
+    color: rgb(200, 200, 200);
+    /*border: 1px solid black;*/
+}
+
+QTabBar[shape="0"]::tab{
+	min-width:3em;
+    padding: 1ex 3ex;
+}
+
+QTabBar[shape="0"]::tab:selected{
+	
+	/*color: app_ltblue;*/
+	color: white;
+	background-color: rgb(30, 30, 30);
+	border-bottom-color: rgb(66, 66, 66);
+  
+}
+QTabBar[shape="1"]::tab:selected{
+	/*color: app_ltblue;*/
+	color: white;
+	background-color: rgb(30, 30, 30);
+  border-bottom-color: rgb(66, 66, 66);
+}
+QTabBar[shape="2"]::tab:selected{
+	/*color: app_ltblue;*/
+	color: white;
+	/*background-color: rgb(30, 30, 30);*/
+	background-color: master_background_color;
+	border-left: 0px;
+  
+  /*border-bottom-color: rgb(66, 66, 66);*/
+}
+QTabBar[shape="3"]::tab:selected{
+	/*color: app_ltblue;*/
+	color: white;
+	background-color: rgb(30, 30, 30);
+  border-bottom-color: rgb(66, 66, 66);
+}
+
+
+
+
+QTabBar[shape="0"]::tab:!selected{
+	
+	/*color: rgb(240, 240, 240);
+	background-color: qlineargradient(x1:0, y1:-1, x2:0, y2:1, stop:0 rgb(70, 70, 70), stop:1 rgb(90, 90, 90));
+	*/
+	color: unselected_item_txt
+	background-color: unselected_item_bkgrnd;
+	font:  11px bold "Arial";  
+	
+  border-bottom-color: rgb(66, 66, 66);
+ 	margin-top: 2px;
+}
+
+QTabBar[shape="1"]::tab:!selected{
+	
+	/*color: rgb(240, 240, 240);
+	background-color: qlineargradient(x1:0, y1:-1, x2:0, y2:1, stop:0 rgb(70, 70, 70), stop:1 rgb(90, 90, 90));
+	*/
+	color: unselected_item_txt
+	background-color: unselected_item_bkgrnd;
+	font:  11px bold "Arial";  
+	
+	
+  border-bottom-color: rgb(66, 66, 66);
+ 	margin-top: 2px;
+}
+
+
+/* this shape is the tabs on the left hand side going vertically */
+QTabBar[shape="2"]::tab:!selected{
+	
+	/*color: rgb(240, 240, 240);*/
+	/*background-color: qlineargradient(x1:0, y1:-1, x2:0, y2:1, stop:0 rgb(70, 70, 70), stop:1 rgb(90, 90, 90));*/
+	
+	color: unselected_item_txt
+	background-color: unselected_item_bkgrnd;
+	font:  11px bold "Arial";  
+	
+	
+  border-bottom-color: rgb(66, 66, 66);
+ 	margin-top: 2px;
+}
+QTabBar[shape="3"]::tab:!selected{
+	
+	/*color: rgb(240, 240, 240);
+	background-color: qlineargradient(x1:0, y1:-1, x2:0, y2:1, stop:0 rgb(70, 70, 70), stop:1 rgb(90, 90, 90));
+	*/
+	color: unselected_item_txt
+	background-color: unselected_item_bkgrnd;
+	font:  11px bold "Arial";  
+	
+  border-bottom-color: rgb(66, 66, 66);
+ 	margin-top: 2px;
+}
+
+QTabBar[shape="2"]::tab{
+	
+	min-height:3em;
+    padding: 3ex 1ex;
+}
+
+/*
+QTabBar[shape="2"]::tab:selected{
+	background-color: rgb(120, 120, 120);
+    border-left:1px solid rgb(30, 144, 255);
+}
+*/

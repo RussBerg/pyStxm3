@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640px" height="360px" viewBox="0 0 640 360">
+
+<g fill="none" stroke="#000" stroke-width="2" stroke-linecap="round">
+	<path d="M360,145H550M480,50L430,240M85,50H275L225,240H35zM385,50H575L525,240H335z"/>
+	<path stroke-width="5" d="M155,335V145L306,280M455,335V145L606,280"/>
+</g>
+
+<g fill="#FFF" stroke="#000" stroke-width="3">
+	<circle r="15" cx="480" cy="50"/>
+	<circle r="15" cx="385" cy="50"/>
+	<circle r="15" cx="575" cy="50"/>
+	<circle r="15" cx="155" cy="145"/>
+	<circle r="15" cx="455" cy="145"/>
+	<circle r="15" cx="360" cy="145"/>
+	<circle r="15" cx="550" cy="145"/>
+	<circle r="15" cx="430" cy="240"/>
+	<circle r="15" cx="335" cy="240"/>
+	<circle r="15" cx="525" cy="240"/>
+</g>
+
+<text font-size="24px" font-weight="bold" font-family="Arial, sans-serif">
+	<tspan x="230" y="310">(A)</tspan>
+	<tspan x="530" y="310">(B)</tspan>
+</text>
+
+</svg>

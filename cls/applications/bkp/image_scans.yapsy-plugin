@@ -1,0 +1,11 @@
+[Core]
+#Name = Image scan params
+Name = Fine Image scan params
+Module = fine_image_scans
+#Module = image_scans
+
+[Documentation]
+Author = Russ Berg
+Version = 0.1
+Website = http://lateral.netmanagers.com.ar
+Description = Params for an Fine Image by Image line or Image Point by Point scan

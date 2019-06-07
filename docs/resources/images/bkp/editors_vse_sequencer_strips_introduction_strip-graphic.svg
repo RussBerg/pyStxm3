@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="690px" height="220px" viewBox="0 0 690 220">
+
+<rect fill="#999" x="160" y="115" width="350" height="60"/>
+<g opacity="0.3">
+	<path fill="#666" d="M160,115h60v60h-60zM570,115h60v60h-60z"/>
+	<path d="M208,145l-30-18v36zM582,145l30-18v36z"/>
+	<rect x="80" y="175" width="80" height="10"/>
+</g>
+
+<g fill="none" stroke="#333" stroke-width="2">
+	<path d="M20,40h650v30h-650zm60,0v30m440,0v-30"/>
+	<rect x="160" y="115" width="470" height="60"/>
+</g>
+
+<text font-size="15px" font-family="Arial, sans-serif">
+
+	<tspan x="50" y="33">Hard start</tspan>
+	<tspan x="488" y="33">Hard end</tspan>
+	<tspan x="272" y="60">Content</tspan>
+
+	<tspan x="142" y="108">Soft start</tspan>
+	<tspan x="592" y="108">Soft end</tspan>
+	<tspan x="80" y="170">Offset</tspan>
+	<tspan x="180" y="195">Left handle</tspan>
+	<tspan x="540" y="195">Right handle</tspan>
+
+	<tspan x="330" y="142" fill="#FFF" font-size="18px">Strip</tspan>
+	<tspan x="250" y="162" fill="#FFF">Name: Full Path | Total Frames</tspan>
+
+</text>
+
+</svg>

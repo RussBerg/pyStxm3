@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1298</width>
+    <height>691</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="margin">
+    <number>5</number>
+   </property>
+   <item>
+    <widget class="QTabWidget" name="tabWidget_6">
+     <property name="font">
+      <font>
+       <weight>50</weight>
+       <bold>false</bold>
+      </font>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QWidget {
+    background-color: rgb(200, 200, 200);
+}
+
+QMainWindow::separator 
+{ 
+  background-color: rgb(220, 0, 0);
+  height: 4px;
+}
+        
+QTabWidget::pane { /* The tab widget frame */
+     border-top: 2px solid rgb(125, 125, 125);
+ }
+
+ QTabWidget::tab-bar {
+     left: 5px; /* move to the right by 5px */
+ }
+
+ /* Style the tab using the tab sub-control. Note that
+     it reads QTabBar _not_ QTabWidget */
+ QTabBar::tab {
+     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                 stop: 0 #E1E1E1, stop: 0.4 #DDDDDD,
+                                 stop: 0.5 #D8D8D8, stop: 1.0 #D3D3D3);
+     border: 2px solid rgb(125, 125, 125);
+     border-bottom-color: #C2C7CB; /* same as the pane color */
+     border-top-left-radius: 4px;
+     border-top-right-radius: 4px;
+     min-width: 8ex;
+     padding: 8px;
+ }
+
+ QTabBar::tab:selected, QTabBar::tab:hover {
+     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                 stop: 0 #fafafa, stop: 0.4 #f4f4f4,
+                                 stop: 0.5 #e7e7e7, stop: 1.0 #fafafa);
+ }
+
+ QTabBar::tab:selected {
+     border-color: #9B9B9B;
+     border-bottom-color: #C2C7CB; /* same as pane color */
+ }
+
+ QTabBar::tab:!selected {
+     margin-top: 2px; /* make non-selected tabs look smaller */
+ }</string>
+     </property>
+     <property name="tabPosition">
+      <enum>QTabWidget::North</enum>
+     </property>
+     <property name="tabShape">
+      <enum>QTabWidget::Rounded</enum>
+     </property>
+     <property name="currentIndex">
+      <number>2</number>
+     </property>
+     <property name="elideMode">
+      <enum>Qt::ElideNone</enum>
+     </property>
+     <widget class="QWidget" name="selectTab">
+      <attribute name="title">
+       <string>Select </string>
+      </attribute>
+      <layout class="QVBoxLayout" name="selectTabLayout">
+       <item>
+        <layout class="QHBoxLayout" name="selectTabHLayout"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="execTab">
+      <attribute name="title">
+       <string>Exec</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="scanExecLayout">
+       <item>
+        <layout class="QHBoxLayout" name="scanExecTabLayout"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="resultsTab">
+      <attribute name="title">
+       <string>Results</string>
+      </attribute>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <layout class="QHBoxLayout" name="scanResultsTabLayout"/>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

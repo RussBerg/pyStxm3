@@ -1,0 +1,18 @@
+
+/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*QCheckBox::indicator:unchecked{
+     image: url(UI:checkbox_unchecked.png);
+ }
+
+QCheckBox::indicator:unchecked:disabled{
+     image: url(UI:checkbox_unchecked_disabled.png);
+ }
+
+QCheckBox::indicator:checked{
+     image: url(UI:checkbox_checked.png);
+ }
+
+QCheckBox::indicator:checked:disabled{
+     image: url(UI:checkbox_checked_disabled.png);
+ }*/

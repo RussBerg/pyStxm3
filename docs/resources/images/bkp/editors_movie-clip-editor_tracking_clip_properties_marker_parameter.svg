@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520px" height="350px" viewBox="0 0 520 350" font-size="14px" font-family="Arial, sans-serif">
+
+<g fill="none" stroke-width="4">
+	<rect stroke="#2B832A" x="70" y="30" width="376" height="276"/>
+	<rect stroke="#3954F2" x="194" y="126" width="232" height="160"/>
+	<line stroke="#3954F2" x1="310" y1="206" x2="474" y2="206"/>
+</g>
+
+<g fill="#2B832A">
+	<rect x="60" y="20" width="20" height="20"/>
+	<polygon points="424,306 446,284 446,306"/>
+</g>
+
+<g fill="#3954F2">
+	<rect x="186" y="118" width="16" height="16"/>
+	<rect x="418" y="118" width="16" height="16"/>
+	<rect x="186" y="278" width="16" height="16"/>
+	<rect x="418" y="278" width="16" height="16"/>
+	<rect x="464" y="196" width="20" height="20"/>
+</g>
+
+<rect x="248" y="238" width="12" height="12"/>
+
+<g fill="none">
+	<path stroke="#2B832A" stroke-width="2" d="M247,157l22,22m0-22l-22,22"/>
+	<path stroke="#C1272D" stroke-width="3" d="M300,196l20,20m0-20l-20,20"/>
+</g>
+
+<g fill="none" stroke-width="2" stroke-dasharray="4,4">
+	<polyline stroke="#2B832A" points="310,203 310,168 267,168"/>
+	<polyline stroke="#F15A24" points="310,209 310,244 267,244"/>
+</g>
+<path fill="#2B832A" d="M262,168l11-6l-3,6l3,6z"/>
+<path fill="#F15A24" d="M262,244l11-6l-3,6l3,6z"/>
+
+<path fill="none" stroke="#B3B3B3" stroke-width="2" d="M54,30V306M70,322H446M178,126V286M194,110H426M42,30h16M42,306h24M70,310v24M446,310v24M166,126h18M166,286h18M194,98v18M426,98v18"/>
+<path fill="#B3B3B3" d="M54,30l5,12l-5-3l-5,3zM54,306l-5-12l5,3l5-3zM70,322l12-5l-3,5l3,5zM446,322l-12,5l3-5l-3-5zM178,126l5,12l-5-3l-5,3zM178,286l-5-12l5,3l5-3zM194,110l12-5l-3,5l3,5zM426,110l-12,5l3-5l-3-5z"/>
+
+<text font-size="15px">
+	<tspan fill="#C1272D" x="235" y="210" font-weight="bold">Position</tspan>
+	<tspan fill="#F15A24" x="318" y="241">Offset</tspan>
+	<tspan fill="#2B832A" x="344" y="52" font-weight="bold">Search Area</tspan>
+	<tspan fill="#2B832A" x="236" y="151" font-style="italic">Center</tspan>
+	<tspan fill="#2B832A" x="318" y="182">Position</tspan>
+	<tspan fill="#3954F2" x="322" y="148" font-weight="bold">Pattern Area</tspan>
+</text>
+
+<text>
+	<tspan fill="#2B832A" x="240" y="337">Width</tspan>
+	<tspan fill="#3954F2" x="292" y="105">Width</tspan>
+</text>
+
+<text transform="rotate(270 100 200)">
+	<tspan fill="#2B832A" x="113" y="147">Height</tspan>
+	<tspan fill="#3954F2" x="74" y="272">Height</tspan>
+</text>
+
+</svg>

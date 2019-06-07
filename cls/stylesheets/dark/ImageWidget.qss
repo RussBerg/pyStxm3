@@ -1,0 +1,24 @@
+
+CameraRuler#calibCamWidget QFrame{
+    background-color: master_background_color;
+}
+CameraRuler#calibCamWidget .QWidget{
+    background-color: master_background_color;
+}
+
+
+ImageWidget#lineByLineImageDataWidget{
+    background-color: master_background_color;
+}
+
+
+
+QTabWidget	#lineByLineImageDataWidget{
+   background-color: rgb(5, 5, 5);
+}
+
+#xCrossSection,#yCrossSection{
+
+	background-color: rgb(5, 5, 5);
+}
+

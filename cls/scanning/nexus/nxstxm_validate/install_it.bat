@@ -1,0 +1,1 @@
+easy_install nxstxm_validate/nxstxm_validate-1.0-py2.7.egg

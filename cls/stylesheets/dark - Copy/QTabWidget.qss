@@ -1,0 +1,38 @@
+/*----------------------------------------------------------------------------*/
+
+
+/*
+QTabWidget	QWidget{
+   background-color: transparent; 
+   selection-background-color:  rgb(60, 60, 60) ;
+   selection-color: rgb(220, 220, 220);
+	 
+}
+*/
+QTabWidget::pane { /* The tab widget frame */
+		background-color: app_drkgray;
+    border: 1px solid transparent;
+    margin:0px 0px 0px 0px;
+}
+
+QTabWidget::title
+{
+   /*background-color: rgb(20, 120, 120);*/
+   background-color: transparent;
+   border: 2px groove rgb(70, 70, 70);
+   padding: 0.4em;
+}
+
+QTabWidget	.QTextEdit{
+    /*background-color: rgb(100, 100, 100);*/
+    background-color: transparent;
+    color: rgb(220,220,220);
+    border: 2px groove rgb(70, 70, 70);
+
+   selection-background-color:  rgb(60, 60, 60) ;
+   selection-color: rgb(220, 220, 220);
+	 margin: 3px 0px 3px 0px;
+}
+
+
+

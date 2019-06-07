@@ -1,0 +1,18 @@
+/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*QRadioButton::indicator:unchecked{
+     image: url(UI:radiobutton_unchecked.png);
+ }
+
+QRadioButton::indicator:unchecked:disabled{
+     image: url(UI:radiobutton_unchecked_disabled.png);
+ }
+
+QRadioButton::indicator:checked{
+     image: url(UI:radiobutton_checked.png);
+ }
+
+QRadioButton::indicator:checked:disabled{
+     image: url(UI:radiobutton_checked_disabled.png);
+ }*/
+

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420px" height="200px" viewBox="0 45 420 200">
+
+<rect fill="#D2D4D5" width="315" height="120" x="72" y="75"/>
+<path fill="#FFFFFF" stroke="#7D7F82" stroke-width="1.5" d="M273,130c-6-30,44-43,51-7c37,12,14,55-19,40C278,184,247,152,273,130z"/>
+
+<line fill="none" stroke="#3C3C3C" x1="142" y1="81" x2="142" y2="189"/>
+<path fill="#3C3C3C" d="M142,75l-4.49,7.77h8.97zM142,195l4.49-7.77h-8.97z"/>
+
+<line fill="none" stroke="#7D7F82" stroke-width="1.5" x1="26" y1="207" x2="387" y2="207"/>
+<g fill="#7D7F82">
+	<circle r="6" cx="32" cy="135"/>
+	<circle r="4" cx="72" cy="207"/>
+	<circle r="4" cx="387" cy="207"/>
+</g>
+
+<text fill="#3C3C3C" font-size="12px" font-weight="bold" font-family="Arial, sans-serif">
+	<tspan x="49" y="226">Near Clip</tspan>
+	<tspan x="367" y="226">Far Clip</tspan>
+	<tspan x="148" y="141">Scale</tspan>
+	<tspan x="340" y="70">Visible</tspan>
+</text>
+
+</svg>

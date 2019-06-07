@@ -1,0 +1,149 @@
+{%- extends "!layout.html" %}
+{%- set title = _('Not Found (404)') %}
+{%- set STATIC = "https://docs.blender.org/manual/en/dev/_static/" %}
+{%- block extrahead %}
+	<link rel="stylesheet" href="{{ STATIC }}css/theme.css" type="text/css" />
+	<link rel="stylesheet" href="{{ STATIC }}css/theme_overrides.css" type="text/css" />
+{% endblock %}
+{%- block body %}
+<h1>{% trans %} Not Found (404) {% endtrans %}</h1>
+<p>{% trans %}It seems the page you are trying to find has been either moved or deleted.{% endtrans %}<br>
+   {% trans %}You can try one of the following things:{% endtrans %}</p>
+
+<div class="centered">
+  {% include "searchbox.html" %}
+</div>
+
+{# pathto(master_doc) #}
+<a href="{{ 'https://docs.blender.org/manual/' + language + '/dev/index.html' }}" class="btn btn-neutral" title="{{ _('Return Home') }}">
+<span class="fa fa-home"></span> {{ _('Return Home') }}</a>
+
+{%- endblock %}
+
+<!-- TODO Assess how much of this we want to keep -->
+<!--
+<ul id="linklist"></ul>
+<noscript><span style="font-style: italic">*JavaScript disabled:
+ The inline script would adapt links to the current language and version.
+ It would also add links to index pages (if they exist) .</span></noscript>
+<script>
+function init() {
+ var versions = getVersion();
+ if(versions !== null) {
+   replaceLinks(versions);
+   replaceSearch(versions);
+ }
+ insertbtns();
+ indexPages();
+}
+/*get language and version from url*/
+function getVersion() {
+ var url = window.location.href;
+ var versions = url.match(/\/manual\/([\w\-\.]+\/(?:dev|\d\.\d[\w\d\.]*))\//);
+ if(versions !== null) {
+   versions = versions[1];
+   var seperator = versions.search(/\//);
+   return [versions.substr(0, seperator), versions.substr(seperator + 1, versions.length)];
+ }
+ return null;
+}
+/*replace search form url*/
+function replaceSearch(version) {
+ var searchform = document.getElementById("search");
+ searchform.setAttribute("action", "/manual/" + version[0] + "/" + version[1] + "/search.html");
+ var searchtext = document.getElementsByName("q")[0];
+ searchtext.setAttribute("placeholder", "Search Docs (" + version[0] + " " + version[1] + ")" );
+}
+/*replace header home url*/
+function replaceLinks(version) {
+ var home = document.getElementById("manual");
+ var baseurl = "https://docs.blender.org/manual/";
+ home.setAttribute("href", baseurl + version[0] + "/" + version[1] + "/");
+}
+/*add buttons to insert page name and the hash into the search field*/
+function insertbtns() {
+ var url = window.location.href;
+ var linklist = document.getElementById("linklist");
+ var pageName = url.match(/\/([\w\-_\.]+)\.html/);
+ if(pageName !== null) {
+   pageName = pageName[1];
+   var resp = /[\-_\.]/g;
+   pageName = pageName.replace(resp, " ");
+
+   var newLi = document.createElement("li");
+   var newP = document.createElement("p");
+   newP.setAttribute("data-txt", pageName);
+   if(pageName.length > 12) {
+     pageName = pageName.substr(0, 10);
+     pageName += "...";
+   }
+   newP.setAttribute("title", "Insert the page name ("  + pageName + ") into the search field");
+   newP.innerHTML = "Insert" + ' "' + pageName + '"';
+   newLi.appendChild(newP);
+   linklist.appendChild(newLi);
+   newP.addEventListener("click", click_handler, true);
+ }
+ var hash = location.hash;
+ if(hash !== "") {
+   hash = hash.substr(1, hash.length);
+   hash = hash.replace(resp, " ");
+   newLi = document.createElement("li");
+   newP = document.createElement("p");
+   newP.setAttribute("data-txt", hash);
+   newP.setAttribute("title", "Insert the hash (" + hash + ") into the search field");
+   if(hash.length > 12) {
+     hash = hash.substr(0, 10);
+     hash += "...";
+   }
+   newP.innerHTML = "Insert" + ' "' + hash + '"';
+   newLi.appendChild(newP);
+   linklist.appendChild(newLi);
+   newP.addEventListener("click", click_handler, true);
+ }
+}
+function click_handler(e) {
+ var text = e.target.getAttribute("data-txt");
+ var field = document.getElementsByName("q")[0];
+ if(field.value !== "" && field.value.substr(field.value.length - 1, field.value.length) !== " ") {field.value += " ";}
+ field.value += text;
+}
+/*add links to index pages*/
+function indexPages() {
+ var url = window.location.href;
+ var hash = location.hash;
+ if(hash !== "") {
+   url = url.replace(hash, "");
+ }
+ var url_re = /\/[\w\-_\.]*$/;
+ var new_url = url.replace(url_re, "/index.html");
+ var base_re = /^https\:\/\/docs.blender.org\/manual\//;
+ if(base_re.test(new_url)) {
+   if(url !== new_url) { loadDoc(new_url, "ix", "Index", "Go to the Index page");}
+ }
+ url_re = /\/[\w\-_\.]*\/[\w\-_\.]*$/;
+ new_url = url.replace(url_re, "/index.html");
+ if(base_re.test(new_url)) {
+   loadDoc(new_url, "pix", "Parent Index", "Go to the Parent folders Index page");
+ }
+}
+/*check if index links are not 404*/
+function loadDoc(requestUrl, id, text, title) {
+ var xhttp = new XMLHttpRequest();
+ xhttp.onreadystatechange = function() {
+   if (this.readyState == 4 && this.status == 200) {
+     var newLi = document.createElement("li");
+     var newA = document.createElement("a");
+     newA.setAttribute("href", requestUrl);
+     newA.setAttribute("id", id);
+     newA.setAttribute("title", title);
+     newA.innerHTML = text;
+     newLi.appendChild(newA);
+     document.getElementById("linklist").appendChild(newLi);
+   }
+ };
+ xhttp.open("GET", requestUrl, true);
+ xhttp.send();
+}
+window.onload=init();
+</script>
+-->

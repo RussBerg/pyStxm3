@@ -1,0 +1,14 @@
+QMenu{
+	background-color: master_dark_background_color;
+}
+
+
+QMenu::item {
+    /* sets background of menu item. set this to something non-transparent
+        if you want menu color and menu item color to be different */
+    background-color: master_dark_background_color;
+}
+
+QMenu::item:selected { /* when user selects item using mouse or keyboard */
+    background-color: app_ltblue;
+}

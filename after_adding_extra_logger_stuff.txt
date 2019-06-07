@@ -1,0 +1,739 @@
+diff --git a/bcm/devices/epics/counter.py b/bcm/devices/epics/counter.py
+index c2cac1b..92e9faf 100644
+--- a/bcm/devices/epics/counter.py
++++ b/bcm/devices/epics/counter.py
+@@ -26,7 +26,7 @@ from bcm.devices.epics.base import BaseDevice
+ from epics import PV
+ from aio import aio
+ from cls.utils.dict_utils import dct_get, dct_put
+-# from cls.utils.log import get_module_logger
++from cls.utils.log import get_module_logger
+ from cls.utils.xim2array import loadXim2Array
+ from cls.utils.thread_logger import doprint
+ from cls.utils.enum import Enum
+@@ -51,7 +51,7 @@ DATA_OFFSET = 2
+ 
+ 
+ # setup module logger with a default do-nothing handler
+-# _logger = get_module_logger(__name__)
++_logger = get_module_logger(__name__)
+ 
+ class CounterError(Exception):
+     """Base class for errors in the counter module."""
+@@ -901,6 +901,7 @@ class BaseGate(BaseDevice):
+ 
+     def stop(self):
+         if (self.run.connected):
++            _logger.debug('BaseGate: stop: stop has been called')
+             self.run.put(0)
+         # self.isRunning = 0
+ 
+@@ -949,6 +950,7 @@ class BaseGate(BaseDevice):
+         self.start()
+ 
+     def start(self):
++        _logger.debug('BaseGate: start: start has been called')
+         self.run.put(1)
+ 
+     # self.isRunning = 1
+@@ -1044,17 +1046,20 @@ class BaseCounter(BaseDevice):
+         self.mode = mode
+ 
+     def start(self):
++        _logger.debug('BaseCounter: start: start has been called')
+         self.run.put(1)
+ 
+     # self.isRunning = 1
+ 
+     def stop(self):
++        _logger.debug('BaseCounter: stop: stop has been called')
+         self.run.put(0)
+         self.read_counts.put(0)
+ 
+     # self.isRunning = 0
+ 
+     def configure(self, dwell, num_points=1, row_mode='Line'):
++        _logger.debug('BaseCounter: configure: configure has been called')
+         self.stop()
+         num_points = int(num_points)
+         self.set_mode(row_mode)
+diff --git a/bcm/devices/epics/mbbo.py b/bcm/devices/epics/mbbo.py
+index 2e1d1d8..4dbd1c8 100644
+--- a/bcm/devices/epics/mbbo.py
++++ b/bcm/devices/epics/mbbo.py
+@@ -6,8 +6,8 @@ class Mbbo(epics.Device):
+ 	Simple mbbo input device
+ 	"""
+ 	attrs = ('VAL', 'INP', 'NAME','DESC',
+-						'ZRVL','ONVL','TWVL','THVL','FRVL','FVVL','SXVL','SVVL','EIVL','NIVL','TEVL','ELVL','TVVL','TTVL','FTVL','FFVL',
+-							'ZRST','ONST','TWST','THST','FRST','FVST','SXST','SVST','EIST','NIST','TEST','ELST','TVST','TTST','FTST','FFST')
++			'ZRVL','ONVL','TWVL','THVL','FRVL','FVVL','SXVL','SVVL','EIVL','NIVL','TEVL','ELVL','TVVL','TTVL','FTVL','FFVL',
++			'ZRST','ONST','TWST','THST','FRST','FVST','SXST','SVST','EIST','NIST','TEST','ELST','TVST','TTST','FTST','FFST')
+ 	
+ 	val_flds = ['ZRVL','ONVL','TWVL','THVL','FRVL','FVVL','SXVL','SVVL','EIVL','NIVL','TEVL','ELVL','TVVL','TTVL','FTVL','FFVL']
+ 	str_flds = ['ZRST','ONST','TWST','THST','FRST','FVST','SXST','SVST','EIST','NIST','TEST','ELST','TVST','TTST','FTST','FFST']
+@@ -31,7 +31,8 @@ class Mbbo(epics.Device):
+ 	
+ 	def get_position(self):
+ 		return(self.get('VAL'))
+-	
++
++
+ 	def get_report(self):
+ 		""" return a dict that reresents all 
+ 		 of the settings for this device """
+diff --git a/bcm/devices/epics/motor_qt.py b/bcm/devices/epics/motor_qt.py
+index 6695942..842f4c5 100644
+--- a/bcm/devices/epics/motor_qt.py
++++ b/bcm/devices/epics/motor_qt.py
+@@ -7,6 +7,7 @@ import time
+ from PyQt5 import QtCore, QtWidgets
+ from PyQt5.QtCore import QObject, Qt, pyqtSignal
+ 
++from cls.utils.log import get_module_logger, log_to_qt
+ from aio import aio
+ from cls.utils.dict_utils import dct_get, dct_put
+ 
+@@ -14,6 +15,8 @@ WAIT_SLEEP = 0.002
+ START_TIMEOUT = 20
+ MOVE_TIMEOUT = 900000
+ 
++_logger = get_module_logger(__name__)
++
+ class Motor_Qt(QObject):
+     """ just a convienience class so that PVs can be configured in the beamline configuration file
+     and used as if they were other devices, making the rest of the code cleaner
+@@ -336,6 +339,11 @@ class Motor_Qt(QObject):
+ 
+         drv, rbv = ('setpoint', 'readback')
+ 
++        if(val is not None):
++            _logger.debug('move: [%s] to %.3f]' % (self._name, val))
++        else:
++            _logger.debug('move: [%s] asked to move None?????' % (self._name))
++
+         if relative:
+             val += self.get(drv)
+ 
+diff --git a/cls/app_data/uhvstxm_dflts.json b/cls/app_data/uhvstxm_dflts.json
+index ccff25d..3b28d8a 100644
+--- a/cls/app_data/uhvstxm_dflts.json
++++ b/cls/app_data/uhvstxm_dflts.json
+@@ -66,12 +66,12 @@
+             "ZP_FOCUS_PARAMS": {
+                 "OSA_A0": 1000.0,
+                 "OSA_A0MAX": 0.0,
+-                "OSA_D": 60.0,
++                "OSA_D": 50.0,
+                 "OSA_IDEAL_A0": 1000,
+-                "OSA_IDX": 3,
+-                "ZP_A1": -4.524,
+-                "ZP_D": 140.0,
+-                "ZP_IDX": 3
++                "OSA_IDX": 2,
++                "ZP_A1": -4.855,
++                "ZP_D": 240.0,
++                "ZP_IDX": 4
+             },
+             "ZP_PARAMS": [
+                 {
+@@ -106,7 +106,7 @@
+                     "CsD": 95.0,
+                     "D": 240.0,
+                     "OZone": 25.0,
+-                    "a1": -4.853,
++                    "a1": -4.855,
+                     "zp_id": 5
+                 },
+                 {
+@@ -140,8 +140,8 @@
+                 259
+             ],
+             "CALIBPOSN": [
+-                -5.83,
+-                -22.23
++                47.818,
++                26.143
+             ],
+             "CENTER": [
+                 0.0,
+@@ -255,12 +255,12 @@
+     "SCAN": {
+         "COARSE_IMAGE": {
+             "CENTER": [
+-                78.4609506389105,
+-                5836.657487293221,
++                2185.54,
++                5276.3,
+                 0,
+                 0
+             ],
+-            "DWELL": 14.29,
++            "DWELL": 11.43,
+             "NPOINTS": [
+                 50,
+                 50,
+@@ -268,22 +268,22 @@
+                 0
+             ],
+             "RANGE": [
+-                600.0,
+-                600.0,
++                2000.0,
++                2000.0,
+                 0,
+                 0
+             ],
+             "STEP": [
+-                12.0,
+-                12.0,
++                40.0,
++                40.0,
+                 0,
+                 0
+             ]
+         },
+         "DETECTOR": {
+             "CENTER": [
+-                -5.83,
+-                -22.23,
++                47.82,
++                26.14,
+                 0,
+                 0
+             ],
+@@ -309,22 +309,22 @@
+         },
+         "FOCUS": {
+             "CENTER": [
+-                -8.34,
+-                5622.62,
+-                -5280.38,
++                3920.42,
++                6486.32,
++                -31999.3,
+                 0
+             ],
+             "DWELL": 3.0,
+             "NPOINTS": [
+-                200,
+-                200,
++                50,
++                50,
+                 100,
+                 0
+             ],
+             "RANGE": [
+-                14.25,
+-                5622.62,
+-                100.0,
++                3926.42,
++                6486.32,
++                200.0,
+                 0
+             ],
+             "STEP": [
+@@ -363,8 +363,8 @@
+         },
+         "OSA": {
+             "CENTER": [
+-                -92.42,
+-                -598.39,
++                -56.17,
++                20.47,
+                 0,
+                 0
+             ],
+@@ -376,23 +376,23 @@
+                 0
+             ],
+             "RANGE": [
+-                189.42,
+-                188.7,
++                250.0,
++                250.0,
+                 0,
+                 0
+             ],
+             "STEP": [
+-                7.5767999999999995,
+-                7.547999999999999,
++                10.0,
++                10.0,
+                 0,
+                 0
+             ]
+         },
+         "OSA_FOCUS": {
+             "CENTER": [
+-                -213.41,
+-                31.59,
+-                -5260.93,
++                0.0,
++                0.0,
++                -31999.3,
+                 0
+             ],
+             "DWELL": 1.0,
+diff --git a/cls/applications/pyStxm/app.ini b/cls/applications/pyStxm/app.ini
+index c025abf..8d3ea0b 100644
+--- a/cls/applications/pyStxm/app.ini
++++ b/cls/applications/pyStxm/app.ini
+@@ -1,5 +1,5 @@
+ [DEFAULT]
+-dataDir = S:\STXM-data\Cryo-STXM\2018
++dataDir = S:\STXM-data\Cryo-STXM\2019
+ 
+ autoSaveData = true
+ 
+diff --git a/cls/applications/pyStxm/e712.ini b/cls/applications/pyStxm/e712.ini
+index c422e24..b29cd66 100644
+--- a/cls/applications/pyStxm/e712.ini
++++ b/cls/applications/pyStxm/e712.ini
+@@ -10,13 +10,13 @@
+     "max_rcv_bytes": 16384.08,
+     "max_sock_timeout": 1.0,
+     "mode": 1,
+-    "numX": 100,
+-    "numY": 100,
++    "numX": 150,
++    "numY": 150,
+     "pnt_start_delay": 0.04,
+     "pnt_step_time": 0.02,
+     "pnt_updown_time": 0.0,
+-    "startX": -19.2265309471,
+-    "startY": 5603.32449484,
+-    "stopX": 30.7734690529,
+-    "stopY": 5653.32449484
++    "startX": 3896.48007407,
++    "startY": 6459.43465432,
++    "stopX": 3952.88439506,
++    "stopY": 6513.21551852
+ }
+\ No newline at end of file
+diff --git a/cls/applications/pyStxm/preferences/focusAndZoneplateParms/focusAndZoneplateParms.py b/cls/applications/pyStxm/preferences/focusAndZoneplateParms/focusAndZoneplateParms.py
+index b6b5234..3693d88 100644
+--- a/cls/applications/pyStxm/preferences/focusAndZoneplateParms/focusAndZoneplateParms.py
++++ b/cls/applications/pyStxm/preferences/focusAndZoneplateParms/focusAndZoneplateParms.py
+@@ -264,7 +264,7 @@ class FocusParams(BasePreference):
+ 
+ 		# Jan16 2018 MAIN_OBJ.device('A0').put(A0)
+ 		# force epics to update the record def fror ZP's
+-		MAIN_OBJ.device('Zp_select').put('setpoint', zp_idx)
++		MAIN_OBJ.device('Zp_select').put('VAL', zp_idx)
+ 
+ 		self.a0Fld.setText('%.3f' % A0)
+ 		zp_pnl = self.zp_panels[zp_idx]
+@@ -283,12 +283,12 @@ class FocusParams(BasePreference):
+ 
+ 	def update_zp_selection(self):
+ 		zp_idx = self.zpToolBox.currentIndex()
+-		MAIN_OBJ.device('Zp_select').put('setpoint', zp_idx)
++		MAIN_OBJ.device('Zp_select').put('VAL', zp_idx)
+ 		self.update_zp_data()
+ 		
+ 	def update_osa_selection(self):
+ 		osa_idx = self.osaToolBox.currentIndex()
+-		MAIN_OBJ.device('OSA_select').put('setpoint', osa_idx)
++		MAIN_OBJ.device('OSA_select').put('VAL', osa_idx)
+ 		self.update_zp_data()
+ 	
+ 	def update_osa_data(self):
+diff --git a/cls/applications/pyStxm/scan_plugins/SampleFineImageWithE712WavegenScanClass.py b/cls/applications/pyStxm/scan_plugins/SampleFineImageWithE712WavegenScanClass.py
+index cd4828b..982de3e 100644
+--- a/cls/applications/pyStxm/scan_plugins/SampleFineImageWithE712WavegenScanClass.py
++++ b/cls/applications/pyStxm/scan_plugins/SampleFineImageWithE712WavegenScanClass.py
+@@ -407,7 +407,7 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
+         '''
+         cur_idx = self.get_consecutive_scan_idx()
+ 
+-        _logger.info('SampleImageWithE712Wavegen: on_done_save_jpg_and_tmp_file() called [%d]' % cur_idx)
++        _logger.info('on_done_save_jpg_and_tmp_file() called [%d]' % cur_idx)
+ 
+         _dct = self.get_img_idx_map(cur_idx)
+         sp_id = _dct['sp_id']
+@@ -423,9 +423,9 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
+         self.on_save_sample_image(_data=self.img_data[sp_id])
+ 
+         if (cur_idx >= self.numImages):
+-            print 'update_tmp_file: cur_idx[%d] >= self.numImages[%d]: I dont this this is right' % (cur_idx, self.numImages)
++            _logger.debug('on_done_save_jpg_and_tmp_file: cur_idx[%d] >= self.numImages[%d]: I dont this this is right' % (cur_idx, self.numImages))
+         else:
+-            print 'creating a snapshot for idx%d' % cur_idx
++            _logger.debug('on_done_save_jpg_and_tmp_file: creating a snapshot for idx%d' % cur_idx)
+             _dct = self.get_snapshot_dict(cur_idx)
+             self.main_obj.zmq_save_dict_to_tmp_file(_dct)
+ 
+@@ -439,7 +439,7 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
+         self._scan2.sscan.put('WAIT', 0)
+         ###############################
+         if (cur_idx == self.numImages - 1):
+-            print 'hey! I think this is the scan_done'
++            _logger.debug('on_done_save_jpg_and_tmp_file: hey! I think this is the scan_done')
+             self.shutter.close()
+             self.on_scan_done_discon_sigs()
+             self.save_hdr()
+@@ -722,7 +722,7 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
+         :returns: None
+ 
+         """
+-        _logger.info('\n\nSampleImageWithE712Wavegen: configuring sp_id [%d]' % sp_id)
++        _logger.debug('\nSampleImageWithE712Wavegen: configuring sp_id [%d]' % sp_id)
+         self.new_spatial_start_sent = False
+         # initial setup and retrieval of common scan information
+         self.set_spatial_id(sp_id)
+diff --git a/cls/applications/pyStxm/stxmMain.py b/cls/applications/pyStxm/stxmMain.py
+index b4eea2a..26afb2d 100644
+--- a/cls/applications/pyStxm/stxmMain.py
++++ b/cls/applications/pyStxm/stxmMain.py
+@@ -242,7 +242,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
+ 
+         self.shutterFbkLbl = ca_biLabelWidget(MAIN_OBJ.device(DNM_SHUTTER), labelWidget=self.shutterFbkLbl,
+                                               hdrText=DNM_SHUTTER, title_color='white',
+-                                              options=dict(state_clrs=['black', 'blue']))
++                                              options=dict(state_clrs=['black', 'blue'], log_dbg=True))
+         self.status_dict = {}
+ 
+         if (LOAD_ALL):
+@@ -1050,15 +1050,18 @@ class pySTXMWindow(QtWidgets.QMainWindow):
+             # print 'setting shutter mode to AUTO'
+             MAIN_OBJ.device(DNM_SHUTTER).close()
+             MAIN_OBJ.device(DNM_SHUTTER).set_to_auto()
++            _logger.debug('on_shutterCntrlComboBox: user selected AUTO shutter')
+ 
+         elif (idx == 1):
+             # print 'setting shutter mode to MANUAL'
+             MAIN_OBJ.device(DNM_SHUTTER).set_to_manual()
+             MAIN_OBJ.device(DNM_SHUTTER).open()
++            _logger.debug('on_shutterCntrlComboBox: user selected OPEN shutter')
+         else:
+             # print 'setting shutter mode to MANUAL'
+             MAIN_OBJ.device(DNM_SHUTTER).set_to_manual()
+             MAIN_OBJ.device(DNM_SHUTTER).close()
++            _logger.debug('on_shutterCntrlComboBox: user selected CLOSE shutter')
+ 
+     def setup_scan_toolbox(self):
+         """
+@@ -2630,11 +2633,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
+         #self.executingScan.top_level_progress.connect(self.on_total_scan_progress)
+         #reconnect_signal(self.executingScan, self.executingScan.top_level_progress, self.on_total_scan_progress)
+ 
+-
+         reconnect_signal(self.scan_progress_table, self.scan_progress_table.total_prog, self.on_total_scan_progress)
+ 
+-
+-
+         #self.executingScan.low_level_progress.connect(self.on_scan_progress)
+         reconnect_signal(self.executingScan, self.executingScan.low_level_progress, self.on_scan_progress)
+ 
+@@ -2966,7 +2966,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
+         :returns: None
+         """
+         s = copy.copy(msg)
+-        _logger.debug('scanActionLbl: %s' % msg)
++        _logger.debug('scanActionLbl: [%s]' % msg)
+         self.scanActionLbl.setText(msg)
+         scanning_ss = '#scanActionLbl {	font: 75 8pt "MS Shell Dlg 2"; font-weight: bold; color: black; background-color: rgb(235, 235, 0);}'
+         idle_ss = '#scanActionLbl { font: 75 8pt "MS Shell Dlg 2"; font-weight: bold; color: white; background-color: transparent; }'
+diff --git a/cls/applications/pyStxm/widgets/motorPanel.py b/cls/applications/pyStxm/widgets/motorPanel.py
+index ed57a2b..6646614 100644
+--- a/cls/applications/pyStxm/widgets/motorPanel.py
++++ b/cls/applications/pyStxm/widgets/motorPanel.py
+@@ -336,6 +336,7 @@ class PositionersPanel(QtWidgets.QWidget):
+ 		fld = self.sender()
+ 		dev_dct = self.mtr_dict[fld.id]
+ 		dev_dct['dev'].put(fld.cur_val)
++		_logger.debug('on_setpoint_dev_changed: setting [%s] to [%.3f]' % (dev_dct['dev'].get_name(), fld.cur_val))
+ 	
+ 	def on_editing_finished(self):
+ 
+@@ -370,6 +371,7 @@ class PositionersPanel(QtWidgets.QWidget):
+ 		fld = self.sender()
+ 		pvname = str(fld.statusTip())
+ 		(dev, dev_ui, widg, mtr) = self.mtr_dict[pvname]
++		_logger.debug('stop: user stopping[%s]' % (pvname))
+ 		mtr.stop()
+ 
+ 	def updateMoving(self, **kwargs):
+@@ -424,7 +426,7 @@ class PositionersPanel(QtWidgets.QWidget):
+ 		(dev, dev_ui, widg, mtr) = self.mtr_dict[pvname]
+ 		pos = float(str(self.sender().text()))
+ 		sts = mtr.move(pos)
+-		
++
+ 		if(sts == OUTSIDE_LIMITS):
+ 			#outside the limits
+ 			clr_str = "yellow;"
+@@ -434,6 +436,7 @@ class PositionersPanel(QtWidgets.QWidget):
+ 		_dct = {}
+ 		_dct['setStyleSheet'] = [(dev_ui.setPosFld, "background-color: " + clr_str, False)]
+ 		self.updateQueue.put_nowait(_dct)
++		_logger.debug('on_return_pressed: user moving[%s] to [%.3f]' % (pvname, pos))
+ 	
+ 	def check_soft_limits(self, mtr, sp):
+ 		lvio = mtr.get('soft_limit')
+diff --git a/cls/caWidgets/caLabelWidget.py b/cls/caWidgets/caLabelWidget.py
+index addf2f8..9d69723 100644
+--- a/cls/caWidgets/caLabelWidget.py
++++ b/cls/caWidgets/caLabelWidget.py
+@@ -13,11 +13,13 @@ Created on 2011-03-07
+ 
+ from PyQt5 import QtGui, QtCore, QtWidgets
+ import Queue
++import time
+ 
+ from bcm.devices import aio
+ from cls.app_data.defaults import get_style
+-import time
++from cls.utils.log import get_module_logger
+ 
++_logger = get_module_logger(__name__)
+ 
+ class BaseLabel(QtWidgets.QLabel):
+ 
+@@ -399,6 +401,11 @@ class ca_biLabelWidget(BaseLabel):
+         else:
+             self.state_colors = [var_clr, var_clr]
+ 
++        if('log_dbg' in options):
++            self.log_data = True
++        else:
++            self.log_data = False
++
+         # self.enum_strs = []
+         for fname in self.fields:
+             pvName = '%s.%s' % (self.prefix, fname)
+@@ -417,6 +424,8 @@ class ca_biLabelWidget(BaseLabel):
+     def set_text(self, val):
+         if (len(self.enum_strs) > val):
+             enum_str = self.enum_strs[val]
++            if(self.log_data):
++                _logger.debug('ca_biLabelWidget: set_text: setting [%s] to [%s]' % (self.prefix, enum_str))
+             self.var_clr = self.state_colors[val]
+             dct = {}
+             dct['val'] = val
+diff --git a/cls/caWidgets/caPushBtn.py b/cls/caWidgets/caPushBtn.py
+index f0ab2d1..8780d08 100644
+--- a/cls/caWidgets/caPushBtn.py
++++ b/cls/caWidgets/caPushBtn.py
+@@ -22,6 +22,7 @@ from bcm.devices.device_names import *
+ from cls.caWidgets.caLabelWidget import format_text_no_title
+ from cls.app_data.defaults import master_colors
+ from cls.applications.pyStxm.widgets.button_small_wbtn import Ui_Form as btn_small_pass_a_btn
++from cls.utils.log import get_module_logger, log_to_qt
+ from cls.utils.enum import Enum
+ 
+ # BTN STATE colors
+@@ -32,6 +33,8 @@ one_color = 'rgb(79, 255, 144);'
+ # Moving color
+ two_color = 'rgb(79, 255, 144);'
+ 
++_logger = get_module_logger(__name__)
++
+ def format_btn(title_color='black', bgcolor='transparent'):
+ 
+     s = 'color: %s; background-color: %s;' % (title_color, bgcolor)
+@@ -135,6 +138,7 @@ class caPushBtn(QtWidgets.QPushButton):
+         else:
+             val = self.off_val
+ 
++        _logger.debug('on_btn_dev_push: user pressed [%s] with val [%d]' % (self.prefix, val))
+         self.update_counter = 1
+         self.pv.put(val)
+ 
+@@ -321,7 +325,7 @@ class caPushBtnWithFbk(QtWidgets.QPushButton):
+             val = self.off_val
+ 
+         self.update_counter = 1
+-        print 'putting [%d] ' % val
++        _logger.debug('caPushBtnWithFbk: on_btn_dev_push: user pressed [%s] with val [%d] ' % (self.prefix, val))
+         self.pv.put(val)
+ 
+     def on_btn_dev_push_no_toggle(self):
+@@ -333,7 +337,7 @@ class caPushBtnWithFbk(QtWidgets.QPushButton):
+             self.btn_state = True
+ 
+         self.update_counter = 1
+-        print 'on_btn_dev_push_no_toggle: putting [%d] ' % val
++        _logger.debug('caPushBtnWithFbk: on_btn_dev_push_no_toggle: user pressed [%s] with val [%d] ' % (self.prefix, val))
+         self.pv.put(val)
+ 
+     def on_connect(self,  pvname=None, conn=None, pv=None):
+diff --git a/cls/plotWidgets/uhv_settings.json b/cls/plotWidgets/uhv_settings.json
+index a0fc082..37e2f35 100644
+--- a/cls/plotWidgets/uhv_settings.json
++++ b/cls/plotWidgets/uhv_settings.json
+@@ -50,15 +50,15 @@
+     },
+     "SAMPLE_STANDARD": {
+         "CENTER": [
+-            -195.33999509395449,
+-            3470.8254465222426
++            2625.456639982701,
++            3488.1886485591613
+         ],
+         "RADIUS": 1250,
+         "RECT": [
+-            -1010.3399950939545,
+-            3610.8254465222435,
+-            619.6600049060455,
+-            3330.8254465222417
++            1810.4566399827008,
++            3628.188648559162,
++            3440.456639982701,
++            3348.1886485591604
+         ]
+     },
+     "SMPL_HLDR": {
+diff --git a/cls/scanning/BaseScan.py b/cls/scanning/BaseScan.py
+index 5a329cd..9689b06 100644
+--- a/cls/scanning/BaseScan.py
++++ b/cls/scanning/BaseScan.py
+@@ -1446,6 +1446,7 @@ class BaseScan(BaseDevice):
+ 
+             ado = dct_get(self.sp_db, SPDB_ACTIVE_DATA_OBJECT)
+             fname = dct_get(ado, ADO_CFG_DATA_FILE_NAME).replace('.hdf5','')
++
+             #self.hdr = HdrData(data_dir, fname)
+ 
+             thumb_file_sffx = self.main_obj.get_thumbfile_suffix()
+@@ -1508,6 +1509,8 @@ class BaseScan(BaseDevice):
+ 
+             self.main_obj.zmq_client_new_scan(_fname + '.tmp', subdir=subdir)
+ 
++            _logger.debug('config_hdr_datarecorder: preparing data file [%s]' % _fname)
++
+             self.data_obj = ActiveDataObj()
+             self.data_obj.reset_data_dct()
+ 
+@@ -3292,7 +3295,7 @@ class BaseScan(BaseDevice):
+         _logger.info('chk_for_more_evregions: checking')    
+         
+         if(self._abort):
+-            _logger.info('chk_for_more_evregions: scan aborting')
++            _logger.info('chk_for_more_evregions: abort has been set, scan aborting')
+             #make sure to save current scan
+             if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+                 self.gate.stop()
+@@ -3360,14 +3363,18 @@ class BaseScan(BaseDevice):
+ 
+ 
+             elif(self.is_point_spec):
+-                #ok now finish configuration and start it
+-                self.on_this_dev_cfg()
+-                if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+-                    if (not self.is_point_spec):
+-                        self.gate.start()
+-                        self.counter.start()
+-                        #sept 11
+-                        self.counter.wait_till_running()
++                if(self.counter.isRunning):
++                    #leave it running
++                    pass
++                else:
++                    #ok now finish configuration and start it
++                    self.on_this_dev_cfg()
++                    if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
++                        if (not self.is_point_spec):
++                            self.gate.start()
++                            self.counter.start()
++                            #sept 11
++                            self.counter.wait_till_running()
+ 
+             self.start()
+             #let caller know were not done
+diff --git a/cls/scanning/nexus/tmpfile_to_nxstxm.py b/cls/scanning/nexus/tmpfile_to_nxstxm.py
+index 1fe35dd..5375584 100644
+--- a/cls/scanning/nexus/tmpfile_to_nxstxm.py
++++ b/cls/scanning/nexus/tmpfile_to_nxstxm.py
+@@ -137,10 +137,15 @@ def compile_data(tmp_nf, sp_rois, numSpid, numE, numEpu, img_idx_grp):
+     for idx_str in tmp_f_idx_keys:
+         if((idx_str.find('idx') > -1) and (idx_str.find('map') is -1)):
+             print 'compile_data: processing %s' % idx_str
++            if (idx_str not in tmp_nf.keys()):
++                _logger.error(
++                    'Looks like this is an aborted file as [%s] does not exist in tmp file, leaving' % idx_str)
++                break
+             dets_dct = convert_nxgrp_to_dict(tmp_nf[idx_str]['DETECTORS'])
+             psnr_dct = convert_nxgrp_to_dict(tmp_nf[idx_str]['POSITIONERS'])
+             #{'e_idx': i, 'pol_idx': k, 'sp_idx': j,'entry': 'entry%d' % entry_idx}
+             imgidx_str = str(idx_cntr)
++
+             e_idx = img_idx_grp[imgidx_str]['e_idx']
+             pol_idx = img_idx_grp[imgidx_str]['pol_idx']
+             sp_idx = img_idx_grp[imgidx_str]['sp_idx']
+@@ -186,12 +191,6 @@ def compile_data(tmp_nf, sp_rois, numSpid, numE, numEpu, img_idx_grp):
+     print 'compile_data: Done'
+     return(dct)
+ 
+-
+-
+-
+-
+-
+-
+ def make_entries(nf, tmp_nf, sp_rois, numSpid, numE, numEpu, img_idx_grp):
+     '''
+     goal here is to take
+@@ -342,8 +341,8 @@ if __name__ == '__main__':
+     import os
+ 
+     data_dir = r'S:\STXM-data\Cryo-STXM\2018\guest\0206\test'
+-    data_dir = r'S:\STXM-data\Cryo-STXM\2018\guest\0302\C180302084'
+-    tmp_fname = os.path.join(data_dir,'C180302084.hdf5.tmp')
++    data_dir = r'S:\STXM-data\Cryo-STXM\2019\guest\0129\test'
++    tmp_fname = os.path.join(data_dir,'C190129003.hdf5.tmp')
+     dest_fname = os.path.join(data_dir, 'EXPORTED.hdf5')
+     export_tmp_to_nxstxm(tmp_fname, dest_fname)
+ 
+diff --git a/cls/utils/file_system_tools.py b/cls/utils/file_system_tools.py
+index fda05f8..6bc7e12 100644
+--- a/cls/utils/file_system_tools.py
++++ b/cls/utils/file_system_tools.py
+@@ -69,19 +69,31 @@ def get_filenames_in_dir(path, extension='hdf5'):
+         return(sorted(files))
+     return([])
+ 
+-def skip_non_standard_dirs(dirs):
++def hasNumbers(inputString):
++    return any(char.isdigit() for char in inputString)
++
++def skip_non_standard_dirs(dirs, prefix_char='C'):
++    dirs_with_prefix = []
++    f = lambda x: (x[0] is prefix_char)
++    valid_ = map(f, dirs)
++    for i in range(len(dirs)):
++        if (valid_[i]):
++            dirs_with_prefix.append(dirs[i])
+     n_dirs = []
+-    for dir in dirs:
++    for dir in dirs_with_prefix:
+         if(dir.find(' ') > -1):
+             pass
+-        else:
++        elif(hasNumbers(dir)):
+             n_dirs.append(dir)
++        else:
++            pass
+     return(n_dirs)
+ 
+ def get_next_dir_in_seq_num(path, prefix_char='C', extension='hdf5'):
++
+     if(os.path.isdir(path)):
+         _dirs = sorted(next(os.walk(path))[1])
+-        _dirs = skip_non_standard_dirs(_dirs)
++        _dirs = skip_non_standard_dirs(_dirs, prefix_char=prefix_char)
+         if(len(_dirs) > 0):
+             seq_num_str = _dirs[-1].replace(prefix_char,'')
+             seq_num = int(seq_num_str) + 1
+diff --git a/runpyStxmDataRecorder.cmd b/runpyStxmDataRecorder.cmd
+index 70f41bc..1932031 100644
+--- a/runpyStxmDataRecorder.cmd
++++ b/runpyStxmDataRecorder.cmd
+@@ -25,5 +25,5 @@ set C:\GnuWin32\bin;C:\Perl\bin;%EXTS%\bin\windows-x64;%LOC%\bin\windows-x64;C:\
+ set PATH=%MODS%/asyn-4-21/bin/windows-x64;%PATH%
+ 
+ cd %CD%\cls\zeromq\epics
+-C:\Continuum\Anaconda2\python.exe %CD%\epics_server_pubSub.py 10.52.35.212 5555 S:\STXM-data\Cryo-STXM\2018\guest
++C:\Continuum\Anaconda2\python.exe %CD%\epics_server_pubSub.py 10.52.35.212 5555 S:\STXM-data\Cryo-STXM\2019\guest
+ 

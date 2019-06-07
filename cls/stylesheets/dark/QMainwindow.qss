@@ -1,0 +1,33 @@
+/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+QMainWindow{
+	/*background-color: rgb(100, 100, 100);*/
+	 background-color: rgb(66, 66, 66);
+   /*background-color: rgb(83, 83, 83);
+   border: 10px solid red;
+   selection-background-color: red;
+   selection-color:red;
+   color: red;*/
+}
+
+/* this is the area around main widgets that provide spacer type widgets */
+QMainWindow::separator {
+	background-color: rgb(70,70,70);
+	
+}
+
+QMainWindow::separator:hover {
+}
+
+/*centralFrame{
+   background-color: master_background_color;
+   color: rgb(200,200,200);
+   border: 0px solid black;
+}
+*/
+/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+:disabled{
+   color: rgb(130,130, 130);
+}
+

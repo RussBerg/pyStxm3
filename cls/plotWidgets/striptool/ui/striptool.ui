@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>675</width>
+    <height>552</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>675</width>
+    <height>550</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>pyStripTool</string>
+  </property>
+  <property name="autoFillBackground">
+   <bool>true</bool>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout_6">
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="font">
+         <font>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Ring Current:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="ringCurrentLbl">
+        <property name="palette">
+         <palette>
+          <active>
+           <colorrole role="Text">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>0</red>
+              <green>85</green>
+              <blue>255</blue>
+             </color>
+            </brush>
+           </colorrole>
+          </active>
+          <inactive>
+           <colorrole role="Text">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>0</red>
+              <green>85</green>
+              <blue>255</blue>
+             </color>
+            </brush>
+           </colorrole>
+          </inactive>
+          <disabled>
+           <colorrole role="Text">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>120</red>
+              <green>120</green>
+              <blue>120</blue>
+             </color>
+            </brush>
+           </colorrole>
+          </disabled>
+         </palette>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>0.0 mA</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="palette">
+       <palette>
+        <active>
+         <colorrole role="Light">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>217</red>
+            <green>217</green>
+            <blue>217</blue>
+           </color>
+          </brush>
+         </colorrole>
+         <colorrole role="Base">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>217</red>
+            <green>217</green>
+            <blue>217</blue>
+           </color>
+          </brush>
+         </colorrole>
+         <colorrole role="HighlightedText">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>217</red>
+            <green>217</green>
+            <blue>217</blue>
+           </color>
+          </brush>
+         </colorrole>
+         <colorrole role="NoRole">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>217</red>
+            <green>217</green>
+            <blue>217</blue>
+           </color>
+          </brush>
+         </colorrole>
+        </active>
+        <inactive>
+         <colorrole role="Light">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>217</red>
+            <green>217</green>
+            <blue>217</blue>
+           </color>
+          </brush>
+         </colorrole>
+         <colorrole role="Base">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>217</red>
+            <green>217</green>
+            <blue>217</blue>
+           </color>
+          </brush>
+         </colorrole>
+         <colorrole role="HighlightedText">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>217</red>
+            <green>217</green>
+            <blue>217</blue>
+           </color>
+          </brush>
+         </colorrole>
+         <colorrole role="NoRole">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>217</red>
+            <green>217</green>
+            <blue>217</blue>
+           </color>
+          </brush>
+         </colorrole>
+        </inactive>
+        <disabled>
+         <colorrole role="Light">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>217</red>
+            <green>217</green>
+            <blue>217</blue>
+           </color>
+          </brush>
+         </colorrole>
+         <colorrole role="Base">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>240</red>
+            <green>240</green>
+            <blue>240</blue>
+           </color>
+          </brush>
+         </colorrole>
+         <colorrole role="HighlightedText">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>217</red>
+            <green>217</green>
+            <blue>217</blue>
+           </color>
+          </brush>
+         </colorrole>
+         <colorrole role="NoRole">
+          <brush brushstyle="SolidPattern">
+           <color alpha="255">
+            <red>217</red>
+            <green>217</green>
+            <blue>217</blue>
+           </color>
+          </brush>
+         </colorrole>
+        </disabled>
+       </palette>
+      </property>
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="scanTab">
+       <attribute name="title">
+        <string>StripTool</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="horizontalLayout_8"/>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>675</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuEdit">
+    <property name="title">
+     <string>Edit</string>
+    </property>
+    <addaction name="actionSettings"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionSettings">
+   <property name="text">
+    <string>Settings</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

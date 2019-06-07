@@ -1,0 +1,41 @@
+
+/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+QWidget	.QProgressBar{
+    background-color:  qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgb(90, 90, 90), stop:1 rgb(60, 60, 60));
+    border: 1px solid black;
+	  font-size: 10px;
+	  margin: -5px -5px -5px -5px;
+	  text-align: center;
+	  color: rgb(240,240,240);
+	  
+}
+
+QProgressBar::chunk{
+    /*background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(180, 180, 180, 100), stop:1 rgba(60, 60, 60, 60));*/
+    background-color:rgb(80, 135, 255);
+    /*border: 1px solid rgba(180, 180, 180, 200);*/
+    
+    margin: 1px 1px 1px 1px;
+
+}
+
+#scan_progbar{
+    background-color:  qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgb(90, 90, 90), stop:1 rgb(60, 60, 60));
+    border: 1px solid black;
+	  font-size: 12px;
+	  margin: -5px -5px -5px -5px;
+	  text-align: center;
+	  color: rgb(240,240,240);
+	  
+}
+
+#scan_progbar::chunk{
+    /*background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgba(180, 180, 180, 100), stop:1 rgba(60, 60, 60, 60));*/
+    background-color:rgb(60, 115, 235);
+    /*border: 1px solid rgba(180, 180, 180, 200);*/
+    
+    margin: 1px 1px 1px 1px;
+
+}
+

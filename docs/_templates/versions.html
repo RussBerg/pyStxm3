@@ -1,0 +1,20 @@
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="document versions">
+<ul id="versionwrap" role="presentation">
+   <li style="float:left" role="presentation">
+		<span id="version-dropdown" class="version-btn" tabindex="0" role="button" aria-label="versions selector" aria-haspopup="true" aria-controls="version-vsnlist" aria-disabled="true">
+		{{ release }} 
+		</span>
+		<ul id="version-vsnlist" class="version-list" role="menu" aria-labelledby="version-dropdown" aria-hidden="true">
+			<li role="presentation">Loading...</li>
+		</ul>
+	</li>
+   <li style="float:right" role="presentation">
+		<span id="lang-dropdown" class="version-btn" tabindex="0" role="button"  aria-label="language selector" aria-haspopup="true" aria-controls="version-langlist">
+			{% if language is not none %} {{ language }} {% else %} en {% endif %}
+		</span>
+		<ul id="version-langlist" class="version-list" role="menu" aria-labelledby="lang-dropdown" aria-hidden="true">
+			<li role="presentation">Loading...</li>
+		</ul>
+	</li>
+</ul>
+</div>

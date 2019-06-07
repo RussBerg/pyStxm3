@@ -1,0 +1,1451 @@
+'''
+Created on 2016-10-11
+
+@author: bergr
+
+The basic operation of this widget is to connect to a DirectoryMonitor class that will detect when a file(s) are added/removed to/from a directory.
+
+This class will pass a Queue to the DirectoryMonitor() that will be used to send information back from the DIretoryMonitor() class.
+
+When a change to the directory has occurred the DIrectoryMonitor() will collect the changes in two categories, added and removed, these will be added
+to a dictionary that contains these categories as key words, contained in each is a list of the filenames that have been either added or removed. This 
+dictionary will then be written to the queue and then the DirectoryMonitor() class will emit its changed signal. The changed signal is monitored by 
+the ContactSheet() at which point it will read out of the queue all of the added/removed dictionaries passing that information off to the graphics widget
+functions that handle creating the graphics for each data file.
+
+'''
+import sys
+import os
+import itertools
+import simplejson as json
+import Queue
+import numpy as np
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+from bcm.device.epu import convert_wrapper_epu_to_str
+
+from cls.utils.images import array_to_gray_qpixmap
+
+from cls.applications.pyStxm import abs_path_to_ini_file
+from cls.app_data.defaults import  master_colors, get_style, rgb_as_hex
+
+from cls.utils.arrays import flip_data_upsdown
+from cls.appWidgets.dialogs import setExistingDirectory
+from cls.utils.dirlist import dirlist
+from cls.utils.fileUtils import get_file_path_as_parts
+from cls.utils.log import get_module_logger, log_to_qt
+from cls.utils.cfgparser import ConfigClass
+from cls.utils.dict_utils import dct_get, dct_put
+from cls.scanning.types import spatial_type_prefix, image_types, scan_image_types, scan_types, scan_sub_types, sample_positioning_modes
+
+from cls.data_io.bioxas_im_data_io import BioxasDataIo
+
+from cls.plotWidgets.imageWidget import make_default_stand_alone_stxm_imagewidget
+from cls.utils.roi_utils import get_first_sp_db_from_wdg_com
+from cls.utils.roi_dict_defs import *
+from cls.utils.fileSystemMonitor import DirectoryMonitor
+
+appConfig = ConfigClass(abs_path_to_ini_file)
+icoDir1 = appConfig.get_value('DEFAULT', 'icoDir1')
+
+_logger = get_module_logger(__name__)
+
+MAX_THUMB_COLUMNS = 3
+THMB_SIZE = 90
+SCENE_WIDTH = 290.0
+THUMB_WIDTH = 150.0
+THUMB_HEIGHT = 130.0
+
+
+COLORTABLE=[]
+for i in range(256): COLORTABLE.append(QtGui.qRgb(i/4,i,i/2))
+
+
+
+class ThumbnailWidget(QtWidgets.QGraphicsWidget):
+    update_view = QtCore.pyqtSignal()
+    select = QtCore.pyqtSignal(object)
+    launch_viewer = QtCore.pyqtSignal(object)
+    drag = QtCore.pyqtSignal(object, object)
+    
+    def __init__(self, fname, sp_db, data, title, info_dct, parent = None):
+        """
+        __init__(): description
+
+        :param fname: fname description
+        :type fname: fname type
+
+        :param sp_db: sp_db description
+        :type sp_db: sp_db type
+
+        :param data: data description
+        :type data: data type
+
+        :param title: title description
+        :type title: title type
+
+        :param info_dct: info_dct description
+        :type info_dct: info_dct type
+
+        :param parent=None: parent=None description
+        :type parent=None: parent=None type
+
+        :returns: None
+        """
+        '''
+        This class is used to create a single graphics widget that displays a thumbnail of
+        a stxm image data, the thumbnail is created from the data section of the hdf5 file
+        '''
+        QtWidgets.QGraphicsWidget.__init__(self, parent)
+        self.parent = parent
+        fname = str(fname)
+        data_dir, fprefix, fsuffix = get_file_path_as_parts(fname)
+        if(title is None):
+            self.title = str(fprefix)
+        else:    
+            self.title = title
+            
+        self.data = data
+        self.sp_db = sp_db
+        self.labelheight = 20
+        self.bordersize = 1
+        
+        self.hdf5_path = fname
+        self.data_dir = data_dir
+        self.fname = fname
+        self.pen = QtGui.QPen()
+        self.pen.setWidth(2)
+        self.pen.setBrush(QtCore.Qt.black)
+        self.pen.setStyle(QtCore.Qt.SolidLine)
+        self.is_selected = False
+        self.valid_file = False
+        self.pic = None
+        self.info_str = info_dct['info_str']
+        self.info_jstr = info_dct['info_jstr']
+            
+        self.valid_file = True
+        self.pic = self.getpic()
+        self.setToolTip(self.info_str)
+        self.setAcceptHoverEvents(True)            
+
+    def is_valid(self):
+        """
+        is_valid(): description
+
+        :returns: None
+        """
+        return(self.valid_file)
+            
+        
+    
+    def boundingRect(self):
+        """
+        boundingRect(): description
+
+        :returns: None
+        """
+        if(self.pic is not None):
+            width = self.pic.rect().width() + self.bordersize * 2
+            height = self.pic.rect().height() + self.labelheight + self.bordersize * 2
+            thumb_widget_rect = QtCore.QRectF(0.0, 0.0, width, height)
+
+        else:
+            thumb_widget_rect = QtCore.QRectF(0.0, 0.0, THUMB_WIDTH, THUMB_HEIGHT)
+            #thumb_widget_rect = QtCore.QRectF()
+        
+        #self._boundingRect = thumb_widget_rect
+        return thumb_widget_rect
+
+    def sizeHint(self, which, constraint = QtCore.QSizeF()):
+        """
+        sizeHint(): description
+
+        :param which: which description
+        :type which: which type
+
+        :param constraint=QtCore.QSizeF(): constraint=QtCore.QSizeF() description
+        :type constraint=QtCore.QSizeF(): constraint=QtCore.QSizeF() type
+
+        :returns: None
+        """
+        br = self.boundingRect()
+        return br.size()
+        
+    def getpic(self):
+        """
+        getpic(): description
+
+        :returns: None
+        """
+        if(self.data is not None):
+            if(len(self.data.shape) == 2):
+                wd, ht = self.data.shape
+                #data = np.flipud(self.data)
+                #data = self.data
+                data = flip_data_upsdown(self.data)
+                shape = data.shape
+                
+            elif(len(self.data.shape) == 3):
+                img_seq, wd, ht = self.data.shape
+                #data = np.flipud(self.data[0])
+                #data = self.data[0]
+                data = flip_data_upsdown(self.data[0])
+                shape = data.shape
+                
+            else:
+                #_logger.error('unsupported data shape')
+                return(None)
+        else:
+            _logger.error('data is None in [%s]' % self.hdf5_path)
+            return(None)    
+        
+        # convert it to a QPixmap for display:
+        pmap = array_to_gray_qpixmap(data)
+        #pmap = pmap.scaled(QtCore.QSize(128,128),  QtCore.Qt.KeepAspectRatio)
+        pmap = pmap.scaled(QtCore.QSize(THMB_SIZE,THMB_SIZE))
+        
+        return pmap
+
+    def paint(self, painter, option, widget):
+        """
+        paint(): description
+
+        :param painter: painter description
+        :type painter: painter type
+
+        :param option: option description
+        :type option: option type
+
+        :param widget: widget description
+        :type widget: widget type
+
+        :returns: None
+        """
+        if(self.pic is not None):
+            if(self.is_selected):
+                self.pen.setBrush(QtCore.Qt.blue)
+            else:
+                self.pen.setBrush(QtCore.Qt.black)
+                self.pen.setStyle(QtCore.Qt.SolidLine)
+            
+            painter.setPen(self.pen)
+            # Draw border
+            painter.drawRect(QtCore.QRect(0, 
+                              0, 
+                              self.pic.rect().width() + self.bordersize, 
+                              self.pic.rect().height() + self.labelheight + self.bordersize))
+    
+            # Fill label
+            painter.fillRect(QtCore.QRect(self.bordersize, 
+                                          self.bordersize + self.pic.rect().height(), 
+                                          self.pic.rect().width(), 
+                                          self.labelheight), 
+                                          QtCore.Qt.gray)
+    
+            # Draw image
+            painter.drawPixmap(QtCore.QRect(self.bordersize, 
+                                            self.bordersize, 
+                                            self.pic.rect().width(), 
+                                            self.pic.rect().height()), 
+                               self.pic, 
+                               self.pic.rect())
+    
+            # Draw text
+            text_rect = QtCore.QRect(0, 
+                                     self.pic.rect().y() + self.pic.rect().height(), 
+                                     self.pic.rect().width(), 
+                                     self.labelheight)
+                                     
+            painter.drawText(text_rect, QtCore.Qt.AlignCenter, self.title)
+            
+        
+    def mousePressEvent(self, event):
+        """
+        mousePressEvent(): description
+
+        :param event: event description
+        :type event: event type
+
+        :returns: None
+        """
+        btn = event.button()
+
+        if(self.is_selected):
+            self.is_selected = False
+        else:
+            self.is_selected = True    
+            
+        self.select.emit(self)
+        self.update(QtCore.QRectF(0.0, 
+                          0.0, 
+                          self.pic.rect().width() + self.bordersize, 
+                          self.pic.rect().height() + self.labelheight + self.bordersize))
+        QtWidgets.QGraphicsItem.mousePressEvent(self, event)
+
+        if btn == QtCore.Qt.LeftButton:
+            self.drag.emit(self, event)
+        
+    
+
+    def contextMenuEvent(self, event):
+        """
+        contextMenuEvent(): description
+
+        :param event: event description
+        :type event: event type
+
+        :returns: None
+        """
+
+        menu = QtWidgets.QMenu()
+        #loadAction = QtWidgets.QAction("Load Scan", self)
+        launchAction = QtWidgets.QAction("Launch in Viewer", self)
+        #loadAction.triggered.connect(self.load_scan)
+        launchAction.triggered.connect(self.launch_vwr)
+        
+        #menu.addAction(loadAction)
+        menu.addAction(launchAction)
+        menu.exec_(event.screenPos())
+        
+    def load_scan(self):
+        """
+        load_scan(): description
+
+        :returns: None
+        """
+        print 'loading %s.hdf5' % self.hdf5_path
+        
+        
+    def launch_vwr(self):
+        """
+        launch_vwr(): description
+
+        :returns: None
+        """
+        #print 'launch_viewer %s.hdf5' % self.hdf5_path
+        if(self.data.ndim == 3):
+            
+            l = len(self.title.split('.')[0].split('_')) 
+            if(l > 1):
+                #found a '_' character indicating its a stack image
+                i = int(self.title.split('.')[0].split('_')[1])
+                data = self.data[i]
+            else:
+                #its a single image
+                data = self.data[0]    
+            
+        if(self.data.ndim == 2):
+            data = self.data
+        
+        dct = {}
+        #because the data in the StxmImageWidget is displayed with 0Y at the btm 
+        #and maxY at the top I must flip it before sending it
+        #dct['data'] = np.flipud(data)
+        dct['data'] = data
+        dct['path'] = self.hdf5_path
+        dct['sp_db'] = self.sp_db
+        dct['title'] = None
+        if(self.sp_db is not None):
+            dct['title'] = self.title
+        self.launch_viewer.emit(dct)
+
+    def mouseHoverEvent(self, event):
+        """
+        mouseHoverEvent(): description
+
+        :param event: event description
+        :type event: event type
+
+        :returns: None
+        """
+        print('Widget enter')
+
+    def mouseReleaseEvent(self, event):
+        """
+        mouseReleaseEvent(): description
+
+        :param event: event description
+        :type event: event type
+
+        :returns: None
+        """
+        QtWidgets.QGraphicsItem.mouseReleaseEvent(self, event)
+        
+
+    def hoverEnterEvent(self, event):
+        """
+        hoverEnterEvent(): description
+
+        :param event: event description
+        :type event: event type
+
+        :returns: None
+        """
+        pass
+        #self.pen.setStyle(QtCore.Qt.DotLine)
+        #QtWidgets.QGraphicsWidget.hoverEnterEvent(self, event)
+
+    def hoverLeaveEvent(self, event):
+        """
+        hoverLeaveEvent(): description
+
+        :param event: event description
+        :type event: event type
+
+        :returns: None
+        """
+        pass
+        #self.pen.setStyle(QtCore.Qt.SolidLine)
+        #QtWidgets.QGraphicsWidget.hoverLeaveEvent(self, event)
+
+def get_pixmap(fname):
+    """
+    get_pixmap(): description
+
+    :param get_pixmap(fname: get_pixmap(fname description
+    :type get_pixmap(fname: get_pixmap(fname type
+
+    :returns: None
+    """
+    pmap = QtGui.QPixmap(fname)
+    #pmap.scaled(64, 64)#, aspectRatioMode=Qt_IgnoreAspectRatio, transformMode=Qt_FastTransformation)
+    pmap = pmap.scaled(QtCore.QSize(16,16),  QtCore.Qt.KeepAspectRatio)
+    return(pmap)
+
+
+class MainGraphicsWidget(QtWidgets.QGraphicsWidget):
+    def __init__(self):
+        """
+        __init__(): description
+
+        :returns: None
+        """
+        QtWidgets.QGraphicsWidget.__init__(self)
+        self.gridlayout = QtWidgets.QGraphicsGridLayout()
+        self.gridlayout.setContentsMargins(0, 5, 5, 0)
+        self.setLayout(self.gridlayout)
+    
+    def set_layout_size(self, qr):
+        """
+        set_layout_size(): description
+
+        :param qr: qr description
+        :type qr: qr type
+
+        :returns: None
+        """
+        gwl = self.layout()
+        gwl.setGeometry(QtCore.QRectF(qr.x(), qr.y(), qr.width(), THUMB_HEIGHT))
+        gwl.updateGeometry()
+            
+    def boundingRect(self):
+        """
+        boundingRect(): description
+
+        :returns: None
+        """
+        #print self.gridlayout.contentsRect()
+        return(self.gridlayout.contentsRect())
+    
+    def clear_layout(self):
+        """
+        clear_layout(): description
+
+        :returns: None
+        """
+        if((self.gridlayout.rowCount() == 0) and (self.gridlayout.columnCount() == 0)):
+            return
+        for row in range(self.gridlayout.count()):
+            #the count() will change as the items are removed
+            #so just keep pulling them from teh top [0]
+            item = self.gridlayout.itemAt(self.gridlayout.count()-1)
+            self.gridlayout.removeAt(self.gridlayout.count()-1)
+            del item
+        self.set_layout_size(QtCore.QRectF(self.rect().x(), self.rect().y(), self.rect().width(), THUMB_HEIGHT))
+        #self.gridlayout.updateGeometry()    
+
+class ContactSheet(QtWidgets.QWidget):
+    def __init__(self, data_dir="", data_io=None, counter='counter0', parent=None):
+        """
+        __init__(): description
+
+        :param data_dir="": data_dir="" description
+        :type data_dir="": data_dir="" type
+
+        :returns: None
+        """
+        super(ContactSheet, self).__init__(parent)
+        #QtWidgets.QWidget.__init__(parent)
+        
+        #self.setStyleSheet("QToolTip { color: #ffffff; background-color: #2a82da; border: 1px solid white; }")
+        #self.setStyleSheet("QToolTip { color: #ffffff; background-color: rgb(26, 106, 255); border: 1px solid white; }")
+        self.setStyleSheet("QToolTip { color: rgb(20, 20, 20); background-color: rgb(181, 179, 181); border: 1px solid grey; }")
+        self.counter_nm = counter
+        self.data_io_class = data_io
+        self.data_io = None
+        self.appname = "Contact Sheet"
+        self.setObjectName('contactSheet')
+        self.win = None
+        self.thumbs = []
+        self.setWindowTitle(self.appname)
+        self.scene = QtWidgets.QGraphicsScene()
+        self.scene.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(50, 50, 50)))
+        #self.data_dir = r'C:/controls/py2.7/Beamlines/sm/data/guest/Apr29'
+        self.data_dir = ""
+        self.image_file_extension = '.jpg'
+        self.data_file_extension = '.hdf5'
+        self.formats = '*' + self.image_file_extension
+        
+        self.dir_lbl = QtWidgets.QLabel('')        
+        self.dir_lbl.setAlignment(QtCore.Qt.AlignHCenter)
+        font = self.dir_lbl.font()
+        font.setBold(True)
+        self.dir_lbl.setFont(font)
+        self.dir_lbl.contextMenuEvent = self.dirLabelContextMenuEvent
+        #s = '<a style="background-color: transparent; color: %s"><b>%s</b>\t <a border-width: 50px; style="background-color: %s; color: %s"><b>%s</b> </a>' % (title_color, title, bgcolor, var_color, var)
+        
+        self.refreshBtn = QtWidgets.QToolButton()
+        ico_dir = icoDir1
+        ico_psize = '/64x64/'
+        ico_clr = 'gray'
+        
+        #pmap = get_pixmap(ico_dir + ico_clr + ico_psize + 'reload.png')
+        #self.refreshBtn.icon(QtGui.QPixmap(pmap))
+        #self.refreshBtn.setMaximumSize(50, 25)
+        #self.refreshBtn.clicked.connect(self.reload_view)
+        
+        self.view = QtWidgets.QGraphicsView(self.scene)
+                
+        self.cur_thumb_row = 0
+        self.cur_thumb_column = 0
+        
+        self.f_queue = Queue.Queue()
+        
+        self.fsys_mon = DirectoryMonitor(self.f_queue)
+        #self.fsys_mon.set_file_extension_filter(self.image_file_extension)
+        self.fsys_mon.set_file_extension_filter('hdf5')
+        self.fsys_mon.set_data_dir( self.data_dir)
+        #self.fsys_mon.changed.connect(self.on_dir_changed)
+        self.fsys_mon.changed.connect(self.update_file_list)
+        # set QGraphicsView attributes
+        #self.view.setRenderHints(QtGui.QPainter.Antialiasing | QtGui.QPainter.HighQualityAntialiasing)
+        #self.view.setViewportUpdateMode(QtWidgets.QGraphicsView.MinimalViewportUpdate)
+        hlayout = QtWidgets.QHBoxLayout()
+        vlayout = QtWidgets.QVBoxLayout()
+        vlayout.setContentsMargins(0,0,0,0)
+        hlayout.setContentsMargins(1,1,1,1)
+        hlayout.addWidget(self.dir_lbl)
+        #hlayout.addWidget(self.refreshBtn)
+        vlayout.addLayout(hlayout)
+        vlayout.addWidget(self.view)
+        self.setLayout(vlayout)
+        #self.graphics_wdg = QtWidgets.QGraphicsWidget()
+        self.graphics_wdg = MainGraphicsWidget()
+        
+        self.scene.addItem(self.graphics_wdg)
+        
+        self.updateTimer = QtCore.QTimer()
+        self.updateTimer.timeout.connect(self.update_file_list)
+#         self.gridlayout = QtWidgets.QGraphicsGridLayout()
+#         self.gridlayout.setContentsMargins(5, 5, 5, 5)
+#         self.graphics_wdg.setLayout(self.gridlayout)
+        self.set_data_dir(data_dir)
+        #self.updateTimer.start(1000)
+    
+    def update_file_list(self):
+        call_task_done = False
+        f_added = []
+        f_removed = []
+        while not self.f_queue.empty():
+            resp = self.f_queue.get()
+            if('added' in resp.keys()):
+                f_added = resp['added']
+                call_task_done = True
+            
+            if('removed' in resp.keys()):
+                f_removed = resp['removed']
+                call_task_done = True
+            
+        if(call_task_done):
+            self.on_dir_changed((f_added, f_removed))
+            self.f_queue.task_done() 
+            
+    def dirLabelContextMenuEvent(self, event):
+        """
+        dirLabelContextMenuEvent(): description
+
+        :param event: event description
+        :type event: event type
+
+        :returns: None
+        """
+
+        menu = QtWidgets.QMenu()
+        chgdirAction = QtWidgets.QAction("Change Directory", self)
+        chgdirAction.triggered.connect(self.change_dir)
+        
+        menu.addAction(chgdirAction)
+        menu.exec_(event.globalPos())    
+    
+    def is_stack_dir(self, data_dir):
+        """
+        is_stack_dir(): description
+
+        :param data_dir: data_dir description
+        :type data_dir: data_dir type
+
+        :returns: None
+        """
+        if(len(data_dir) > 0):
+            d_lst = self.split_data_dir(data_dir)
+            dname = d_lst[-1]
+            fstr = os.path.join(data_dir, dname + '.hdf5')
+            if(os.path.exists(fstr)):
+                return(True)
+            else:
+                return(False)
+        else:
+            _logger.error('Invalid data directory')
+            return(False)    
+    
+    def get_stack_file_name(self, data_dir):
+        """
+        get_stack_file_name(): description
+
+        :param data_dir: data_dir description
+        :type data_dir: data_dir type
+
+        :returns: None
+        """
+        d_lst = self.split_data_dir(data_dir)
+        dname = d_lst[-1]
+        return(dname + '.hdf5')
+    
+    def get_stack_data(self, fname):
+        """
+        get_stack_data(): description
+
+        :param fname: fname description
+        :type fname: fname type
+
+        :returns: None
+        """
+        fname = str(fname)
+        data_dir, fprefix, fsuffix = get_file_path_as_parts(fname)
+        self.ensure_instance_of_data_io_class(fname)
+        if(data_dir is None):
+            #_logger.info('Problem with file [%s]' % fname)
+            return(None, None)
+
+        #ado_obj = self.get_entries(data_dir, fprefix, fsuffix)
+        #if(ado_obj is None):
+        #    #_logger.info('Problem with file [%s]' % fname)
+        #    return('', '')
+        entry_dct = self.get_entries(data_dir, fprefix, fsuffix)
+        if(entry_dct is None):
+            _logger.info('Problem with file [%s]' % fname)
+            return(None, None)
+        
+        #wdg_com = dct_get(ado_obj, ADO_CFG_WDG_COM)
+        ekey = entry_dct.keys()[0]
+        wdg_com = self.data_io.get_wdg_com_from_entry(entry_dct, ekey)
+        sp_db = get_first_sp_db_from_wdg_com(wdg_com)
+        #data = ado_obj['DATA']
+        data = self.get_data_from_entry(entry_dct, stack_dir=True, fname=fname)
+        
+        return(sp_db, data )
+    
+    def get_sp_db_and_data(self, fname, stack_dir=False):
+        """
+        get_sp_db_and_data(): description
+
+        :param fname: fname description
+        :type fname: fname type
+
+        :returns: None
+        """
+        from cls.utils.roi_utils import get_ado_obj_from_wdg_com
+        
+        fname = str(fname)
+        data_dir, fprefix, fsuffix = get_file_path_as_parts(fname)
+        if(data_dir is None):
+            _logger.info('Problem with file [%s]' % fname)
+            return(None, None)
+        
+        entry_dct = self.get_entries(data_dir, fprefix, fsuffix)
+        if(entry_dct is None):
+            _logger.info('Problem with file [%s]' % fname)
+            return(None, None)
+        data = self.get_data_from_entry(entry_dct, stack_dir=stack_dir, fname=fname)
+        ekey = entry_dct.keys()[0]
+        wdg_com = self.data_io.get_wdg_com_from_entry(entry_dct, ekey)
+        sp_db = get_first_sp_db_from_wdg_com(wdg_com)
+        return(sp_db, data)
+
+    def ensure_instance_of_data_io_class(self, fname):
+        data_dir, fprefix, fsuffix = get_file_path_as_parts(fname)
+        self.data_io = self.data_io_class(data_dir, fprefix)
+
+    def get_entries(self, data_dir, fprefix, fsuffix):
+        """
+        get_entries(): description
+
+        :param data_dir: data_dir description
+        :type data_dir: data_dir type
+
+        :param fprefix: fprefix description
+        :type fprefix: fprefix type
+
+        :param fsuffix: fsuffix description
+        :type fsuffix: fsuffix type
+
+        :returns: None
+        """
+        fname = data_dir + fprefix + fsuffix
+        self.ensure_instance_of_data_io_class(fname)
+        entry_dct = self.data_io.load()
+        return(entry_dct)
+
+    def get_data_from_entry(self, entry_dct, spid_idx=0, stack_dir=False, fname=None):
+        """
+        get_data_from_entry(): description
+
+        :param ado_obj: ado_obj description
+        :type ado_obj: ado_obj type
+        
+        :param spid_idx: spid_idx index into list of sp_ids
+        :type spid_idx: integer
+        
+
+        :returns: None
+        """
+        if(entry_dct is None):
+            print
+        ekey = entry_dct.keys()[0]
+        
+        self.ensure_instance_of_data_io_class(fname)
+        nx_datas = self.data_io.get_NXdatas_from_entry(entry_dct, ekey)
+        #currently only support 1 counter
+        #counter_name = nx_datas.keys()[0]
+        ## IN THE FUTURE THIS NEEDS TO BE CONFIGURABLE GIVEN THE EXISTANCE OF MULTI DETECTORS
+        #counter_name = self.counter_nm
+
+        data = self.data_io.get_signal_data_from_NXdata(nx_datas, self.counter_nm)
+        
+        if((data.ndim is 3)):
+            if(stack_dir):
+                return(data)
+            
+            if(len(data) > 0):
+                data = data[0]
+            else:
+                return(None)
+        
+        if((data.ndim is not 2)):
+            #_logger.error('Data  is of wrong dimension, is [%d] should be [2]' % (data.ndim))
+            #print 'Data is of wrong dimension, is [%d] should be [2]' % (data.ndim)
+            return(None)
+
+            
+        return(data)
+    
+    def set_image_report(self, info_str, info_jstr):
+        """
+        set_image_report(): description
+
+        :param info_str: info_str description
+        :type info_str: info_str type
+
+        :param info_jstr: info_jstr description
+        :type info_jstr: info_jstr type
+
+        :returns: None
+        """
+        self.image_info_str = info_str
+        self.image_info_jstr = info_jstr
+    
+    
+    def convert_goni_theta_angle(self, angle):
+        '''
+        convert from hundreths of a deg to degree as the
+        :param angle: the angle as returned by the Goniometer Theta motor feedback in hundreths of a degree
+        :type angle: float
+        
+        :returns: The value passed in multiplied by 0.01 
+        '''
+        return(angle * 0.01)
+    
+    def build_image_params(self, fpath, sp_db, data, ev_idx=0, ev_pnt=0, pol_idx=0, pol_pnt=0):
+        """
+        build_image_params(): create a string and json string that represents the key bits of information
+            on this image. The json string is used for drag and drop events so that the widget that receives the 'drop' has 
+            enough info to load the image, scan or display the relevant information. 
+
+        :param fpath: the filename
+        :type fpath: string
+
+        :param sp_db:  This is the standard spatial database dict that is used throughout the application, refer to 
+                        make_spatial_db_dict() in stxm_control/stxm_utils/roi_utils.py for a detailed look at the structure
+                        of an sp_db
+        :type sp_db: sp_db type
+
+        :param data: A numpy array that contains the image data 
+        :type data: data type
+
+        :param ev_idx: the index into the correct ev_roi for this image
+        :type ev_idx: integer
+
+        :param ev_pnt: the index into the correct energy point in the ev_roi for this image
+        :type ev_pnt: integer
+
+        :param pol_idx: the index into the correct polarity_roi for this image
+        :type pol_idx: integer
+
+        :param pol_pnt: the index into the correct polarity point in the pol_roi for this image
+        :type pol_pnt: integer
+
+        :returns:  a tuple consisting of a string used for the tooltip data and a json string used for drag and drop operations
+        """
+        if(data.size == 0):
+            return(None, None)
+            
+        if(data.ndim == 3):
+            data = data[0]
+            
+        if(data.ndim == 2):
+            #hack
+            e_pnt = sp_db[EV_ROIS][ev_idx][SETPOINTS][ev_pnt]
+            if(type(e_pnt) is list):
+                e_pnt = e_pnt[0]
+                
+            height, width = data.shape
+            #s = 'File: %s  \n' %  (fprefix + '.hdf5')
+            dct = {}
+            dct['file'] = fpath
+            dct['scan_type'] = scan_types[dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE)]  + ' ' + scan_sub_types[dct_get(sp_db, SPDB_SCAN_PLUGIN_SUBTYPE)]
+            dct['scan_panel_idx'] = dct_get(sp_db, SPDB_SCAN_PLUGIN_PANEL_IDX)
+            dct['energy'] = e_pnt
+            dct['polarity'] = convert_wrapper_epu_to_str(sp_db[EV_ROIS][ev_idx][POL_ROIS][pol_idx][POL])
+            dct['offset'] = sp_db[EV_ROIS][ev_idx][POL_ROIS][pol_idx][OFF]
+            dct['angle'] = sp_db[EV_ROIS][ev_idx][POL_ROIS][pol_idx]['ANGLE']
+            dct['dwell'] = sp_db[EV_ROIS][ev_idx][DWELL]
+            dct['npoints'] = (width, height)
+            dct['center'] = (dct_get(sp_db, SPDB_XCENTER), dct_get(sp_db, SPDB_YCENTER))
+            dct['range'] = (dct_get(sp_db, SPDB_XRANGE), dct_get(sp_db, SPDB_YRANGE))
+            dct['step'] = (dct_get(sp_db, SPDB_XSTEP), dct_get(sp_db, SPDB_YSTEP))
+            
+            if('GONI' in sp_db.keys()):
+                if(dct_get(sp_db, SPDB_GT) is None):
+                    pass
+                elif(dct_get(sp_db, SPDB_GZ) is None):
+                    pass
+                elif(dct_get(sp_db, SPDB_GTCENTER) is not None):
+                    dct['goni_theta_cntr'] = self.convert_goni_theta_angle(dct_get(sp_db, SPDB_GTCENTER))
+            
+             
+            jstr = json.dumps(dct)
+            s = 'File: %s  \n' %  dct['file']
+            s += 'Scan Type: \t%s\n' %  dct['scan_type']
+            s += 'Energy:    \t%.2f eV\n' % e_pnt
+            s += 'Polarity:  \t%s  Offset: %.2f mm  Angle: %.2f deg\n' % (convert_wrapper_epu_to_str(sp_db[EV_ROIS][ev_idx][EPU_POL_PNTS][pol_idx]), sp_db[EV_ROIS][ev_idx][EPU_OFF_PNTS][pol_idx], sp_db[EV_ROIS][ev_idx][EPU_ANG_PNTS][pol_idx])
+            s += 'Dwell:     \t%.2f ms\n' % sp_db[EV_ROIS][ev_idx][DWELL]
+            s += '# Points:  \t%d x %d \n' % (width, height)
+            s += 'Center:    \t(%.2f, %.2f) um\n' % dct['center']
+            s += 'Range:     \t(%.2f, %.2f) um\n' % dct['range']
+            s += 'StepSize:  \t(%.3f, %.3f) um' % dct['step']
+            if('goni_theta_cntr' in dct.keys()):
+                s += '\nGoni Theta:\t%.2f deg' % dct['goni_theta_cntr']
+            return(s, jstr)
+        else:
+            #print 'build_image_params: Unsupported dimensions of data ->[%d]'% data.ndim
+            return(None, None)
+    
+    def change_dir(self):
+        """
+        change_dir(): description
+
+        :returns: None
+        """
+        dir = setExistingDirectory("Pick Directory", init_dir=self.data_dir)
+        prev_cursor = self.cursor()
+        #QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+        
+        self.setCursor(QtCore.Qt.WaitCursor)
+        QtWidgets.QApplication.processEvents()
+        #check if directory contains a stack
+        if(self.is_stack_dir(dir)):
+            self.set_data_dir(dir, is_stack_dir=True)
+            data_fnames = dirlist(dir, self.data_file_extension, remove_suffix=False)
+            fname = os.path.join(dir, data_fnames[0])
+            sp_db, data = self.get_stack_data(fname)
+            self.load_stack_into_view(data_fnames[0])
+            
+            self.fsys_mon.set_data_dir( self.data_dir)
+            #QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(prev_cursor))
+            self.unsetCursor()
+            QtWidgets.QApplication.processEvents()  
+            return
+                    
+        if(len(dir) > 0):
+            self.set_data_dir(dir, is_stack_dir=False)
+            self.fsys_mon.set_data_dir( self.data_dir)
+    
+        self.unsetCursor()
+        #QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(prev_cursor))
+        QtWidgets.QApplication.processEvents()
+            
+    
+    def on_dir_changed(self, (f_added, f_removed)):
+        """
+        on_dir_changed(): this handler needs to discern between files that are not finished writing and those that are ready to be read
+
+        :param (f_added: (f_added description
+        :type (f_added: (f_added type
+
+        :param f_removed): f_removed) description
+        :type f_removed): f_removed) type
+
+        :returns: None
+        """
+        #print 'on_dir_changed: added: ' , f_added
+        #print 'on_dir_changed: removed: ' , f_removed
+        prev_cursor = self.cursor()
+        #QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+        self.setCursor(QtCore.Qt.WaitCursor)
+        QtWidgets.QApplication.processEvents()
+        
+        if(len(f_added) > 0):
+            #self.add_to_view(f_added)
+            ROWS = (len(self.thumbs) + len(f_added)) / MAX_THUMB_COLUMNS
+            for fname in f_added:
+                if(self.cur_thumb_column >= MAX_THUMB_COLUMNS):
+                    self.incr_cur_row()
+                    self.reset_cur_column()
+
+                fstr = os.path.join(self.data_dir, fname)
+                sp_db, data = self.get_sp_db_and_data(fstr)
+                #status = self.add_to_view(fname, sp_db, data, ev_idx=0, ev_pnt=0, pol_idx=0, pol_pnt=0, row=self.cur_thumb_row, col=self.cur_thumb_column, update_scene=False)
+                status = self.add_to_view(fname, sp_db, data, ev_idx=0, ev_pnt=0, pol_idx=0, pol_pnt=0, row=None, col=None, update_scene=False)
+                if(status is not None):
+                    self.incr_cur_column()
+
+                QtWidgets.QApplication.processEvents()
+                
+            self.update_scene()
+        #QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(prev_cursor))
+        self.unsetCursor()
+        QtWidgets.QApplication.processEvents()
+        
+    
+    def set_cur_row(self, val):
+        self.cur_thumb_row = val
+    
+    def set_cur_column(self, val):
+        self.cur_thumb_column = val    
+    
+    def reset_cur_row(self):
+        self.cur_thumb_row = 0
+    
+    def reset_cur_column(self):
+        self.cur_thumb_column = 0
+        
+    def incr_cur_row(self):
+        self.cur_thumb_row += 1
+        
+    def incr_cur_column(self):
+        self.cur_thumb_column += 1    
+    
+    
+    def get_next_row_and_col(self):
+        ROWS = (len(self.thumbs) + 1) / MAX_THUMB_COLUMNS
+        if(self.cur_thumb_column >= MAX_THUMB_COLUMNS):
+            self.incr_cur_row()
+            rows = self.cur_thumb_row
+            self.set_cur_column(0)
+            
+        return(self.cur_thumb_row, self.cur_thumb_column)    
+            
+    
+        
+    def on_drag(self, obj, event):
+        """
+        on_drag(): description
+
+        :param obj: obj description
+        :type obj: obj type
+
+        :param event: event description
+        :type event: event type
+
+        :returns: None
+        """
+        event.accept()
+
+        itemData = QtCore.QByteArray()
+        dataStream = QtCore.QDataStream(itemData, QtCore.QIODevice.WriteOnly)
+        dataStream << QtCore.QByteArray(obj.info_jstr) << (event.pos() - obj.rect().topLeft()) 
+        #dataStream << QtCore.QByteArray(obj.data.tobytes()) << QtCore.QByteArray(obj.info_str) << (event.pos() - obj.rect().topLeft())
+
+        mimeData = QtCore.QMimeData()
+        mimeData.setData('application/x-stxmscan', itemData)
+        mimeData.setText(obj.info_jstr)
+
+        drag = QtGui.QDrag(self)
+        drag.setMimeData(mimeData)
+        pos = event.pos() - obj.rect().topLeft()
+        drag.setHotSpot(QtCore.QPoint(pos.x(), pos.y()))
+        drag.setPixmap(obj.pic)
+
+        if drag.exec_(QtCore.Qt.MoveAction | QtCore.Qt.CopyAction, QtCore.Qt.CopyAction) == QtCore.Qt.MoveAction:
+            pass
+        else:
+            pass
+    
+    
+    def make_thumbWidget(self, data_dir, fname, info_dct, title=None, sp_db=None, data=None):
+        """
+        make_thumbWidget(): description
+
+        :param data_dir: data_dir description
+        :type data_dir: data_dir type
+
+        :param fname: fname description
+        :type fname: fname type
+
+        :param info_dct: info_dct description
+        :type info_dct: info_dct type
+
+        :param title=None: title=None description
+        :type title=None: title=None type
+
+        :param sp_db=None: sp_db=None description
+        :type sp_db=None: sp_db=None type
+
+        :param data=None: data=None description
+        :type data=None: data=None type
+
+        :returns: None
+        """
+        fstr = os.path.join(data_dir, fname)
+        thumb_widget = ThumbnailWidget(fstr, sp_db, data, title, info_dct, parent = None)
+        if(thumb_widget.is_valid):
+            #thumb_widget.update_view.connect(self.update_view)
+            thumb_widget.select.connect(self.do_select)
+            thumb_widget.launch_viewer.connect(self.launch_viewer)
+            thumb_widget.drag.connect(self.on_drag)
+            return(thumb_widget)
+        else:
+            return(None)
+    
+    def add_thumb_widget(self, data_dir, fname, info_dct, row, column, title=None, sp_db=None, data=None):
+        """
+        add_thumb_widget(): description
+
+        :param data_dir: data_dir description
+        :type data_dir: data_dir type
+
+        :param fname: fname description
+        :type fname: fname type
+
+        :param info_dct: info_dct description
+        :type info_dct: info_dct type
+
+        :param row: row description
+        :type row: row type
+
+        :param column: column description
+        :type column: column type
+
+        :param title=None: title=None description
+        :type title=None: title=None type
+
+        :param sp_db=None: sp_db=None description
+        :type sp_db=None: sp_db=None type
+
+        :param data=None: data=None description
+        :type data=None: data=None type
+
+        :returns: None
+        """
+        thumb_widget = self.make_thumbWidget(data_dir, fname, info_dct, title=title, sp_db=sp_db, data=data)
+        if(thumb_widget):
+            self.graphics_wdg.gridlayout.addItem(thumb_widget, row, column, 1, 1)
+            self.graphics_wdg.gridlayout.setColumnSpacing(column, 20)
+            self.graphics_wdg.gridlayout.setRowSpacing(row, 15)
+            
+            self.thumbs.append(thumb_widget)
+            return(True)
+        else:
+            return(False)
+        
+        
+    def clear_grid_layout(self):
+        """
+        clear_grid_layout(): description
+
+        :returns: None
+        """
+        if((self.graphics_wdg.gridlayout.rowCount() == 0) and (self.graphics_wdg.gridlayout.columnCount() == 0)):
+            return
+        i = 0
+        self.graphics_wdg.clear_layout()
+        ir = self.scene.itemsBoundingRect()    
+        qr = QtCore.QRectF(ir.x(), ir.y(), ir.width(), THUMB_HEIGHT)
+        self.scene.setSceneRect(qr)    
+        self.view.setSceneRect(qr)
+        self.graphics_wdg.set_layout_size(qr)
+        del self.thumbs
+        self.thumbs = []
+        self.set_cur_row(0)    
+        self.set_cur_column(0)
+        
+    def add_to_view(self, fname, sp_db, data, image_num=None, ev_idx=0, ev_pnt=0, pol_idx=0, pol_pnt=0, row=None, col=None, update_scene=False):
+        """
+        load_stack_into_view(): description
+
+        :param fname: fname description
+        :type fname: fname type
+
+        :returns: None
+        
+        """
+        if(data is None):
+            return(False)
+        
+        if(data.ndim == 3):
+            data = data[0]
+        elif(data.ndim == 2):
+            #its a single image
+            data = data
+        elif(data.ndim == 1):
+            #its a spectra which is not supported so just return None
+            return(None)
+        else:
+            #its unknown 
+            return(None)    
+        
+        rows, cols = data.shape
+
+        if((sp_db is not None) and (data is not None)):
+            if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in [scan_types.GENERIC_SCAN, scan_types.SAMPLE_POINT_SPECTRUM]):
+                fstr = os.path.join(self.data_dir, fname)
+                info_str, info_jstr = self.build_image_params(fstr, sp_db, data, ev_idx=ev_idx, ev_pnt=ev_pnt, pol_idx=pol_idx, pol_pnt=0)
+                info_dct = {'info_str': info_str, 'info_jstr': info_jstr}
+                lfn = len(fname)
+                title = fname[0:lfn-5]
+            else:
+                #its not a supported scan type
+                return
+        
+        if((row is None) and (col is None)):
+            row, col = self.get_next_row_and_col()
+        
+        
+        num_rows = self.graphics_wdg.gridlayout.rowCount() 
+        column = 0
+        if(image_num is None):
+            ttl = title
+        else:
+            ttl = title + '_%d'%image_num
+            
+        status = self.add_thumb_widget( self.data_dir, fname, info_dct,  row, col, title=ttl, sp_db=sp_db, data=data)
+                
+        if(update_scene and status):
+            self.update_scene()
+            
+        return(status)    
+    
+    
+    def update_scene(self):
+        num_rows = self.graphics_wdg.gridlayout.rowCount() 
+        #qr = QtCore.QRectF(0.0, 0.0, 290.0, num_rows * 170.0)
+        qr = QtCore.QRectF(0.0, 0.0, SCENE_WIDTH, num_rows * THUMB_HEIGHT)
+        #print 'num_rows = %d, ht = %d' % (num_rows, num_rows * 170.0)
+        self.graphics_wdg.set_layout_size(qr)
+        self.scene.setSceneRect(qr)
+        self.view.setSceneRect(qr)
+        yPos = self.view.verticalScrollBar()
+        if(num_rows > 3):
+            yPos.setValue(yPos.maximum())
+        else:    
+            yPos.setValue(yPos.minimum())
+            
+    def load_stack_into_view(self, fname):
+        """
+        load_stack_into_view(): description
+
+        :param fname: fname description
+        :type fname: fname type
+
+        :returns: None
+        """
+        fstr = os.path.join(self.data_dir, fname)
+        sp_db, data = self.get_sp_db_and_data(fstr, stack_dir=True)
+        self.clear_grid_layout()
+        num_images, rows, cols = data.shape
+        ROWS = num_images / MAX_THUMB_COLUMNS
+        # rowcol = itertools.product(range(ROWS),range(MAX_THUMB_COLUMNS))
+        rowcol = itertools.product(range(ROWS + 1), range(MAX_THUMB_COLUMNS))
+        ev_idx = 0
+        i = 0
+        for ev_roi in sp_db[EV_ROIS]:
+            # ev_idx = 0
+            enpnts = int(ev_roi[NPOINTS])
+            polnpnts = len(ev_roi[POL_ROIS])
+            ev_pol_idxs = itertools.product(range(enpnts), range(polnpnts))
+
+            # for ev_pol_idxs in itertools.product(range(enpnts), range(polnpnts) ):
+            for x in range(enpnts):
+                # for row, column in itertools.product(range(ROWS),range(MAX_THUMB_COLUMNS)):
+                # print 'load_stack_into_view: %d of %d' % (x, enpnts)
+                for p in range(polnpnts):
+                    row, column = rowcol.next()
+                    ev_pnt, pol_idx = ev_pol_idxs.next()
+                    status = self.add_to_view(fname, sp_db, data[i], image_num=i, ev_idx=ev_idx, ev_pnt=ev_pnt,
+                                              pol_idx=pol_idx, pol_pnt=0, row=row, col=column, update_scene=False)
+
+                    if (not status):
+                        continue
+                    i += 1
+                # pol_idx += 1
+            ev_idx += 1
+            self.set_cur_row(row + 1)
+            self.set_cur_column(column + 1)
+
+        self.update_scene()
+        
+    def reload_view(self, is_stack_dir=False):
+        """
+        reload_view(): walk the self.data_dir and try to load every .hdf5 file, display only the ones that are valid
+        skip the ones that are not
+
+        :param is_stack_dir=False: is_stack_dir=False description
+        :type is_stack_dir=False: is_stack_dir=False type
+
+        :returns: None
+        self.graphics_wdg.set_layout_size(qr)
+        self.scene.setSceneRect(qr)
+        self.view
+        """
+        self.clear_grid_layout()    
+        row = 0
+        column = 0
+        if(self.data_dir is None):
+            return
+            
+        if(not os.path.exists(self.data_dir)):
+            _logger.error('Data directory does not exist: [%s]' % self.data_dir)
+            return
+            
+        data_fnames = dirlist(self.data_dir, self.data_file_extension, remove_suffix=False)
+        #only look at files that have an image and data file, then turn to list, then sort ascending
+        #thumb_fnames = sorted( list(set(image_fnames) & set(data_fnames)) )
+        thumb_fnames = sorted( data_fnames )
+        
+        if(len(thumb_fnames) < 1):
+            return
+        elif(len(thumb_fnames) == 1):
+            #there is only a single file in directory
+            fstr = os.path.join(self.data_dir, thumb_fnames[0])
+            sp_db, data = self.get_sp_db_and_data(fstr)
+            if((sp_db is not None) and (data is not None)):
+                if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in [scan_types.GENERIC_SCAN, scan_types.SAMPLE_POINT_SPECTRUM]):
+                    info_str, info_jstr = self.build_image_params(fstr, sp_db, data, ev_idx=0, pol_idx=0)
+                    info_dct = {'info_str': info_str, 'info_jstr': info_jstr}
+                    status = self.add_thumb_widget( self.data_dir, thumb_fnames[0], info_dct,  0, 0, sp_db=sp_db, data=data)
+                    if(not status):
+                        #file must have had a problem with it
+                        yPos = self.view.verticalScrollBar()
+                        yPos.setValue(yPos.minimum())
+                        return
+            
+            self.set_cur_row(0)    
+            self.set_cur_column(1)
+        else:                
+            #try to load the whole directory
+            ROWS = int(round(float(len(thumb_fnames) / float(MAX_THUMB_COLUMNS)))) + 1
+            if(ROWS == 0):
+                ROWS = 1
+            i = 0
+            rowcol =  itertools.product(range(ROWS),range(MAX_THUMB_COLUMNS))
+            #for row, column in itertools.product(range(ROWS),range(MAX_THUMB_COLUMNS)):
+            for i in range(len(thumb_fnames)):
+                if(i >= len(thumb_fnames)):
+                    #if it is less than 1 full row
+                    break
+                fstr = os.path.join(self.data_dir, thumb_fnames[i])
+                sp_db, data = self.get_sp_db_and_data(fstr)
+                if((sp_db is not None) and (data is not None)):
+                    if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in [scan_types.GENERIC_SCAN, scan_types.SAMPLE_POINT_SPECTRUM]):
+                        row, column = rowcol.next()
+                        fstr = os.path.join(self.data_dir, thumb_fnames[i])
+                        info_str, info_jstr = self.build_image_params(fstr, sp_db, data, ev_idx=0, pol_idx=0)
+                        info_dct = {'info_str': info_str, 'info_jstr': info_jstr}
+                        status = self.add_thumb_widget( self.data_dir, thumb_fnames[i], info_dct,  row, column, sp_db=sp_db, data=data)
+                        if(not status):
+                            continue
+                     
+                i += 1
+
+                QtWidgets.QApplication.processEvents()
+
+            #self.set_cur_row(row + 1)    
+            self.set_cur_row(row )
+            self.set_cur_column(column + 1)
+
+        self.update_scene()
+    
+    def split_data_dir(self, data_dir):    
+        """
+        split_data_dir(): description
+
+        :param data_dir: data_dir description
+        :type data_dir: data_dir type
+
+        :returns: None
+        """
+        if(data_dir is None):
+            return
+        sep = '/'
+        if(data_dir.find('/') > -1):
+            sep = '/'
+        elif(data_dir.find('\\') > -1):
+            sep = '/'
+        else:
+            _logger.error('Unsupported directory string [%s]' % data_dir)
+
+        d_lst = data_dir.split(sep)
+        return(d_lst)
+
+    def set_data_dir(self, data_dir, is_stack_dir=False):
+        """
+        set_data_dir(): description
+
+        :param data_dir: data_dir description
+        :type data_dir: data_dir type
+
+        :param is_stack_dir=False: is_stack_dir=False description
+        :type is_stack_dir=False: is_stack_dir=False type
+
+        :returns: None
+        """
+        if(len(data_dir) > 0):
+            self.data_dir = data_dir
+            d = self.split_data_dir(data_dir)
+            num_dirs = len(d)-1
+            fstr = os.path.join(d[num_dirs-1], d[num_dirs])
+            self.dir_lbl.setText(fstr)
+            self.fsys_mon.set_data_dir(data_dir)
+            if(not is_stack_dir):
+                self.reload_view(is_stack_dir)
+
+    def do_select(self, thumb):
+        """
+        do_select(): description
+
+        :param thumb: thumb description
+        :type thumb: thumb type
+
+        :returns: None
+        """
+        for t in self.thumbs:
+            if(id(thumb) != id(t)):
+                t.is_selected = False
+            else:
+                t.is_selected = True
+        self.update_view()
+
+    def update_view(self):
+        """
+        update_view(): description
+
+        :returns: None
+        """
+        self.view.update()
+        #self.scene.update(rect=QtCore.QRectF(0,0,1500,1500))
+        rect = self.scene.sceneRect()
+        self.scene.update(rect=QtCore.QRectF(rect.left(), rect.top(),rect.width(),rect.height()))
+
+    def launch_viewer(self, dct):
+        """
+        launch_viewer(): description
+
+        :param dct: dct description
+        :type dct: dct type
+
+        :returns: None
+        """
+        import traceback
+        #fname, data, title=None):
+        try:
+            fname = dct['path']
+            data = dct['data']
+            sp_db = dct['sp_db']
+            title = dct['title']
+            
+            data_dir, fprefix, fsuffix = get_file_path_as_parts(fname)
+
+            if(self.win is None):
+                fg_clr = rgb_as_hex(master_colors['plot_forgrnd'])
+                bg_clr = rgb_as_hex(master_colors['plot_bckgrnd'])
+                min_clr = rgb_as_hex(master_colors['plot_gridmaj'])
+                maj_clr = rgb_as_hex(master_colors['plot_gridmin'])
+                
+                self.win = make_default_stand_alone_stxm_imagewidget(data_io=self.data_io)
+                qssheet = get_style('dark')
+                self.win.setStyleSheet(qssheet)
+#                 
+                self.win.set_grid_parameters(bg_clr, min_clr, maj_clr)
+                self.win.set_cs_grid_parameters(fg_clr, bg_clr, min_clr, maj_clr)
+                 
+                self.win.closeEvent = self.on_viewer_closeEvent
+                numX = int(dct_get(sp_db, SPDB_XNPOINTS))
+                numY = int(dct_get(sp_db, SPDB_YNPOINTS))
+                rect = dct_get(sp_db, SPDB_RECT)
+                self.win.initData(image_types.IMAGE, numY ,  numX, {SPDB_RECT: rect})
+                self.win.set_data(data)
+                self.win.on_set_aspect_ratio(True)
+                self.win.update_contrast()
+                self.win.show()
+                
+            else:    
+                self.win.set_data(data)
+                rect = dct_get(sp_db, SPDB_RECT)
+                (x1, y1, x2, y2) = rect
+                self.win.set_image_parameters(self.win.item, x1, y1, x2, y2)
+                self.win.on_set_aspect_ratio(True)
+                self.win.update_contrast()
+                self.win.raise_()
+                
+            
+            if(title is not None):
+                self.win.plot.set_title('%s' % title)
+            else:
+                self.win.plot.set_title('%s%s' % (fprefix, fsuffix))    
+
+        except:
+            traceback.print_exc()
+        
+    def on_viewer_closeEvent(self, event):
+        #print 'viewer closed'
+        self.win = None    
+        event.accept() # let the window close
+        #    event.ignore()
+        
+if __name__ == "__main__":
+    from cls.data_io.bioxas_im_data_io import BioxasDataIo
+    from cls.data_io.stxm_data_io import STXMDataIo
+    log_to_qt()
+    app = QtWidgets.QApplication(sys.argv)
+    app.setApplicationName("Pyqt Image gallery example")
+    dir = r'S:\STXM-data\Cryo-STXM\2017\guest\0817'
+    #dir = r'/home/bergr/git/testing/py27_qt5/py2.7/cls/data/guest'
+    #main = ContactSheet(r'S:\STXM-data\Cryo-STXM\2016\guest\test')
+    #main = ContactSheet(dir, BioxasDataIo)
+    main = ContactSheet(dir, STXMDataIo)
+    main.set_data_dir(dir)
+    main.show()
+    main.resize(385, 700)
+
+    sys.exit(app.exec_())

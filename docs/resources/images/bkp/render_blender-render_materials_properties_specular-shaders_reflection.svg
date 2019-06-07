@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="540px" height="320px" viewBox="0 0 540 320" stroke-linecap="round">
+
+<g fill="none" stroke="#000" stroke-width="2">
+	<path stroke-width="1.5" d="M511,176h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6"/>
+	<path stroke-width="3" d="M507,173L415,311"/>
+	<path d="M31,146v54M165,213L112,182L169,157z"/>
+	<circle cx="277" cy="22" r="11"/>
+	<path stroke-width="1.5" d="M293,173L462,238M277,22L456,231"/>
+</g>
+
+<circle cx="112" cy="182" r="4"/>
+<circle cx="277" cy="22" r="6"/>
+<path d="M280,168l15.07,1.59l-2.82,7.32zm182,70l-8.72-18.22l-7.94,6.8z"/>
+
+<text fill="#485F70" font-size="12px" font-weight="bold" font-family="Georgia, Tahoma, sans-serif">
+
+	<tspan x="20" y="240">Viewing</tspan>
+	<tspan x="20" y="254">Plane</tspan>
+
+	<tspan x="130" y="240">Camera</tspan>
+
+	<tspan x="340" y="240">Reflected</tspan>
+	<tspan x="340" y="254">Light</tspan>
+	<tspan x="340" y="268">Angle</tspan>
+
+	<tspan x="250" y="50">Lamp</tspan>
+
+	<tspan x="380" y="100">Incident</tspan>
+	<tspan x="380" y="114">Light</tspan>
+	<tspan x="380" y="128">Angle</tspan>
+
+	<tspan x="455" y="286">Renderable</tspan>
+	<tspan x="455" y="300">Surface</tspan>
+
+</text>
+
+</svg>

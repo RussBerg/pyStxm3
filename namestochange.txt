@@ -1,0 +1,69 @@
+'Ideal_A0' = DNM_IDEAL_A0
+'Calcd_Zpz' = DNM_CALD_ZPZ
+'Zpz_adjust' = DNM_ZPZ_ADJUST
+'Delta_A0' = DNM__DELTA_A0
+'Focal_Length' = DNM_FOCAL_LEN
+'A0' = DNM_A0
+'A0Max' = DNM_A0_MAX
+'A0ForCalc' = DNM_A0_FOR_CALC
+'Zpz_pos' = DNM_ZPZ_POS
+'Zp_def' = DNM_ZPZ_DEF
+'OSA_def' = DNM_OSA_DEF
+'Zp_select' = DNM_ZP_SELECT
+'OSA_select' = DNM_OSA_SELECT
+'Energy_enable' = DNM_ENERGY_ENABLE
+'ENERGY_RBV' = DNM_ENERGY_RBV
+'ZPZ_RBV' = DNM_ZPZ_RBV
+'Zp_def.A' = DNM_ZP_DEF_A
+'Zp_def1_A' = DNM_ZP_DEF1_A
+'Zp_def2_A' = DNM_ZP_DEF2_A
+'Zp_def3_A' = DNM_ZP_DEF3_A
+'Zp_def4_A' = DNM_ZP_DEF4_A
+'Zp_def5_A' = DNM_ZP_DEF5_A
+'Zp_def6_A' = DNM_ZP_DEF6_A
+'Zp_def7_A' = DNM_ZP_DEF7_A
+'SRStatus_shutters' = DNM_SRSTATUS_SHUTTERS
+'Mono_ev_fbk' = DNM_MONO_EV_FBK
+'Mono_grating_fbk' = DNM_MONO_GRATING_FBK
+'Epu_pol_fbk' = DNM_EPU_POL_FBK
+'Epu_pol_angle' = DNM_EPU_POL_ANGLE
+'Epu_gap_fbk' = DNM_EPU_GAP_FBK
+'Epu_gap_offset' = DNM_EPU_GAP_OFFSET
+'Epu_harmonic' = DNM_EPU_HARMONIC
+'SYSTEM:mode:fbk' = DNM_SYSTEM_MODE_FBK
+'ticker' = DNM_TICKER
+'CX_auto_disable_power' = DNM_CX_AUTO_DISABLE_PWR
+'CY_auto_disable_power' = DNM_CY_AUTO_DISABLE_PWR
+'DX_auto_disable_power' = DNM_DX_AUTO_DISABLE_PWR
+'DY_auto_disable_power' = DNM_DY_AUTO_DISABLE_PWR
+'accRange' = DNM_ACC_RANGE
+'FX_force_done' = DNM_FX_FORCE_DONE
+'FY_force_done' = DNM_FY_FORCE_DONE
+'OX_force_done' = DNM_OX_FORCE_DONE
+'OY_force_done' = DNM_OY_FORCE_DONE
+'OSAXYZ_lockposition_enabled' = DNM_OSAXYZ_LOCKPOS_EN
+'OSAXY_goto_lockposition' = DNM_OSAXY_LOCKPOS
+'OSAZ_goto_lockposition' = DNM_OSAZ_LOCKPOS
+'Set_XY_lockposition' = DNM_SET_XY_LOCKPOS
+'Set_Z_lockposition' = DNM_SET_Z_LOCKPOS
+
+'%sstxm:cmd_file' % prfx = DNM_SSCAN_CMD_FILE
+'%sstxm:scan1' % prfx  = DNM_SSCAN_1
+'%sstxm:scan2' % prfx  = DNM_SSCAN_2
+'%sstxm:scan3' % prfx  = DNM_SSCAN_3
+'%sstxm:scan4' % prfx  = DNM_SSCAN_4
+'%sstxm:scan5' % prfx  = DNM_SSCAN_5
+'%sstxm:scan6' % prfx  = DNM_SSCAN_6 
+'%sstxm:scan7' % prfx  = DNM_SSCAN_7 
+'%sstxm:scan8' % prfx  = DNM_SSCAN_8 
+'%sstxm:scan1:sts' % prfx = DNM_SSCAN_1_STS
+
+
+
+
+
+
+
+
+
+

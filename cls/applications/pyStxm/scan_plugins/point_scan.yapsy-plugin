@@ -1,0 +1,10 @@
+[Core]
+Name = Point scan params
+#Module = point_scan
+Module = fine_point_scan
+
+[Documentation]
+Author = Russ Berg
+Version = 0.1
+Website = http://lateral.netmanagers.com.ar
+Description = Params for an Point scan

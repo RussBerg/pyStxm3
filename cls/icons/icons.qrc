@@ -1,0 +1,146 @@
+<RCC>
+  <qresource prefix="curveStyles">
+    <file>images/curvestyles/dots.png</file>
+    <file>images/curvestyles/lines.png</file>
+    <file>images/curvestyles/steps.png</file>
+    <file>images/curvestyles/sticks.png</file>
+  </qresource>
+  <qresource prefix="smallGeneral">
+    <file>32x32/1375157101_27797.ico</file>
+    <file>32x32/1375157132_27800.ico</file>
+    <file>32x32/1375157150_27812.ico</file>
+    <file>32x32/1375157155_27817.ico</file>
+    <file>32x32/1375157161_27824.ico</file>
+    <file>32x32/1375157165_27829.ico</file>
+    <file>32x32/1375157170_27798.ico</file>
+    <file>32x32/1375157175_27801.ico</file>
+    <file>32x32/1375157179_27806.ico</file>
+    <file>32x32/1375157183_27813.ico</file>
+    <file>32x32/1375157188_27818.ico</file>
+    <file>32x32/1375157192_27820.ico</file>
+    <file>32x32/1375157196_27825.ico</file>
+    <file>32x32/1375157200_27799.ico</file>
+    <file>32x32/1375157204_27802.ico</file>
+    <file>32x32/1375157209_27807.ico</file>
+    <file>32x32/1375157214_27814.ico</file>
+    <file>32x32/1375157219_27819.ico</file>
+    <file>32x32/1375157223_27821.ico</file>
+    <file>32x32/1375157227_27826.ico</file>
+    <file>32x32/1375157231_27803.ico</file>
+    <file>32x32/1375157235_27808.ico</file>
+    <file>32x32/1375157238_27810.ico</file>
+    <file>32x32/1375157243_27815.ico</file>
+    <file>32x32/1375157247_27822.ico</file>
+    <file>32x32/1375157251_27827.ico</file>
+    <file>32x32/1375157255_27796.ico</file>
+    <file>32x32/1375157259_27804.ico</file>
+    <file>32x32/1375157263_27809.ico</file>
+    <file>32x32/1375157267_27811.ico</file>
+    <file>32x32/1375157271_27816.ico</file>
+    <file>32x32/1375157275_27823.ico</file>
+    <file>32x32/1375157280_27828.ico</file>
+    <file>32x32/1375157285_27830.ico</file>
+  </qresource>
+  <qresource prefix="curveTypes">
+    <file>images/curvetypes/xfy.png</file>
+    <file>images/curvetypes/yfx.png</file>
+  </qresource>
+  <qresource prefix="items">
+    <file>images/items/annotation.png</file>
+    <file>images/items/curve.png</file>
+    <file>images/items/errorbar.png</file>
+    <file>images/items/grid.png</file>
+    <file>images/items/histogram.png</file>
+    <file>images/items/histogram2d.png</file>
+    <file>images/items/image.png</file>
+    <file>images/items/label.png</file>
+    <file>images/items/legend.png</file>
+  </qresource>
+  <qresource prefix="markers">
+    <file>images/markers/cross.png</file>
+    <file>images/markers/diamond.png</file>
+    <file>images/markers/ellipse.png</file>
+    <file>images/markers/hexagon.png</file>
+    <file>images/markers/point.png</file>
+    <file>images/markers/square.png</file>
+    <file>images/markers/star.png</file>
+    <file>images/markers/triangle_d.png</file>
+    <file>images/markers/triangle_l.png</file>
+    <file>images/markers/triangle_r.png</file>
+    <file>images/markers/triangle_u.png</file>
+    <file>images/markers/xcross.png</file>
+  </qresource>
+  <qresource prefix="markerStyles">
+    <file>images/markerstyles/cross_marker.png</file>
+    <file>images/markerstyles/horiz_marker.png</file>
+    <file>images/markerstyles/vert_marker.png</file>
+  </qresource>
+  <qresource prefix="mask">
+    <file>images/mask/mask_circle.png</file>
+    <file>images/mask/mask_circle_outside.png</file>
+    <file>images/mask/mask_rectangle.png</file>
+    <file>images/mask/mask_rectangle_outside.png</file>
+    <file>images/mask/mask_tool.png</file>
+  </qresource>
+  <qresource prefix="patterns">
+    <file>images/patterns/bdiagpattern.png</file>
+    <file>images/patterns/crosspattern.png</file>
+    <file>images/patterns/dense1pattern.png</file>
+    <file>images/patterns/dense2pattern.png</file>
+    <file>images/patterns/dense3pattern.png</file>
+    <file>images/patterns/dense4pattern.png</file>
+    <file>images/patterns/dense5pattern.png</file>
+    <file>images/patterns/dense6pattern.png</file>
+    <file>images/patterns/dense7pattern.png</file>
+    <file>images/patterns/diagcrosspattern.png</file>
+    <file>images/patterns/fdiagpattern.png</file>
+    <file>images/patterns/horpattern.png</file>
+    <file>images/patterns/nobrush.png</file>
+    <file>images/patterns/solidpattern.png</file>
+    <file>images/patterns/verpattern.png</file>
+  </qresource>
+  <qresource prefix="scales">
+    <file>images/scales/lin_lin.png</file>
+    <file>images/scales/lin_log.png</file>
+    <file>images/scales/log_lin.png</file>
+    <file>images/scales/log_log.png</file>
+  </qresource>
+  <qresource prefix="shapes">
+    <file>images/shapes/circle.png</file>
+    <file>images/shapes/ellipse_shape.png</file>
+    <file>images/shapes/freeform.png</file>
+    <file>images/shapes/gtaxes.png</file>
+    <file>images/shapes/marker.png</file>
+    <file>images/shapes/oblique_rectangle.png</file>
+    <file>images/shapes/point_shape.png</file>
+    <file>images/shapes/polyline.png</file>
+    <file>images/shapes/rectangle.png</file>
+    <file>images/shapes/segment.png</file>
+  </qresource>
+  <qresource prefix="styles">
+    <file>images/styles/dash.png</file>
+    <file>images/styles/dashdot.png</file>
+    <file>images/styles/dashdotdot.png</file>
+    <file>images/styles/dot.png</file>
+    <file>images/styles/solid.png</file>
+  </qresource>
+  <qresource prefix="general">
+    <file>1318611600_23.ico</file>
+    <file>arrow-up.ico</file>
+    <file>bubble.ico</file>
+    <file>document-pencil.ico</file>
+    <file>folder.ico</file>
+    <file>forward.ico</file>
+    <file>key.ico</file>
+    <file>network.ico</file>
+    <file>pause.ico</file>
+    <file>play.ico</file>
+    <file>reload.ico</file>
+    <file>rewind.ico</file>
+    <file>save.ico</file>
+    <file>stop.ico</file>
+    <file>video.ico</file>
+    <file>wand.ico</file>
+    <file>zoom.ico</file>
+  </qresource>
+</RCC>

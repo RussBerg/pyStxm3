@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="540px" height="320px" viewBox="0 0 540 320" stroke-linecap="round">
+
+<g fill="none" stroke="#000" stroke-width="2">
+	<path stroke-width="1.5" d="M511,176h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6m2,6h-6"/>
+	<path stroke-width="3" d="M507,173L415,311"/>
+	<path d="M31,146v54M165,213L112,182L169,157z"/>
+	<circle cx="277" cy="22" r="11"/>
+	<path stroke-width="1.5" d="M277,22L433,201"/>
+	<path stroke-width="1" d="M421.8,271.1L463,239M411,250.5L463,239M410.1,228.2L463,239M417.2,209.3L463,239M444.1,188.8L463,239M462,185.2L463,239M479.9,188.8L463,239"/>
+</g>
+
+<circle cx="112" cy="182" r="4"/>
+<circle cx="277" cy="22" r="6"/>
+<path d="M417,275l7.15-3.25l-2.58-3.14zM405,252l7.85,0.17l-0.97-3.95zM411.83,226.42L404,227l7.08,3.41zM419.49,208.38L412,206l5.29,5.8zM477.5,189.44l3.82,1.39L482,183zM459.97,186.59h4.07L462,179zM442.68,190.83l3.82-1.39L442,183zM427.43,200.54L440,209l-6.66-13.61z"/>
+
+<text fill="#485F70" font-size="12px" font-weight="bold" font-family="Georgia, Tahoma, sans-serif">
+
+	<tspan x="20" y="240">Viewing</tspan>
+	<tspan x="20" y="254">Plane</tspan>
+
+	<tspan x="130" y="240">Camera</tspan>
+
+	<tspan x="340" y="240">Reflected</tspan>
+	<tspan x="340" y="254">Light</tspan>
+	<tspan x="340" y="268">Angle</tspan>
+
+	<tspan x="250" y="50">Lamp</tspan>
+
+	<tspan x="380" y="100">Incident</tspan>
+	<tspan x="380" y="114">Light</tspan>
+	<tspan x="380" y="128">Angle</tspan>
+
+	<tspan x="455" y="286">Renderable</tspan>
+	<tspan x="455" y="300">Surface</tspan>
+
+</text>
+
+</svg>

@@ -1,0 +1,288 @@
+{
+    "definition": {
+        "symbols": {
+            "doc": "These symbols will be used below to coordinate the shapes of the datasets.",
+            "symbol": [
+                {
+                    "doc": "total number of scan points",
+                    "_name": "numP"
+                },
+                {
+                    "doc": "number of photon energies scanned",
+                    "_name": "numE"
+                },
+                {
+                    "doc": "number of pixels in Y direction",
+                    "_name": "numY"
+                },
+                {
+                    "doc": "number of pixels in X direction",
+                    "_name": "numX"
+                }
+            ]
+        },
+        "doc": "\n          Application definition for a STXM instrument. The interferometer\n          position measurements, monochromator photon energy values and\n          detector measurements are all treated as NXdetectors and stored\n          within the NXinstrument group as lists of values stored in \n          chronological order. The NXdata group then holds another version\n          of the data in a regular 3D array (NumE by NumY by NumX, for a\n          total of NumP points in a sample image stack type scan). The former\n          data values should be stored with a minimum loss of precision, while\n          the latter values can be simplified and/or approximated in order to\n          fit the constraints of a regular 3D array. 'Line scans' and 'point spectra'\n          are just sample_image scan types with reduced dimensions in the same way \n          as single images have reduced E dimensions compared to image 'stacks'.\n    ",
+        "group": {
+            "field": [
+                {
+                    "_name": "title"
+                },
+                {
+                    "_name": "start_time",
+                    "_type": "NX_DATE_TIME"
+                },
+                {
+                    "_name": "end_time",
+                    "_type": "NX_DATE_TIME"
+                },
+                {
+                    "doc": " Official NeXus NXDL schema to which this file conforms ",
+                    "enumeration": {
+                        "item": {
+                            "_value": "NXstxm"
+                        }
+                    },
+                    "_name": "definition",
+                    "_type": "NX_CHAR",
+                    "_minOccurs": "1",
+                    "_maxOccurs": "1"
+                }
+            ],
+            "group": [
+                {
+                    "group": [
+                        {
+                            "field": [
+                                {
+                                    "_name": "type",
+                                    "_minOccurs": "1",
+                                    "_maxOccurs": "1"
+                                },
+                                {
+                                    "_name": "name",
+                                    "_minOccurs": "1",
+                                    "_maxOccurs": "1"
+                                },
+                                {
+                                    "_name": "probe",
+                                    "_minOccurs": "1",
+                                    "_maxOccurs": "1"
+                                }
+                            ],
+                            "_type": "NXsource",
+                            "_minOccurs": "1",
+                            "_maxOccurs": "1"
+                        },
+                        {
+                            "field": {
+                                "dimensions": {
+                                    "dim": {
+                                        "_index": "1",
+                                        "_value": "NumP"
+                                    },
+                                    "_rank": "1"
+                                },
+                                "_name": "energy",
+                                "_minOccurs": "1",
+                                "_maxOccurs": "1"
+                            },
+                            "_type": "NXmonochromator",
+                            "_name": "monochromator",
+                            "_minOccurs": "1",
+                            "_maxOccurs": "1"
+                        },
+                        {
+                            "field": {
+                                "dimensions": {
+                                    "doc": " Detector data should be presented with the first dimension corresponding to the\n                    scan point and subsequent dimensions corresponding to the output of the detector.\n                    Detectors that provide more than one value per scan point should have\n                    a data array of rank 1+d, where d is the dimensions of the array provided per\n                    scan point. For example, an area detector should have an NXdetector data array\n                    of 3 dimensions, with the first being the set of scan points and the latter \n                    two being the x- and y- extent of the detector ",
+                                    "dim": {
+                                        "_index": "1",
+                                        "_value": "NumP"
+                                    }
+                                },
+                                "_name": "data",
+                                "_type": "NX_NUMBER"
+                            },
+                            "_type": "NXdetector",
+                            "_minOccurs": "1"
+                        },
+                        {
+                            "doc": " Measurements of the sample position from the x-axis interferometer.",
+                            "field": {
+                                "dimensions": {
+                                    "dim": {
+                                        "_index": "1",
+                                        "_value": "NumP"
+                                    },
+                                    "_rank": "1"
+                                },
+                                "_name": "data",
+                                "_type": "NX_FLOAT"
+                            },
+                            "_type": "NXdetector",
+                            "_name": "sample_x",
+                            "_minOccurs": "0",
+                            "_maxOccurs": "1"
+                        },
+                        {
+                            "doc": " Measurements of the sample position from the y-axis interferometer.",
+                            "field": {
+                                "dimensions": {
+                                    "dim": {
+                                        "_index": "1",
+                                        "_value": "NumP"
+                                    },
+                                    "_rank": "1"
+                                },
+                                "_name": "data",
+                                "_type": "NX_FLOAT"
+                            },
+                            "_type": "NXdetector",
+                            "_name": "sample_y",
+                            "_minOccurs": "0",
+                            "_maxOccurs": "1"
+                        },
+                        {
+                            "doc": " Measurements of the sample position from the z-axis interferometer.",
+                            "field": {
+                                "dimensions": {
+                                    "dim": {
+                                        "_index": "1",
+                                        "_value": "NumP"
+                                    },
+                                    "_rank": "1"
+                                },
+                                "_name": "data",
+                                "_type": "NX_FLOAT"
+                            },
+                            "_type": "NXdetector",
+                            "_name": "sample_z",
+                            "_minOccurs": "0",
+                            "_maxOccurs": "1"
+                        }
+                    ],
+                    "_type": "NXinstrument",
+                    "_minOccurs": "1",
+                    "_maxOccurs": "1"
+                },
+                {
+                    "field": {
+                        "_name": "rotation_angle",
+                        "_type": "NX_FLOAT"
+                    },
+                    "_type": "NXsample"
+                },
+                {
+                    "field": [
+                        {
+                            "doc": " Label for typical scan types as a convenience for humans. \n                Each label corresponds to a specific set of axes being scanned \n                to produce a data array of shape:\n                \n                * sample point spectrum: (photon_energy,)\n                * sample line spectrum: (photon_energy, sample_y/sample_x)\n                * sample image: (sample_y, sample_x)\n                * sample image stack: (photon_energy, sample_y, sample_x)\n                * sample focus: (zoneplate_z, sample_y/sample_x)\n                * osa image: (osa_y, osa_x)\n                * osa focus: (zoneplate_z, osa_y/osa_x)\n                * detector image: (detector_y, detector_x)\n                \n                The \"generic scan\" string is to be used when none of the \n                other choices are appropriate.\n                ",
+                            "enumeration": {
+                                "item": [
+                                    {
+                                        "_value": "sample point spectrum"
+                                    },
+                                    {
+                                        "_value": "sample line spectrum"
+                                    },
+                                    {
+                                        "_value": "sample image"
+                                    },
+                                    {
+                                        "_value": "sample image stack"
+                                    },
+                                    {
+                                        "_value": "sample focus"
+                                    },
+                                    {
+                                        "_value": "osa image"
+                                    },
+                                    {
+                                        "_value": "osa focus"
+                                    },
+                                    {
+                                        "_value": "detector image"
+                                    },
+                                    {
+                                        "_value": "generic scan"
+                                    }
+                                ]
+                            },
+                            "_name": "stxm_scan_type",
+                            "_minOccurs": "1",
+                            "_maxOccurs": "1"
+                        },
+                        {
+                            "doc": " Detectors that provide more than one value per scan point should be summarised\n              to a single value per scan point for this array in order to simplify plotting.\n              \n              Note that 'Line scans' and focus type scans measure along one spatial dimension\n              but are not restricted to being parallel to the X or Y axes. Such scans \n              should therefore use a single dimension for the positions along the spatial\n              line. The 'sample_x' and 'sample_y' fields should then contain lists of the\n              x- and y-positions and should both have the 'axis' attribute pointing to the same dimension.",
+                            "_name": "data",
+                            "_type": "NX_NUMBER",
+                            "_signal": "1"
+                        },
+                        {
+                            "doc": " List of photon energies of the X-ray beam. If scanned through multiple values,\n              then an 'axis' attribute will be required to link the field to the appropriate data array dimension.",
+                            "dimensions": {
+                                "dim": {
+                                    "_index": "1",
+                                    "_value": "NumE"
+                                },
+                                "_rank": "1"
+                            },
+                            "_name": "energy",
+                            "_type": "NX_FLOAT",
+                            "_minOccurs": "1",
+                            "_maxOccurs": "1"
+                        },
+                        {
+                            "doc": " List of Y positions on the sample. If scanned through multiple values,\n              then an 'axis' attribute will be required to link the field to the appropriate data array dimension.",
+                            "dimensions": {
+                                "dim": {
+                                    "_index": "1",
+                                    "_value": "NumY"
+                                },
+                                "_rank": "1"
+                            },
+                            "_name": "sample_y",
+                            "_type": "NX_FLOAT",
+                            "_minOccurs": "1",
+                            "_maxOccurs": "1"
+                        },
+                        {
+                            "doc": " List of X positions on the sample. If scanned through multiple values,\n              then an 'axis' attribute will be required to link the field to the appropriate data array dimension.",
+                            "dimensions": {
+                                "dim": {
+                                    "_index": "1",
+                                    "_value": "NumX"
+                                },
+                                "_rank": "1"
+                            },
+                            "_name": "sample_x",
+                            "_type": "NX_FLOAT",
+                            "_minOccurs": "1",
+                            "_maxOccurs": "1"
+                        }
+                    ],
+                    "_type": "NXdata"
+                },
+                {
+                    "field": {
+                        "doc": " Values to use to normalise for time-variations in photon flux. Typically, the synchrotron storage ring\n              electron beam current is used as a proxy for the X-ray beam intensity. Array must have same shape as the\n              NXdata groups.",
+                        "_name": "data",
+                        "_type": "NX_FLOAT"
+                    },
+                    "_type": "NXmonitor",
+                    "_name": "control",
+                    "_minOccurs": "0",
+                    "_maxOccurs": "1"
+                }
+            ],
+            "_type": "NXentry"
+        },
+        "_xmlns": "http://definition.nexusformat.org/nxdl/3.1",
+        "_xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+        "_name": "NXstxm",
+        "_extends": "NXobject",
+        "_type": "group",
+        "_category": "application",
+        "_xsi:schemaLocation": "http://definition.nexusformat.org/nxdl/3.1 ../nxdl.xsd",
+        "_version": "1.1"
+    }
+}

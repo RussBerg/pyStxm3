@@ -1,0 +1,5 @@
+
+PolaritySelWidget,EnergySelWidget,SpatialSelWidget {
+	background-color: master_background_color;
+
+}

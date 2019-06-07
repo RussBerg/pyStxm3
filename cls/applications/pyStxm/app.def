@@ -1,0 +1,139 @@
+#this file describes all valid app.ini keys as well as valid variable values
+
+[DEFAULT]
+#KEY = TYPE, <MIN, MAX> or <RANGE>=(MIN..MAX) or <LIST> or <DICT>
+major_version = int_range,0,100
+minor_version = int_range,0,100
+top = str, dir_path
+dirslash=str, char
+appDir = str, dir_path
+
+dataDir = str, dir_path
+scanDefsDir = str, dir_path
+imagesDir = str, dir_path
+icoDir = str, dir_path
+icoDir1 = str, dir_path
+widgetsDir = str, dir_path
+widgetsUiDir = str, dir_path
+uiDir = str, dir_path
+cfgDir = str, dir_path
+mtrcfg = str, dir_path
+autoSaveData = bool, [False, True]
+scanPluginDir=str, dir_path
+
+#this is located in IOC1610-303 and is a subdir of the sscan app directory
+sscan_script_dir = str, dir_path
+
+# COARSE_SAMPLEFINE (formerly 'conventional') scanning mode = Sample_pos_mode=COARSE, sample_fine_pos_mode=SAMPLE_FINE
+scanning_mode = list, [COARSE_SAMPLEFINE,GONI_ZONEPLATE,COARSE_ZONEPLATE]
+
+#use_laser, 0 = no, 1 = yes
+use_laser = bool, False, True
+
+[OSA]
+type=str, [GONI,CONVENTIONAL]
+
+[DATA]
+save_all_data=bool, False, True
+save_jpg_thumbnails=bool, False, True
+
+[CAMERA]
+enabled=bool, False, True
+camera_waveform = str, chars
+frame_wd = int_range, 640, 800
+frame_ht = int_range, 480, 800
+scaling_factor=float_range, 0.0, 20.0
+
+
+[SAMPLE_POSITIONS]
+xpos_1=int_range, -5000, 5000
+ypos_1=int_range, -5000, 5000
+xpos_2=int_range, -5000, 5000
+ypos_2=int_range, -5000, 5000
+xpos_3=int_range, -5000, 5000
+ypos_3=int_range, -5000, 5000
+xpos_4=int_range, -5000, 5000
+ypos_4=int_range, -5000, 5000
+xpos_5=int_range, -5000, 5000
+ypos_5=int_range, -5000, 5000
+xpos_6=int_range, -5000, 5000
+ypos_6=int_range, -5000, 5000
+xi0pos=int_range, -9000, 9000
+yi0pos=int_range, -9000, 9000
+sample_circle_diam=int, 1000
+
+[SCAN_RANGES]
+coarse_x=int_range, 0, 13000
+coarse_y=int_range, 0, 7000
+fine_x=int_range, 0, 100
+fine_y=int_range, 0, 100
+
+[SAMPLE_IMAGE_LXL]
+f_acc_rng=float_range, 0.0, 5.0
+f_decc_rng=float_range, 0.0, 5.0
+c_scan1_pdly=float_range, 0.0, 5.0
+c_scan2_pdly=float_range, 0.0, 5.0
+f_scan2_pdly=float_range, 0.0, 5.0
+f_scan1_pdly=float_range, 0.0, 5.0
+# force done values are: 0=NORMAL, 1=FORCED, 2=INTERNAL_TIMED
+c_fx_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+c_fy_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+f_fx_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+f_fy_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+
+[SAMPLE_IMAGE_PXP]
+f_acc_rng=float_range, 0.0, 5.0
+c_scan1_pdly=float_range, 0.0, 5.0
+c_scan2_pdly=float_range, 0.0, 5.0
+#f_scan2_pdly=float_range, 0.0, 5.0
+#f_scan1_pdly=float_range, 0.0, 5.0
+f_scan2_pdly=float_range, 0.0, 5.0
+f_scan1_pdly=float_range, 0.0, 5.0
+# force done values are: 0=NORMAL, 1=FORCED, 2=INTERNAL_TIMED
+c_fx_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+c_fy_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+f_fx_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+f_fy_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+
+
+[SAMPLE_POINT_SPEC_SCAN]
+f_acc_rng=float_range, 0.0, 5.0
+c_scan1_pdly=float_range, 0.0, 5.0
+c_scan2_pdly=float_range, 0.0, 5.0
+#f_scan2_pdly=float_range, 0.0, 5.0
+#f_scan1_pdly=float_range, 0.0, 5.0
+f_scan2_pdly=float_range, 0.0, 5.0
+f_scan1_pdly=float_range, 0.0, 5.0
+# force done values are: 0=NORMAL, 1=FORCED, 2=INTERNAL_TIMED
+c_fx_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+c_fy_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+f_fx_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+f_fy_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+
+[SAMPLE_LINE_SPEC_SCAN]
+f_acc_rng=float_range, 0.0, 5.0
+c_scan1_pdly=float_range, 0.0, 5.0
+c_scan2_pdly=float_range, 0.0, 5.0
+#f_scan2_pdly=float_range, 0.0, 5.0
+#f_scan1_pdly=float_range, 0.0, 5.0
+f_scan2_pdly=float_range, 0.0, 5.0
+f_scan1_pdly=float_range, 0.0, 5.0
+# force done values are: 0=NORMAL, 1=FORCED, 2=INTERNAL_TIMED
+c_fx_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+c_fy_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+f_fx_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+f_fy_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+
+[FOCUS_SCAN]
+f_acc_rng=float_range, 0.0, 5.0
+c_scan1_pdly=float_range, 0.0, 5.0
+c_scan2_pdly=float_range, 0.0, 5.0
+#f_scan2_pdly=float_range, 0.0, 5.0
+#f_scan1_pdly=float_range, 0.0, 5.0
+f_scan2_pdly=float_range, 0.0, 5.0
+f_scan1_pdly=float_range, 0.0, 5.0
+# force done values are: 0=NORMAL, 1=FORCED, 2=INTERNAL_TIMED
+c_fx_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+c_fy_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+f_fx_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]
+f_fy_force_done=list, [NORMAL,FORCED,INTERNAL_TIMED]

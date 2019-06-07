@@ -1,0 +1,25 @@
+
+QMenuBar{
+	background-color: master_background_color;
+	font: bold 14px;
+
+}
+
+
+QMenuBar::item {
+    spacing: 10px; 
+    padding: 1px 14px;
+    /*background: transparent;*/
+    background: master_dark_background_color;
+    
+}
+
+/*
+QMenuBar::item:selected {
+    background: rgb(50,50,50);
+}
+*/
+
+QMenuBar::item:pressed {
+    background: #888888;
+}

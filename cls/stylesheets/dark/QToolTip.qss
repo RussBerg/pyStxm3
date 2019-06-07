@@ -1,0 +1,4 @@
+QToolTip{
+	background: app_medgray;
+  color: rgb(0, 0, 0);
+}

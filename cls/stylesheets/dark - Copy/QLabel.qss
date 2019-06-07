@@ -1,0 +1,61 @@
+/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*QLabel{
+	background-color: transparent; 
+		border: 2px solid green;
+    border-radius: 4px;
+    padding: 2px;
+    background-image: url(images/welcome.png);
+    border: 1px solid gray;
+  	color: rgb(0, 0, 0);
+}
+*/
+
+QLabel#posFbkLbl{
+	
+  color: black;
+  /*background-color: master_background_color;*/
+  /*background-color: rgb(30, 150, 254);*/
+  background-color: app_ltgray;;
+  border-radius: 2px;
+  border: 1px solid gray;
+}
+
+QLabel#mtrNameFld{
+	background-color: app_blue;
+  color: rgb(0, 0, 0);
+}
+
+QLabel#unitsLbl{
+	background-color: master_background_color;
+  color: white;
+}
+
+
+
+/*QLabel#scanActionLbl[busy="true"] {
+	background-color: rgb(50, 150,150);
+} */
+
+QLabel#scanActionLbl{
+	color: rgb(250, 250,250);
+} 
+
+
+/* Temperatures and Pressures*/
+
+QLabel#pvNameLbl{
+	background-color: app_ltblue;
+  color: rgb(0, 0, 0);
+  border: 1px solid gray;
+}
+
+
+QLabel#stripToolFbkLbl{
+
+  color: white;
+
+}
+
+
+

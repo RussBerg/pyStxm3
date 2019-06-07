@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>200</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
+    <widget class="QToolBox" name="toolBox">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="osa1">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>378</width>
+        <height>85</height>
+       </rect>
+      </property>
+      <attribute name="label">
+       <string>OSA 1</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout"/>
+     </widget>
+     <widget class="QWidget" name="osa2">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>378</width>
+        <height>85</height>
+       </rect>
+      </property>
+      <attribute name="label">
+       <string>OSA 2</string>
+      </attribute>
+     </widget>
+     <widget class="QWidget" name="osa3">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>378</width>
+        <height>85</height>
+       </rect>
+      </property>
+      <attribute name="label">
+       <string>OSA 3</string>
+      </attribute>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

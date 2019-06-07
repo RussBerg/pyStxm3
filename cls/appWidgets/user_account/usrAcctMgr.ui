@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>703</width>
+    <height>369</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>pySTXM_control user Account Manager</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="usersTab">
+      <attribute name="title">
+       <string>Users</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout">
+           <item>
+            <widget class="QLabel" name="label">
+             <property name="toolTip">
+              <string/>
+             </property>
+             <property name="text">
+              <string>Use the list below to grant or deny users access to pySTXM_control</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_2">
+             <property name="toolTip">
+              <string/>
+             </property>
+             <property name="text">
+              <string>and to change passwords and other settings.</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTreeWidget" name="usrTreeWidget">
+         <property name="mouseTracking">
+          <bool>true</bool>
+         </property>
+         <column>
+          <property name="text">
+           <string>Name</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Full Name</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Description</string>
+          </property>
+         </column>
+         <item>
+          <property name="text">
+           <string>Guest</string>
+          </property>
+          <property name="text">
+           <string>Guest Account</string>
+          </property>
+          <property name="text">
+           <string>The default guest account for a visiting user</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="groupsTab">
+      <attribute name="title">
+       <string>Groups</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <item>
+            <widget class="QLabel" name="label_3">
+             <property name="toolTip">
+              <string/>
+             </property>
+             <property name="text">
+              <string>The list below shows what groups this user belongs too and therefore</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_4">
+             <property name="toolTip">
+              <string/>
+             </property>
+             <property name="text">
+              <string>has access to the groups data directories.</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_4">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QTreeWidget" name="treeWidget_2">
+         <property name="mouseTracking">
+          <bool>true</bool>
+         </property>
+         <property name="alternatingRowColors">
+          <bool>true</bool>
+         </property>
+         <column>
+          <property name="text">
+           <string>Group</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Type</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Members</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Description</string>
+          </property>
+         </column>
+         <item>
+          <property name="text">
+           <string>Visitor</string>
+          </property>
+          <property name="text">
+           <string>USER</string>
+          </property>
+          <property name="text">
+           <string>guest, admin, maint, bergr</string>
+          </property>
+          <property name="text">
+           <string>A default group for a visitor</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Controls</string>
+          </property>
+          <property name="text">
+           <string>MAINT</string>
+          </property>
+          <property name="text">
+           <string>bergr, wilsont</string>
+          </property>
+          <property name="text">
+           <string>The CONTROLS group account</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Admin</string>
+          </property>
+          <property name="text">
+           <string>ADMIN</string>
+          </property>
+          <property name="text">
+           <string>bergr</string>
+          </property>
+          <property name="text">
+           <string>The administrators group, </string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>User</string>
+          </property>
+          <property name="text">
+           <string>USER</string>
+          </property>
+          <property name="text">
+           <string>[all]</string>
+          </property>
+          <property name="text">
+           <string>The User group</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Martin</string>
+          </property>
+          <property name="text">
+           <string>USER</string>
+          </property>
+          <property name="text">
+           <string>martin, martin2, martin3</string>
+          </property>
+          <property name="text">
+           <string>German BlaBla lab from Munich</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>Dialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>229</x>
+     <y>344</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>Dialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>297</x>
+     <y>350</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>usrTreeWidget</sender>
+   <signal>doubleClicked(QModelIndex)</signal>
+   <receiver>Dialog</receiver>
+   <slot>open()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>114</x>
+     <y>136</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-4</x>
+     <y>127</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

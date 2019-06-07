@@ -1,0 +1,20 @@
+
+
+QWidget	.QToolButton{
+    /*background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgb(90, 90, 90), stop:1 rgb(60, 60, 60));*/
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgb(90, 90, 90), stop:1 rgb(60, 60, 60));
+    border: 1px solid black;
+    color:rgb(220,220,220);
+    /*padding: 1ex 2ex;*/
+    font: 11px "MS Shell Dlg 2"; 
+}
+
+QToolButton::hover{
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgb(114, 148, 240), stop:1 rgb(92, 119, 194));
+    color:rgb(255,255,255);
+}
+
+QToolButton::checked{
+    border: 1.5px solid app_ltblue;
+}
+

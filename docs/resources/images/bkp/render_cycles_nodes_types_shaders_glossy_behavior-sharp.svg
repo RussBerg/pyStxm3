@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400px" height="260px" viewBox="0 0 400 260">
+
+	<rect fill="#FCFCFC" width="400" height="260"/>
+
+	<marker id="arrow" refX="4" refY="4" viewBox="0 0 7 8" markerWidth="7" markerHeight="8" orient="auto">
+		<polyline fill="#000" stroke="none" points="0,0 7,4 0,8 2,4"/>
+	</marker>
+
+	<circle fill="#FCFCFC" stroke="#BCBCBC" stroke-width="4" cx="310" cy="230" r="128"/>
+
+	<g fill="none" stroke="#000" stroke-width="2" marker-end="url(#arrow)">
+
+		<line opacity="0.4" x1="223" y1="133" x2="253" y2="27"/>
+		<line x1="45" y1="205" x2="218" y2="135"/>
+
+	</g>
+
+</svg>

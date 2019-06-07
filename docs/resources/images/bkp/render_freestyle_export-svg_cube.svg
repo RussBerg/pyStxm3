@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="330px" height="330px">
+
+<g fill="none" stroke="#3A3A3A" stroke-width="3">
+
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M37.51,237.85l132.54-61.3M166.46,24.64l3.59,151.9l121,63.04"/>
+		<path d="M150.18,136.77l146.85-62.36M156.03,315.96l-5.85-179.19L22.64,73.87M37.51,237.85L22.64,73.87l143.82-49.23l130.57,49.77l-5.99,165.17l-135.02,76.37z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.05;1" values="inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M36.74,240.81l128.38-64.23M161.17,24.68l3.95,151.89l125.51,60.04"/>
+		<path d="M156.88,136.73l139.68-64.69M21.73,76.25l135.15,60.48l5.28,179.21M36.74,240.81L21.73,76.25l139.44-51.57l135.39,47.35l-5.92,164.59l-128.48,79.31z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.05;0.1;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M35.82,249.82l114.53-72.54M145.31,25.29l5.05,151.99l137.69,50.65"/>
+		<path d="M176.91,135.82l116.75-70.74M180.48,314.9l-3.56-179.08L20.51,83.5M35.82,249.82L20.51,83.5l124.8-58.21l148.36,39.79l-5.62,162.85L180.48,314.9z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.1;0.15;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M38.91,264.36l88.11-84.01M120.22,27.79l6.8,152.56l152.85,34.53"/>
+		<path d="M208.01,131.98l76.71-77.3M208.92,310.32l-0.91-178.34L23.49,95.2M208.92,310.32l70.96-95.44l4.85-160.2l-164.5-26.89L23.49,95.2l15.42,169.15z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.15;0.2;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M51.24,282.01l47.83-94.4M90.08,33.63l8.99,153.98l164.18,12.86"/>
+		<path d="M243.2,123.27l23.49-80.01M241.15,299.79l2.05-176.51L36.45,109.45M36.45,109.45l14.79,172.56l189.91,17.78l22.09-99.32l3.44-157.2L90.08,33.63z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.2;0.25;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M74.72,298.34l-2.02-98.97M61.49,43.05L72.7,199.37l166.33-11.02M240.56,33.74l-1.53,154.61l29.15,95.43"/>
+		<path d="M61.67,122.65l210.91-12.49M272.58,110.17l-32.02-76.42L61.49,43.05l0.18,79.6l13.05,175.69l193.45-14.56z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.25;0.3;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M53.42,213.49l158.95-32.7M211.9,27.85l0.47,152.94l71.86,85.45"/>
+		<path d="M94,131.56L289.9,95.9M104.54,309.38L94,131.56L40.42,54.34M53.42,213.49l-13-159.14l171.49-26.5l78,68.05l-5.67,170.34l-179.7,43.15z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.3;0.35;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M42.78,226.33l146.82-48.85M187.45,25.31l2.15,152.17l100.72,74.18"/>
+		<path d="M123.8,135.62l172.57-51.5M131.88,314.46l-8.08-178.84L28.63,64.63M187.45,25.31l108.92,58.81l-6.05,167.54l-158.45,62.8l-89.1-88.13L28.63,64.63z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.35;0.4;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M38.5,234.91l136.47-58.29M171.74,24.69l3.23,151.94l116.26,65.95"/>
+		<path d="M143.51,136.68l153.75-59.86M23.79,71.52l119.73,65.16l6.42,179.15M38.5,234.91L23.79,71.52l147.95-46.83l125.52,52.13l-6.03,165.76l-141.3,73.24z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.4;0.45;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M37.51,237.85l132.54-61.3M166.46,24.64l3.59,151.9l121,63.04"/>
+		<path d="M150.18,136.77l146.85-62.36M22.64,73.87l127.55,62.9l5.85,179.19M291.05,239.59l-135.02,76.37L37.51,237.85L22.64,73.87l143.82-49.23l130.57,49.77z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.45;0.5;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M35.46,233.98l132.67-60.9M168.46,22.63l-0.33,150.44l120.45,67.87"/>
+		<path d="M152.78,141.46l146.65-62.93M24.36,71.81l128.42,69.65l0.99,175.74M35.46,233.98L24.36,71.81l144.11-49.18l130.96,55.9l-10.85,162.41L153.77,317.2z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.5;0.55;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M29.68,222.1l133.09-59.73M174.99,17.3l-12.22,145.07l118.04,81.81"/>
+		<path d="M160.07,156.02l145.98-64.65M30.05,66.4l130.01,89.62l-13.48,163.94M280.81,244.18l-134.22,75.78L29.68,222.1l0.37-155.7l144.94-49.1l131.06,74.07z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.55;0.6;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M21.55,202.22l133.93-57.89M187.09,11.09l-31.62,133.24L267.3,246.64"/>
+		<path d="M170,180.58l144.76-67.4M40.93,60.36L170,180.58l-36.08,140.78M187.09,11.09L40.93,60.36L21.55,202.22l112.38,119.15l133.38-74.72l47.46-133.46z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.6;0.65;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M13.52,175.78l135.28-55.64M205.28,8.06L148.8,120.14l99.84,124.69"/>
+		<path d="M178.9,212.96l142.98-70.7M116.13,317.7l62.77-104.74L57.84,58.13M57.84,58.13L13.52,175.78L116.13,317.7l132.51-72.88l73.24-102.56L205.28,8.06z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.65;0.7;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M8.4,146.35l137.13-53.39M228.16,12.18l-82.63,80.77l81.68,143.4"/>
+		<path d="M182.83,247.52l140.87-73.73M95.32,306.69l87.51-59.17L79.8,64.02M323.7,173.79L228.16,12.18L79.8,64.02L8.4,146.35l86.93,160.34l131.88-70.33z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.7;0.75;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M206.57,221.91l-131.65,67.5M7.85,118.83l139.21-51.52M251.96,24.53l-104.9,42.79l59.51,154.59l112.39-20.43"/>
+		<path d="M103.37,79.02l76.8,198.21M103.37,79.02L7.85,118.83l67.07,170.58l105.25-12.18l138.8-75.76L251.96,24.53z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.75;0.8;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M189.84,205.01l-131.79,64.9M152.53,47.1l37.31,157.91l120.03,16.18"/>
+		<path d="M272.3,41.9L124.09,99.39M11.38,97.35l112.71,2.05l48.69,198.41M309.87,221.19L172.78,297.8L58.05,269.91L11.38,97.35L152.53,47.1l119.77-5.2z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.8;0.85;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M178.39,189.97l-132.12,62.9M159.3,33.8l19.09,156.16l121.9,42.71"/>
+		<path d="M286.59,58.74l-147.57,60.1M164.39,309.35l-25.37-190.51L16.66,83.37M46.27,252.87l-29.6-169.5L159.3,33.8l127.28,24.94l13.7,173.94l-135.9,76.67z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.85;0.9;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M172.03,179.98L39.61,241.67M164.54,26.77l7.49,153.21l121.42,58.1"/>
+		<path d="M294.55,70.37l-147.05,61.79M21.01,76.06l126.5,56.09l10.72,182.4M293.46,238.08l-135.23,76.47L39.61,241.67L21.01,76.06l143.53-49.29l130.01,43.6z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.9;0.95;1" values="none;inline;none;none"/>
+	</g>
+	<g>
+		<path stroke="#6F6F6F" stroke-dasharray="5,5" d="M170.05,176.55l-132.54,61.3M166.46,24.64l3.59,151.9l121,63.04"/>
+		<path d="M297.04,74.41l-146.85,62.36M156.03,315.96l-5.85-179.19L22.64,73.87M156.03,315.96l135.02-76.37l5.99-165.17L166.46,24.64L22.64,73.87l14.87,163.97z"/>
+		<animate attributeName="display" begin="0s" dur="2s" repeatCount="indefinite" keyTimes="0;0.95;1" values="none;inline;none"/>
+	</g>
+
+</g>
+
+</svg>

@@ -1,0 +1,9 @@
+[Core]
+Name = Coarse Image scan params
+Module = coarse_image_scan
+
+[Documentation]
+Author = Russ Berg
+Version = 0.1
+Website = http://lateral.netmanagers.com.ar
+Description = Params for a Coarse Image scan

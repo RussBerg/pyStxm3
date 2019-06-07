@@ -1,0 +1,14 @@
+
+QTabWidget	.InternalShell{
+		
+    /*background: rgb(250,250,250);*/
+    background: rgb(0,0,0);
+    
+}
+
+
+/*
+PythonShellWidget, InternalShell, ShellWidget{
+    background-color: rgb(250,250,250);
+}
+*/

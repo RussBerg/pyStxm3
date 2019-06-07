@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360px" height="300px" viewBox="0 0 360 300">
+
+<g fill="none" stroke-width="4">
+	<rect stroke="#2B832A" x="40" y="45" width="290" height="220"/>
+	<rect stroke="#3954F2" x="105" y="102" width="116" height="106"/>
+	<line stroke="#237F7F" x1="163" y1="155" x2="274" y2="155"/>
+</g>
+
+<g fill="#2B832A">
+	<rect x="30" y="35" width="20" height="20"/>
+	<polygon points="330,265 302,265 330,237"/>
+</g>
+
+<g fill="#3954F2">
+	<rect x="95" y="92" width="20" height="20"/>
+	<rect x="211" y="92" width="20" height="20"/>
+	<rect x="95" y="198" width="20" height="20"/>
+	<rect x="211" y="198" width="20" height="20"/>
+</g>
+
+<rect fill="#237F7F" x="264" y="145" width="20" height="20"/>
+<rect x="158" y="150" width="10" height="10"/>
+
+<text font-size="14px" font-family="Arial, sans-serif">
+
+	<tspan fill="#2B832A" x="33" y="30">Position Handle</tspan>
+	<tspan fill="#2B832A" x="236" y="37" font-weight="bold">Search Area</tspan>
+	<tspan fill="#2B832A" x="246" y="285">Scale Handle</tspan>
+
+	<tspan fill="#3954F2" x="121" y="94" font-weight="bold">Pattern Area</tspan>
+	<tspan fill="#3954F2" x="70" y="235">Pattern Corner</tspan>
+
+	<tspan fill="#237F7F" x="255" y="108">Scale-</tspan>
+	<tspan fill="#237F7F" x="255" y="123">Rotation</tspan>
+	<tspan fill="#237F7F" x="255" y="138">Handle</tspan>
+
+	<tspan x="138" y="176">Position</tspan>
+
+</text>
+
+</svg>

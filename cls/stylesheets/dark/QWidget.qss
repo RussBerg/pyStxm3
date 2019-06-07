@@ -1,0 +1,24 @@
+
+/* changing this color affects a lot of the QLabels */
+QWidget {
+	color: rgb(255, 255, 255);
+	background-color: master_background_color;
+	
+}
+
+#stripToolFbkLbl{
+	color: rgb(255, 255, 255);
+	background-color: transparent;
+	
+}
+
+ca_aiLabelWidget{
+	color: rgb(255, 255, 255);
+	background-color: master_background_color;
+	
+}
+
+
+
+
+

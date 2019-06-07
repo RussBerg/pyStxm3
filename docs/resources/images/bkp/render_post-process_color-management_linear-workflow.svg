@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="584px" height="170px" viewBox="0.5 0.5 584 170">
+
+<g stroke="#000">
+
+	<g fill="#FFE76D">
+		<rect x="17" y="37" width="130" height="30" rx="6"/>
+		<rect x="222" y="37" width="140" height="30" rx="6"/>
+		<rect x="437" y="37" width="130" height="30" rx="6"/>
+		<rect x="17" y="102" width="130" height="30" rx="6"/>
+		<rect x="222" y="102" width="140" height="30" rx="6"/>
+		<rect x="437" y="102" width="130" height="30" rx="6"/>
+	</g>
+
+	<line x1="150" y1="52" x2="218" y2="52"/>
+	<line x1="365" y1="52" x2="433" y2="52"/>
+	<line x1="365" y1="56" x2="433" y2="117"/>
+	<line x1="151" y1="117" x2="218" y2="60"/>
+	<line x1="292" y1="71" x2="292" y2="98"/>
+
+	<circle fill="#E9AFAE" cx="185" cy="52" r="8"/>
+	<circle fill="#AEC6ED" cx="400" cy="52" r="8"/>
+	<circle fill="#AEC6ED" cx="400" cy="87" r="8"/>
+
+</g>
+
+<path d="M215,49l5,3l-5,3l1-3zM430,49l5,3l-5,3l1-3zM292,69l3,5l-3-1l-3,1zM292,100l-3-5l3,1l3-1zM219.53,58.69l-1.86,5.53l-1.18-2.93l-2.71-1.64zM149.47,118.31l1.86-5.53l1.18,2.93l2.71,1.64zM434.49,118.33l-5.73-1.1l2.75-1.57l1.25-2.9z"/>
+
+<g font-size="12px" font-family="Tahoma, sans-serif" text-anchor="middle">
+
+	<g font-size="11px">
+		<text x="82" y="28">PNG Diffuse Texture</text>
+		<text x="82" y="147">Baked Normal Map</text>
+		<text x="292" y="28">Rendering &amp; Compositing</text>
+		<text x="292" y="147">OpenEXR Intermediate</text>
+		<text x="502" y="28">Monitor, Projector, TV</text>
+		<text x="502" y="147">Movie File, Web Image</text>
+	</g>
+
+	<text x="82" y="56">sRGB Space</text>
+	<text x="82" y="121">Non-Color Data</text>
+	<text x="292" y="56">Linear Space</text>
+	<text x="292" y="121">Linear Space</text>
+	<text x="502" y="56">Display Space</text>
+	<text x="502" y="121">Display Space</text>
+
+</g>
+
+</svg>

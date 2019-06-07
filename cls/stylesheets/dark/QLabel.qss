@@ -1,0 +1,81 @@
+/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*QLabel{
+	background-color: transparent; 
+		border: 2px solid green;
+    border-radius: 4px;
+    padding: 2px;
+    background-image: url(images/welcome.png);
+    border: 1px solid gray;
+  	color: rgb(0, 0, 0);
+}
+*/
+
+QLabel{
+	font: 11px "MS Shell Dlg 2";  
+}	
+
+
+QLabel#posFbkLbl{
+	
+  color: black;
+  /*background-color: master_background_color;*/
+  /*background-color: rgb(30, 150, 254);*/
+  background-color: app_ltgray;;
+  border-radius: 2px;
+  border: 1px solid gray;
+  font: bold 11px "MS Shell Dlg 2";  
+}
+
+QLabel#mtrNameFld{
+	background-color: app_blue;
+  color: rgb(0, 0, 0);
+  font: bold 11px "MS Shell Dlg 2";  
+}
+
+QLabel#unitsLbl{
+	background-color: master_background_color;
+  color: white;
+}
+
+
+
+/*QLabel#scanActionLbl[busy="true"] {
+	background-color: rgb(50, 150,150);
+} */
+
+QLabel#scanActionLbl{
+	color: rgb(250, 250,250);
+	font: bold 11px "MS Shell Dlg 2";  
+} 
+
+
+/* Temperatures and Pressures*/
+
+QLabel#pvNameLbl{
+	background-color: app_ltblue;
+  color: rgb(0, 0, 0);
+  border: 1px solid gray;
+  font: bold 11px "MS Shell Dlg 2";  
+  
+}
+
+
+QLabel#stripToolFbkLbl{
+
+  color: white;
+  font: bold 15px "MS Shell Dlg 2";  
+
+}
+
+QLabel#sscan_status_label_1,#sscan_status_label_2,#sscan_status_label_3,#sscan_status_label_4,
+#sscan_status_label_5,#sscan_status_label_6,#sscan_status_label_7,#sscan_status_label_8,
+#fazeLbl_1,#fazeLbl_2,#fazeLbl_3,#fazeLbl_4,#fazeLbl_5,#fazeLbl_6,#fazeLbl_7,#fazeLbl_8{
+
+  color: white;
+  font: bold 11px "MS Shell Dlg 2";  
+
+}
+
+
+

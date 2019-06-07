@@ -1,0 +1,6 @@
+
+/* base QFrame that the plotTabWidget sits on */
+
+QFrame#centralFrame, .QWidget{
+    background-color: rgb(125, 125, 125);
+}

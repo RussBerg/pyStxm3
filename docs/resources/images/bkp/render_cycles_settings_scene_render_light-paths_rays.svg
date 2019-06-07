@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560px" height="200px" viewBox="0 0 560 200">
+
+<g stroke="#FAE600">
+	<circle opacity="0.3" stroke-width="13" cx="220" cy="37" r="10"/>
+	<circle opacity="0.5" stroke-width="8" cx="220" cy="37" r="10"/>
+	<circle fill="#FFF" stroke-width="2" cx="220" cy="37" r="10"/>
+</g>
+
+<g fill="none" stroke="#000" stroke-width="2">
+	<path d="M44,49L189,182L325.5,130M189,182L215,57"/>
+	<path stroke="#646464" d="M325.5,130L440.5,116L540,88"/>
+</g>
+<path d="M210.3,60.1l7.8,1.6l-2.3-8.6z"/>
+<path fill="#646464" d="M535.1,85.2l2.2,7.7l6.6-6z"/>
+
+<g fill="#FFF" stroke="#646464" stroke-width="2">
+	<polygon points="36,60 26,36 53,37"/>
+	<circle cx="26" cy="36" r="4"/>
+	<circle fill="none" cx="383" cy="123" r="58"/>
+	<line stroke-width="4" x1="30" y1="183" x2="530" y2="183"/>
+</g>
+
+<g fill="#505050" font-size="12px" font-weight="bold" font-family="Arial, sans-serif">
+	<text transform="matrix(0.738 0.675 -0.675 0.738 78.877 98.636)">Camera</text>
+	<text transform="matrix(0.204 -0.979 0.979 0.204 211.796 136.585)">Shadow</text>
+	<text transform="matrix(0.935 -0.354 0.354 0.935 250.962 172.534)">Reflection</text>
+	<text transform="matrix(0.993 -0.12 0.12 0.993 349.214 140.254)">Transmission</text>
+	<text transform="matrix(0.962 -0.274 0.274 0.962 458.336 124.624)">Transmission</text>
+</g>
+
+</svg>

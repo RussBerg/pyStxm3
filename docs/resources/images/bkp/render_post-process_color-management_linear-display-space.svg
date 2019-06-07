@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560px" height="110px" viewBox="0.5 0.5 560 110">
+
+<g stroke="#000">
+	<rect fill="#FFE76D" x="22" y="52" width="140" height="30" rx="6"/>
+	<rect fill="#AEC6ED" x="182" y="39" width="80" height="55" rx="6"/>
+	<rect fill="#AEC6ED" x="282" y="47" width="105" height="40" rx="6"/>
+	<rect fill="#FFE76D" x="407" y="52" width="130" height="30" rx="6"/>
+	<path fill="none" d="M162,67h17M262,67h17M387,67h17"/>
+</g>
+
+<path d="M177,64l5,3l-5,3l1-3zM277,64l5,3l-5,3l1-3zM402,64l5,3l-5,3l1-3z"/>
+
+<g font-size="12px" font-family="Tahoma, sans-serif" text-anchor="middle">
+
+	<g font-size="11px">
+		<text x="93" y="28">Rendering &amp; Compositing</text>
+		<text x="222" y="28">Artistic Look</text>
+		<text x="335" y="28">Display Transform</text>
+		<text x="473" y="28">Monitor, Projector, TV</text>
+	</g>
+
+	<text x="93" y="71">Linear Space</text>
+
+	<text x="223" y="57">Exposure</text>
+	<text x="223" y="71">Curves</text>
+	<text x="223" y="85">View</text>
+
+	<text x="335" y="64">Display Device</text>
+	<text x="335" y="78">Gamma</text>
+
+	<text x="473" y="71">Display Space</text>
+
+</g>
+
+</svg>

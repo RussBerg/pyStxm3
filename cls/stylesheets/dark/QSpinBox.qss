@@ -1,0 +1,48 @@
+
+/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+QSpinBox, QDoubleSpinBox {
+   /*background-color:  qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgb(180, 180, 180), stop:1 rgb(150, 150, 150));   
+   border: 1px solid black;
+   */
+   background-color:  rgb(150, 150, 150);   
+   border: 1px solid grey;
+   
+   padding:0px;
+
+   /*selection-background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgb(120, 120, 120), stop:1 rgb(90, 90, 90));
+   selection-color: rgb(83, 83, 83);
+   */
+   
+}
+
+
+QSpinBox::up-button, QSpinBox::down-button, QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {
+     subcontrol-origin: border;
+     width: 16px;
+     border-width: 0px;
+ }
+
+QSpinBox::up-button, QDoubleSpinBox::up-button {
+     subcontrol-position: top right;     
+     color: black;
+}
+
+QSpinBox::down-button, QDoubleSpinBox::down-button {
+     subcontrol-position: bottom right;
+     color: black;
+}
+
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
+     border-image: url(UI:spinbox_up.png);
+     height:7px;
+     color: black;
+ }
+
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
+     border-image: url(UI:spinbox_down.png);
+     height:7px;
+     color: black;
+}
+
+

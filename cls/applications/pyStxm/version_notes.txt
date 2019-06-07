@@ -1,0 +1,186 @@
+
+V2.1:
+This was the first version that was deployed for staff in late spring/summer of 2017
+- interactive OSA Y tracking control
+- beam spot defocussing
+- using zmq pub/sub to save data, incorporates saving temp file during scan then exporting to nxstxm at the end
+
+
+V2.2: sept 14 2017 -> Dec 30 2017
+ - added multi region data acquisition
+ - added setting of current polarization values to default values for polarization widget in multiregion widget
+    : Point scans
+    : Image scans
+    : Line scans
+ - fixed aribtrary line sample focus scans
+ - added visual indication of where the beam is on the image, BeamSpotTool, beam_spot_fbk widget
+    For zoneplate scanning the beam location is (Zx+Gx, Zy+Gy), use a small yellow circle (35 nm) that is connected
+    to the feedback of (Zx+Gx, Zy+Gy), created BeamSpotShape which is a custom shape that shows beam location
+ - changed soft limits for epu offset to -10, 10 for real and simulated EPU offset positioners
+ - the app doesnt completely exit I think because the zmq pub socket/context is not being shutdown on exit.
+    This was fixed by removing the spyder python console, for some reason it was the thing that was hanging around
+ - make counter number above striptool visible again
+    This was fixed by setting the background-color for the stripToolFbkLbl to transparent
+     #stripToolFbkLbl{
+	    color: rgb(255, 255, 255);
+	    background-color: transparent;
+	    }
+- Fixed the "Clear all Images" tool button for the ImageWidget so that it doesn't 'toggle' but just pushes
+- added pick a point and goto, for situations when wanting to optimize beam,
+    - pick a spot on an image,- goto spot,- open shutter
+
+    created the StxmControlBeamTool, click and drag a point and hte imageWidget emits 'new_beam_position(cx,cy)'
+    which is then connected to 'on_new_directed_beam_pos' of stxmMain whcih in turn moves the correct
+    motors to move the sample or beam (zoneplate scanning)
+- added 'Continuous Grab' to camera_ruler()
+- OSA recenter seems to take a couple of seconds now and never used to
+    - fixed, problem was because confirm_stopped() had timeout as 200 iterations to wait to see it it was starting from a stopped
+       position, shortened this to 20, seems good but keep eye on it
+- incorrect aspect ratio when some new shapes created or scan parameters updated
+    in stxmMain: on_scanpluggin_roi_changed() commented call to self.lineByLineImageDataWidget.recenter_plot_to_all_items()
+    this was making sure that there was the same amount of border around shape based on plot window
+- make it an option to leave whatever images are on the screen when a new image scan is started, this way we can
+    buildup a very large mosaic
+- Implemented the "set_focus_to_A0" btn, when this btn is clicked:
+     - determine hte delta from the new zpz focus position to the theoretical focal length
+     - write this delta value to the PV 'Delta_A0'
+     - this Delta_A0 PV is included in the mode1:setter transform func such that when it is set
+     - the theoretical focal length remains the same but zpz AND osaZ nove to new positions (the new focus point)
+     - OSA Z is relatively adjusted by Delta_A0 such that the new OSA Z position is = (A0 setpoint - Delta_A0)
+     - all PV's are recorded in the data file
+
+- changed PositionerScan so that the positioner just stops and scan ends instead of returning the positioner to its
+    prior position which takes a long time in case of Gx, Gy, positioners, this was changed in generic.cmd
+- make shutter control part of the sscan record so that it is open and closed the least amount of time
+        - tightened up the opening and closing of shutter for scans,
+- for composite image situtations, when the ROI tool is on the screen it needs to be always on top of everything else
+    right now it is not.
+    - this is now fixed by setting the z arg of add_item() to a very large number, the larger the number the more on top
+    the item is, the z level when adding images is always N+1 where N is the number of current image items.
+        This change was made in imageWidget.py and looks basically like:
+            self.plot.add_item(item, z=999999999)
+- can now drag thumbnail from viewer onto a separate viewer which used to produce an error that the STXMDataIO is None or something
+    STXMDataIO object is not callable: imageWidget.py:4925. fixed
+- created a threaded image loader for use with imageWidget and thumbnailviewer widget, a progress bar is created to show
+    progress of images being loaded
+- the DDL database seem to sometimes be using a DDL table entry that was not correct resulting in distorted images, when I looked at how the keys were being
+    generated I saw that the keys were sometimes incorrect, fixed it and need to test more.
+- fix multi region widget so that it repects the max ranges for scans, it now doesnt allow a range spatial range value to be entered
+    larger than the a max and min specified in the setup of the multi region widget
+- separated coarse and fine image scans into their own scan pluggins, this was done to reduce the complexity of configuration
+    for the different scanning modes
+- the scanning modes have been standardized now to the following which are specified in cls.types.stxmTypes:
+    sample_positioning_modes = Enum('Coarse', 'Goniometer')
+    sample_fine_positioning_modes = Enum('SampleFine', 'Zoneplate')
+    # scanning modes are a concatentation of the sample and sample_fine positioning modes
+    scanning_mode = Enum('COARSE_SAMPLEFINE', 'GONI_ZONEPLATE', 'COARSE_ZONEPLATE')
+- added the interferometer axis signal voltages to the statusbar, they are both set to alarm at 0.29 volts (the background olor changes)
+    This was added when working with COARSE_SAMPLEFINE mode where I noticed that at certain positions across the entire sample
+    holder the interferometer signal voltage would dip into the red, I believe this is what is causing the SampleY encoder position to become so
+    out of touch with the coarseY encoder on the stepper.
+
+
+V2.3: Jan 2 2018 -> Mar 5 2018
+
+ - added spectra plots to ThumbnailViewer, drag and drop works for scan pluggin,
+ - added drag and drop to spectra plot
+ - changed foreground color of read only spatial fields for point spectra scans from blue to light gray
+ - switched to using 64bit python
+ - modified ContactSheet so that it displays spectra and generic scan data as a thumbnail as well as launches viewers,
+    and also supports drag and drop onto viewer from contactSheet
+ - Contact sheet now also puts spectra/generic scan data onto its own tab making it easier to find the data you are looking for
+ - commented out the setting of the A0 value when pyStxm starts, this was causing problems when restarting the software because
+   if the value was changed in EPICS it wouldnt be picked up at the pyStxm level, so if I restarted pyStxm then it set the
+   A0 value back to a previously saved number (1000), this was a problem because we were working at the carbon edge
+   which meant that the focal length was very short and caused a collision when the A0 value (which sets the OSA Z position)
+   was set to 1000, commented it out for now for reevaluation later.
+ - When "set ZP to focus" btn is pressed on focus scan plugin I now make sure to reset the 'Delta_A0' pv back to 0.0
+   in case it was already carrying a delta (which is set when the "set A0 to focus" btn is pressed.
+ - for OSA scans make sure that OSA vertical tracking is OFF,
+ - fixed a problem whereby if a user was 'dragging' a scan just as a scan was finishing and the confirm
+    saving data warning dialog popped up it would lock the app because the dragEvent was waiting to drop and the dialog
+    needs a normal mouse event to click one of the save/cancel buttons, so as a result you couldn't do either.
+        I fixed this by adding a set_drag_enable() in the Contact sheet
+ - rewrote the calib camera server side control as an asynPortDriver app
+ - added tomography scan
+ - added exclude_positioners list to device config so that certain non relevant/existant positiners would not be displayed
+    on themotors panel
+ - when going to focus or tomography scan tab I skip recentering the current plot which forced the user to middle click the mouse
+    in order to recenter and autoscale the image that was there
+ - added behaviour now for muti region widget that if the user adds an ev region and the previous ev region had only 1 point it creates
+    the new ev region with 10 points which makes it asier to se tthe start/stop ev
+ - switch data type from np.float64 to np.float32 to reduce memory usage
+ - when pyStxm exits disable zoneplate z stage from moving due to energy changes
+ - added init_scans_for_console() function as a debugging tool to know what signals/callbacks are still connected to
+   the sscan classes at the end of a scan
+ - Goniometer theta angle was changed from 0.01/degree to 1/degree
+ - for print preview changed 'polarity' to 'polarization'
+ - tried to improve performance of focus scans
+ -
+
+V2.4: Mar 5 2018 -> ?
+ - fixed a problem in roi_utils.py-recalc_setpoints() where if there was only 1 point linspace would return a nan as the step size
+ - added cur_img_idx to the progress dictionary
+ - created list_utils.py in utils dir
+ - created json_utlis.py in the utils dir
+ - fixed problems saving tomography data, files now open 1 region at a time in axis2000
+ - fixed problem with thumbnailviewer where the active area of the thumbnail was based on the size of the data pixmap
+   not the entire graphic widget
+ - moves the osa vertical tracking, sample focus mode and beam defocus to the ES Positioners panel
+ - fixed the scan_q_view to support stacks and tomography data properly
+ - moved all scanplugin attributes inside __init__
+ - fix issue with imagewidget and overlay positioning not being remembered, modified imagewidget to accept a settings
+    filename
+ - added plugin type framework for 'preferences' stacked widget
+ - implemented COARSE_ZONEPLATE scanning mode
+ - fixed bug where if a stack had been scanned then all other sample_image scans would be marked as sample_image_stack
+
+
+
+V2.5
+ - The scan plot selection box's and handle colors are not the same for coarse/ Detector/OSA scan as they are for fine
+ image scans. So I moved the guiqwt config.py file to /plotWidgets/guiqwt_config.py and set the colors there, so
+ now all colors match.
+ - After a focus scan if the user clicks 'Fine Imge Scan' the focus image would be left on screen, if there were
+ no spatial regions defined for the fine scan then th eplotting widget would not get updated with any coordinates (because
+ there was no spatial region)O, so what would happen is the plotting widget would be left with the coordinates
+ of the focus scan (ZpZ for Y and SampleXY for X), so the user would have to hunt to find the location they wanted to do
+ a fine scan from. I now check to see if the fine scan image spatial table is empty and if it is I use the cuurent
+ SampleXY coordinates with a range of 500x500, see how well this works.
+ - Sometimes the E712 waveform generator would still be running (not sure how) when the user clicked 'Start', as a result the new
+ waveform for X was getting reset to 0 points but was not being reprogrammed with the new waveform, as a result
+ the scan would appear to hang because the waveform generators were running but with no points so they just stayed
+ on.
+ - Jay wanted it to be more obvious that the coarse image scan was not meant to be used below 70um, so I set the
+ validator for the range to be 70 >
+ - Jay also wanted it to be more obvious that you could right click on teh scan pluggin to get more load/save options.
+ I created a frame around the load button that changes background color when user hovers over it also added an icon
+ that shows a right click mouse with a tooltip that says 'right click to get more load/save options'
+ - added a docs directory and started creating the documentation for the software users manual.  
+ - standardized to bcm.devices with epics/tango/pixelator sub dirs for device implementation
+ - Fixed a linescan bug where the scan velocity calculation was not using the correct number of line points, after
+  fix I was able to do: 200x200, 400x400, 1000x1000, 2000x2000 points
+
+- todo: fix modifications to thumbnailviewer to support stack directories
+
+ - todo: make epics_server_pubsub more robust to file/dct issues
+
+ - todo: for composite images the cross sections are all being computed individually which looks like crap
+
+ - todo: need to make sure that zmq dataRecord produces a heartbeat so I know it is working
+
+ - todo: need to make sure that camera_ruler server produces a heartbeat so I know it is working
+
+ - todo: focus scan still has problem when interactively selecting zpz vertical position, zpz value sometimes ends up
+    being set to the sample y position
+
+ - todo: there is a imagewidget problem when going between point scans and image scans,
+    selecting points then switching to image scan and selecting multiple regions will eventually cause an invalid
+    region to be created
+
+ - todo: investigate the zmq data recorder calves if .tmp file or some part of it exiusts, I think this
+    is in hdfdict as it see's a name that already exists like 'idx0'
+
+ - todo: see if I can speedup the starting of the app, takes a while now
+
+

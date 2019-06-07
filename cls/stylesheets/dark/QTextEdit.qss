@@ -1,0 +1,12 @@
+/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+QWidget	.QTextEdit{
+    background-color: rgb(220, 220, 220);
+    color: rgb(220,220,220);
+    border: 2px groove rgb(70, 70, 70);
+
+   selection-background-color:  rgb(60, 60, 60) ;
+   selection-color: rgb(220, 220, 220);
+	 margin: 3px 0px 3px 0px;
+	 font: 11px "MS Shell Dlg 2";  
+}

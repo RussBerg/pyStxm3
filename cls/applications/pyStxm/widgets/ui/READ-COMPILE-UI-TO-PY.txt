@@ -1,0 +1,15 @@
+ to compile a .ui file into a .py file execute the following:
+ pyuic4 -o piezoRecal.py piezoRecal.ui
+ 
+#compile ui file from Qt Designer
+pyuic4 ui_file.ui -o compiled_ui_file.py
+#compile resource file (icons, etc..)
+pyrcc4 resource_file.qrc -o compiled_resource_file.py
+
+
+
+
+#################################################
+############## PyQt5 ###########################
+C:\Continuum\Anaconda2\Library\bin\pyuic5.bat <original ui file>.ui -o <compiled ui file>.py
+C:\Continuum\Anaconda2\Library\bin\pyuic5.bat sp_small.ui -o sp_small.py

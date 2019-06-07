@@ -1,0 +1,21 @@
+
+/* the are outside the actual plot where the axis and tick strings are */
+CurveViewerWidget#spectraWidget	QFrame{
+    background-color: master_background_color;
+}
+
+/* the little area between the actual plot wiodget and teh tab widget */
+QTabWidget	QWidget#spectraWidget{
+    /*background-color: rgb(225, 125, 125);*/
+    background-color: master_background_color;
+    color: rgb(220,220,220);
+    
+   selection-background-color:  rgb(60, 60, 60) ;
+   selection-color: rgb(220, 220, 220);
+	 
+}
+
+CurveDialog #plotBgrnd{
+
+	background-color: rgb(5, 5, 5);
+}

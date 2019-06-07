@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680px" height="360px" viewBox="0 0 680 360">
+
+<rect fill="#3A3A3A" width="680" height="360"/>
+
+<polygon fill="#A2A2B5" stroke="#000" stroke-width="1.5" points="306,319 60,232 120,44 305,136"/>
+<circle r="2" cx="60" cy="232"/>
+<circle r="2" cx="120" cy="44"/>
+<circle r="2" cx="305" cy="136"/>
+<circle r="2" cx="306" cy="319"/>
+
+<path fill="none" stroke="#FADC0A" stroke-width="1.5" d="M369,105L313,132M314.88,125.54l-2.33,6.67l6.68,2.33M369,190L313,198M316.75,192.41l-4.24,5.66l5.66,4.24M369,274L240,246M245.46,242.07l-5.95,3.83l3.83,5.95"/>
+
+<g fill="#FFF" font-size="18px" font-family="Arial, sans-serif">
+
+	<text x="375" y="108">Vertex</text>
+	<text x="375" y="194">Edge</text>
+	<text x="375" y="280">Face</text>
+
+</g>
+
+</svg>

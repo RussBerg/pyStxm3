@@ -1,0 +1,11 @@
+/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+
+QWidget	.QLineEdit {
+     border: 2px solid gray;
+     border-radius: 2px;
+     padding: 0 8px;
+     color: rgb(0, 0, 0);
+     background-color:  rgb(240, 240, 240); 
+     selection-background-color: darkgray;
+ }

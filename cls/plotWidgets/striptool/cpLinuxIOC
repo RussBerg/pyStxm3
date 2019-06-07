@@ -1,0 +1,178 @@
+#!/bin/bash
+
+# Copy files for HCS BR1_SR1_HCS Epics app to /iocApps
+#!/bin/bash
+
+# Copy files for HCS BR1_SR1_HCS Epics app to /iocApps
+#
+# This is done the similar to OSR on IOC1602-101 with
+# additional feature of keeping track of different versions.
+# So structure looks like:
+# - /iocApps/<main>/<target_ioc>/<target_dir>/<version1>
+# -   ...                                    /<version2>
+# -   ...                                    /current
+#     where .../current is a link to .../<versionX> for the current version
+# - /iocApps/<main>/<target_dir> is a link to
+#     /iocApps/<main>/<target_ioc>/<target_dir>/current
+ 
+ 
+############# Only need to make changes to the following ################## 
+### dir will be $base_dir/$target_ioc/$target_dir
+base_dir=/home/sylmand/pyWScanner
+#target_dir=app
+target_arch=linux-x86_64
+exec_script=runSyLMAND_pyWireScanApp
+symLinkName=SyLMAND_pyWSCAN
+
+
+# Install specific list of files
+fileList="cfgs/HEntContBiDirV123.cfg \
+		cfgs/HExitContBiDirV123.cfg \
+		cfgs/VEntContBiDirV123.cfg \
+		cfgs/VExitContBiDirV123.cfg \
+		runSyLMAND_pyWireScanApp \
+		wirescan.ini \
+		wireScanViewerWidget.py \
+		ui/wireScanner.ui "
+		
+########################## Done Changes #####################################
+
+# Variables used for move pvlist file to /home/control
+dest_user=epics
+dest_host=css1021-102
+autosave_dir=/home/control/autosave
+
+
+#if [ ! $# == 1 ]; then
+#  echo "Usage: $0 IOCNAME"
+#  echo "Possible IOC's are: "
+#  ls -ld ./iocBoot/IOC*
+#  exit
+#fi
+
+
+
+if  [[ "$USER" = "sylmand" ]]
+then
+	echo "User $USER is sylmand"
+else
+	echo "User $USER Not sylmand"
+	echo "Run as sylmand"
+	exit
+fi
+
+#
+# Make sure the EPICS App version is defined
+#
+if [[ -z $APP_VERSION ]]
+then
+	echo "\$APP_VERSION not defined"
+	echo "Using NO Version convention for directories"
+	#echo "Exiting"
+	target_version_dir=$base_dir/$target_ioc/$target_dir
+	target_current_dir=$base_dir/$target_ioc/$target_dir
+	#exit
+else
+	echo "\$APP_VERSION=$APP_VERSION"
+	app_version=$APP_VERSION
+	target_version_dir=$base_dir/$target_ioc/$target_dir/$app_version
+	target_current_dir=$base_dir/$target_ioc/$target_dir/current
+fi
+
+
+
+#
+# Test and make directories
+#
+#if [[ ! -d $target_version_dir ]]
+#then 
+#	echo "$target_version_dir is NOT Mounted!"
+#	exit
+#fi
+
+## Create the directories
+if [[ ! -e $target_version_dir ]]
+then 
+	mkdir -vp $target_version_dir
+	mkdir -vp $target_version_dir/app
+	mkdir -vp $target_version_dir/app/cfgs
+	mkdir -vp $target_version_dir/app/ui
+	mkdir -vp $target_version_dir/app/utils
+	mkdir -vp $target_version_dir/data
+	
+fi
+
+#make a base directory link past the IOC
+#if [[ ! -e $base_dir/$symLinkName ]]
+#then 
+#	ln -v -s 	$target_version_dir $base_dir/$symLinkName
+#fi
+
+#
+# Test to see if the directory with version number already exists.
+# If so, then maybe user forgot to change the version number, so
+# ask for confirmation before continuing.
+#
+#if [[ -e $target_version_dir ]]
+#then 
+#	echo "**** $target_version_dir already exists."
+#	echo "Maybe you forgot to change the version number."
+#	read -p "Do you want to continue with the installation (the directory wil be replaced) (y/n)?" response
+#	if [[ $response == 'y' ]]
+#	then
+#		echo "response is y"
+#		#rm -rfv $target_version_dir
+#		#rm -f $base_dir/$target_dir
+#	else
+#		echo "Exiting"
+#		exit
+#	fi
+#fi
+
+#if [[ ! -z $APP_VERSION ]]
+#then
+#	## Recreate links
+#	rm -vf $base_dir/$target_dir
+#	rm -vf $target_current_dir
+#	ln -v -s $target_version_dir $target_current_dir
+#	ln -v -s $target_current_dir $base_dir/$target_dir
+#fi	
+
+
+
+## Copy over the executables
+
+for target_ioc in $target_ioc_list
+    do
+	cp -v bin/$target_arch/$executable  $target_version_dir/bin/$target_arch
+    done
+
+## Function to copy over other files
+
+function copyToProduction {
+for file in $fileList; do
+    case $file in
+        utils/*.py )
+        	cp -v $file     $target_version_dir/app/utils/ ;;
+        *.py )
+        	cp -v $file     $target_version_dir/app/ ;;
+        *.ini )
+        	cp -v $file     $target_version_dir/app/ ;;
+        *.cfg )
+        	cp -v $file     $target_version_dir/app/cfgs/ ;;
+		run* )
+			cp -v $file     $target_version_dir/ ;;
+        *.ui )
+        	cp -v $file     $target_version_dir/app/ui ;;
+        * )
+           echo "Unrecognized file" $file ;;
+    esac
+done
+}
+ 
+copyToProduction
+
+
+# Copy the rc script to /etc/init.d on the target computer
+/usr/bin/scp $exec_script sylmand@vmsl54:/home/sylmand/bin
+

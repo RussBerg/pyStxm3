@@ -1,0 +1,9 @@
+
+/* changing this color affects a lot of the QLabels */
+QDialog{
+	color: rgb(255, 255, 255);
+	background-color: master_background_color;
+	
+}
+
+

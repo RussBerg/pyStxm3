@@ -1,0 +1,2 @@
+cd /home/sylmand/pyWScanner/app
+python2.6 wireScanViewerWidget.py

@@ -1,0 +1,4 @@
+[run]
+branch = true
+include = suitcase/nxstxm/*
+omit = suitcase/nxstxm/_version.py

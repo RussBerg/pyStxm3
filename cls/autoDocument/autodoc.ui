@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>952</width>
+    <height>606</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QPushButton" name="loadBtn">
+     <property name="text">
+      <string>Autodocument a File File</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="saveBtn">
+     <property name="text">
+      <string>Save to a .cmntd file</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="fnameLbl">
+     <property name="minimumSize">
+      <size>
+       <width>16</width>
+       <height>16</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>TextLabel</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QTextEdit" name="originalTextEdit"/>
+     </item>
+     <item>
+      <widget class="QTextEdit" name="cmntdTextEdit"/>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -4,8 +4,8 @@ at the SM beam line (10ID1) at the CLS. The application uses several main framew
  
 * Python 3.7, The open source programming used
 * Qt5, The open source application framework used
-* Epics R3.14.12.4, The open source distributed control system
-* BlueSky 
+* Epics, R3.14.12.4, The open source distributed control system
+* BlueSky, 1.5.3, Bluesky Data Collection Framework 
 * Synapps 5.7, The device and data collection software
 * PyEpics 3, The connection to the DCS from the python side
 

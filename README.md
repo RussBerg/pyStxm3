@@ -2,11 +2,13 @@
 python Qt software for STXM data acquisition, this application was originally put together to preform data collection on the UHV STXM 
 at the SM beam line (10ID1) at the CLS. The application uses several main frameworks to deliver the data collection capability, namely:
  
-* Python 2.7, The open source programming used
+* Python 3.7, The open source programming used
 * Qt5, The open source application framework used
 * Epics R3.14.12.4, The open source distributed control system
+* BlueSky 
 * Synapps 5.7, The device and data collection software
 * PyEpics 3, The connection to the DCS from the python side
+
   
 There is a second part to this software and that is the SynApps Epics applications that provide the low level device control, namely:
 	
@@ -34,12 +36,18 @@ The pyStxm software is dependent on the following python modules (note that thei
  - pyepics (3.2.6)
  - PythonQwt (0.5.5)
  - QtPy (1.2.1)
+ - bluesky (1.5.3)
+ - ophyd (1.3.0)
+ - databroker (0.12.2)
+ - caproto (0.3.4)
+ - suitcase (0.11.0)
  - scipy (0.18.1)
  - simplejson (3.10.0)
  - spyder (3.1.2)
  - Twisted (16.6.0)
  - Yapsy (1.11.223)
  - zope.interface (4.3.3)
+  - pymongo (0.3.0)
 
 
 ### Installing
@@ -96,6 +104,7 @@ and run pyStxm like this:
 
 * [Python](https://www.python.org/) - The open source programming used
 * [Qt](https://www.qt.io/) - The open source application framework used
+* [BlueSky] (https://nsls-ii.github.io/bluesky/) - Bluesky Data Collection Framework
 * [Epics](http://www.aps.anl.gov/epics/) - The open source device and data acquisition control
 * [Synapps] (https://www1.aps.anl.gov/bcda/synapps/) The device and data collection software the 
 
@@ -121,9 +130,8 @@ For the versions available, see the [tags on this repository](https://github.com
 
 This project is licensed under the GPL2 License - see the [LICENSE.md](LICENSE.md) file for details
 
-## Acknowledgments
 
-* Thanks to Michel Fodje for early assistance and helpful advice
+
 
 
 

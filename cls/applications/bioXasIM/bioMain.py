@@ -861,7 +861,7 @@ class bioxasMWindow(QtWidgets.QMainWindow):
 #                 plot_item_type = int(dct_get(sp_db, SPDB_PLOT_SHAPE_TYPE))
 #                 self.lineByLineImageDataWidget.addShapePlotItem(int(sp_id), rect, item_type=plot_item_type)
 #
-        if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.GENERIC_SCAN]):
+        if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in [scan_types.SAMPLE_POINT_SPECTRA, scan_types.GENERIC_SCAN]):
             self.lineByLineImageDataWidget.blockSignals(True)
             self.lineByLineImageDataWidget.delShapePlotItems()
             self.lineByLineImageDataWidget.load_image_data(fname, wdg_com, data)
@@ -987,7 +987,7 @@ class bioxasMWindow(QtWidgets.QMainWindow):
         #print 'on_toolbox_changed: %d' % idx
         spectra_plot_types = [scan_panel_order.POINT_SCAN]
         non_interactive_plots = [scan_panel_order.POSITIONER_SCAN]
-        multi_spatial_scan_types = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE, \
+        multi_spatial_scan_types = [scan_types.SAMPLE_POINT_SPECTRA, scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE, \
                                     scan_types.SAMPLE_IMAGE_STACK]
 
         skip_list = [scan_types.SAMPLE_FOCUS, scan_types.OSA_FOCUS]
@@ -1122,7 +1122,7 @@ class bioxasMWindow(QtWidgets.QMainWindow):
         is_point = counter_to_plotter_com_dct[ CNTR2PLOT_IS_POINT ]
         #self.cur_image_idx = _dct['img_idx']
 
-        if(self.get_cur_scan_type() == scan_types.SAMPLE_LINE_SPECTRUM):
+        if(self.get_cur_scan_type() == scan_types.SAMPLE_LINE_SPECTRA):
             #if(not self.image_started and (col == 0)):
             #if(not self.executingScan.image_started and (col == 0)):
             if(is_point):
@@ -1190,7 +1190,7 @@ class bioxasMWindow(QtWidgets.QMainWindow):
         img_cntr = counter_to_plotter_com_dct[CNTR2PLOT_IMG_CNTR]
         ev_cntr = counter_to_plotter_com_dct[CNTR2PLOT_EV_CNTR]
 
-        if(self.get_cur_scan_type() == scan_types.SAMPLE_LINE_SPECTRUM):
+        if(self.get_cur_scan_type() == scan_types.SAMPLE_LINE_SPECTRA):
             if(not self.executingScan.image_started and (ev_cntr == 0) and ((col == 0) and (row == 0))):
                 self.on_image_start()
 
@@ -1302,7 +1302,7 @@ class bioxasMWindow(QtWidgets.QMainWindow):
         :returns: integer number of images required for the scans
         """
         single_image_scans = [scan_types.DETECTOR_IMAGE, scan_types.OSA_FOCUS, scan_types.OSA_IMAGE, scan_types.SAMPLE_FOCUS, \
-                              scan_types.SAMPLE_IMAGE, scan_types.GENERIC_SCAN, scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_POINT_SPECTRUM]
+                              scan_types.SAMPLE_IMAGE, scan_types.GENERIC_SCAN, scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_POINT_SPECTRA]
         sp_rois = dct_get(wdg_com, WDGCOM_SPATIAL_ROIS)
         sp_ids = sorted(sp_rois.keys())
         n_imgs = []
@@ -1408,7 +1408,7 @@ class bioxasMWindow(QtWidgets.QMainWindow):
 
         # a list of basic scans that use the same configuration block below
         _simple_types = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.OSA_FOCUS, scan_types.GENERIC_SCAN, scan_types.SAMPLE_FOCUS]
-        _multispatial_types = [scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_POINT_SPECTRUM]
+        _multispatial_types = [scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_POINT_SPECTRA]
 
         if(scan_type in _simple_types):
             sp_id = sp_ids[0]
@@ -1429,14 +1429,14 @@ class bioxasMWindow(QtWidgets.QMainWindow):
             idx = 0
             for sp_id in sp_ids:
                 sp_db = sp_rois[sp_id]
-                if(scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
+                if(scan_type == scan_types.SAMPLE_POINT_SPECTRA):
                     #for point spec all spatial regions use same datafile but different entrys
                     self.assign_datafile_names_to_sp_db(sp_db, d[0], image_idx=0)
                 else:
                     self.assign_datafile_names_to_sp_db(sp_db, d[idx], image_idx=idx)
                 idx += 1
 
-            if(scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
+            if(scan_type == scan_types.SAMPLE_POINT_SPECTRA):
                 #here I need to init it with the number of sp_ids (spatial points)
                 self.init_point_spectra(num_curves=len(sp_ids))
                 line = False
@@ -1521,11 +1521,11 @@ class bioxasMWindow(QtWidgets.QMainWindow):
         #_logger.info('GUI: connect_executingScan_signals')
         if((scan_type == scan_types.SAMPLE_IMAGE) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
             (scan_type == scan_types.SAMPLE_IMAGE_STACK) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
-            (scan_type == scan_types.SAMPLE_LINE_SPECTRUM) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
+            (scan_type == scan_types.SAMPLE_LINE_SPECTRA) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
             (scan_type == scan_types.SAMPLE_FOCUS) and (scan_sub_type == scan_sub_types.LINE_UNIDIR)):
             self.executingScan.sigs.changed.connect(self.add_line_to_plot)
 
-            if(not (scan_type == scan_types.SAMPLE_LINE_SPECTRUM)):
+            if(not (scan_type == scan_types.SAMPLE_LINE_SPECTRA)):
                 #dont connect this for line_spec scans because the data level is energy which would cause a
                 # new image for each energy line which is not what we want
                 self.executingScan.data_start.connect(self.on_image_start)
@@ -1535,18 +1535,18 @@ class bioxasMWindow(QtWidgets.QMainWindow):
                 (scan_type == scan_types.DETECTOR_IMAGE)  or \
                 (scan_type == scan_types.OSA_IMAGE) or \
                 (scan_type == scan_types.OSA_FOCUS) or \
-                ((scan_type == scan_types.SAMPLE_LINE_SPECTRUM) and (scan_sub_type == scan_sub_types.POINT_BY_POINT)) or \
+                ((scan_type == scan_types.SAMPLE_LINE_SPECTRA) and (scan_sub_type == scan_sub_types.POINT_BY_POINT)) or \
                 (scan_type == scan_types.SAMPLE_FOCUS) or \
                 (scan_type == scan_types.ZP_IMAGE_SCAN) ):
             self.executingScan.sigs.changed.connect(self.add_point_to_plot)
 
-            if(not (scan_type == scan_types.SAMPLE_LINE_SPECTRUM)):
+            if(not (scan_type == scan_types.SAMPLE_LINE_SPECTRA)):
                 #dont connect this for line_spec scans because the data level is energy which would cause a
                 # new image for each energy line which is not what we want
                 self.executingScan.data_start.connect(self.on_image_start)
 
 
-        elif((scan_type == scan_types.SAMPLE_POINT_SPECTRUM) or \
+        elif((scan_type == scan_types.SAMPLE_POINT_SPECTRA) or \
             (scan_type == scan_types.GENERIC_SCAN)):
             self.executingScan.sigs.changed.connect(self.add_point_to_spectra)
             #self.executingScan.new_spatial_start.connect(self.init_point_spectra)
@@ -1578,11 +1578,11 @@ class bioxasMWindow(QtWidgets.QMainWindow):
         #_logger.debug('disconnect_executingScan_signals: TOP')
         if((scan_type == scan_types.SAMPLE_IMAGE) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
            (scan_type == scan_types.SAMPLE_IMAGE_STACK) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
-            (scan_type == scan_types.SAMPLE_LINE_SPECTRUM) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
+            (scan_type == scan_types.SAMPLE_LINE_SPECTRA) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
             (scan_type == scan_types.SAMPLE_FOCUS) and (scan_sub_type == scan_sub_types.LINE_UNIDIR)):
             self.executingScan.sigs.changed.disconnect(self.add_line_to_plot)
 
-            if(not (scan_type == scan_types.SAMPLE_LINE_SPECTRUM)):
+            if(not (scan_type == scan_types.SAMPLE_LINE_SPECTRA)):
                 self.executingScan.data_start.disconnect(self.on_image_start)
 
         elif(((scan_type == scan_types.SAMPLE_IMAGE) and (scan_sub_type == scan_sub_types.POINT_BY_POINT)) or \
@@ -1590,15 +1590,15 @@ class bioxasMWindow(QtWidgets.QMainWindow):
                 (scan_type == scan_types.DETECTOR_IMAGE)  or \
                 (scan_type == scan_types.OSA_IMAGE) or \
                 (scan_type == scan_types.OSA_FOCUS) or \
-                ((scan_type == scan_types.SAMPLE_LINE_SPECTRUM) and (scan_sub_type == scan_sub_types.POINT_BY_POINT)) or \
+                ((scan_type == scan_types.SAMPLE_LINE_SPECTRA) and (scan_sub_type == scan_sub_types.POINT_BY_POINT)) or \
                 (scan_type == scan_types.SAMPLE_FOCUS) or \
                 (scan_type == scan_types.ZP_IMAGE_SCAN) ):
             self.executingScan.sigs.changed.disconnect(self.add_point_to_plot)
 
-            if(not (scan_type == scan_types.SAMPLE_LINE_SPECTRUM)):
+            if(not (scan_type == scan_types.SAMPLE_LINE_SPECTRA)):
                 self.executingScan.data_start.disconnect(self.on_image_start)
 
-        elif((scan_type == scan_types.SAMPLE_POINT_SPECTRUM) or \
+        elif((scan_type == scan_types.SAMPLE_POINT_SPECTRA) or \
             (scan_type == scan_types.GENERIC_SCAN)):
             self.executingScan.sigs.changed.disconnect(self.add_point_to_spectra)
             #self.executingScan.new_spatial_start.disconnect(self.init_point_spectra)
@@ -1675,7 +1675,7 @@ class bioxasMWindow(QtWidgets.QMainWindow):
                 self.lineByLineImageDataWidget.initData(image_types.OSAFOCUS, numZ ,  numX, {SPDB_RECT: rect})
                 self.lineByLineImageDataWidget.set_autoscale(fill_plot_window=True)
 
-            elif(scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
+            elif(scan_type == scan_types.SAMPLE_LINE_SPECTRA):
                 self.lineByLineImageDataWidget.initData(image_types.LINE_PLOT, numX ,  numE, {SPDB_RECT: rect})
                 self.lineByLineImageDataWidget.set_autoscale(fill_plot_window=True)
 

@@ -80,6 +80,7 @@ DNM_ZONEPLATE_Z_BASE = '_ZonePlateZ_base'
 DNM_ZONEPLATE_SCAN_MODE = 'Zpz_scanModeFlag'
 DNM_ZONEPLATE_INOUT = 'Zpz_inout'
 DNM_ZONEPLATE_INOUT_FBK = 'Zpz_inout_fbk'
+DNM_ZONEPLATE_Z_ADJUST = 'Zpz_adjust'
 DNM_SAMPLE_X = 'SampleX'
 DNM_SAMPLE_Y = 'SampleY'
 

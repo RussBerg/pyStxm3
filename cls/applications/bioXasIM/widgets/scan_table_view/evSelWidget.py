@@ -4,7 +4,7 @@ from PyQt5 import QtWidgets
 from cls.applications.pyStxm.widgets.scan_table_view.baseScanTable import *
 
 from cls.applications.pyStxm.widgets.scan_table_view.evScanTableView import EnergyScanTableView
-from cls.applications.pyStxm.widgets.scan_table_view.polaritySelWidget import PolaritySelWidget
+from cls.applications.pyStxm.widgets.scan_table_view.polarizationSelWidget import PolaritySelWidget
 from cls.types.stxmTypes import energy_scan_order_types
 class EnergySelWidget(BaseSelectionWidget):
     """

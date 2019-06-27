@@ -114,9 +114,13 @@ class CoarseGoniScanClass(BaseScan):
         """
         # use base configure x y motor scan
         # self.busy_saving = False
-        self.stack = False
+        # self.stack = False
+        # self.is_pxp = True
+        # self.is_lxl = False
+        # call the base class configure so that all member vars can be initialized
+        super(CoarseGoniScanClass, self).configure(wdg_com, sp_id=sp_id, line=line, z_enabled=z_enabled)
+
         self.is_pxp = True
-        self.is_lxl = False
 
         self.config_basic_2d(wdg_com, sp_id=sp_id, z_enabled=False)
         # THIS must be the last call

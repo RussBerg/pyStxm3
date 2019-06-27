@@ -449,7 +449,7 @@ class TomographyWithE712Wavegen(BaseScan):
         """
 
         pass_tst = True
-        if (self.scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
+        if (self.scan_type == scan_types.SAMPLE_POINT_SPECTRA):
             if (self.evScan.get_name() != '%s:scan3' % self.scan_prefix):
                 pass_tst = False
             if (self.polScan.get_name() != '%s:scan2' % self.scan_prefix):
@@ -585,7 +585,7 @@ class TomographyWithE712Wavegen(BaseScan):
         #so create dummy spi_ds (one for each goni theta angle) so that an entry for each will be created
         self.numSPIDS = len(self.sp_rois)
 
-        if (self.scan_type != scan_types.SAMPLE_POINT_SPECTRUM):
+        if (self.scan_type != scan_types.SAMPLE_POINT_SPECTRA):
             self.numImages = int(self.numE * self.numEPU * self.numSPIDS)
         else:
             # is a sample point spectrum
@@ -1229,7 +1229,7 @@ class TomographyWithE712Wavegen(BaseScan):
         if (update):
             _logger.info('Skipping save_hdr() update = True')
             return
-        upside_dwn_scans = [scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE]
+        upside_dwn_scans = [scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE]
         # _logger.info('save_hdr: starting')
         self.data_obj.set_scan_end_time()
 

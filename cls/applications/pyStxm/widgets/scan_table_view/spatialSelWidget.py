@@ -260,7 +260,7 @@ class SpatialSelWidget(BaseSelectionWidget):
         dct_put(sp_db, SPDB_ID_VAL, sp_model_id)
 
         if(scan[SPDB_X][NPOINTS] == 1):
-            scan_type = scan_types.SAMPLE_POINT_SPECTRUM
+            scan_type = scan_types.SAMPLE_POINT_SPECTRA
             #sp_db['SCAN_PLUGGIN']['ITEM']['TYPE'] = spatial_type_prefix.PNT
             dct_put(sp_db, SPDB_PLOT_SHAPE_TYPE, spatial_type_prefix.PNT)
         else:

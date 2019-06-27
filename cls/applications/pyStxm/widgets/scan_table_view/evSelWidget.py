@@ -7,7 +7,7 @@ from bcm.devices.device_names import *
 from cls.utils.roi_dict_defs import *
 
 from cls.applications.pyStxm.widgets.scan_table_view.evScanTableView import EnergyScanTableView
-from cls.applications.pyStxm.widgets.scan_table_view.polaritySelWidget import PolaritySelWidget
+from cls.applications.pyStxm.widgets.scan_table_view.polarizationSelWidget import PolarizationSelWidget
 from cls.types.stxmTypes import energy_scan_order_types
 from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
 from cls.utils.roi_utils import get_base_energy_roi

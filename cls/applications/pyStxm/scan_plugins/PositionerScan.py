@@ -33,7 +33,7 @@ _logger = get_module_logger(__name__)
 class PositionerScanClass(BaseScan):
     """ a scan for executing a positioner line pxp scan in X, """
     
-    def __init__(self):
+    def __init__(self, main_obj=None):
         """
         __init__(): description
 

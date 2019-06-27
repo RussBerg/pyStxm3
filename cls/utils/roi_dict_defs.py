@@ -113,8 +113,6 @@ SPDB_EV_POL = 'EV.POL'
 SPDB_EV_ROIS = 'EV_ROIS' #holds a list of energy roi's
 SPDB_EV_ID = 'EV_ID' #holds the ev roi id in the spatial roi
 
-
-
 SPDB_SINGLE_LST_SP_ROIS = 'SINGLE_LST.SP_ROIS' # for multi region supported scans, this holds the list of sp_rois
 SPDB_SINGLE_LST_EV_ROIS = 'SINGLE_LST.EV_ROIS' # for multi region supported scans, this holds the list of ev_rois
 SPDB_SINGLE_LST_POL_ROIS = 'SINGLE_LST.POL_ROIS' # for multi region supported scans, this holds the list of pol_rois

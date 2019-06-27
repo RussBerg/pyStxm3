@@ -85,7 +85,7 @@ class FinePointScanParam(ScanParamWidget):
         '''
         self.name = "Fine Point Scan"
         self.idx = scan_panel_order.POINT_SCAN
-        self.type = scan_types.SAMPLE_POINT_SPECTRUM
+        self.type = scan_types.SAMPLE_POINT_SPECTRA
         self.data = {}
         self.section_id = 'POINT'
         self.axis_strings = ['counts', 'eV', '', '']
@@ -316,7 +316,7 @@ class FinePointScanParam(ScanParamWidget):
         if(wdg_com[CMND] == widget_com_cmnd_types.LOAD_SCAN):
             sp_db = get_first_sp_db_from_wdg_com(wdg_com)
 
-            if(not ev_only and (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_POINT_SPECTRUM)):
+            if(not ev_only and (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_POINT_SPECTRA)):
                 return
                 
             self.multi_region_widget.load_scan(wdg_com, append, ev_only=ev_only, sp_only=sp_only)

@@ -876,7 +876,7 @@ class ScanQueueTableWidget(QtWidgets.QWidget):
         elif(scan_type == scan_types.TOMOGRAPHY_SCAN):
             self.set_delegates_tomo()
 
-        elif(scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
+        elif(scan_type == scan_types.SAMPLE_POINT_SPECTRA):
             self.set_delegates_point_spec()
 
         elif(scan_type == scan_types.COARSE_IMAGE_SCAN):
@@ -885,7 +885,7 @@ class ScanQueueTableWidget(QtWidgets.QWidget):
         elif (scan_type == scan_types.COARSE_GONI_SCAN):
             self.set_delegates_ev()
 
-        elif(scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
+        elif(scan_type == scan_types.SAMPLE_LINE_SPECTRA):
             self.set_delegates_line_spec()
 
         elif(scan_type == scan_types.GENERIC_SCAN):
@@ -940,10 +940,10 @@ class ScanQueueTableWidget(QtWidgets.QWidget):
         elif (scan_type == scan_types.COARSE_GONI_SCAN):
             rows = self.make_single_ev_row_entries(sp_db)
 
-        elif(scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
+        elif(scan_type == scan_types.SAMPLE_POINT_SPECTRA):
             rows = self.make_point_scan_row_entries(sp_db)
 
-        elif(scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
+        elif(scan_type == scan_types.SAMPLE_LINE_SPECTRA):
             rows = self.make_single_ev_row_entries(sp_db, show_ev_range=True)
             #return None, scan_type
 

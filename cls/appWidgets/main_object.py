@@ -93,6 +93,8 @@ class main_object_base(QtCore.QObject):
         dct_put(self.main_obj, 'APP.MINOR_VER', ver_dct['minor_ver'])
         dct_put(self.main_obj, 'APP.AUTHOR', ver_dct['auth'])
         dct_put(self.main_obj, 'APP.DATE', ver_dct['date'])
+        dct_put(self.main_obj, 'APP.COMMIT', ver_dct['commit'])
+
         
         dct_put(self.main_obj, 'SCAN.CFG.SCAN_TYPE', 'THIS IS THE SCAN CFG TYPE')
         dct_put(self.main_obj, 'SCAN.CFG.UNIQUEID', 0)
@@ -616,7 +618,7 @@ class dev_config_base(QtCore.QObject):
 
         :return:
         '''
-        _logger.info('devs_as_list: creating snapshot of Devices and values')
+        _logger.debug('devs_as_list: returning list of Devices')
         dlst = []
         for t in self.devices['TEMPERATURES'].keys():
             for k, dev in self.devices['TEMPERATURES'][t].items():
@@ -666,7 +668,7 @@ class dev_config_base(QtCore.QObject):
         #        #print('devs_as_list: [%s]' % k)
         #        if (ophyd_dev is not None):
         #            dlst.append(ophyd_dev)
-        _logger.info('devs_as_list: done creating snapshot')
+
         return (dlst)
 
     def close_splash(self):

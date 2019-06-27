@@ -363,7 +363,7 @@ class LineSpecSSCAN(BaseScan):
         self.numX = self.numE
         self.numY = self.x_roi[NPOINTS]
         
-        if(self.scan_type ==  scan_types.SAMPLE_LINE_SPECTRUM):
+        if(self.scan_type ==  scan_types.SAMPLE_LINE_SPECTRA):
             self.is_line_spec = True    
         else:
             _logger.error('LineSpecSSCAN: unable to determine scan type [%d]' % self.scan_type)

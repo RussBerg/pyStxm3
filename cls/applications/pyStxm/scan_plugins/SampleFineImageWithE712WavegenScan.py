@@ -12,6 +12,8 @@ import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 
 from bcm.devices.device_names import *
+from cls.scan_engine.bluesky.bluesky_defs import bs_dev_modes
+from cls.scan_engine.bluesky.test_gate import trig_src_types
 
 from cls.applications.pyStxm import abs_path_to_ini_file
 from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
@@ -136,6 +138,15 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
         e712_wdg.on_wavegen_scan_done()
 
 
+    # def make_scan_plan(self, dets, gate, md=None, bi_dir=False):
+    #
+    #     self.configure_devs(dets, gate)
+    #
+    #     if(self.is_pxp):
+    #         return(self.make_pxp_scan_plan(dets, gate, md=md, bi_dir=bi_dir))
+    #     else:
+    #         return (self.make_lxl_scan_plan(dets, gate, md=md, bi_dir=bi_dir))
+
     def make_scan_plan(self, dets, gate, md=None, bi_dir=False):
         '''
         override the default make_scan_plan to set the scan_type
@@ -145,20 +156,110 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
         :param bi_dir:
         :return:
         '''
-        if(self.numImages is 1):
+        if(self.is_point_spec):
+            self.scan_type = scan_types.SAMPLE_POINT_SPECTRA
+            return (self.make_stack_image_plan(dets, gate, md=md, bi_dir=bi_dir))
+        elif(self.numImages is 1):
             self.scan_type = scan_types.SAMPLE_IMAGE
-            return (self.make_single_image_plan(dets, gate, md=md, bi_dir=bi_dir))
+            return (self.make_single_image_e712_plan(dets, gate, md=md, bi_dir=bi_dir))
         else:
             self.scan_type = scan_types.SAMPLE_IMAGE_STACK
             return (self.make_stack_image_plan(dets, gate, md=md, bi_dir=bi_dir))
 
+    # def make_pxp_scan_plan(self, dets, gate, md=None, bi_dir=False):
+    #     '''
+    #
+    #     :param dets:
+    #     :param gate:
+    #     :param md:
+    #     :param bi_dir:
+    #     :return:
+    #     '''
+    #     if(self.is_point_spec):
+    #         self.scan_type = scan_types.SAMPLE_POINT_SPECTR
+    #         return (self.make_single_image_e712_plan(dets, gate, md=md, bi_dir=bi_dir))
 
-    # def make_single_image_plan(self, dets, gate, bi_dir=False):
-    #     from cls.scan_engine.bluesky.test_gate import trig_src_types
+    def make_single_point_spec_plan(self, dets, gate, md=None, bi_dir=False, do_baseline=True):
+
+        print('entering: make_single_point_spec_plan')
+        #zp_def = self.get_zoneplate_info_dct()
+        dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
+        e712_dev = self.main_obj.device(DNM_E712_OPHYD_DEV)
+        e712_wdg = self.main_obj.device(DNM_E712_WIDGET)
+        shutter = self.main_obj.device(DNM_SHUTTER)
+        ev_mtr = self.main_obj.device(DNM_ENERGY)
+        pol_mtr = self.main_obj.device(DNM_EPU_POLARIZATION)
+        e712_x_usetablenum = self.main_obj.device('e712_x_usetablenum')
+        e712_y_usetablenum = self.main_obj.device('e712_y_usetablenum')
+        e712_x_start_pos = self.main_obj.device('e712_x_start_pos')
+        e712_y_start_pos = self.main_obj.device('e712_y_start_pos')
+        stagers = []
+
+        det = dets[0]
+        # det.set_mode(0)
+        # gate.set_mode(0)
+        # gate.set_num_points(1)
+        # gate.set_trig_src(trig_src_types.E712)
+        #gate.set_dwell(self.dwell)
+        #det.set_num_points(self.x_roi[NPOINTS])
+        #det.configure(self.x_roi[NPOINTS], self.scan_type)
+
+        if(md is None):
+            md = {'metadata': dict_to_json(self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type))}
+        # if(not skip_baseline):
+        #     @bpp.baseline_decorator(dev_list)
+
+        @conditional_decorator(bpp.baseline_decorator(dev_list), do_baseline)
+        @bpp.stage_decorator(stagers)
+        @bpp.run_decorator(md=md)
+        def do_scan():
+            print('starting: make_single_point_spec_plan:  do_scan()')
+            # load the sp_id for wavegen
+            x_tbl_id, y_tbl_id = e712_wdg.get_wg_table_ids(self.sp_id)
+            print('make_single_point_spec_plan: putting x_tbl_id=%d, y_tbl_id=%d' % (x_tbl_id, y_tbl_id))
+            e712_x_usetablenum.put(x_tbl_id)
+            e712_y_usetablenum.put(y_tbl_id)
+            # get the X motor reset position * /
+            if(self.is_zp_scan):
+                e712_x_start_pos.put(self.zx_roi[START])
+                e712_y_start_pos.put(self.zy_roi[START])
+            else:
+                e712_x_start_pos.put(self.x_roi[START])
+                e712_y_start_pos.put(self.y_roi[START])
+
+            e712_wdg.set_num_cycles(self.y_roi[NPOINTS])
+
+            yield from bps.stage(gate)
+            yield from bps.stage(det)
+            # , starts=starts, stops=stops, npts=npts, group='e712_wavgen', wait=True)
+            # this starts the wavgen and waits for it to finish without blocking the Qt event loop
+            shutter.open()
+            yield from bps.mv(e712_dev.run, 1)
+            yield from bps.read(det)
+            shutter.close()
+            # yield from bps.wait(group='e712_wavgen')
+            yield from bps.unstage(gate)
+            yield from bps.unstage(det)  # stop minting events everytime the line_det publishes new data!
+            # yield from bps.unmonitor(det)
+            # the collect method on e712_flyer may just return as empty list as a formality, but future proofing!
+            #yield from bps.collect(det)
+            print('make_single_point_spec_plan Leaving')
+
+        return (yield from do_scan())
+
+    # def make_single_image_e712_plan(self, dets, gate, md=None, bi_dir=False, do_baseline=True):
     #     print('entering: exec_e712_wavgen')
     #     #zp_def = self.get_zoneplate_info_dct()
     #     dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
     #     e712_dev = self.main_obj.device(DNM_E712_OPHYD_DEV)
+    #     e712_wdg = self.main_obj.device(DNM_E712_WIDGET)
+    #     shutter = self.main_obj.device(DNM_SHUTTER)
+    #     ev_mtr = self.main_obj.device(DNM_ENERGY)
+    #     pol_mtr = self.main_obj.device(DNM_EPU_POLARIZATION)
+    #     e712_x_usetablenum = self.main_obj.device('e712_x_usetablenum')
+    #     e712_y_usetablenum = self.main_obj.device('e712_y_usetablenum')
+    #     e712_x_start_pos = self.main_obj.device('e712_x_start_pos')
+    #     e712_y_start_pos = self.main_obj.device('e712_y_start_pos')
     #     stagers = []
     #     for d in dets:
     #         stagers.append(d)
@@ -174,26 +275,35 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
     #         gate.set_mode(0)
     #         gate.set_num_points(1)
     #         gate.set_trig_src(trig_src_types.E712)
-    #
+    # 
     #     gate.set_dwell(self.dwell)
     #     #det.set_num_points(self.x_roi[NPOINTS])
     #     det.configure(self.x_roi[NPOINTS], self.scan_type)
-    #     md = {'metadata': dict_to_json(self.make_standard_data_metadata(entry_num=0, scan_type=self.scan_type))}
-    #     # md = {'entry_name': 'entry0', 'scan_type': self.scan_type,
-    #     #       'rois': {SPDB_X: self.x_roi, SPDB_Y: self.y_roi},
-    #     #       'dwell': self.dwell,
-    #     #       'primary_det': DNM_DEFAULT_COUNTER,
-    #     #       'zp_def': zp_def,
-    #     #       'wdg_com': dict_to_json(self.wdg_com)}
-    #
-    #     @bpp.baseline_decorator(dev_list)
+    #     if(md is None):
+    #         md = {'metadata': dict_to_json(self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type))}
+    #     # if(not skip_baseline):
+    #     #     @bpp.baseline_decorator(dev_list)
+    # 
+    #     @conditional_decorator(bpp.baseline_decorator(dev_list), do_baseline)
     #     @bpp.stage_decorator(stagers)
     #     @bpp.run_decorator(md=md)
     #     def do_scan():
-    #         # yield from bps.open_run(md)
-    #         shutter = self.main_obj.device(DNM_SHUTTER)
-    #         print('starting: do_scan()')
-    #
+    #         print('starting: make_single_image_e712_plan:  do_scan()')
+    #         # load the sp_id for wavegen
+    #         x_tbl_id, y_tbl_id = e712_wdg.get_wg_table_ids(self.sp_id)
+    #         print('make_single_image_e712_plan: putting x_tbl_id=%d, y_tbl_id=%d' % (x_tbl_id, y_tbl_id))
+    #         e712_x_usetablenum.put(x_tbl_id)
+    #         e712_y_usetablenum.put(y_tbl_id)
+    #         # get the X motor reset position * /
+    #         if(self.is_zp_scan):
+    #             e712_x_start_pos.put(self.zx_roi[START])
+    #             e712_y_start_pos.put(self.zy_roi[START])
+    #         else:
+    #             e712_x_start_pos.put(self.x_roi[START])
+    #             e712_y_start_pos.put(self.y_roi[START])
+    # 
+    #         e712_wdg.set_num_cycles(self.y_roi[NPOINTS])
+    # 
     #         #yield from bps.stage(gate)
     #         yield from bps.kickoff(det)
     #         # , starts=starts, stops=stops, npts=npts, group='e712_wavgen', wait=True)
@@ -203,200 +313,16 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
     #         shutter.close()
     #         # yield from bps.wait(group='e712_wavgen')
     #         yield from bps.unstage(gate)
-    #
     #         yield from bps.complete(det)  # stop minting events everytime the line_det publishes new data!
     #         # yield from bps.unmonitor(det)
     #         # the collect method on e712_flyer may just return as empty list as a formality, but future proofing!
     #         yield from bps.collect(det)
-    #         print('exec_e712_wavgen Leaving')
-    #
-    #         # yield from bps.close_run()
-    #
+    #         print('make_single_image_e712_plan Leaving')
+    # 
     #     return (yield from do_scan())
 
-    def make_single_image_plan(self, dets, gate, md=None, bi_dir=False, do_baseline=True):
-        from cls.scan_engine.bluesky.test_gate import trig_src_types
-        print('entering: exec_e712_wavgen')
-        #zp_def = self.get_zoneplate_info_dct()
-        dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
-        e712_dev = self.main_obj.device(DNM_E712_OPHYD_DEV)
-        e712_wdg = self.main_obj.device(DNM_E712_WIDGET)
-        shutter = self.main_obj.device(DNM_SHUTTER)
-        ev_mtr = self.main_obj.device(DNM_ENERGY)
-        pol_mtr = self.main_obj.device(DNM_EPU_POLARIZATION)
-        e712_x_usetablenum = self.main_obj.device('e712_x_usetablenum')
-        e712_y_usetablenum = self.main_obj.device('e712_y_usetablenum')
-        e712_x_start_pos = self.main_obj.device('e712_x_start_pos')
-        e712_y_start_pos = self.main_obj.device('e712_y_start_pos')
-        stagers = []
-        for d in dets:
-            stagers.append(d)
-        det = dets[0]
-        if(self.is_lxl):
-            stagers.append(gate)
-            det.set_mode(1)
-            gate.set_mode(1)
-            gate.set_num_points(self.x_roi[NPOINTS])
-            gate.set_trig_src(trig_src_types.E712)
-        else:
-            det.set_mode(0)
-            gate.set_mode(0)
-            gate.set_num_points(1)
-            gate.set_trig_src(trig_src_types.E712)
-
-        gate.set_dwell(self.dwell)
-        #det.set_num_points(self.x_roi[NPOINTS])
-        det.configure(self.x_roi[NPOINTS], self.scan_type)
-        if(md is None):
-            md = {'metadata': dict_to_json(self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type))}
-        # if(not skip_baseline):
-        #     @bpp.baseline_decorator(dev_list)
-
-        @conditional_decorator(bpp.baseline_decorator(dev_list), do_baseline)
-        @bpp.stage_decorator(stagers)
-        @bpp.run_decorator(md=md)
-        def do_scan():
-            print('starting: make_single_image_plan:  do_scan()')
-            # load the sp_id for wavegen
-            x_tbl_id, y_tbl_id = e712_wdg.get_wg_table_ids(self.sp_id)
-            print('make_single_image_plan: putting x_tbl_id=%d, y_tbl_id=%d' % (x_tbl_id, y_tbl_id))
-            e712_x_usetablenum.put(x_tbl_id)
-            e712_y_usetablenum.put(y_tbl_id)
-            # get the X motor reset position * /
-            if(self.is_zp_scan):
-                e712_x_start_pos.put(self.zx_roi[START])
-                e712_y_start_pos.put(self.zy_roi[START])
-            else:
-                e712_x_start_pos.put(self.x_roi[START])
-                e712_y_start_pos.put(self.y_roi[START])
-
-            e712_wdg.set_num_cycles(self.y_roi[NPOINTS])
-
-            #yield from bps.stage(gate)
-            yield from bps.kickoff(det)
-            # , starts=starts, stops=stops, npts=npts, group='e712_wavgen', wait=True)
-            # this starts the wavgen and waits for it to finish without blocking the Qt event loop
-            shutter.open()
-            yield from bps.mv(e712_dev.run, 1)
-            shutter.close()
-            # yield from bps.wait(group='e712_wavgen')
-            yield from bps.unstage(gate)
-            yield from bps.complete(det)  # stop minting events everytime the line_det publishes new data!
-            # yield from bps.unmonitor(det)
-            # the collect method on e712_flyer may just return as empty list as a formality, but future proofing!
-            yield from bps.collect(det)
-            print('make_single_image_plan Leaving')
-
-        return (yield from do_scan())
-
-    # def make_stack_image_plan(self, dets, gate, bi_dir=False):
-    #     from cls.scan_engine.bluesky.test_gate import trig_src_types
-    #     print('entering: exec_e712_wavgen')
-    #     # zp_def = self.get_zoneplate_info_dct()
-    #     dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
-    #     e712_dev = self.main_obj.device(DNM_E712_OPHYD_DEV)
-    #     e712_wdg = self.main_obj.device(DNM_E712_WIDGET)
-    #     stagers = []
-    #     for d in dets:
-    #         stagers.append(d)
-    #     det = dets[0]
-    #
-    #     md = {'metadata': dict_to_json(self.make_standard_data_metadata(entry_num=0, scan_type=self.scan_type))}
-    #
-    #     # md = {'entry_name': 'entry0', 'scan_type': self.scan_type,
-    #     #       'rois': {SPDB_X: self.x_roi, SPDB_Y: self.y_roi},
-    #     #       'dwell': self.dwell,
-    #     #       'primary_det': DNM_DEFAULT_COUNTER,
-    #     #       'zp_def': zp_def,
-    #     #       'wdg_com': dict_to_json(self.wdg_com)}
-    #
-    #     @bpp.baseline_decorator(dev_list)
-    #     #@bpp.stage_decorator(stagers)
-    #     @bpp.run_decorator(md=md)
-    #     def do_scan():
-    #         # yield from bps.open_run(md)
-    #         shutter = self.main_obj.device(DNM_SHUTTER)
-    #         ev_mtr = self.main_obj.device(DNM_ENERGY)
-    #         pol_mtr = self.main_obj.device(DNM_EPU_POLARIZATION)
-    #         e712_x_usetablenum = self.main_obj.device('e712_x_usetablenum')
-    #         e712_y_usetablenum = self.main_obj.device('e712_y_usetablenum')
-    #         e712_x_start_pos = self.main_obj.device('e712_x_start_pos')
-    #         e712_y_start_pos = self.main_obj.device('e712_y_start_pos')
-    #
-    #         print('starting: make_stack_image_plan: do_scan()')
-    #
-    #
-    #         # , starts=starts, stops=stops, npts=npts, group='e712_wavgen', wait=True)
-    #         # this starts the wavgen and waits for it to finish without blocking the Qt event loop
-    #         for ev_roi in self.e_rois:
-    #             #switch to new energy
-    #             for ev_sp in ev_roi[SETPOINTS]:
-    #                 yield from bps.mv(ev_mtr, ev_sp)
-    #                 self.dwell = ev_roi[DWELL]
-    #                 pol_setpoints = ev_roi[EPU_POL_PNTS]
-    #                 for pol in pol_setpoints:
-    #                     # switch to new polarization
-    #                     yield from bps.mv(pol_mtr, pol)
-    #
-    #                     #now load and execute each spatial region
-    #                     for sp_id in self.sp_ids:
-    #                         self.sp_id = sp_id
-    #                         #this updates member vars x_roi, y_roi, etc... with current spatial id specifics
-    #                         self.update_roi_member_vars(self.sp_rois[self.sp_id])
-    #
-    #                         # load new dwell as well as config the gate and counter accordingly
-    #                         if (self.is_lxl):
-    #                             det.set_mode(1)
-    #                             gate.set_mode(1)
-    #                             gate.set_num_points(self.x_roi[NPOINTS])
-    #                             gate.set_trig_src(trig_src_types.E712)
-    #                         else:
-    #                             det.set_mode(0)
-    #                             gate.set_mode(0)
-    #                             gate.set_num_points(1)
-    #                             gate.set_trig_src(trig_src_types.E712)
-    #
-    #                         gate.set_dwell(self.dwell)
-    #                         # det.set_num_points(self.x_roi[NPOINTS])
-    #                         det.configure(self.x_roi[NPOINTS], self.scan_type)
-    #
-    #                         #load the sp_id for wavegen
-    #                         x_tbl_id, y_tbl_id = e712_wdg.get_wg_table_ids(self.sp_id)
-    #                         print('putting x_tbl_id=%d, y_tbl_id=%d' % (x_tbl_id, y_tbl_id))
-    #                         e712_x_usetablenum.put(x_tbl_id)
-    #                         e712_y_usetablenum.put(y_tbl_id)
-    #                         # get the X motor reset position * /
-    #                         e712_x_start_pos.put(self.x_roi[START])
-    #                         e712_y_start_pos.put(self.y_roi[START])
-    #
-    #                         e712_wdg.set_num_cycles(self.y_roi[NPOINTS])
-    #
-    #                         yield from bps.stage(gate)
-    #                         yield from bps.kickoff(det)
-    #                         #open the shutter
-    #                         shutter.open()
-    #                         #start wavgen
-    #                         yield from bps.mv(e712_dev.run, 1)
-    #
-    #                         shutter.close()
-    #                         # yield from bps.wait(group='e712_wavgen')
-    #                         yield from bps.unstage(gate)
-    #
-    #                         yield from bps.create(name='primary-sp_id=%d' % self.sp_id)
-    #                         yield from bps.complete(det)  # stop minting events everytime the line_det publishes new data!
-    #                         # yield from bps.unmonitor(det)
-    #                         # the collect method on e712_flyer may just return as empty list as a formality, but future proofing!
-    #                         yield from bps.collect(det, stream=True)
-    #                         yield from bps.save()
-    #
-    #         print('exec_e712_wavgen Leaving')
-    #
-    #         # yield from bps.close_run()
-    #
-    #     return (yield from do_scan())
 
     def make_stack_image_plan(self, dets, gate,  md=None, bi_dir=False):
-        from cls.scan_engine.bluesky.test_gate import trig_src_types
         print('entering: make_stack_image_plan')
         dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
         stagers = []
@@ -415,6 +341,7 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
             entrys_lst = []
             entry_num = 0
             idx = 0
+            point_spec_devs_configd = False
             prev_entry_nm = ''
             # , starts=starts, stops=stops, npts=npts, group='e712_wavgen', wait=True)
             # this starts the wavgen and waits for it to finish without blocking the Qt event loop
@@ -433,6 +360,16 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
                             self.sp_id = sp_id
                             #this updates member vars x_roi, y_roi, etc... with current spatial id specifics
                             self.update_roi_member_vars(self.sp_rois[self.sp_id])
+                            if(self.is_point_spec and (not point_spec_devs_configd)):
+                                #config the det and gate
+                                dets[0].set_mode(bs_dev_modes.NORMAL_PXP)
+                                gate.set_mode(bs_dev_modes.NORMAL_PXP)
+                                gate.set_num_points(1)
+                                gate.set_trig_src(trig_src_types.E712)
+                                gate.set_dwell(self.dwell)
+                                dets[0].configure()
+                                point_spec_devs_configd = True
+
                             # take a single image that will be saved with its own run scan id
                             img_dct = self.img_idx_map['%d'%idx]
                             md = {'metadata': dict_to_json(
@@ -441,17 +378,22 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
                             #if(img_dct['entry'] is not prev_entry_nm):
                             if(img_dct['entry'] not in entrys_lst):
                                 #only create the entry once
-                                yield from self.make_single_image_plan(dets, gate, md=md, do_baseline=True)
+                                if(self.is_point_spec):
+                                    yield from self.make_single_point_spec_plan(dets, gate, md=md, do_baseline=True)
+                                else:
+                                    yield from self.make_single_image_e712_plan(dets, gate, md=md, do_baseline=True)
+
                             else:
                                 #this data will be used to add to previously created entries
-                                yield from self.make_single_image_plan(dets, gate, md=md, do_baseline=False)
+                                if (self.is_point_spec):
+                                    yield from self.make_single_point_spec_plan(dets, gate, md=md, do_baseline=False)
+                                else:
+                                    yield from self.make_single_image_e712_plan(dets, gate, md=md, do_baseline=False)
 
                             #entry_num += 1
                             idx += 1
                             #prev_entry_nm = img_dct['entry']
                             entrys_lst.append(img_dct['entry'])
-
-
 
             print('make_stack_image_plan Leaving')
 
@@ -824,7 +766,7 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
     #     """
     #
     #     pass_tst = True
-    #     if (self.scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
+    #     if (self.scan_type == scan_types.SAMPLE_POINT_SPECTRA):
     #         if (self.evScan.get_name() != '%s:scan3' % self.scan_prefix):
     #             pass_tst = False
     #         if (self.polScan.get_name() != '%s:scan2' % self.scan_prefix):
@@ -926,10 +868,18 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
         evs = dct_get(self.wdg_com, SPDB_SINGLE_LST_EV_ROIS)
         pols = dct_get(self.wdg_com, SPDB_SINGLE_LST_POL_ROIS)
         dwells = dct_get(self.wdg_com, SPDB_SINGLE_LST_DWELLS)
+        sub_type = dct_get(self.wdg_com, SPDB_SCAN_PLUGIN_SUBTYPE)
+        if(sub_type is scan_sub_types.POINT_BY_POINT):
+            self.is_pxp = True
+            self.is_lxl = False
+        else:
+            self.is_pxp = False
+            self.is_lxl = True
 
         self.use_hdw_accel = dct_get(self.sp_db, SPDB_HDW_ACCEL_USE)
         if (self.use_hdw_accel is None):
             self.use_hdw_accel = True
+
         self.is_fine_scan = True
         #override
         if(not self.is_fine_scan):
@@ -959,7 +909,7 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
 
         self.numSPIDS = len(self.sp_rois)
 
-        if (self.scan_type != scan_types.SAMPLE_POINT_SPECTRUM):
+        if (self.scan_type != scan_types.SAMPLE_POINT_SPECTRA):
             self.numImages = int(self.sp_db[SPDB_EV_NPOINTS] * self.numEPU * self.numSPIDS)
         else:
             # is a sample point spectrum
@@ -977,6 +927,7 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
         self.is_point_spec = False
         self.file_saved = False
         self.sim_point = 0
+        self.use_hdw_accel = True
 
         if ((self.scan_type == scan_types.SAMPLE_IMAGE) or (self.scan_type == scan_types.SAMPLE_IMAGE_STACK)):
             if (self.scan_sub_type == scan_sub_types.LINE_UNIDIR):
@@ -986,7 +937,7 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
                 # POINT_BY_POINT
                 self.is_pxp = True
 
-        elif (self.scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
+        elif (self.scan_type == scan_types.SAMPLE_POINT_SPECTRA):
             self.is_point_spec = True
 
         else:
@@ -1098,7 +1049,7 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
         #         # POINT_BY_POINT
         #         self.set_optimize_scan_func(self.optimize_sample_point_scan)
         #
-        # elif (self.scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
+        # elif (self.scan_type == scan_types.SAMPLE_POINT_SPECTRA):
         #     # self.pdlys = {'scan2': 0.05, 'scan1': 0.05}
         #     self.set_optimize_scan_func(self.optimize_sample_pointspec_scan)
         #
@@ -1586,78 +1537,78 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
     # #     self.evScan.put('P1SP', e_roi[START])
     # #     self.evScan.put('P1EP', e_roi[STOP])
 
-    def config_for_goniometer_scan_hdw_accel(self, dct, is_focus=False):
-        """
-        For a goniometer scan this will always be a fine scan of max range 100x100um (actually less)
-        and the sequence to configure a scan is to position the goniometer at teh center of the scan everytime
-        and set the +/- scan range to be about Zoneplate XY center (0,0)
-
-        Need to take into account that this could be a LxL scan (uses xScan, yScan, zScan) or a PxP (uses xyScan, zScan)
-
-        Because this scan uses the waveform generator on the E712 there are no positioners set for X and Y scan only the
-        triggering of the waveform generator, will still need to do something so that save_hdr has something to get data
-        from, not sure how to handle this yet.
-
-        """
-        ### VERY IMPORTANT the current PID tune for ZX is based on a velo (SLew Rate) of 1,000,000
-        self.main_obj.device(DNM_ZONEPLATE_X).put('velocity', 1000000.0)
-        self.main_obj.device(DNM_ZONEPLATE_Y).put('velocity', 1000000.0)
-
-        # self.setupScan.set_positioner(1, self.main_obj.device(DNM_GONI_X))
-        # self.setupScan.set_positioner(2, self.main_obj.device(DNM_GONI_Y))
-        # self.setupScan.set_positioner(3, self.main_obj.device(DNM_OSA_X))
-        # # self.setupScan.set_positioner(4,  self.main_obj.device(DNM_OSA_Y))
-        #
-        # gx_mtr = self.main_obj.device(dct['cx_name'])
-        # gy_mtr = self.main_obj.device(dct['cy_name'])
-        #
-        # self.set_config_devices_func(self.on_this_dev_cfg)
-        #
-        self.sample_mtrx = self.sample_finex = self.main_obj.device(DNM_ZONEPLATE_X)
-        self.sample_mtry = self.sample_finey = self.main_obj.device(DNM_ZONEPLATE_Y)
-        #
-        # move Gx and Gy to center of scan, is it within a um?
-        if (self.zx_roi[CENTER] != 0.0):
-            # zx is moving to scan center
-            pass
-        else:
-            # Gx is moving to scan center nd zx is centered around 0, so move Gx to scan center
-            self.main_obj.device(dct['cx_name']).put('user_setpoint', self.gx_roi[CENTER])
-
-        # if(self.is_within_dband( gy_mtr.get_position(), self.gy_roi[CENTER], 15.0)):
-        if (self.zy_roi[CENTER] != 0.0):
-            # zy is moving to scan center
-            pass
-        else:
-            # Gy is moving to scan center nd zy is centered around 0, so move Gy to scan center
-            self.main_obj.device(dct['cy_name']).put('user_setpoint', self.gy_roi[CENTER])
-        #
-        # # config the sscan that makes sure to move goni xy and osa xy to the correct position for scan
-        # # the setupScan will be executed as the top level but not monitored
-        # # self.setupScan.put('NPTS', 1)
-        # # self.setupScan.put('P1PV', '%s.VAL' % self.main_obj.device(DNM_GONI_X).get_name())
-        # # self.setupScan.put('R1PV', '%s.RBV' % self.main_obj.device(DNM_GONI_X).get_name())
-        # # self.setupScan.put('P1SP', self.gx_roi[CENTER])
-        # # self.setupScan.put('P1EP', self.gx_roi[CENTER])
-        # #
-        # #
-        # # self.setupScan.put('P2PV', '%s.VAL' % self.main_obj.device(DNM_GONI_Y).get_name())
-        # # self.setupScan.put('R2PV', '%s.RBV' % self.main_obj.device(DNM_GONI_Y).get_name())
-        # # self.setupScan.put('P2SP', self.gy_roi[CENTER])
-        # # self.setupScan.put('P2EP', self.gy_roi[CENTER])
-        # #
-        # #
-        # # self.setupScan.put('P3PV', '%s.VAL' % self.main_obj.device(DNM_OSA_X).get_name())
-        # # self.setupScan.put('R3PV', '%s.RBV' % self.main_obj.device(DNM_OSA_X).get_name())
-        # # self.setupScan.put('P3SP', self.ox_roi[CENTER])
-        # # self.setupScan.put('P3EP', self.ox_roi[CENTER])
-
-        self.num_points = self.numY
-
-        self.sample_mtrx.put('Mode', 0)
-
-        #setup the E712 wavtable's and other relevant params
-        self.modify_config_for_hdw_accel()
+    # def config_for_goniometer_scan_hdw_accel(self, dct, is_focus=False):
+    #     """
+    #     For a goniometer scan this will always be a fine scan of max range 100x100um (actually less)
+    #     and the sequence to configure a scan is to position the goniometer at teh center of the scan everytime
+    #     and set the +/- scan range to be about Zoneplate XY center (0,0)
+    #
+    #     Need to take into account that this could be a LxL scan (uses xScan, yScan, zScan) or a PxP (uses xyScan, zScan)
+    #
+    #     Because this scan uses the waveform generator on the E712 there are no positioners set for X and Y scan only the
+    #     triggering of the waveform generator, will still need to do something so that save_hdr has something to get data
+    #     from, not sure how to handle this yet.
+    #
+    #     """
+    #     ### VERY IMPORTANT the current PID tune for ZX is based on a velo (SLew Rate) of 1,000,000
+    #     self.main_obj.device(DNM_ZONEPLATE_X).put('velocity', 1000000.0)
+    #     self.main_obj.device(DNM_ZONEPLATE_Y).put('velocity', 1000000.0)
+    #
+    #     # self.setupScan.set_positioner(1, self.main_obj.device(DNM_GONI_X))
+    #     # self.setupScan.set_positioner(2, self.main_obj.device(DNM_GONI_Y))
+    #     # self.setupScan.set_positioner(3, self.main_obj.device(DNM_OSA_X))
+    #     # # self.setupScan.set_positioner(4,  self.main_obj.device(DNM_OSA_Y))
+    #     #
+    #     # gx_mtr = self.main_obj.device(dct['cx_name'])
+    #     # gy_mtr = self.main_obj.device(dct['cy_name'])
+    #     #
+    #     # self.set_config_devices_func(self.on_this_dev_cfg)
+    #     #
+    #     self.sample_mtrx = self.sample_finex = self.main_obj.device(DNM_ZONEPLATE_X)
+    #     self.sample_mtry = self.sample_finey = self.main_obj.device(DNM_ZONEPLATE_Y)
+    #     #
+    #     # move Gx and Gy to center of scan, is it within a um?
+    #     if (self.zx_roi[CENTER] != 0.0):
+    #         # zx is moving to scan center
+    #         pass
+    #     else:
+    #         # Gx is moving to scan center nd zx is centered around 0, so move Gx to scan center
+    #         self.main_obj.device(dct['cx_name']).put('user_setpoint', self.gx_roi[CENTER])
+    #
+    #     # if(self.is_within_dband( gy_mtr.get_position(), self.gy_roi[CENTER], 15.0)):
+    #     if (self.zy_roi[CENTER] != 0.0):
+    #         # zy is moving to scan center
+    #         pass
+    #     else:
+    #         # Gy is moving to scan center nd zy is centered around 0, so move Gy to scan center
+    #         self.main_obj.device(dct['cy_name']).put('user_setpoint', self.gy_roi[CENTER])
+    #     #
+    #     # # config the sscan that makes sure to move goni xy and osa xy to the correct position for scan
+    #     # # the setupScan will be executed as the top level but not monitored
+    #     # # self.setupScan.put('NPTS', 1)
+    #     # # self.setupScan.put('P1PV', '%s.VAL' % self.main_obj.device(DNM_GONI_X).get_name())
+    #     # # self.setupScan.put('R1PV', '%s.RBV' % self.main_obj.device(DNM_GONI_X).get_name())
+    #     # # self.setupScan.put('P1SP', self.gx_roi[CENTER])
+    #     # # self.setupScan.put('P1EP', self.gx_roi[CENTER])
+    #     # #
+    #     # #
+    #     # # self.setupScan.put('P2PV', '%s.VAL' % self.main_obj.device(DNM_GONI_Y).get_name())
+    #     # # self.setupScan.put('R2PV', '%s.RBV' % self.main_obj.device(DNM_GONI_Y).get_name())
+    #     # # self.setupScan.put('P2SP', self.gy_roi[CENTER])
+    #     # # self.setupScan.put('P2EP', self.gy_roi[CENTER])
+    #     # #
+    #     # #
+    #     # # self.setupScan.put('P3PV', '%s.VAL' % self.main_obj.device(DNM_OSA_X).get_name())
+    #     # # self.setupScan.put('R3PV', '%s.RBV' % self.main_obj.device(DNM_OSA_X).get_name())
+    #     # # self.setupScan.put('P3SP', self.ox_roi[CENTER])
+    #     # # self.setupScan.put('P3EP', self.ox_roi[CENTER])
+    #
+    #     self.num_points = self.numY
+    #
+    #     self.sample_mtrx.put('Mode', 0)
+    #
+    #     #setup the E712 wavtable's and other relevant params
+    #     self.modify_config_for_hdw_accel()
 
 
 #     def on_sample_scan_counter_changed_hdw_accel(self, row, data, counter_name='counter0'):
@@ -1870,7 +1821,7 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
 #         if (update):
 #             _logger.info('Skipping save_hdr() update = True')
 #             return
-#         upside_dwn_scans = [scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE]
+#         upside_dwn_scans = [scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE]
 #         # _logger.info('save_hdr: starting')
 #         if (self.is_point_spec):
 #             self.save_point_spec_hdr(update)
@@ -2180,7 +2131,7 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
 
             return False if there are more ev Regions and you dont want everything stopped and cleaned up
         """
-        multi_ev_single_image_scans = [scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_POINT_SPECTRUM]
+        multi_ev_single_image_scans = [scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_POINT_SPECTRA]
 
         _logger.info('hdw_accel_chk_for_more_evregions: checking')
 
@@ -2297,7 +2248,7 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
 
             return False if there are more ev Regions and you dont want everything stopped and cleaned up 
         """
-        multi_ev_single_image_scans = [scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_POINT_SPECTRUM]
+        multi_ev_single_image_scans = [scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_POINT_SPECTRA]
 
         # Sept 6 if(TEST_SAVE_INITIAL_FILE):
         # Sept 6     self.save_hdr(update=True)

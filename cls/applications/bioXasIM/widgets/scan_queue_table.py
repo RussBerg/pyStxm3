@@ -754,13 +754,13 @@ class ScanQueueTableWidget(QtWidgets.QWidget):
         elif(scan_type == scan_types.SAMPLE_IMAGE_STACK):
             self.set_delegates_multi_ev()
 
-        elif(scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
+        elif(scan_type == scan_types.SAMPLE_POINT_SPECTRA):
             self.set_delegates_point_spec()
 
         elif(scan_type == scan_types.ZP_IMAGE_SCAN):
             self.set_delegates_multi_ev()
 
-        elif(scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
+        elif(scan_type == scan_types.SAMPLE_LINE_SPECTRA):
             self.set_delegates_multi_ev()
 
         elif(scan_type == scan_types.GENERIC_SCAN):
@@ -808,10 +808,10 @@ class ScanQueueTableWidget(QtWidgets.QWidget):
         elif(scan_type == scan_types.ZP_IMAGE_SCAN):
             rows = self.make_multi_ev_row_entries(sp_db)
 
-        elif(scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
+        elif(scan_type == scan_types.SAMPLE_POINT_SPECTRA):
             rows = self.make_point_scan_row_entries(sp_db)
 
-        elif(scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
+        elif(scan_type == scan_types.SAMPLE_LINE_SPECTRA):
             rows = self.make_single_ev_row_entries(sp_db)
             #return None, scan_type
 

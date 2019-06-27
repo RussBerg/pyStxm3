@@ -146,11 +146,11 @@ class PointDetectorDevice(BaseCounterInputDevice):
         print('name = %s, type = %s' % (str(self.__class__), self.name))
 
     def configure(self):
-        self.do_point_config(scan_types.SAMPLE_POINT_SPECTRUM, 2.0, 1, 1)
+        self.do_point_config(scan_types.SAMPLE_POINT_SPECTRA, 2.0, 1, 1)
 
     def stage(self):
         # if (self.mode is 0):
-        #     self.do_point_config(scan_types.SAMPLE_POINT_SPECTRUM, 2.0, 1, 1)
+        #     self.do_point_config(scan_types.SAMPLE_POINT_SPECTRA, 2.0, 1, 1)
         # else:
         #     pass
         self.configure()
@@ -192,7 +192,7 @@ class PointDetectorDevice(BaseCounterInputDevice):
         self.row_mode.put(1)  # 1 point
         self.retriggerable.put(True)
 
-        if (scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
+        if (scan_type == scan_types.SAMPLE_POINT_SPECTRA):
             self.points_per_row.put(numE)  # EV point spectra
         else:
             self.points_per_row.put(numX)  # X points
@@ -280,10 +280,16 @@ class LineDetectorDevice(BaseCounterInputDevice):
             self.num_points,  = self.rawData.shape
             if(self.num_points > 0):
                 (row, data) = self.process_scalar_line_data(self.rawData)
+                if(self._scan_type is scan_types.SAMPLE_LINE_SPECTRA):
+                    #print('LineDetectorDevice: SAMPLE_LINE_SPECTRA: row=%d' % (row))
+                    self._plot_dct[CNTR2PLOT_ROW] = 0
+                    self._plot_dct[CNTR2PLOT_COL] = int(row)
+                else:
+                    #print('LineDetectorDevice: row=%d' % (row))
+                    self._plot_dct[CNTR2PLOT_ROW] = int(row)
+                    self._plot_dct[CNTR2PLOT_COL] = 0
 
-                self._plot_dct[CNTR2PLOT_ROW] = int(row)
-                self._plot_dct[CNTR2PLOT_COL] = 0
-                self._plot_dct[CNTR2PLOT_VAL] = data
+                self._plot_dct[CNTR2PLOT_VAL] = data[0:self.p_num_points]
                 self._plot_dct[CNTR2PLOT_IS_LINE] = True
                 self._plot_dct[CNTR2PLOT_SCAN_TYPE] = self._scan_type
                 self.sigs.changed.emit(self._plot_dct)
@@ -368,7 +374,6 @@ class LineDetectorFlyerDevice(MonitorFlyerMixin, BaseCounterInputDevice):
 
         NUM_FOR_EDIFF = 2
         trig_src_pfi = 3
-
         xnpoints = self.p_num_points + 2
 
         #self.configure(dwell, num_points=xnpoints, row_mode='Line')  # , row_mode='LINE')
@@ -402,7 +407,7 @@ class LineDetectorFlyerDevice(MonitorFlyerMixin, BaseCounterInputDevice):
         self.signal_src_clock_select.put(3)  # /PFI 3 this is connected to the E712 OUT1
 
         self.sample_mode.put(1)  # DAQmx_Val_ContSamps
-        if (self._scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
+        if (self._scan_type == scan_types.SAMPLE_LINE_SPECTRA):
             # dont need the extra points
             self.max_points.put(self.p_num_points + 1)  #
         else:
@@ -411,7 +416,7 @@ class LineDetectorFlyerDevice(MonitorFlyerMixin, BaseCounterInputDevice):
         self.points_per_row.put(self.p_num_points)
         self.retriggerable.put(False)
 
-        if (self._scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
+        if (self._scan_type == scan_types.SAMPLE_POINT_SPECTRA):
             #self.points_per_row.put(numE)  # EV point spectra
             self.points_per_row.put(self.p_num_points)  # EV point spectra
         else:

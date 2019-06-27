@@ -458,7 +458,7 @@ class ophyd_biLabelWidget(BaseLabel):
             self.binary_change.emit(dct)
 
         else:
-            print('ERROR: set_text, len of enum_strs too small')
+            #print('ERROR: set_text, len of enum_strs too small')
             self.init_fbk(do_set_text=False)
 
 

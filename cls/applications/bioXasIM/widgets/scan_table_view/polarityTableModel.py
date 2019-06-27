@@ -79,7 +79,7 @@ class PolarityTableModel(BaseScanTableModel):
                 scan = self.scanListData[row]
                 scan_id = scan[SPDB_ID_VAL]
                 #print 'setData[scan_id=%d] col=%d val= %f' % (scan_id, col, val)
-                #if(POLARITY_COLUMN_MAP[col] == 'POL'):
+                #if(POLARIZATION_COLUMN_MAP[col] == 'POL'):
                 #    #convert polarity combobox val to stxm wrapper values
                 #    val = val - 1
                     

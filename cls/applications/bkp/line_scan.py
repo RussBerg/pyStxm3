@@ -82,7 +82,7 @@ class LineScansParam(ScanParamWidget):
         '''
         self.name = "Line Scan"
         self.idx = scan_panel_order.LINE_SCAN  # by default
-        self.type = scan_types.SAMPLE_LINE_SPECTRUM
+        self.type = scan_types.SAMPLE_LINE_SPECTRA
         self.data = {}
         self.section_id = 'LINE'
         self.axis_strings = ['XY microns', 'Energy eV', '', '']
@@ -242,7 +242,7 @@ class LineScansParam(ScanParamWidget):
             sp_id = sp_ids[0]
             sp_db = sp_roi_dct[sp_id]
 
-            if(not ev_only and (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_LINE_SPECTRUM)):
+            if(not ev_only and (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_LINE_SPECTRA)):
                 return
 
             # if(not ev_only):

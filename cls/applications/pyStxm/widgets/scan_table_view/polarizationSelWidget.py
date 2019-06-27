@@ -7,12 +7,12 @@ import copy
 from PyQt5 import QtCore, QtGui, QtWidgets
 from cls.applications.pyStxm.widgets.scan_table_view.baseScanTable import *
 
-from cls.applications.pyStxm.widgets.scan_table_view.polarityTableView import PolarityTableView
+from cls.applications.pyStxm.widgets.scan_table_view.polarizationTableView import PolarizationTableView
 from cls.utils.roi_utils import get_epu_pol_dct
 
-class PolaritySelWidget(BaseSelectionWidget):
+class PolarizationSelWidget(BaseSelectionWidget):
     """
-    A QWidget that contains an PolarityTableView
+    A QWidget that contains an PolarizationTableView
     """
     def __init__(self,*args):
         """
@@ -35,7 +35,7 @@ class PolaritySelWidget(BaseSelectionWidget):
         self.dflt_angle = 0.0
 
         self.scan_id = 0
-        self.table_view = PolarityTableView()
+        self.table_view = PolarizationTableView()
         #self.scan_id = self.table_view.get_model_id_start_val()
         self.table_view.resizeColumnsToContents()
         self.table_view.setSortingEnabled(False)
@@ -145,7 +145,7 @@ class PolaritySelWidget(BaseSelectionWidget):
         """
         #print '\t\t\t\tPOLARITY model_ID %d selected' % (scan[SPDB_ID_VAL])
         #self.table_view.dump_model_keys()
-        #_logger.debug('PolaritySelWidget: on_row_selected, emitting model_change')
+        #_logger.debug('PolarizationSelWidget: on_row_selected, emitting model_change')
         self.model_change.emit(scan[SPDB_ID_VAL])
         
         
@@ -191,7 +191,7 @@ class PolaritySelWidget(BaseSelectionWidget):
     
     def on_new_region(self, scan=None):
         """
-        on_new_region(): on new Polarity region
+        on_new_region(): on new Polarization region
 
         :param scan=None: scan=None description
         :type scan=None: scan=None type
@@ -246,7 +246,7 @@ class PolaritySelWidget(BaseSelectionWidget):
             if (scan is None):
                 return
 
-        if (isinstance(self.sender(), PolarityTableView) and (len(self.get_regions()) == 1)):
+        if (isinstance(self.sender(), PolarizationTableView) and (len(self.get_regions()) == 1)):
             # if delete was called from the polarity roi's tableview and there is only 1 roi left
             # then don't delete anything
             return

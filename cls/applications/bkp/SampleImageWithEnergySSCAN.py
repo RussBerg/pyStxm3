@@ -463,7 +463,7 @@ class SampleImageWithEnergySSCAN(BaseScan):
         """
         
         pass_tst = True
-        if(self.scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
+        if(self.scan_type == scan_types.SAMPLE_POINT_SPECTRA):
             if(self.evScan.get_name() != '%s:scan3' % self.scan_prefix):
                 pass_tst = False
             if(self.polScan.get_name() != '%s:scan2' % self.scan_prefix):
@@ -555,7 +555,7 @@ class SampleImageWithEnergySSCAN(BaseScan):
         self.numE = self.sp_db[SPDB_EV_NPOINTS]
         self.numSPIDS = len(self.sp_rois)
         
-        if(self.scan_type != scan_types.SAMPLE_POINT_SPECTRUM):
+        if(self.scan_type != scan_types.SAMPLE_POINT_SPECTRA):
             self.numImages = self.sp_db[SPDB_EV_NPOINTS] * self.numEPU
         else:
             #is a sample point spectrum
@@ -581,7 +581,7 @@ class SampleImageWithEnergySSCAN(BaseScan):
                 #POINT_BY_POINT
                 self.is_pxp = True
                 
-        elif(self.scan_type ==  scan_types.SAMPLE_POINT_SPECTRUM):
+        elif(self.scan_type ==  scan_types.SAMPLE_POINT_SPECTRA):
             self.is_point_spec = True
             
         else:
@@ -641,7 +641,7 @@ class SampleImageWithEnergySSCAN(BaseScan):
                 #POINT_BY_POINT
                 self.set_optimize_scan_func(self.optimize_sample_point_scan)
             
-        elif(self.scan_type ==  scan_types.SAMPLE_POINT_SPECTRUM):
+        elif(self.scan_type ==  scan_types.SAMPLE_POINT_SPECTRA):
             #self.pdlys = {'scan2': 0.05, 'scan1': 0.05}
             self.set_optimize_scan_func(self.optimize_sample_pointspec_scan)
         

@@ -39,13 +39,14 @@ class PositionerScanParam(ScanParamWidget):
         self.loadScanBtn.clicked.connect(self.load_scan)
         self.posnerComboBox.currentIndexChanged.connect(self.positioner_changed)
         
-        self.scan_class = PositionerScanClass()
+        self.scan_class = PositionerScanClass(main_obj=self.main_obj)
         self.positioner = None
 
         self.sp_db = None
         self.load_from_defaults()
         self.init_sp_db()
         self.on_single_spatial_npoints_changed()
+        self.init_loadscan_menu()
 
     def init_plugin(self):
         '''

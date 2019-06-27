@@ -748,7 +748,7 @@ class CurveViewerWidget(CurveDialog):
     def install_data_io_handler(self, data_io_hndlr):
         self.data_io = data_io_hndlr
     
-    def openfile(self, fname, scan_type=scan_types.SAMPLE_POINT_SPECTRUM):
+    def openfile(self, fname, scan_type=scan_types.SAMPLE_POINT_SPECTRA):
         """
         openfile(): currently only supports 1 counter per entry
 

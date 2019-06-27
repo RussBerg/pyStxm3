@@ -108,9 +108,13 @@ class OsaScanClass(BaseScan):
         :returns: None
         """
         #self.busy_saving = False
-        self.stack = False
+        # self.stack = False
+        # self.is_pxp = True
+        # self.is_lxl = False
+        # call the base class configure so that all member vars can be initialized
+        super(OsaScanClass, self).configure(wdg_com, sp_id=sp_id, line=line, z_enabled=z_enabled)
+
         self.is_pxp = True
-        self.is_lxl = False
 
         self.config_basic_2d(wdg_com, sp_id=sp_id, z_enabled=False)
         

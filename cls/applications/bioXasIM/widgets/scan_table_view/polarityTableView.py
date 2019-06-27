@@ -5,8 +5,8 @@ Created on Nov 16, 2016
 '''
 from cls.applications.pyStxm.widgets.scan_table_view.baseScanTable import *
 
-from cls.applications.pyStxm.widgets.scan_table_view.polarityTableModel import PolarityTableModel 
-from cls.applications.pyStxm.widgets.scan_table_view.polarityCmboBoxDelegate import PolComboBoxDelegate, POLARITY_COLUMN
+from cls.applications.pyStxm.widgets.scan_table_view.polarizationTableModel import PolarizationTableModel
+from cls.applications.pyStxm.widgets.scan_table_view.polarizationCmboBoxDelegate import PolComboBoxDelegate, POLARIZATION_COLUMN
 
 class PolarityTableView(BaseScanTableView):
     
@@ -28,11 +28,11 @@ class PolarityTableView(BaseScanTableView):
         hdrList = ['ID','Polarity', 'Offset', 'Linear Angle']
         #self.func_list = ['pol_id', 'polarity', 'offset','linearAngle']
         
-        super(PolarityTableView, self).__init__(hdrList, scanList, PolarityTableModel, parent)
+        super(PolarityTableView, self).__init__(hdrList, scanList, PolarizationTableModel, parent)
         self.setStyleSheet(POL_SS)
         self.xyNum = 0
         #self.set_model_id_start_val(POL_CNTR)
-        self.setItemDelegateForColumn(POLARITY_COLUMN, PolComboBoxDelegate(self))
+        self.setItemDelegateForColumn(POLARIZATION_COLUMN, PolComboBoxDelegate(self))
         
         #turn bold off
         font = self.horizontalHeader().font()
@@ -47,7 +47,7 @@ class PolarityTableView(BaseScanTableView):
 
         :returns: None
         """
-        self.tablemodel = PolarityTableModel(self.hdrList, self.scans, self)
+        self.tablemodel = PolarizationTableModel(self.hdrList, self.scans, self)
         self.set_model_column_defaults()
         
     
@@ -100,7 +100,7 @@ class PolarityTableView(BaseScanTableView):
         if(self.tablemodel is not None):
             for row in range(0, self.tablemodel.rowCount()):
                 #table_view.openPersistentEditor(table_model.index(row, 0))
-                self.openPersistentEditor(self.tablemodel.index(row, POLARITY_COLUMN))
+                self.openPersistentEditor(self.tablemodel.index(row, POLARIZATION_COLUMN))
     
     def add_scan(self, scan, scan_id):
         """

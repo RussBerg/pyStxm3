@@ -151,10 +151,12 @@ class LineSpecScanClass(BaseScan):
             yield from bps.mv(mtr_x, self.x_roi[START], mtr_y, self.y_roi[CENTER])
 
             #now do a horizontal line for every new zoneplate Z setpoint
-            for sp in self.zz_roi[SETPOINTS]:
-                yield from bps.mv(mtr_ev, sp)
-                yield from bps.mv(mtr_x, self.x_roi[STOP])
-                yield from bps.mv(mtr_x, self.x_roi[START])
+            for ev_roi in self.e_rois:
+                # switch to new energy
+                for ev_sp in ev_roi[SETPOINTS]:
+                    yield from bps.mv(mtr_ev, ev_sp)
+                    yield from bps.mv(mtr_x, self.x_roi[STOP])
+                    yield from bps.mv(mtr_x, self.x_roi[START])
 
             shutter.close()
             # yield from bps.wait(group='e712_wavgen')
@@ -269,7 +271,7 @@ class LineSpecScanClass(BaseScan):
         self.numX = int(self.numE)
         self.numY = int(self.x_roi[NPOINTS])
         
-        if(self.scan_type ==  scan_types.SAMPLE_LINE_SPECTRUM):
+        if(self.scan_type ==  scan_types.SAMPLE_LINE_SPECTRA):
             self.is_line_spec = True    
         else:
             _logger.error('LineSpecSSCAN: unable to determine scan type [%d]' % self.scan_type)

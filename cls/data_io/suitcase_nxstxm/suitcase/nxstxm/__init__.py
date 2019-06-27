@@ -543,8 +543,8 @@ class Serializer(event_model.DocumentRouter):
 				'osa_image', \
 				'osa_focus', \
 				'sample_focus', \
-				'sample_point_spectrum', \
-				'sample_line_spectrum', \
+				'sample_point_spectra', \
+				'sample_line_spectra', \
 				'sample_image', \
 				'sample_image_stack', \
 				'generic_scan', \
@@ -704,8 +704,8 @@ class Serializer(event_model.DocumentRouter):
 				'osa_image', \
 				'osa_focus', \
 				'sample_focus', \
-				'sample_point_spectrum', \
-				'sample_line_spectrum', \
+				'sample_point_spectra', \
+				'sample_line_spectra', \
 				'sample_image', \
 				'sample_image_stack', \
 				'generic_scan', \
@@ -1133,11 +1133,11 @@ class Serializer(event_model.DocumentRouter):
 
     def get_rois_from_current_md(self, uid):
         '''
-        convienience function
+        convienience function, assumes self._cur_sp_id has been set
         :param uid:
         :return:
         '''
-        rois = self._cur_scan_md[uid]['rois']
+        rois = self._cur_scan_md[uid]['rois'][self._cur_sp_id]
         return(rois)
 
 
@@ -1288,8 +1288,8 @@ class Serializer(event_model.DocumentRouter):
                 'osa_image', \
                 'osa_focus', \
                 'sample_focus', \
-                'sample_point_spectrum', \
-                'sample_line_spectrum', \
+                'sample_point_spectra', \
+                'sample_line_spectra', \
                 'sample_image', \
                 'sample_image_stack', \
                 'generic_scan', \

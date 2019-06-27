@@ -1,12 +1,12 @@
 import os
-import simplejson as json
+
+from cls.utils.json_utils import file_to_json, json_to_dict
 
 def get_version():
     filename = r'./version.json'
     if os.path.exists(filename):
-        file = open(filename)
-        ver_dct = json.loads(file.read())
-        file.close()
+        js = file_to_json(filename)
+        ver_dct = json_to_dict(js)
 
     else:
         ver_dct = {}

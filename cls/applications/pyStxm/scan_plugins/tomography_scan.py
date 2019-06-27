@@ -17,7 +17,7 @@ from cls.applications.pyStxm.scan_plugins import plugin_dir
 #from cls.applications.pyStxm.scan_plugins.SampleImageWithEnergySSCAN import SampleImageWithEnergySSCAN
 #from cls.applications.pyStxm.scan_plugins.SampleImageWithE712Wavegen import SampleImageWithE712Wavegen
 #from cls.applications.pyStxm.scan_plugins.SampleFineImageWithE712WavegenScanClass import SampleFineImageWithE712WavegenScanClass
-#from cls.applications.pyStxm.scan_plugins.TomographyWithE712Wavegen import TomographyWithE712Wavegen
+from cls.applications.pyStxm.scan_plugins.TomographyWithE712WavegenScan import TomographyWithE712WavegenScanClass
 from cls.applications.pyStxm.widgets.scan_table_view.multiRegionWidget import MultiRegionWidget
 from bcm.devices.device_names import *
 
@@ -42,10 +42,10 @@ MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
 MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
 MAX_SCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_X')
 MAX_SCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_Y')
+USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_int('USE_E712_HDW_ACCEL')
 
 
-
-class TomographyScansParam(ScanParamWidget):
+class TomographyScanParam(ScanParamWidget):
 
     
     def __init__(self, parent=None):
@@ -81,7 +81,7 @@ class TomographyScansParam(ScanParamWidget):
             self.tomo_zpz_adjust_wdg.zpzEnableAdjustChkBox.clicked.connect(self.on_zpz_enable_chkbox)
             #self.useE712WavegenBtn.clicked.connect(self.on_E712WavegenBtn)
 
-            #self.sscan_class = TomographyWithE712Wavegen()
+            self.scan_class = TomographyWithE712WavegenScanClass(main_obj=self.main_obj)
 
             #self.singleEVChkBx.clicked.connect(self.on_single_energy)
             self.hdwAccelDetailsBtn.clicked.connect(self.show_hdw_accel_details)
@@ -92,6 +92,7 @@ class TomographyScansParam(ScanParamWidget):
             self.init_sp_db()
             self.connect_paramfield_signals()
             self.on_plugin_focus()
+            self.init_loadscan_menu()
 
     def init_plugin(self):
         '''
@@ -190,6 +191,9 @@ class TomographyScansParam(ScanParamWidget):
             zpz_adjust = self.main_obj.device('Zpz_adjust')
             zpz_adjust.put(0.0)
 
+        # call the base class defocus
+        super(TomographyScanParam, self).on_plugin_defocus()
+
     def on_close_tomo_zpz_adj(self):
         self.tomo_zpz_adjust_wdg.close()
         if (self.tomo_zpz_adjust_wdg.zpzEnableAdjustChkBox.isChecked()):
@@ -205,7 +209,7 @@ class TomographyScansParam(ScanParamWidget):
             ngt = int(str(self.npointsGTFld.text()))
             defocus_pnts = np.linspace(delta_start, delta_stop, ngt)
             zpz_adjust_roi = get_base_roi(SPDB_G_ZPZ_ADJUST, 'NONE', delta_center, delta_rng, ngt, stepSize=None, max_scan_range=None,
-                                  enable=False)
+                                  enable=True)
             #reverse order of setpoints
             zpz_adjust_roi[SETPOINTS] = defocus_pnts
             dct_put(self.sp_db, SPDB_G_ZPZ_ADJUST, zpz_adjust_roi)
@@ -236,8 +240,8 @@ class TomographyScansParam(ScanParamWidget):
 
     def show_hdw_accel_details(self):
         dark = get_style('dark')
-        self.sscan_class.e712_wg.setStyleSheet(dark)
-        self.sscan_class.e712_wg.show()
+        self.scan_class.e712_wg.setStyleSheet(dark)
+        self.scan_class.e712_wg.show()
 
     def calc_new_scan_time_estemate(self, is_pxp, x_roi, y_roi, dwell_in_sec):
         '''
@@ -257,8 +261,8 @@ class TomographyScansParam(ScanParamWidget):
 
         #if(self.useE712WavegenBtn.isChecked()):
         if (True):
-            self.sscan_class.e712_wg.set_mode(mode)
-            hline_time = self.sscan_class.e712_wg.calc_hline_time( dwell_in_sec, x_roi[NPOINTS], pxp=pxp)
+            self.scan_class.e712_wg.set_mode(mode)
+            hline_time = self.scan_class.e712_wg.calc_hline_time( dwell_in_sec, x_roi[NPOINTS], pxp=pxp)
             total_time_sec = float(y_roi[NPOINTS]) * (float(hline_time))
             s = 'Estimated time: %s' % secondsToStr(total_time_sec)
 
@@ -534,8 +538,8 @@ class TomographyScansParam(ScanParamWidget):
             if (gt_roi[STEP] != None):
                 self.set_parm(self.stepGTFld, gt_roi[STEP], type='float', floor=0)
 
-        if (wdg_com[CMND] == widget_com_cmnd_types.SELECT_ROI):
-            self.update_last_settings()
+        # if (wdg_com[CMND] == widget_com_cmnd_types.SELECT_ROI):
+        #     self.update_last_settings()
 
     def clear_params(self):
         #this should cascade through and delete all tables
@@ -554,7 +558,7 @@ class TomographyScansParam(ScanParamWidget):
             sp_ids = list(sp_db_dct.keys())
             sp_id = sp_ids[0]
             sp_db = sp_db_dct[sp_id]
-
+            self.sp_db = sp_db
             image_scans = [scan_types.TOMOGRAPHY_SCAN]
             if((not ev_only) and (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in image_scans)):
                 return
@@ -584,6 +588,17 @@ class TomographyScansParam(ScanParamWidget):
 
             # load GT fields
             gt_roi = dct_get(sp_db, SPDB_GT)
+
+            #reset the SPDB_G_ZPZ_ADJUST to disabled
+            # it has been disabled so create a table of zero's for zpz_adjust values
+            ngt = int(str(self.npointsGTFld.text()))
+            defocus_pnts = np.zeros(ngt)
+            zpz_adjust_roi = get_base_roi(SPDB_G_ZPZ_ADJUST, 'NONE', 0, 0, ngt, stepSize=None,
+                                          max_scan_range=None,
+                                          enable=False)
+            # reverse order of setpoints
+            zpz_adjust_roi[SETPOINTS] = defocus_pnts
+            dct_put(sp_db, SPDB_G_ZPZ_ADJUST, zpz_adjust_roi)
 
             # if do_recalc then it is because mod_roi() has been called by a signal that the
             # plotWidgetter has resized/moved the ROI, the recalc of x/y when the number of points
@@ -623,10 +638,11 @@ class TomographyScansParam(ScanParamWidget):
             for sp_id in sp_ids:
                 sp_db = sp_rois[sp_id]
 
-                #added E712 waveform generator support
-                dct_put(sp_db, SPDB_HDW_ACCEL_USE, True)
-                dct_put(sp_db, SPDB_HDW_ACCEL_AUTO_DDL, self.autoDDLRadBtn.isChecked())
-                dct_put(sp_db, SPDB_HDW_ACCEL_REINIT_DDL, self.reinitDDLRadBtn.isChecked())
+                if (USE_E712_HDW_ACCEL):
+                    # added E712 waveform generator support
+                    dct_put(sp_db, SPDB_HDW_ACCEL_USE, True)
+                    dct_put(sp_db, SPDB_HDW_ACCEL_AUTO_DDL, self.autoDDLRadBtn.isChecked())
+                    dct_put(sp_db, SPDB_HDW_ACCEL_REINIT_DDL, self.reinitDDLRadBtn.isChecked())
 
                 dct_put(sp_db, SPDB_SCAN_PLUGIN_SUBTYPE, self.sub_type)
                 x_roi = dct_get(sp_db, SPDB_X)
@@ -655,13 +671,14 @@ class TomographyScansParam(ScanParamWidget):
      
         """
         
-        self.update_type()
+        # self.update_type()
         self.update_last_settings(incl_zpz_adjust=False)
         if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
             self.wdg_com = self.GONI_SCAN_update_data()
         else:
             self.wdg_com = self.update_multi_spatial_wdg_com()
 
+        self.update_type()
         self.roi_changed.emit(self.wdg_com)    
         return(self.wdg_com)
     

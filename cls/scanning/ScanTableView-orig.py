@@ -1497,7 +1497,7 @@ class PolarityTableModel(BaseScanTableModel):
                 scan = self.scanListData[row]
                 scan_id = scan[SPDB_ID_VAL]
                 #print 'setData[scan_id=%d] col=%d val= %f' % (scan_id, col, val)
-                #if(POLARITY_COLUMN_MAP[col] == 'POL'):
+                #if(POLARIZATION_COLUMN_MAP[col] == 'POL'):
                 #    #convert polarity combobox val to stxm wrapper values
                 #    val = val - 1
                     
@@ -2319,7 +2319,7 @@ class PolComboBoxDelegate(QtWidgets.QItemDelegate):
         #for item in items:
         #    cbox.addItem(item, idx)
         #    idx = idx -1
-        #chkd = index.model().get_scans()[index.row()][POLARITY_COLUMN]
+        #chkd = index.model().get_scans()[index.row()][POLARIZATION_COLUMN]
         #chkbx.setChecked(chkd)
         #self.connect(cbox, QtCore.SIGNAL("currentIndexChanged(Int)"), self, QtCore.SLOT("on_pol_changed()"))
         cbox.currentIndexChanged.connect(self.on_pol_changed)
@@ -2678,7 +2678,7 @@ class SpatialSelWidget(BaseSelectionWidget):
         dct_put(sp_db, SPDB_ID_VAL, sp_model_id)
 
         if(scan[SPDB_X][NPOINTS] == 1):
-            scan_type = scan_types.SAMPLE_POINT_SPECTRUM
+            scan_type = scan_types.SAMPLE_POINT_SPECTRA
             #sp_db['SCAN_PLUGGIN']['ITEM']['TYPE'] = spatial_type_prefix.PNT
             dct_put(sp_db, SPDB_PLOT_SHAPE_TYPE, spatial_type_prefix.PNT)
         else:
@@ -3229,7 +3229,7 @@ class EnergySelWidget(BaseSelectionWidget):
     
 class PolaritySelWidget(BaseSelectionWidget):
     """
-    A QWidget that contains an PolarityTableView
+    A QWidget that contains an PolarizationTableView
     """
     def __init__(self,*args):
         """
@@ -3595,7 +3595,7 @@ class MultiRegionWidget(BaseSelectionWidget):
         tables
         scan_types = Enum('Detector_Image','OSA_Image','OSA_Focus','Sample_Focus','Sample_Point_Spectrum', 'Sample_Line_Spectrum', 'Sample_Image', 'Sample_Image_Stack', 'Generic_Scan')
         """
-        multi_scan_types = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK, scan_types.SAMPLE_IMAGE + IMAGE_LXL, scan_types.SAMPLE_IMAGE + IMAGE_PXP]
+        multi_scan_types = [scan_types.SAMPLE_POINT_SPECTRA, scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK, scan_types.SAMPLE_IMAGE + IMAGE_LXL, scan_types.SAMPLE_IMAGE + IMAGE_PXP]
         
         sp_roi_dct = dct_get(wdg_com, WDGCOM_SPATIAL_ROIS)
         sp_ids = list(sp_roi_dct.keys())

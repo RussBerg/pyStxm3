@@ -9,8 +9,9 @@ import os
 from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, DEFAULTS
 from cls.scanning.base import ScanParamWidget, zp_focus_modes
 from cls.applications.pyStxm.scan_plugins import plugin_dir
-#from cls.applications.pyStxm.scan_plugins.LineSpecSSCAN import LineSpecSSCAN
+from cls.applications.pyStxm.scan_plugins.LineSpecScan import LineSpecScanClass
 #from cls.applications.pyStxm.scan_plugins.LineSpecSSCANWithE712Wavegen import LineSpecSSCAN
+from cls.applications.pyStxm.scan_plugins.LineSpecSSCANWithE712WavegenScan import LineSpecScanWithE712WavegenClass
 from bcm.devices.device_names import *
 from cls.data_io.stxm_data_io import STXMDataIo
 
@@ -33,6 +34,7 @@ MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
 MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
 MAX_SCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_X')
 MAX_SCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_Y')
+USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_int('USE_E712_HDW_ACCEL')
 
 class LineScansParam(ScanParamWidget):
 
@@ -63,13 +65,17 @@ class LineScansParam(ScanParamWidget):
 
         self.loadScanBtn.clicked.connect(self.load_scan)
         #self.singleEVChkBx.clicked.connect(self.on_single_energy)
-        #self.sscan_class = LineSpecSSCAN()
+        if(USE_E712_HDW_ACCEL):
+            self.scan_class = LineSpecScanWithE712WavegenClass(main_obj=self.main_obj)
+        else:
+            self.scan_class = LineSpecScanClass(main_obj=self.main_obj)
 
         self.sub_type_override = self.sub_type
         
         self.wdg_com = None
         self.load_from_defaults()
         self.on_plugin_focus()
+        self.init_loadscan_menu()
 
     def init_plugin(self):
         '''
@@ -78,7 +84,7 @@ class LineScansParam(ScanParamWidget):
         '''
         self.name = "Line Scan"
         self.idx = scan_panel_order.LINE_SCAN  # by default
-        self.type = scan_types.SAMPLE_LINE_SPECTRUM
+        self.type = scan_types.SAMPLE_LINE_SPECTRA
         self.data = {}
         self.section_id = 'LINE'
         self.axis_strings = ['XY microns', 'Energy eV', '', '']
@@ -229,7 +235,7 @@ class LineScansParam(ScanParamWidget):
             sp_id = sp_ids[0]
             sp_db = sp_roi_dct[sp_id]
 
-            if(not ev_only and (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_LINE_SPECTRUM)):
+            if(not ev_only and (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_LINE_SPECTRA)):
                 return
 
             # if(not ev_only):

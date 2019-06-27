@@ -33,7 +33,7 @@ _logger = get_module_logger(__name__)
 class PointScanParam(ScanParamWidget):
     name = "Point Scan"
     idx = scan_panel_order.POINT_SCAN
-    type = scan_types.SAMPLE_POINT_SPECTRUM
+    type = scan_types.SAMPLE_POINT_SPECTRA
     data = {}
     section_id = 'POINT'
     axis_strings = ['counts', 'eV', '', '']
@@ -206,7 +206,7 @@ class PointScanParam(ScanParamWidget):
         if(wdg_com[CMND] == widget_com_cmnd_types.LOAD_SCAN):
             sp_db = sp_db = get_first_sp_db_from_wdg_com(wdg_com)
 
-            if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_POINT_SPECTRUM):
+            if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_POINT_SPECTRA):
                 return
                 
             self.multi_region_widget.load_scan(wdg_com)

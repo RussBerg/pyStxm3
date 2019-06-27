@@ -36,6 +36,7 @@ from cls.utils.log import get_module_logger
 
 MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
 MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
+USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_float('USE_E712_HDW_ACCEL')
 
 _logger = get_module_logger(__name__)
 
@@ -76,6 +77,7 @@ class PointScanParam(ScanParamWidget):
         self.wdg_com = None
         self.load_from_defaults()
         self.on_plugin_focus()
+        self.init_loadscan_menu()
 
     def init_plugin(self):
         '''
@@ -84,7 +86,7 @@ class PointScanParam(ScanParamWidget):
         '''
         self.name = "Point Scan"
         self.idx = scan_panel_order.POINT_SCAN
-        self.type = scan_types.SAMPLE_POINT_SPECTRUM
+        self.type = scan_types.SAMPLE_POINT_SPECTRA
         self.data = {}
         self.section_id = 'POINT'
         self.axis_strings = ['counts', 'eV', '', '']
@@ -268,7 +270,7 @@ class PointScanParam(ScanParamWidget):
         if(wdg_com[CMND] == widget_com_cmnd_types.LOAD_SCAN):
             sp_db = get_first_sp_db_from_wdg_com(wdg_com)
 
-            if(not ev_only and (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_POINT_SPECTRUM)):
+            if(not ev_only and (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_POINT_SPECTRA)):
                 return
                 
             self.multi_region_widget.load_scan(wdg_com, append, ev_only=ev_only, sp_only=sp_only)

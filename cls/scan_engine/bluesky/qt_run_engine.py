@@ -36,7 +36,7 @@ class QRunEngine(QObject, RunEngine):
         # Attach the state_hook to emit signals
         self.state_hook = self.on_state_change
         self._execution_result = None
-        self.msg_hook = self.on_msg_hook
+        #self.msg_hook = self.on_msg_hook
         #self.subscribe(self.dump_doc)
 
         # Create a kicker, not worried about doing this multiple times as this
@@ -69,8 +69,8 @@ class QRunEngine(QObject, RunEngine):
         """
         """
         #self.msg_changed.emit(msg)
-        #print(msg)
-        pass
+        print(msg)
+        #pass
 
 
     @pyqtSlot()

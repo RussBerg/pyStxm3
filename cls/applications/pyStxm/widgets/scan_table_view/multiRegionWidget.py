@@ -5,7 +5,7 @@ from cls.applications.pyStxm.widgets.scan_table_view.baseScanTable import *
 from cls.data_io.stxm_data_io import STXMDataIo
 from cls.applications.pyStxm.widgets.scan_table_view.spatialSelWidget import SpatialSelWidget
 from cls.applications.pyStxm.widgets.scan_table_view.evSelWidget import EnergySelWidget
-from cls.applications.pyStxm.widgets.scan_table_view.polaritySelWidget import PolaritySelWidget
+from cls.applications.pyStxm.widgets.scan_table_view.polarizationSelWidget import PolarizationSelWidget
 from cls.utils.roi_utils import make_spatial_db_dict, widget_com_cmnd_types
 from cls.utils.fileUtils import get_file_path_as_parts
 from cls.utils.log import get_module_logger, log_to_qt
@@ -65,7 +65,7 @@ class MultiRegionWidget(BaseSelectionWidget):
         self.getAllEvBtn.clicked.connect(self.get_just_ev_regions)
         self.getAllPolBtn.clicked.connect(self.get_just_pol_regions)
         
-        self.pol_widg = PolaritySelWidget()
+        self.pol_widg = PolarizationSelWidget()
         self.ev_widg = EnergySelWidget(self.pol_widg)
 
         if(self.enable_multi_spatial):
@@ -246,7 +246,7 @@ class MultiRegionWidget(BaseSelectionWidget):
         tables
         scan_types = Enum('Detector_Image','OSA_Image','OSA_Focus','Sample_Focus','Sample_Point_Spectrum', 'Sample_Line_Spectrum', 'Sample_Image', 'Sample_Image_Stack', 'Generic_Scan')
         """
-        multi_scan_types = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE, \
+        multi_scan_types = [scan_types.SAMPLE_POINT_SPECTRA, scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE, \
                             scan_types.SAMPLE_IMAGE_STACK, scan_types.SAMPLE_IMAGE + IMAGE_LXL, \
                             scan_types.SAMPLE_IMAGE + IMAGE_PXP, scan_types.TOMOGRAPHY_SCAN]
         

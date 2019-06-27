@@ -7,7 +7,7 @@ from cls.applications.pyStxm.widgets.scan_table_view.baseScanTable import *
 from cls.applications.pyStxm.widgets.scan_table_view.multiRegionWidget import MultiRegionWidget
 from cls.applications.pyStxm.widgets.scan_table_view.spatialSelWidget import SpatialSelWidget
 from cls.applications.pyStxm.widgets.scan_table_view.evSelWidget import EnergySelWidget
-from cls.applications.pyStxm.widgets.scan_table_view.polaritySelWidget import PolaritySelWidget
+from cls.applications.pyStxm.widgets.scan_table_view.polarizationSelWidget import PolaritySelWidget
 
 from cls.scanning.plugins import plugin_dir
 

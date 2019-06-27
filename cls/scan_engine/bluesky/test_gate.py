@@ -74,7 +74,7 @@ class BaseCounterOutputDevice(ophyd.Device):
                 self.p_trig_src = 3
             elif(src is trig_src_types.E712):
                 self.p_trig_src = 3
-
+        self.trig_src_select.put(self.p_trig_src)
 
     def set_mode(self, val):
         self.mode = val
@@ -89,7 +89,7 @@ class BaseCounterOutputDevice(ophyd.Device):
 
     def set_num_points(self, val):
         self.p_num_points = val
-        self.max_points.put(val)
+        self.max_points.put(self.p_num_points)
 
     def stage(self):
         super().stage()
@@ -130,8 +130,10 @@ class BaseCounterOutputDevice(ophyd.Device):
         # self.p_dwell = dwell
         # self.p_duty_cycle = duty
         # self.p_num_points = num_points
-
-        self.max_points.put(self.p_num_points)
+        if (self.mode is bs_dev_modes.NORMAL_PXP):
+            self.max_points.put(self.p_num_points)
+        else:
+            self.max_points.put(self.p_num_points + 2)
         self.dwell.put(self.p_dwell)
         self.duty_cycle.put(self.p_duty_cycle)
         self.trig_delay.put(trig_delay)

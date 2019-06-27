@@ -5,11 +5,11 @@ Created on Nov 16, 2016
 '''
 from cls.applications.pyStxm.widgets.scan_table_view.baseScanTable import *
 
-from cls.applications.pyStxm.widgets.scan_table_view.polarityTableView import PolarityTableView
+from cls.applications.pyStxm.widgets.scan_table_view.polarizationTableView import PolarizationTableView
 
 class PolaritySelWidget(BaseSelectionWidget):
     """
-    A QWidget that contains an PolarityTableView
+    A QWidget that contains an PolarizationTableView
     """
     def __init__(self,*args):
         """
@@ -29,7 +29,7 @@ class PolaritySelWidget(BaseSelectionWidget):
         
         
         self.scan_id = 0
-        self.table_view = PolarityTableView()
+        self.table_view = PolarizationTableView()
         #self.scan_id = self.table_view.get_model_id_start_val()
         self.table_view.resizeColumnsToContents()
         self.table_view.setSortingEnabled(False)

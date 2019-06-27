@@ -45,8 +45,8 @@ from cls.types.stxmTypes import scan_sub_types, scan_types, image_types, positio
 from cls.utils.log import get_module_logger
 from cls.utils.dict_utils import dct_get, dct_put
 from cls.utils.enum_utils import Enum
-from cls.utils.fileUtils import get_file_path_as_parts
-from cls.applications.pyStxm import abs_path_to_ini_file, abs_path_to_top, abs_path_to_docs
+from cls.utils.fileUtils import get_file_path_as_parts, creation_date
+from cls.applications.pyStxm import abs_path_to_ini_file, abs_path_to_top, abs_path_to_docs, abs_path_of_ddl_file
 from cls.utils.cfgparser import ConfigClass
 
 _logger = get_module_logger(__name__)
@@ -213,10 +213,38 @@ class ScanParamWidget(QtWidgets.QFrame):
             self.loadscan_frame.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
             self.loadscan_frame.customContextMenuRequested.connect(self.on_context_menu)
 
+        if (hasattr(self, 'ddlFrame')):
+            self.ddlFrame.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+            self.ddlFrame.customContextMenuRequested.connect(self.on_ddl_menu)
+
         if(hasattr(self, 'helpBtn')):
             self.helpBtn.clicked.connect(self.on_help_btn_clicked)
             self._help_html_fpath = os.path.join(abs_path_to_docs, self._help_html_fpath)
             self.helpBtn.setToolTip(self._help_ttip)
+
+    def format_info_text(self, title, msg, title_clr='blue', newline=True, start_preformat=False, end_preformat=False):
+        '''
+        take arguments and create an html string used for tooltips
+        :param title: The title will be bolded
+        :param msg: The message will be simple black text
+        :param title_clr: The Title will use this color
+        :param newline: A flag to add a newline at the end of the string or not
+        :param start_preformat: If this is the first string we need to start the PREformat tag
+        :param end_preformat: If this is the last string we need to stop the PREformat tag
+        :return:
+        '''
+        s = ''
+        if (start_preformat):
+            s += '<pre>'
+
+        if (newline):
+            s += '<font size="3" color="%s"><b>%s</b></font> %s<br>' % (title_clr, title, msg)
+        else:
+            s += '<font size="3" color="%s"><b>%s</b></font> %s' % (title_clr, title, msg)
+
+        if (end_preformat):
+            s += '</pre>'
+        return (s)
 
     def get_selection_is_oversized(self):
             return(self._selection_is_oversized)
@@ -524,50 +552,59 @@ class ScanParamWidget(QtWidgets.QFrame):
         elif action == dumpdbgEvAction:
             self.show_debug_info()
 
+    def on_ddl_menu(self, point):
+        '''
+                setup a ddl menu when the user right clicks on a scan pluggin
+                to show:
+                    - Clear DDL cache: last cleared Dec 23, 2019
+                    - E712 Details
+                :param point:
+                :return:
+                '''
+        if (os.path.exists(abs_path_of_ddl_file)):
+            # get the data of the last modification of the file
+            t_str = creation_date(abs_path_of_ddl_file)
+            msg = 'clear DDL cache: last cleared %s' % t_str
+            #msg = '%s' % self.format_info_text('clear DDL cache:', 'last cleared [%s]' % t_str, newline=False,
+            #                                  end_preformat=True)
+        else:
+            msg = 'clear DDL cache:'
 
-    # def contextMenuEvent(self, event):
-    #     '''
-    #     setup a context menu when the user right clicks on a scan pluggin
-    #     to show:
-    #         - Save scan configuration
-    #         - Load energy scan definition
-    #         loading an energy scn def is only enabled if the pluggin's multi_ev member variable is True
-    #     :param event:
-    #     :return:
-    #     '''
-    #     menu = QtWidgets.QMenu(self)
-    #     saveAction = menu.addAction("Save scan configuration")
-    #     loadSpAction = menu.addAction("Load spatial scan definition")
-    #     loadEvAction = menu.addAction("Load energy scan definition")
-    #
-    #
-    #     #set it to False instead of None because the user may not select any action (which would equal None)
-    #     dumpdbgEvAction = False
-    #     debugger = sys.gettrace()
-    #     if (debugger):
-    #         #only offer this menu if user is debugging
-    #         dumpdbgEvAction = menu.addAction("dump debug info")
-    #
-    #     # do a check here to see if I want to enable loading ev scan def
-    #     if (self.multi_ev):
-    #         loadEvAction.setEnabled(True)
-    #     else:
-    #         loadEvAction.setEnabled(False)
-    #
-    #     action = menu.exec_(self.mapToGlobal(event.pos()))
-    #     if action == saveAction:
-    #         # print 'OK saving scan cfg'
-    #         cfg = self.update_data()
-    #         self.save_config(cfg)
-    #     elif action == loadEvAction:
-    #         # print 'OK loading Ev scan def'
-    #         # cfg = self.update_data()
-    #         self.load_scan_definition(ev_only=True)
-    #         pass
-    #     elif action == loadSpAction:
-    #         self.load_scan_definition(sp_only=True)
-    #     elif action == dumpdbgEvAction:
-    #         self.show_debug_info()
+        menu = QtWidgets.QMenu(self)
+        clearCacheAction = menu.addAction(msg)
+        #loadSpAction = menu.addAction("Load spatial scan definition")
+        #loadEvAction = menu.addAction("Load energy scan definition")
+
+        # # set it to False instead of None because the user may not select any action (which would equal None)
+        # dumpdbgEvAction = False
+        # debugger = sys.gettrace()
+        # if (debugger):
+        #     # only offer this menu if user is debugging
+        #     dumpdbgEvAction = menu.addAction("dump debug info")
+        #
+        # # do a check here to see if I want to enable loading ev scan def
+        # if (self.multi_ev):
+        #     loadEvAction.setEnabled(True)
+        # else:
+        #     loadEvAction.setEnabled(False)
+        point = QtCore.QPoint(point.x() + 120, point.y() + 60)
+        action = menu.exec_(self.mapToGlobal(point))
+        if action == clearCacheAction:
+            # print 'OK saving scan cfg'
+            #cfg = self.update_data()
+            #self.save_config(cfg)
+            if (os.path.exists(abs_path_of_ddl_file)):
+                os.remove(abs_path_of_ddl_file)
+
+        # elif action == loadEvAction:
+        #     # print 'OK loading Ev scan def'
+        #     # cfg = self.update_data()
+        #     self.load_scan_definition(ev_only=True)
+        #     pass
+        # elif action == loadSpAction:
+        #     self.load_scan_definition(sp_only=True)
+        # elif action == dumpdbgEvAction:
+        #     self.show_debug_info()
 
     def show_debug_info(self):
         print('debug dump of [%s]' % self.name)
@@ -1110,7 +1147,7 @@ class ScanParamWidget(QtWidgets.QFrame):
                 if (not load_image_data):
                     return
 
-                if (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) == scan_types.SAMPLE_POINT_SPECTRUM):
+                if (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) == scan_types.SAMPLE_POINT_SPECTRA):
                     valid_data_dim = 1
 
                 elif (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) == scan_types.SAMPLE_IMAGE):
@@ -2353,8 +2390,12 @@ class ScanParamWidget(QtWidgets.QFrame):
         zy_roi = get_base_start_stop_roi(SPDB_Y, self.positioners['ZY'], scan_rect.bottom(), scan_rect.top(), zynpts,
                                          enable=True)
 
+        #because this is strictly for modiifications FOR THE GONIOMETER that means that x_roi and y_roi contain the scan
+        # params and zx_roi zy_roi do not contain scan param info, so copy x_roi to zx_roi and same for y/zy
         dct_put(sp_db, SPDB_ZX, zx_roi)
         dct_put(sp_db, SPDB_ZY, zy_roi)
+        #dct_put(sp_db, SPDB_ZX, x_roi)
+        #dct_put(sp_db, SPDB_ZY, y_roi)
 
         # x_roi and y_roi have to be the absolute coordinates because they are used later on to setup the image plot boundaries
         dct_put(sp_db, SPDB_X, x_roi)
@@ -2371,5 +2412,21 @@ class ScanParamWidget(QtWidgets.QFrame):
         dct_put(sp_db, SPDB_OX, ox_roi)
         dct_put(sp_db, SPDB_OY, oy_roi)
         dct_put(sp_db, SPDB_OZ, oz_roi)
+
+        # added E712 waveform generator support
+        if(hasattr(self, 'useE712WavegenBtn')):
+            dct_put(sp_db, SPDB_HDW_ACCEL_USE, self.useE712WavegenBtn.isChecked())
+        else:
+            dct_put(sp_db, SPDB_HDW_ACCEL_USE, False)
+
+        if (hasattr(self, 'autoDDLRadBtn')):
+            dct_put(sp_db, SPDB_HDW_ACCEL_AUTO_DDL, self.autoDDLRadBtn.isChecked())
+        else:
+            dct_put(sp_db, SPDB_HDW_ACCEL_AUTO_DDL, False)
+
+        if (hasattr(self, 'reinitDDLRadBtn')):
+            dct_put(sp_db, SPDB_HDW_ACCEL_REINIT_DDL, self.reinitDDLRadBtn.isChecked())
+        else:
+            dct_put(sp_db, SPDB_HDW_ACCEL_REINIT_DDL, False)
 
         return (sp_db)

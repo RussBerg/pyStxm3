@@ -72,11 +72,6 @@ class OsaFocusScanClass(BaseScan):
         @bpp.stage_decorator(dets)
         # @bpp.run_decorator(md={'entry_name': 'entry0', 'scan_type': scan_types.DETECTOR_IMAGE})
         def do_scan():
-            # Declare the end of the run.
-
-            # x_roi = dct_get(self.sp_db, SPDB_X)
-            # y_roi = dct_get(self.sp_db, SPDB_Y)
-            # zz_roi = dct_get(self.sp_db, SPDB_ZZ)
             mtr_x = self.main_obj.device(DNM_OSA_X)
             mtr_y = self.main_obj.device(DNM_OSA_Y)
             mtr_z = self.main_obj.device(DNM_ZONEPLATE_Z_BASE)
@@ -118,9 +113,13 @@ class OsaFocusScanClass(BaseScan):
         :returns: None
         """
 
-        self.stack = False
+        # self.stack = False
+        # self.is_pxp = True
+        # self.is_lxl = False
+        # call the base class configure so that all member vars can be initialized
+        super(OsaFocusScanClass, self).configure(wdg_com, sp_id=sp_id, line=line, z_enabled=z_enabled)
+
         self.is_pxp = True
-        self.is_lxl = False
         self.sub_type = scan_sub_types.POINT_BY_POINT
 
         self.configure_x_y_z_arb_linescan(wdg_com, sp_id=sp_id, line=line, z_enabled=z_enabled)

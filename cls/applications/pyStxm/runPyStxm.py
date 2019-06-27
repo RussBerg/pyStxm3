@@ -13,6 +13,10 @@ def clean_up():
     from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
     MAIN_OBJ.cleanup()
 
+
+#kill fricken carepeater
+os.system("taskkill /f /im  caRepeater.exe")
+
 debugger = sys.gettrace()
 from cls.appWidgets.dialogs import excepthook
 sys.excepthook = excepthook

@@ -66,6 +66,7 @@ class CoarseImageScanParam(ScanParamWidget):
             self.init_sp_db()
             self.connect_paramfield_signals()
             self.on_single_spatial_npoints_changed()
+            self.init_loadscan_menu()
 
     def init_plugin(self):
         '''

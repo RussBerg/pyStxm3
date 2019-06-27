@@ -1,6 +1,7 @@
 
 from PyQt5 import QtCore
 import numpy as np
+#import itertools
 from collections import deque
 from bluesky.callbacks.core import CallbackBase, get_obj_fields
 from cls.plotWidgets.utils import *
@@ -24,7 +25,11 @@ class BaseQtSpectraDataEmitter(QtDataEmitter):
         self._events = deque()
         self._descriptors = deque()
         self._scan_type = None
-        self._sp_id = 0
+        #self._sp_id_lst = []
+        self._spid_seq_map = {}
+        # self._ttl_sequence_points = 0
+        # self._num_spids = 0
+
         if x is not None:
             self.x, *others = get_obj_fields([x])
         else:
@@ -33,16 +38,18 @@ class BaseQtSpectraDataEmitter(QtDataEmitter):
         if ('scan_type' in kwargs.keys()):
             self._scan_type = kwargs['scan_type']
 
-        if ('sp_id' in kwargs.keys()):
-            self._sp_id = kwargs['sp_id']
+        if ('spid_seq_map' in kwargs.keys()):
+            self._spid_seq_map = kwargs['spid_seq_map']
 
         self.y, *others = get_obj_fields([y])
         self._epoch_offset = None  # used if x == 'time'
         self._epoch = epoch
 
+
     def start(self, doc):
         # print('MyDataEmitter: start')
         self.x_data, self.y_data = [], []
+
         self._start_doc = doc
         super().start(doc)
 
@@ -67,10 +74,12 @@ class BaseQtSpectraDataEmitter(QtDataEmitter):
 
     def reset(self):
         # print('MyDataEmitter: reset')
+        self._spid_seq_map = {}
         self._start_doc = None
         self._stop_doc = None
         self._events.clear()
         self._descriptors.clear()
+
 
 class BaseQtImageDataEmitter(QtDataEmitter):
 
@@ -100,14 +109,16 @@ class BaseQtImageDataEmitter(QtDataEmitter):
         self._epoch_offset = None  # used if x == 'time'
         self._epoch = epoch
 
+
+
     def start(self, doc):
-        # print('MyDataEmitter: start')
+        # print('BaseQtImageDataEmitter: start')
         self.x_data, self.y_data = [], []
         self._start_doc = doc
         super().start(doc)
 
     def descriptor(self, doc):
-        # print('MyDataEmitter: descriptor')
+        # print('BaseQtImageDataEmitter: descriptor')
         self._descriptors.append(doc)
         super().descriptor(doc)
 
@@ -121,12 +132,12 @@ class BaseQtImageDataEmitter(QtDataEmitter):
         self.x_data.append(x)
 
     def stop(self, doc):
-        # print('MyDataEmitter: stop')
+        # print('BaseQtImageDataEmitter: stop')
         self._stop_doc = doc
         super().stop(doc)
 
     def reset(self):
-        # print('MyDataEmitter: reset')
+        # print('BaseQtImageDataEmitter: reset')
         self._start_doc = None
         self._stop_doc = None
         self._events.clear()
@@ -168,11 +179,17 @@ class SpecDataEmitter(BaseQtSpectraDataEmitter):
                 # print(doc['data'].keys())
                 if (self.det in doc['data'].keys()):
                     new_y = doc['data'][self.det]
-                    new_x = doc['data'][self.x]
-                    _sp_id = self._sp_id
+                    if(self.x not in doc['data'].keys()):
+                        #new_x = doc['data'][self.x]
+                        new_x = self._spid_seq_map[doc['seq_num']][1]
+                    else:
+                        new_x = doc['seq_num']
+                    #_sp_id = self._sp_id_lst
+                    _sp_id = self._spid_seq_map[doc['seq_num']][0]
                 else:
                     new_y = doc['data'][self.y]
-                    _sp_id = self._sp_id
+                    #_sp_id = self._sp_id_lst
+                    _sp_id = self._spid_seq_map[doc['seq_num']][0]
 
             except KeyError:
                 # print('SpecDataEmitter: KeyError: ')

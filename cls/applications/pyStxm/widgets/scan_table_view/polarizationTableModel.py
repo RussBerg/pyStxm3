@@ -1,12 +1,12 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from cls.applications.pyStxm.widgets.scan_table_view.baseScanTable import *
     
-POLARITY_COLUMN_MAP = ['ID','POL', 'OFF', 'ANGLE']
-POLARITY_POLARITY_CHANGED = [1]
-POLARITY_OFFSET_CHANGED = [2]
-POLARITY_LINEAR_ANGLE_CHANGED = [3]
+POLARIZATION_COLUMN_MAP = ['ID', 'POL', 'OFF', 'ANGLE']
+POLARIZATION_POLARITY_CHANGED = [1]
+POLARIZATION_OFFSET_CHANGED = [2]
+POLARIZATION_LINEAR_ANGLE_CHANGED = [3]
 
-class PolarityTableModel(BaseScanTableModel):
+class PolarizationTableModel(BaseScanTableModel):
     
     def __init__(self, hdrList, datain, parent = None, *args):
         """
@@ -27,12 +27,12 @@ class PolarityTableModel(BaseScanTableModel):
         :returns: None
         """
         #QtCore.QAbstractTableModel.__init__(self, parent, *args)
-        super(PolarityTableModel, self).__init__( hdrList, datain, parent, *args)
+        super(PolarizationTableModel, self).__init__(hdrList, datain, parent, *args)
         # a dict that will use spatial region scan_id's as key to EnergyRegionScanDef's 
         self.cur_scan_row = None
         self.scanListData = datain
         self.editable = False
-        self.column_map = POLARITY_COLUMN_MAP
+        self.column_map = POLARIZATION_COLUMN_MAP
         self.set_min_rows(0)
         self.set_max_rows(20)
         
@@ -58,7 +58,7 @@ class PolarityTableModel(BaseScanTableModel):
         row = index.row()
         col = index.column()
         ok = True
-        print('Polarity model: role = %d' % role)
+        print('Polarization model: role = %d' % role)
         if(role == QtCore.Qt.EditRole):
             if(type(value) is str):
                 if (len(value) == 0):
@@ -83,11 +83,11 @@ class PolarityTableModel(BaseScanTableModel):
                 scan = self.scanListData[row]
                 scan_id = scan[SPDB_ID_VAL]
                 #print 'setData[scan_id=%d] col=%d val= %f' % (scan_id, col, val)
-                #if(POLARITY_COLUMN_MAP[col] == 'POL'):
+                #if(POLARIZATION_COLUMN_MAP[col] == 'POL'):
                 #    #convert polarity combobox val to stxm wrapper values
                 #    val = val - 1
                     
-                scan[POLARITY_COLUMN_MAP[col]] = val
+                scan[POLARIZATION_COLUMN_MAP[col]] = val
             
         if((role == QtCore.Qt.EditRole) or (role == QtCore.Qt.DisplayRole)):
             #must emit this as part of the framework support for an editable AbstractTableModel

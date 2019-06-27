@@ -824,7 +824,7 @@ class SampleFineImageWithE712Wavegen(BaseScan):
     #     """
     #
     #     pass_tst = True
-    #     if (self.scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
+    #     if (self.scan_type == scan_types.SAMPLE_POINT_SPECTRA):
     #         if (self.evScan.get_name() != '%s:scan3' % self.scan_prefix):
     #             pass_tst = False
     #         if (self.polScan.get_name() != '%s:scan2' % self.scan_prefix):
@@ -959,7 +959,7 @@ class SampleFineImageWithE712Wavegen(BaseScan):
 
         self.numSPIDS = len(self.sp_rois)
 
-        if (self.scan_type != scan_types.SAMPLE_POINT_SPECTRUM):
+        if (self.scan_type != scan_types.SAMPLE_POINT_SPECTRA):
             self.numImages = int(self.sp_db[SPDB_EV_NPOINTS] * self.numEPU * self.numSPIDS)
         else:
             # is a sample point spectrum
@@ -986,7 +986,7 @@ class SampleFineImageWithE712Wavegen(BaseScan):
                 # POINT_BY_POINT
                 self.is_pxp = True
 
-        elif (self.scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
+        elif (self.scan_type == scan_types.SAMPLE_POINT_SPECTRA):
             self.is_point_spec = True
 
         else:
@@ -1098,7 +1098,7 @@ class SampleFineImageWithE712Wavegen(BaseScan):
         #         # POINT_BY_POINT
         #         self.set_optimize_scan_func(self.optimize_sample_point_scan)
         #
-        # elif (self.scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
+        # elif (self.scan_type == scan_types.SAMPLE_POINT_SPECTRA):
         #     # self.pdlys = {'scan2': 0.05, 'scan1': 0.05}
         #     self.set_optimize_scan_func(self.optimize_sample_pointspec_scan)
         #
@@ -1870,7 +1870,7 @@ class SampleFineImageWithE712Wavegen(BaseScan):
 #         if (update):
 #             _logger.info('Skipping save_hdr() update = True')
 #             return
-#         upside_dwn_scans = [scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE]
+#         upside_dwn_scans = [scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE]
 #         # _logger.info('save_hdr: starting')
 #         if (self.is_point_spec):
 #             self.save_point_spec_hdr(update)
@@ -2180,7 +2180,7 @@ class SampleFineImageWithE712Wavegen(BaseScan):
 
             return False if there are more ev Regions and you dont want everything stopped and cleaned up
         """
-        multi_ev_single_image_scans = [scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_POINT_SPECTRUM]
+        multi_ev_single_image_scans = [scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_POINT_SPECTRA]
 
         _logger.info('hdw_accel_chk_for_more_evregions: checking')
 
@@ -2297,7 +2297,7 @@ class SampleFineImageWithE712Wavegen(BaseScan):
 
             return False if there are more ev Regions and you dont want everything stopped and cleaned up 
         """
-        multi_ev_single_image_scans = [scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_POINT_SPECTRUM]
+        multi_ev_single_image_scans = [scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_POINT_SPECTRA]
 
         # Sept 6 if(TEST_SAVE_INITIAL_FILE):
         # Sept 6     self.save_hdr(update=True)

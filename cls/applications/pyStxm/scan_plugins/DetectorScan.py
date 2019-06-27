@@ -103,7 +103,7 @@ class DetectorScanClass(BaseScan):
         pass
 
         
-    def configure(self, wdg_com, sp_id=0, line=True, restore=True, z_enabled=False):
+    def configure(self, wdg_com, sp_id=0, line=True, z_enabled=False):
         """
         configure(): description
 
@@ -123,16 +123,15 @@ class DetectorScanClass(BaseScan):
         """
         #use base configure x y motor scan
         # self.busy_saving = False
-        self.stack = False
-        self.is_pxp = True
-        self.is_lxl = False
-        # self.reload_base_scan_config()
-        #sim = (self.xScan.P1.get('description').find('SIM') > -1)
+        # self.stack = False
+        # self.is_pxp = True
+        # self.is_lxl = False
 
-        # if(not sim):
-        #     MAIN_OBJ.device( 'DX_auto_disable_power' ).put(0)
-        #     MAIN_OBJ.device( 'DY_auto_disable_power' ).put(0)
-        #self.configure_x_y_z_scan_LINEAR(wdg_com, sp_id=sp_id, line=line, z_enabled=False)
+        # call the base class configure so that all member vars can be initialized
+        super(DetectorScanClass, self).configure(wdg_com, sp_id=sp_id, line=line, z_enabled=z_enabled)
+        #force a point by point
+        self.is_pxp = True
+
         self.config_basic_2d(wdg_com, sp_id=sp_id,z_enabled=False)
         # THIS must be the last call
         self.finish_setup()

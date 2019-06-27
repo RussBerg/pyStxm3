@@ -20,14 +20,16 @@ from cls.applications.pyStxm.scan_plugins import plugin_dir
 from cls.applications.pyStxm.widgets.scan_table_view.multiRegionWidget import MultiRegionWidget
 #from cls.applications.pyStxm.scan_plugins.SampleImageWithEnergySSCAN import SampleImageWithEnergySSCAN
 #from cls.applications.pyStxm.scan_plugins.SampleImageWithE712Wavegen import SampleImageWithE712Wavegen
-from cls.applications.pyStxm.scan_plugins.SampleFineImageWithE712WavegenScan import SampleFineImageWithE712WavegenScanClass
+#from cls.applications.pyStxm.scan_plugins.SampleFineImageWithE712WavegenScan import SampleFineImageWithE712WavegenScanClass
+from cls.applications.pyStxm.scan_plugins.PointSpecScan import PointSpecScanClass
+
 #from cls.applications.pyStxm.scan_plugins.SampleFineImageWithE712WavegenScanClass import SampleFineImageWithE712WavegenScanClass
 from cls.data_io.stxm_data_io import STXMDataIo
 
 from cls.utils.roi_utils import get_base_roi, make_spatial_db_dict, widget_com_cmnd_types, \
                                 on_range_changed, on_npoints_changed, on_step_size_changed, on_start_changed, on_stop_changed, \
                                 on_center_changed, recalc_setpoints, get_base_start_stop_roi, get_first_sp_db_from_wdg_com
-from cls.types.stxmTypes import scan_types, scan_panel_order, scan_image_types, spatial_type_prefix, sample_positioning_modes
+from cls.types.stxmTypes import scan_types, scan_panel_order, scan_sub_types, spatial_type_prefix, sample_positioning_modes
 from cls.utils.dict_utils import dct_get, dct_put
 from cls.plotWidgets.shape_restrictions import ROILimitObj, ROILimitDef
 from cls.plotWidgets.color_def import get_normal_clr, get_warn_clr, get_alarm_clr, get_normal_fill_pattern, get_warn_fill_pattern, get_alarm_fill_pattern
@@ -58,7 +60,8 @@ class FinePointScanParam(ScanParamWidget):
         self.positioners['OFF'] = DNM_EPU_OFFSET
         self.positioners['ANG'] = DNM_EPU_ANGLE
 
-        self.scan_class = SampleFineImageWithE712WavegenScanClass(main_obj=self.main_obj)
+        #self.scan_class = SampleFineImageWithE712WavegenScanClass(main_obj=self.main_obj)
+        self.scan_class = PointSpecScanClass(main_obj=self.main_obj)
 
         #instead of using centerx etc use startX
         self.multi_region_widget = MultiRegionWidget(use_center=False, is_point=True, enable_multi_spatial=self.enable_multi_region,  single_ev_model=True, max_range=MAX_SCAN_RANGE_FINEX)
@@ -74,11 +77,10 @@ class FinePointScanParam(ScanParamWidget):
         #self.sscan_class = SampleImageWithEnergySSCAN()
         #self.sscan_class = SampleImageWithE712Wavegen()
 
-
-        
         self.wdg_com = None
         self.load_from_defaults()
         self.on_plugin_focus()
+        self.init_loadscan_menu()
 
     def init_plugin(self):
         '''
@@ -87,7 +89,7 @@ class FinePointScanParam(ScanParamWidget):
         '''
         self.name = "Fine Point Scan"
         self.idx = scan_panel_order.POINT_SCAN
-        self.type = scan_types.SAMPLE_POINT_SPECTRUM
+        self.type = scan_types.SAMPLE_POINT_SPECTRA
         self.data = {}
         self.section_id = 'POINT'
         self.axis_strings = ['counts', 'eV', '', '']
@@ -318,7 +320,7 @@ class FinePointScanParam(ScanParamWidget):
         if(wdg_com[CMND] == widget_com_cmnd_types.LOAD_SCAN):
             sp_db = get_first_sp_db_from_wdg_com(wdg_com)
 
-            if(not ev_only and (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_POINT_SPECTRUM)):
+            if(not ev_only and (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_POINT_SPECTRA)):
                 return
                 
             self.multi_region_widget.load_scan(wdg_com, append, ev_only=ev_only, sp_only=sp_only)
@@ -376,20 +378,39 @@ class FinePointScanParam(ScanParamWidget):
             self.wdg_com = self.GONI_SCAN_update_data()
         else:
             self.wdg_com = self.update_multi_spatial_wdg_com()
+
+        #NEED TO MAKE SURE THAT THE SUB SPATIAL TYPE IS SET HERE FOR ALL
+        self.set_spatial_sub_type(self.wdg_com)
             
         self.roi_changed.emit(self.wdg_com)    
         return(self.wdg_com)
-    
-    
+
+
+
+    def set_spatial_sub_type(self, wdg_com):
+        """
+        Ensure that all spatial ROI's have there sub spatial types set to POINT_BY_POINT
+
+        :returns: None
+
+        """
+        sp_rois = dct_get(wdg_com, SPDB_SPATIAL_ROIS)
+        for sp_id, sp_db in sp_rois.items():
+            # make them all pxp
+            dct_put(sp_db, SPDB_SCAN_PLUGIN_SUBTYPE, scan_sub_types.POINT_BY_POINT)
+
+        dct_put(wdg_com, SPDB_SCAN_PLUGIN_SUBTYPE, scan_sub_types.POINT_BY_POINT)
+        return (wdg_com)
+
     def GONI_SCAN_update_data(self):
         """
-        This is a standard function that all scan pluggins have that is called to 
-        get the data from the pluggins UI widgets and write them into a dict returned by 
-        get_base_scanparam_roi(), this dict is emitted by all scan pluggins to be used by 
+        This is a standard function that all scan pluggins have that is called to
+        get the data from the pluggins UI widgets and write them into a dict returned by
+        get_base_scanparam_roi(), this dict is emitted by all scan pluggins to be used by
         the scan classes configure() functions
-    
+
         :returns: None
-     
+
         """
         wdg_com = self.update_multi_spatial_wdg_com()
         sub_spatials = self.create_sub_spatial_dbs(wdg_com)
@@ -403,8 +424,6 @@ class FinePointScanParam(ScanParamWidget):
             dct_put(sp_db, SPDB_HDW_ACCEL_AUTO_DDL, self.autoDDLRadBtn.isChecked())
             dct_put(sp_db, SPDB_HDW_ACCEL_REINIT_DDL, self.reinitDDLRadBtn.isChecked())
 
-            dct_put(sp_db, SPDB_SUB_SPATIAL_ROIS, sub_spatials[sp_id])
-        
         return(wdg_com)
     
     def create_sub_spatial_dbs(self, wdg_com):

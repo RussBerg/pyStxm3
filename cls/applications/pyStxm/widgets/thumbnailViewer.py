@@ -333,7 +333,7 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
         dct['scan_sub_type'] = type_tpl[1]
         dct['data_dir'] = self.data_dir
 
-        if (dct['scan_type'] == scan_types[scan_types.SAMPLE_POINT_SPECTRUM]):
+        if (dct['scan_type'] == scan_types[scan_types.SAMPLE_POINT_SPECTRA]):
             dct['data_min'] = self.data.min()
             dct['data_max'] = self.data.max()
         else:
@@ -684,7 +684,7 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
             self.launch_viewer.emit(dct)
 
 
-        elif (self.scan_type is scan_types.SAMPLE_POINT_SPECTRUM):
+        elif (self.scan_type is scan_types.SAMPLE_POINT_SPECTRA):
             ekey = get_first_entry_key(self.dct)
             entry_dct = self.dct['entries'][ekey]
             xdata = get_point_spec_energy_data_from_entry(entry_dct, counter=self.counter)
@@ -1308,8 +1308,8 @@ class ContactSheet(QtWidgets.QWidget):
 				'osa_image', \
 				'osa_focus', \
 				'sample_focus', \
-				'sample_point_spectrum', \
-				'sample_line_spectrum', \
+				'sample_point_spectra', \
+				'sample_line_spectra', \
 				'sample_image', \
 				'sample_image_stack', \
 				'generic_scan', \
@@ -1318,17 +1318,17 @@ class ContactSheet(QtWidgets.QWidget):
 
         """
         focus_scans = [scan_types.OSA_FOCUS, scan_types.SAMPLE_FOCUS]
-        spectra_scans = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM]
+        spectra_scans = [scan_types.SAMPLE_POINT_SPECTRA, scan_types.SAMPLE_LINE_SPECTRA]
         _scan_type = dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE)
 
         if (data is None):
-            if (_scan_type is scan_types.SAMPLE_POINT_SPECTRUM):
+            if (_scan_type is scan_types.SAMPLE_POINT_SPECTRA):
                 data = np.ones((2, 2))
             else:
                 return (None, None)
 
         if (data.size == 0):
-            if (_scan_type is scan_types.SAMPLE_POINT_SPECTRUM):
+            if (_scan_type is scan_types.SAMPLE_POINT_SPECTRA):
                 data = np.ones((2, 2))
             else:
                 return (None, None)
@@ -1704,7 +1704,7 @@ class ContactSheet(QtWidgets.QWidget):
                 pass
 
     def make_thumbWidget(self, data_dir, fname, info_dct, title=None, sp_db=None, data=None,
-                         stype=scan_types.SAMPLE_POINT_SPECTRUM):
+                         stype=scan_types.SAMPLE_POINT_SPECTRA):
         """
         make_thumbWidget(): description
 
@@ -1869,7 +1869,7 @@ class ContactSheet(QtWidgets.QWidget):
         # rows, cols = data.shape
 
         if ((sp_db is not None) and (data is not None)):
-            # if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in [scan_types.GENERIC_SCAN, scan_types.SAMPLE_POINT_SPECTRUM]):
+            # if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in [scan_types.GENERIC_SCAN, scan_types.SAMPLE_POINT_SPECTRA]):
             # if (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in [scan_types.GENERIC_SCAN]):
             #     fstr = os.path.join(self.data_dir, fname)
             #     info_str, info_jstr = self.build_image_params(fstr, sp_db, data, ev_idx=ev_idx, ev_pnt=ev_pnt, pol_idx=pol_idx, pol_pnt=0)
@@ -2044,7 +2044,7 @@ class ContactSheet(QtWidgets.QWidget):
             sp_db, data = self.get_sp_db_and_data(fstr)
             is_spec = False
             if ((sp_db is not None) and (data is not None)):
-                # if (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in [scan_types.GENERIC_SCAN,scan_types.SAMPLE_POINT_SPECTRUM]):
+                # if (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in [scan_types.GENERIC_SCAN,scan_types.SAMPLE_POINT_SPECTRA]):
                 if (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in spectra_type_scans):
                     info_str, info_jstr = self.build_image_params(fstr, sp_db, data, ev_idx=0, pol_idx=0)
                     info_dct = {'info_str': info_str, 'info_jstr': info_jstr}

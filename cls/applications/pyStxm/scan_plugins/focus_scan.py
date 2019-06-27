@@ -95,6 +95,7 @@ class FocusScanParam(ScanParamWidget):
         self.init_sp_db()
         self.connect_paramfield_signals()
         self.on_single_spatial_npoints_changed()
+        self.init_loadscan_menu()
 
         #self.init_test_module()
 

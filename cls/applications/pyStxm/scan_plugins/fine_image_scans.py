@@ -39,8 +39,7 @@ MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
 MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
 MAX_SCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_X')
 MAX_SCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_Y')
-
-
+USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_int('USE_E712_HDW_ACCEL')
 
 class FineImageScansParam(ScanParamWidget):
 
@@ -90,13 +89,17 @@ class FineImageScansParam(ScanParamWidget):
         self.hdwAccelDetailsBtn.setToolTip('E712 Wavgen details')
         #self.scan_class = SampleImageWithEnergySSCAN()
         #self.scan_class = SampleFineImageWithE712WavegenScanClass()
-        self.scan_class = SampleFineImageWithE712WavegenScanClass(main_obj=self.main_obj)
+        if(USE_E712_HDW_ACCEL):
+            self.scan_class = SampleFineImageWithE712WavegenScanClass(main_obj=self.main_obj)
+        else:
+            self.scan_class = SampleFineImageWithE712WavegenScanClass(main_obj=self.main_obj)
 
         #self.singleEVChkBx.clicked.connect(self.on_single_energy)
         self.hdwAccelDetailsBtn.clicked.connect(self.show_hdw_accel_details)
         self.wdg_com = None
         self.load_from_defaults()
         self.on_plugin_focus()
+        self.init_loadscan_menu()
 
     def init_plugin(self):
         '''
@@ -440,10 +443,11 @@ class FineImageScansParam(ScanParamWidget):
             for sp_id in sp_ids:
                 sp_db = sp_rois[sp_id]
 
-                #added E712 waveform generator support
-                dct_put(sp_db, SPDB_HDW_ACCEL_USE, True)
-                dct_put(sp_db, SPDB_HDW_ACCEL_AUTO_DDL, self.autoDDLRadBtn.isChecked())
-                dct_put(sp_db, SPDB_HDW_ACCEL_REINIT_DDL, self.reinitDDLRadBtn.isChecked())
+                if(USE_E712_HDW_ACCEL):
+                    #added E712 waveform generator support
+                    dct_put(sp_db, SPDB_HDW_ACCEL_USE, True)
+                    dct_put(sp_db, SPDB_HDW_ACCEL_AUTO_DDL, self.autoDDLRadBtn.isChecked())
+                    dct_put(sp_db, SPDB_HDW_ACCEL_REINIT_DDL, self.reinitDDLRadBtn.isChecked())
 
                 dct_put(sp_db, SPDB_SCAN_PLUGIN_SUBTYPE, self.sub_type)
                 x_roi = dct_get(sp_db, SPDB_X)

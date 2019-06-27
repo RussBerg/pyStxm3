@@ -5,11 +5,11 @@ TableView#scan_q_tv QHeaderView{
 }
 */
 
-#SpatialScanTableView,#EnergyScanTableView, #PolarityTableView{
+#SpatialScanTableView,#EnergyScanTableView, #PolarizationTableView{
 	background-color: app_ltgray; 
 }
 
-#SpatialScanTableView,#EnergyScanTableView, #PolarityTableView::!selected{
+#SpatialScanTableView,#EnergyScanTableView, #PolarizationTableView::!selected{
 	background-color: app_ltgray; 
 }
 

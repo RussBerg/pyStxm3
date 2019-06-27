@@ -49,6 +49,7 @@ class FocusE712ScanClass(BaseScan):
 
         self.img_idx_map = {}
         self.spid_data = {}
+        self.e712_wg = MAIN_OBJ.device('E712ControlWidget')
 
     def init_subscriptions(self, ew, func):
         '''
@@ -95,6 +96,12 @@ class FocusE712ScanClass(BaseScan):
             gate.set_trig_src(trig_src_types.NORMAL_PXP)
             gate.set_num_points(1)
             gate.set_mode(bs_dev_modes.NORMAL_PXP)
+        else:
+            # if (self.is_lxl):
+            dets[0].set_mode(1)
+            gate.set_mode(1)
+            gate.set_num_points(self.x_roi[NPOINTS])
+            gate.set_trig_src(trig_src_types.E712)
 
 
     def make_pxp_scan_plan(self, dets, gate, md=None, bi_dir=False):
@@ -108,6 +115,7 @@ class FocusE712ScanClass(BaseScan):
         # gate.set_num_points(1)
         # gate.set_mode(0)
         point_det.configure()
+        #gate.set_trig_src(trig_src_types.E712)
         #the rest of the gate configuration is handled when it is staged
         skip_lst = [DNM_FINE_X, DNM_FINE_Y, DNM_FINE_ZX, DNM_FINE_ZX]
         mtr_dct = self.determine_samplexy_posner_pvs()
@@ -152,8 +160,6 @@ class FocusE712ScanClass(BaseScan):
 
     def make_lxl_scan_plan(self, dets, gate, md=None, bi_dir=False):
         '''
-
-
         :param dets:
         :param gate:
         :param bi_dir:
@@ -161,24 +167,26 @@ class FocusE712ScanClass(BaseScan):
         '''
         #config detector and gate for num points etc
         flyer_det = dets[0]
-        gate.set_num_points(self.x_roi[NPOINTS])
-        gate.set_mode(1) #line
+        #gate.set_num_points(self.x_roi[NPOINTS])
+        #gate.set_mode(1) #line
+        #gate.set_trig_src(trig_src_types.E712)
         flyer_det.configure(self.x_roi[NPOINTS], self.scan_type)
         e712_dev = self.main_obj.device(DNM_E712_OPHYD_DEV)
         dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
         self._bi_dir = bi_dir
+
         if (md is None):
             md = {'metadata': dict_to_json(
                 self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type))}
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)
-        #@bpp.run_decorator(md=md)
+        @bpp.run_decorator(md=md)
         def do_scan():
 
             mtr_z = self.main_obj.device(DNM_ZONEPLATE_Z_BASE)
             shutter = self.main_obj.device(DNM_SHUTTER)
 
-            yield from bps.open_run(md)
+            #yield from bps.open_run(md)
             yield from bps.kickoff(flyer_det)
             yield from bps.stage(gate)
 
@@ -195,7 +203,7 @@ class FocusE712ScanClass(BaseScan):
             # the collect method on e712_flyer may just return as empty list as a formality, but future proofing!
             yield from bps.collect(flyer_det)
 
-            yield from bps.close_run()
+            #yield from bps.close_run()
 
             print('FocusE712ScanClass: LXL make_scan_plan Leaving')
 
@@ -214,48 +222,51 @@ class FocusE712ScanClass(BaseScan):
         :returns: None
         """
         """ here if line == True then it is a line scan else config for point by point """
-        self.e712_wg = MAIN_OBJ.device('E712ControlWidget')
-        self.set_spatial_id(sp_id)
-        self.wdg_com = wdg_com
-        self.sp_rois = wdg_com[WDGCOM_SPATIAL_ROIS]
-        self.sp_ids = list(self.sp_rois.keys())
-        self.sp_db = self.sp_rois[sp_id]
-        self.scan_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_TYPE)
-        self.scan_sub_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE)
-        self.sample_positioning_mode = MAIN_OBJ.get_sample_positioning_mode()
-        self.sample_fine_positioning_mode = MAIN_OBJ.get_fine_sample_positioning_mode()
+        # call the base class configure so that all member vars can be initialized
+        super(FocusE712ScanClass, self).configure(wdg_com, sp_id=sp_id, line=line)
 
-        self.numX = dct_get(self.sp_db, SPDB_XNPOINTS)
-        self.numY = dct_get(self.sp_db, SPDB_YNPOINTS)
-        self.numZ = dct_get(self.sp_db, SPDB_ZNPOINTS)
-        self.numZZ = dct_get(self.sp_db, SPDB_ZZNPOINTS)
-        self.numE = dct_get(self.sp_db, SPDB_EV_NPOINTS)
-        self.numSPIDS = len(self.sp_rois)
-        self.e_rois = dct_get(self.sp_db, SPDB_EV_ROIS)
-        e_roi = self.e_rois[0]
-        self.numEPU = len(dct_get(e_roi, EPU_POL_PNTS))
+        # self.e712_wg = MAIN_OBJ.device('E712ControlWidget')
+        # self.set_spatial_id(sp_id)
+        # self.wdg_com = wdg_com
+        # self.sp_rois = wdg_com[WDGCOM_SPATIAL_ROIS]
+        # self.sp_ids = list(self.sp_rois.keys())
+        # self.sp_db = self.sp_rois[sp_id]
+        # self.scan_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_TYPE)
+        # self.scan_sub_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE)
+        # self.sample_positioning_mode = MAIN_OBJ.get_sample_positioning_mode()
+        # self.sample_fine_positioning_mode = MAIN_OBJ.get_fine_sample_positioning_mode()
+
+        # self.numX = dct_get(self.sp_db, SPDB_XNPOINTS)
+        # self.numY = dct_get(self.sp_db, SPDB_YNPOINTS)
+        # self.numZ = dct_get(self.sp_db, SPDB_ZNPOINTS)
+        # self.numZZ = dct_get(self.sp_db, SPDB_ZZNPOINTS)
+        # self.numE = dct_get(self.sp_db, SPDB_EV_NPOINTS)
+        # self.numSPIDS = len(self.sp_rois)
+        # self.e_rois = dct_get(self.sp_db, SPDB_EV_ROIS)
+        # e_roi = self.e_rois[0]
+        # self.numEPU = len(dct_get(e_roi, EPU_POL_PNTS))
 
         self.main_obj.device('e712_current_sp_id').put(sp_id)
 
-        if (self.fine_sample_positioning_mode == sample_fine_positioning_modes.ZONEPLATE):
-            #ZONEPLATE
-            self.is_zp_scan = True
-        else:
-            #SAMPLEFINE
-            self.is_zp_scan = False
+        # if (self.fine_sample_positioning_mode == sample_fine_positioning_modes.ZONEPLATE):
+        #     #ZONEPLATE
+        #     self.is_zp_scan = True
+        # else:
+        #     #SAMPLEFINE
+        #     self.is_zp_scan = False
+        #
+        # if (self.scan_sub_type == scan_sub_types.LINE_UNIDIR):
+        #     # LINE_UNIDIR
+        #     self.is_lxl = True
+        #     self.is_pxp = False
+        #     # self.pdlys = {}
+        # else:
+        #     # POINT_BY_POINT
+        #     self.is_pxp = True
+        #     self.is_lxl = False
+        #     # self.pdlys = {}
 
-        if (self.scan_sub_type == scan_sub_types.LINE_UNIDIR):
-            # LINE_UNIDIR
-            self.is_lxl = True
-            self.is_pxp = False
-            # self.pdlys = {}
-        else:
-            # POINT_BY_POINT
-            self.is_pxp = True
-            self.is_lxl = False
-            # self.pdlys = {}
-
-        self.update_roi_member_vars(self.sp_db)
+        #self.update_roi_member_vars(self.sp_db)
 
         # self.ensure_left_to_right(self.x_roi)
         # self.ensure_left_to_right(self.y_roi)
@@ -267,10 +278,10 @@ class FocusE712ScanClass(BaseScan):
         #self.configure_sample_motors_for_scan()
 
         # self.e_rois = dct_get(self.sp_db, SPDB_EV_ROIS)
-        self.dwell = self.e_rois[0][DWELL]
-        self.numZX = self.zx_roi[NPOINTS]
-        self.numZY = self.zy_roi[NPOINTS]
-        self.numZZ = self.zz_roi[NPOINTS]
+        # self.dwell = self.e_rois[0][DWELL]
+        # self.numZX = self.zx_roi[NPOINTS]
+        # self.numZY = self.zy_roi[NPOINTS]
+        # self.numZZ = self.zz_roi[NPOINTS]
 
         self.reset_evidx()
         self.reset_imgidx()

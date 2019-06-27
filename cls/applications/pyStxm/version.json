@@ -1,8 +1,1 @@
-{
-	"ver": "3.0",
-	"ver_str": "Version 3.0",
-	"major_ver": "3",
-	"minor_ver": "0",
-	"auth": "Russ Berg",
-	"date": "June 07 2019"
-}
+"{\n    \"auth\": \"Russ Berg\",\n    \"commit\": \"a35282eaeed404131a26bfe310927a9ccd089547\",\n    \"date\": \"  Fri Jun 7 11:08:00 2019 -0400\",\n    \"major_ver\": \"3\",\n    \"minor_ver\": \"0\",\n    \"ver\": \"3.0\",\n    \"ver_str\": \"Version 3.0\"\n}"

@@ -6,7 +6,7 @@ Created on Nov 16, 2016
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-POLARITY_COLUMN = 1
+POLARIZATION_COLUMN = 1
 
 class PolComboBoxDelegate(QtWidgets.QItemDelegate):
     """
@@ -47,7 +47,7 @@ class PolComboBoxDelegate(QtWidgets.QItemDelegate):
         #for item in items:
         #    cbox.addItem(item, idx)
         #    idx = idx -1
-        #chkd = index.model().get_scans()[index.row()][POLARITY_COLUMN]
+        #chkd = index.model().get_scans()[index.row()][POLARIZATION_COLUMN]
         #chkbx.setChecked(chkd)
         #self.connect(cbox, QtCore.SIGNAL("currentIndexChanged(Int)"), self, QtCore.SLOT("on_pol_changed()"))
         cbox.currentIndexChanged.connect(self.on_pol_changed)
@@ -68,7 +68,7 @@ class PolComboBoxDelegate(QtWidgets.QItemDelegate):
         #print 'setEditorData'
         editor.blockSignals(True)
         #editor.setCurrentIndex(int(index.model().data(index)))
-        if(index.column() == POLARITY_COLUMN):
+        if(index.column() == POLARIZATION_COLUMN):
         #    editor.setChecked(index.model().data(index))
             idx = int(index.data()) 
             editor.setCurrentIndex(idx)

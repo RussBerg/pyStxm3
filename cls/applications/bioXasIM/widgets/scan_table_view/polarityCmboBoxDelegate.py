@@ -47,7 +47,7 @@ class PolComboBoxDelegate(QtWidgets.QItemDelegate):
         #for item in items:
         #    cbox.addItem(item, idx)
         #    idx = idx -1
-        #chkd = index.model().get_scans()[index.row()][POLARITY_COLUMN]
+        #chkd = index.model().get_scans()[index.row()][POLARIZATION_COLUMN]
         #chkbx.setChecked(chkd)
         #self.connect(cbox, QtCore.SIGNAL("currentIndexChanged(Int)"), self, QtCore.SLOT("on_pol_changed()"))
         cbox.currentIndexChanged.connect(self.on_pol_changed)

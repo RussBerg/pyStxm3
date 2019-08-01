@@ -347,7 +347,7 @@ def get_classes(class_name, root_element):
 		if child.tag.endswith('field'):
 			group_fields[class_name] = get_fields(child)
 # 			if(len(child.getchildren()) > 0):
-# 				fields = get_classes('field', child)
+# 				fields = get_nexpy_classes('field', child)
 # 			try:
 # 				name = child.attrib['name']
 # 				dtype = child.attrib['type']
@@ -375,8 +375,8 @@ def get_classes(class_name, root_element):
 				else:
 					name = dtype
 				group_fields[name] = get_classes(name, child)
-				#group_fields[dtype] = get_classes('group', child)
-				#classes = get_classes('group', child)
+				#group_fields[dtype] = get_nexpy_classes('group', child)
+				#classes = get_nexpy_classes('group', child)
 			try:
 				dtype = child.attrib['type']
 				name = child.attrib['name']
@@ -570,7 +570,7 @@ if __name__ == '__main__':
 # 	visit_every_node(tree, 0)
 # # 	bc = input_base_classes()
 # 	root = get_class_root('applications', 'NXstxm')
-# 	ac = get_classes('NXstxm', root)
+# 	ac = get_nexpy_classes('NXstxm', root)
 # 	print ac.keys()
 #  	ac = input_application_classes()
 #  	(stxm_doc, stxm_flds, stxm_grps) = ac['NXstxm']

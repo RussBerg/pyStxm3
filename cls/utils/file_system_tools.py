@@ -372,7 +372,7 @@ def master_get_seq_names(path, prefix_char='C', thumb_ext='jpg', dat_ext='hdf5',
             elif(new_stack_dir):
                 print('generate a sequence from the existing name')
                 name, num = get_stack_seq_num_from_fname(dct['thumb_name'])
-                
+
                 for j in range(num, num + int(num_desired_datafiles)):
                     n_dct[i] = dct.copy()
                     n_dct[i]['thumb_name'] = '%s_%03d' % ((prefix_char + str(data_file_seq_num)), j)

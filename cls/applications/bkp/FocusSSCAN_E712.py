@@ -115,7 +115,7 @@ class FocusSSCAN_E712(BaseScan):
         #zp_def = self.get_zoneplate_info_dct()
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)
         def do_scan():
@@ -167,7 +167,7 @@ class FocusSSCAN_E712(BaseScan):
         self._bi_dir = bi_dir
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)
         #@bpp.run_decorator(md=md)

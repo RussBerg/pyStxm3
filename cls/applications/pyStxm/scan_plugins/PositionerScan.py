@@ -56,7 +56,7 @@ class PositionerScanClass(BaseScan):
         self._bi_dir = bi_dir
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
 
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)
@@ -88,10 +88,15 @@ class PositionerScanClass(BaseScan):
         '''
 
         if(self.scan_type in spectra_type_scans):
+            spid_seq_map = self.gen_spid_seq_map(self._master_sp_id_list, self.x_roi[SETPOINTS])
             mtr_x = self.main_obj.device(self.x_roi[POSITIONER])
             #we also need to pass the sp_id because it needs to send it on to the plotter as data comes in
+            # spid_seq_map
+            # self._emitter_cb = SpecDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, x=mtr_x.get_name(), \
+            #                                    scan_type=self.scan_type, sp_id=self.sp_id, spid_seq_map=spid_seq_map)
+            # self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
             self._emitter_cb = SpecDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, x=mtr_x.get_name(), \
-                                               scan_type=self.scan_type, sp_id=self.sp_id)
+                                               scan_type=self.scan_type, spid_seq_map=spid_seq_map)
             self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
             self._emitter_cb.new_plot_data.connect(func)
         else:

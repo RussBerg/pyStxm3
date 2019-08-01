@@ -102,7 +102,7 @@ class LineSpecScanWithE712WavegenClass(BaseScan):
         self._bi_dir = bi_dir
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
         mtr_dct = self.determine_samplexy_posner_pvs()
 
         @bpp.baseline_decorator(dev_list)
@@ -117,15 +117,21 @@ class LineSpecScanWithE712WavegenClass(BaseScan):
             mtr_ev = self.main_obj.device(DNM_ENERGY)
             shutter = self.main_obj.device(DNM_SHUTTER)
 
+            ev_setpoints = []
+            for ev_roi in self.e_rois:
+                # switch to new energy
+                for ev_sp in ev_roi[SETPOINTS]:
+                    ev_setpoints.append(ev_sp)
+
             x_traj = cycler(mtr_x, self.x_roi[SETPOINTS])
             y_traj = cycler(mtr_y, self.y_roi[SETPOINTS])
-            zz_traj = cycler(mtr_ev, self.zz_roi[SETPOINTS])
+            energy_traj = cycler(mtr_ev, ev_setpoints)
 
             yield from bps.stage(gate)
             # this starts the wavgen and waits for it to finish without blocking the Qt event loop
             # the detector will be staged automatically by the grid_scan plan
             shutter.open()
-            yield from scan_nd(dets, zz_traj * (y_traj + x_traj),
+            yield from scan_nd(dets, energy_traj * (y_traj + x_traj),
                                md=md)
 
             shutter.close()
@@ -159,7 +165,7 @@ class LineSpecScanWithE712WavegenClass(BaseScan):
     #
     #     if (md is None):
     #         md = {'metadata': dict_to_json(
-    #             self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type))}
+    #             self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
     #     @bpp.baseline_decorator(dev_list)
     #     @bpp.stage_decorator(dets)
     #     #@bpp.run_decorator(md=md)
@@ -236,7 +242,7 @@ class LineSpecScanWithE712WavegenClass(BaseScan):
     #     #det.set_num_points(self.x_roi[NPOINTS])
     #     det.configure(self.x_roi[NPOINTS], self.scan_type)
     #     if(md is None):
-    #         md = {'metadata': dict_to_json(self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type))}
+    #         md = {'metadata': dict_to_json(self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
     #     # if(not skip_baseline):
     #     #     @bpp.baseline_decorator(dev_list)
     #
@@ -302,27 +308,14 @@ class LineSpecScanWithE712WavegenClass(BaseScan):
             stagers.append(d)
         stagers.append(gate)
         det = dets[0]
-        # if (self.is_lxl):
-        #     stagers.append(gate)
-        #     det.set_mode(1)
-        #     gate.set_mode(1)
-        #     gate.set_num_points(self.x_roi[NPOINTS])
-        #     gate.set_trig_src(trig_src_types.E712)
-        # else:
-        #     det.set_mode(0)
-        #     gate.set_mode(0)
-        #     gate.set_num_points(1)
-        #     gate.set_trig_src(trig_src_types.E712)
-        #
-        # gate.set_dwell(self.dwell)
-        # det.set_num_points(self.x_roi[NPOINTS])
+
         if(self.fine_sample_positioning_mode == sample_fine_positioning_modes.ZONEPLATE):
             det.configure(self.zx_roi[NPOINTS], self.scan_type)
         else:
             det.configure(self.x_roi[NPOINTS], self.scan_type)
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
 
         @bpp.baseline_decorator(dev_list)
         #@bpp.stage_decorator(dets)

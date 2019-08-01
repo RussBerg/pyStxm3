@@ -178,7 +178,7 @@ class SampleFineImageWithE712Wavegen(BaseScan):
     #     gate.set_dwell(self.dwell)
     #     #det.set_num_points(self.x_roi[NPOINTS])
     #     det.configure(self.x_roi[NPOINTS], self.scan_type)
-    #     md = {'metadata': dict_to_json(self.make_standard_data_metadata(entry_num=0, scan_type=self.scan_type))}
+    #     md = {'metadata': dict_to_json(self.make_standard_metadata(entry_num=0, scan_type=self.scan_type))}
     #     # md = {'entry_name': 'entry0', 'scan_type': self.scan_type,
     #     #       'rois': {SPDB_X: self.x_roi, SPDB_Y: self.y_roi},
     #     #       'dwell': self.dwell,
@@ -248,7 +248,7 @@ class SampleFineImageWithE712Wavegen(BaseScan):
         #det.set_num_points(self.x_roi[NPOINTS])
         det.configure(self.x_roi[NPOINTS], self.scan_type)
         if(md is None):
-            md = {'metadata': dict_to_json(self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type))}
+            md = {'metadata': dict_to_json(self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
         # if(not skip_baseline):
         #     @bpp.baseline_decorator(dev_list)
 
@@ -301,7 +301,7 @@ class SampleFineImageWithE712Wavegen(BaseScan):
     #         stagers.append(d)
     #     det = dets[0]
     #
-    #     md = {'metadata': dict_to_json(self.make_standard_data_metadata(entry_num=0, scan_type=self.scan_type))}
+    #     md = {'metadata': dict_to_json(self.make_standard_metadata(entry_num=0, scan_type=self.scan_type))}
     #
     #     # md = {'entry_name': 'entry0', 'scan_type': self.scan_type,
     #     #       'rois': {SPDB_X: self.x_roi, SPDB_Y: self.y_roi},
@@ -436,7 +436,7 @@ class SampleFineImageWithE712Wavegen(BaseScan):
                             # take a single image that will be saved with its own run scan id
                             img_dct = self.img_idx_map['%d'%idx]
                             md = {'metadata': dict_to_json(
-                                self.make_standard_data_metadata(entry_name=img_dct['entry'], scan_type=self.scan_type))}
+                                self.make_standard_metadata(entry_name=img_dct['entry'], scan_type=self.scan_type))}
                             #if(entry_num is 0):
                             #if(img_dct['entry'] is not prev_entry_nm):
                             if(img_dct['entry'] not in entrys_lst):

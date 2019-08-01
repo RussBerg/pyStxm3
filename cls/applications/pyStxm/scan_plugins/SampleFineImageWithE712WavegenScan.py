@@ -205,7 +205,7 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
         #det.configure(self.x_roi[NPOINTS], self.scan_type)
 
         if(md is None):
-            md = {'metadata': dict_to_json(self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type))}
+            md = {'metadata': dict_to_json(self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
         # if(not skip_baseline):
         #     @bpp.baseline_decorator(dev_list)
 
@@ -280,7 +280,7 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
     #     #det.set_num_points(self.x_roi[NPOINTS])
     #     det.configure(self.x_roi[NPOINTS], self.scan_type)
     #     if(md is None):
-    #         md = {'metadata': dict_to_json(self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type))}
+    #         md = {'metadata': dict_to_json(self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
     #     # if(not skip_baseline):
     #     #     @bpp.baseline_decorator(dev_list)
     # 
@@ -337,10 +337,11 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
             ev_mtr = self.main_obj.device(DNM_ENERGY)
             pol_mtr = self.main_obj.device(DNM_EPU_POLARIZATION)
 
-            print('starting: make_stack_image_plan: do_scan()')
+            #print('starting: make_stack_image_plan: do_scan()')
             entrys_lst = []
             entry_num = 0
-            idx = 0
+            #idx = 0
+            self._current_img_idx = 0
             point_spec_devs_configd = False
             prev_entry_nm = ''
             # , starts=starts, stops=stops, npts=npts, group='e712_wavgen', wait=True)
@@ -371,9 +372,11 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
                                 point_spec_devs_configd = True
 
                             # take a single image that will be saved with its own run scan id
-                            img_dct = self.img_idx_map['%d'%idx]
+                            #img_dct = self.img_idx_map['%d' % idx]
+                            img_dct = self.img_idx_map['%d' % self._current_img_idx]
+
                             md = {'metadata': dict_to_json(
-                                self.make_standard_data_metadata(entry_name=img_dct['entry'], scan_type=self.scan_type))}
+                                self.make_standard_metadata(entry_name=img_dct['entry'], scan_type=self.scan_type))}
                             #if(entry_num is 0):
                             #if(img_dct['entry'] is not prev_entry_nm):
                             if(img_dct['entry'] not in entrys_lst):
@@ -391,7 +394,8 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
                                     yield from self.make_single_image_e712_plan(dets, gate, md=md, do_baseline=False)
 
                             #entry_num += 1
-                            idx += 1
+                            #idx += 1
+                            self._current_img_idx += 1
                             #prev_entry_nm = img_dct['entry']
                             entrys_lst.append(img_dct['entry'])
 
@@ -424,356 +428,6 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
             _logger.debug('BaseScan: on_scan_done_discon_sigs: ELSE: sigs were not connected')
         # if(done):
         self.disconnect_signals()
-
-    # def on_single_image_scan_done(self):
-    #     '''
-    #     THis is called on_scan_done if there are only 1 images being acquired
-    #     :return:
-    #     '''
-    #     self.shutter.close()
-    #     self.gate.stop()
-    #     self.counter.stop()
-    #
-    #     #counter = self.counter_dct.keys()[0]
-    #     counter = DNM_DEFAULT_COUNTER
-    #     _sp_id = list(self.spid_data[counter].keys())[0]
-    #     sp_db = self.sp_rois[_sp_id]
-    #     self.data_dct = self.data_obj.get_data_dct()
-    #
-    #     ado_obj = dct_get(sp_db, SPDB_ACTIVE_DATA_OBJECT)
-    #     data_file_prfx = dct_get(ado_obj, ADO_CFG_PREFIX)
-    #     datadir = dct_get(ado_obj, ADO_CFG_DATA_DIR)
-    #     datafile_name = dct_get(ado_obj, ADO_CFG_DATA_FILE_NAME)
-    #     thumb_name = dct_get(ado_obj, ADO_CFG_DATA_THUMB_NAME)
-    #
-    #     if (not self.check_if_save_all_data(datafile_name)):
-    #         self.on_scan_done_discon_sigs()
-    #         return
-    #     else:
-    #         cur_idx = self.get_consecutive_scan_idx()
-    #         _logger.debug('SampleImageWithE712Wavegen: on_single_image_scan_done() called [%d]' % cur_idx)
-    #
-    #         _dct = self.get_img_idx_map(cur_idx)
-    #         sp_id = _dct['sp_id']
-    #         sp_idx = _dct['sp_idx']
-    #         pol_idx = _dct['pol_idx']
-    #
-    #         # for now just use the first counter
-    #         #counter = self.counter_dct.keys()[0]
-    #         counter = DNM_DEFAULT_COUNTER
-    #         self._data = self.spid_data[counter][sp_id][pol_idx]
-    #
-    #         # self.on_save_sample_image(_data=self._data)
-    #         self.on_save_sample_image(_data=self.img_data[sp_id])
-    #
-    #         _dct = self.get_snapshot_dict(cur_idx)
-    #         self.main_obj.zmq_save_dict_to_tmp_file(_dct)
-    #
-    #         #added this conditional when working on coarse scans
-    #         # not sure why I would need this incremented for fine scans
-    #         if(self.is_fine_scan):
-    #             self.incr_consecutive_scan_idx()
-    #
-    #         # THIS IS CRITICAL
-    #         # now that we have all of the data from all of the detectors, tell the sscan rec to continue
-    #         self._scan2.sscan.put('WAIT', 0)
-    #         ###############################
-    #
-    #         self.save_hdr(do_check=False)
-    #         self.on_scan_done_discon_sigs()
-
-    # def on_sampleimage_data_level_done(self):
-    #     # _logger.debug('SampleImageWithEnergySSCAN: SampleImageWithEnergySSCAN() called')
-    #     self.on_save_sample_image()
-    #     if (self.stack):
-    #         self.update_data(stack=True)
-    #     #self.incr_consecutive_scan_idx()
-
-
-    # def on_done_save_jpg_and_tmp_file(self):
-    #     '''
-    #     this is a handler for data_ready signal from SscanClass if there are more than one images being acquired
-    #     the done here is for data_level_done, where we want to save a jpg, update the tmp file and continue IFF
-    #     the current image idx does not qual the last image index
-    #     :return:
-    #     '''
-    #     cur_idx = self.get_consecutive_scan_idx()
-    #
-    #     _logger.info('SampleImageWithE712Wavegen: on_done_save_jpg_and_tmp_file() called [%d]' % cur_idx)
-    #
-    #     _dct = self.get_img_idx_map(cur_idx)
-    #     sp_id = _dct['sp_id']
-    #     sp_idx = _dct['sp_idx']
-    #     pol_idx = _dct['pol_idx']
-    #
-    #     # for now just use the first counter
-    #     #counter = self.counter_dct.keys()[0]
-    #     counter = DNM_DEFAULT_COUNTER
-    #     self._data = self.spid_data[counter][sp_id][pol_idx]
-    #
-    #     #self.on_save_sample_image(_data=self._data)
-    #     self.on_save_sample_image(_data=self.img_data[sp_id])
-    #
-    #     if (cur_idx >= self.numImages):
-    #         print('update_tmp_file: cur_idx[%d] >= self.numImages[%d]: I dont this this is right' % (cur_idx, self.numImages))
-    #     else:
-    #         print('creating a snapshot for idx%d' % cur_idx)
-    #         _dct = self.get_snapshot_dict(cur_idx)
-    #         self.main_obj.zmq_save_dict_to_tmp_file(_dct)
-    #
-    #     # added this conditional when working on coarse scans
-    #     # not sure why I would need this incremented for fine scans
-    #     if (self.is_fine_scan):
-    #         self.incr_consecutive_scan_idx()
-    #
-    #     # THIS IS CRITICAL
-    #     # now that we have all of the data from all of the detectors, tell the sscan rec to continue
-    #     self._scan2.sscan.put('WAIT', 0)
-    #     ###############################
-    #     if (cur_idx == self.numImages - 1):
-    #         print('hey! I think this is the scan_done')
-    #         self.shutter.close()
-    #         self.on_scan_done_discon_sigs()
-    #         self.save_hdr()
-    #
-    # def on_done_save_jpg_and_tmp_file_no_check_for_done(self):
-    #     '''
-    #     this is a handler for data_ready signal from SscanClass if there are more than one images being acquired
-    #     the done here is for data_level_done, where we want to save a jpg, update the tmp file and continue IFF
-    #     the current image idx does not qual the last image index
-    #     :return:
-    #     '''
-    #     cur_idx = self.get_consecutive_scan_idx()
-    #
-    #     _logger.debug('SampleImageWithE712Wavegen: on_done_save_jpg_and_tmp_file_no_check_for_done() called [%d]' % cur_idx)
-    #
-    #     _dct = self.get_img_idx_map(cur_idx)
-    #     sp_id = _dct['sp_id']
-    #     sp_idx = _dct['sp_idx']
-    #     pol_idx = _dct['pol_idx']
-    #
-    #     # for now just use the first counter
-    #     #counter = self.counter_dct.keys()[0]
-    #     counter = DNM_DEFAULT_COUNTER
-    #     self._data = self.spid_data[counter][sp_id][pol_idx]
-    #
-    #     #self.on_save_sample_image(_data=self._data)
-    #     self.on_save_sample_image(_data=self.img_data[sp_id])
-    #
-    #     _dct = self.get_snapshot_dict(cur_idx)
-    #     self.main_obj.zmq_save_dict_to_tmp_file(_dct)
-    #
-    #     if (cur_idx < self.numImages - 1):
-    #         self.incr_consecutive_scan_idx()
-    #
-    #     # THIS IS CRITICAL
-    #     # now that we have all of the data from all of the detectors, tell the sscan rec to continue
-    #     self._scan2.sscan.put('WAIT', 0)
-    #
-    #
-    # def update_tmp_file(self):
-    #     '''
-    #                 this is a handler for data_ready signal from SscanClass
-    #                 :return:
-    #
-    #                 tmp_data_dct = {}
-    #         tmp_data_dct['devs']['energy'] = 685.0
-    #         tmp_data_dct['devs']['epu_gap'] = 235.8
-    #         tmp_data_dct['devs']['epu_polarization'] = 1
-    #         tmp_data_dct['devs']['epu_offset'] = 0.0
-    #         tmp_data_dct['devs']['epu_angle'] = 0.0
-    #         ...
-    #         tmp_data_dct['dets']['counter0'] = [[356, 403 ...]]  # a numpy arrray of shape (100,100) for a 100x100 pt image
-    #         tmp_data_dct['dets']['ring_current'] = 221.56  # a single value
-    #         tmp_data_dct['dets']['ccd0'] = [[[356, 403 ...]]]  # a numpy arrray of shape (480,640) for a 640x480 pt image
-    #
-    #     '''
-    #     tmp_data_dct = {}
-    #
-    #     # if (self.stack):
-    #     cur_idx = self.get_consecutive_scan_idx()
-    #
-    #
-    #     _logger.debug('SampleImageWithEnergySSCAN: update_tmp_file() called [%d]' % cur_idx)
-    #     # print 'self.do_update_devs:'
-    #     attr_dct = self.update_dev_data[cur_idx]
-    #     print(attr_dct)
-    #
-    #     # print self.img_idx_map
-    #     # only support one detector for now
-    #     for counter in list(self.counter_dct.keys()):
-    #         # for each configured counter, get the data and send it to the dataIO
-    #         _dct = self.get_img_idx_map(cur_idx)
-    #         entry = _dct['entry']
-    #         sp_id = _dct['sp_id']
-    #         sp_idx = _dct['sp_idx']
-    #         pol_idx = _dct['pol_idx']
-    #         data = self.spid_data[counter][sp_id][pol_idx]
-    #         self.hdr.update_tmp_data(cur_idx, tmp_data_dct)
-    #     # if(not self.stack):
-    #     #    self.save_hdr()
-    #
-    #
-    #
-    #
-    #
-    # def optimize_sample_line_scan(self):
-    #     '''
-    #     To be implemented by the inheriting class
-    #     This function is meant to retrieve from the ini file the section for its scan and set any PDLY's
-    #     and any other settings required to optimize the scan for speed.
-    #     Typically this is used by the scans that move the fine piezo stages as their status response can greatly
-    #     mprove the performance if it is optimized.
-    #
-    #     appConfig.get_value('SAMPLE_IMAGE', 'whatever')
-    #     c_scan1_pdly=0.0
-    #     c_scan2_pdly=0.0
-    #     f_scan2_pdly=0.0
-    #     f_scan1_pdly=0.15
-    #     # force done values are: 0=NORMAL, 1=FORCED, 2=INTERNAL_TIMED
-    #     f_fx_force_done=2
-    #     f_fy_force_done=1
-    #     '''
-    #     appConfig.update()
-    #     c_scan1_pdly = float(appConfig.get_value('SAMPLE_IMAGE_LXL', 'c_scan1_pdly'))
-    #     c_scan2_pdly = float(appConfig.get_value('SAMPLE_IMAGE_LXL', 'c_scan2_pdly'))
-    #     f_scan1_pdly = float(appConfig.get_value('SAMPLE_IMAGE_LXL', 'f_scan1_pdly'))
-    #     f_scan2_pdly = float(appConfig.get_value('SAMPLE_IMAGE_LXL', 'f_scan2_pdly'))
-    #     c_fx_force_done = float(appConfig.get_value('SAMPLE_IMAGE_LXL', 'c_fx_force_done'))
-    #     c_fy_force_done = float(appConfig.get_value('SAMPLE_IMAGE_LXL', 'c_fy_force_done'))
-    #     f_fx_force_done = float(appConfig.get_value('SAMPLE_IMAGE_LXL', 'f_fx_force_done'))
-    #     f_fy_force_done = float(appConfig.get_value('SAMPLE_IMAGE_LXL', 'f_fy_force_done'))
-    #     fx_done = MAIN_OBJ.device('FX_force_done')
-    #     fy_done = MAIN_OBJ.device('FY_force_done')
-    #
-    #     if (self.x_roi[SCAN_RES] == COARSE):
-    #         self.xScan.put('PDLY', c_scan1_pdly)
-    #         fx_done.put(c_fx_force_done)
-    #     else:
-    #         self.xScan.put('PDLY', f_scan1_pdly)
-    #         fx_done.put(f_fx_force_done)
-    #
-    #     if (self.y_roi[SCAN_RES] == COARSE):
-    #         self.yScan.put('PDLY', c_scan2_pdly)
-    #         fy_done.put(c_fy_force_done)
-    #     else:
-    #         self.yScan.put('PDLY', f_scan2_pdly)
-    #         fy_done.put(f_fy_force_done)
-    #
-    # def optimize_sample_point_scan(self):
-    #     '''
-    #     To be implemented by the inheriting class
-    #     This function is meant to retrieve from the ini file the section for its scan and set any PDLY's
-    #     and any other settings required to optimize the scan for speed.
-    #     Typically this is used by the scans that move the fine piezo stages as their status response can greatly
-    #     mprove the performance if it is optimized.
-    #
-    #     appConfig.get_value('SAMPLE_IMAGE', 'whatever')
-    #     c_scan1_pdly=0.0
-    #     c_scan2_pdly=0.0
-    #     f_scan2_pdly=0.0
-    #     f_scan1_pdly=0.15
-    #     # force done values are: 0=NORMAL, 1=FORCED, 2=INTERNAL_TIMED
-    #     f_fx_force_done=2
-    #     f_fy_force_done=1
-    #     '''
-    #     appConfig.update()
-    #     c_scan1_pdly = float(appConfig.get_value('SAMPLE_IMAGE_PXP', 'c_scan1_pdly'))
-    #     c_scan2_pdly = float(appConfig.get_value('SAMPLE_IMAGE_PXP', 'c_scan2_pdly'))
-    #     f_scan1_pdly = float(appConfig.get_value('SAMPLE_IMAGE_PXP', 'f_scan1_pdly'))
-    #     f_scan2_pdly = float(appConfig.get_value('SAMPLE_IMAGE_PXP', 'f_scan2_pdly'))
-    #     c_fx_force_done = float(appConfig.get_value('SAMPLE_IMAGE_PXP', 'c_fx_force_done'))
-    #     c_fy_force_done = float(appConfig.get_value('SAMPLE_IMAGE_PXP', 'c_fy_force_done'))
-    #     f_fx_force_done = float(appConfig.get_value('SAMPLE_IMAGE_PXP', 'f_fx_force_done'))
-    #     f_fy_force_done = float(appConfig.get_value('SAMPLE_IMAGE_PXP', 'f_fy_force_done'))
-    #     fx_done = MAIN_OBJ.device('FX_force_done')
-    #     fy_done = MAIN_OBJ.device('FY_force_done')
-    #
-    #     if (self.x_roi[SCAN_RES] == COARSE):
-    #         # self.xyScan.put('PDLY', c_scan1_pdly)
-    #         self.xScan.put('PDLY', c_scan1_pdly)
-    #         fx_done.put(c_fx_force_done)
-    #     else:
-    #         # self.xyScan.put('PDLY', f_scan1_pdly)
-    #         self.xScan.put('PDLY', f_scan1_pdly)
-    #         fx_done.put(f_fx_force_done)
-    #
-    #     if (self.y_roi[SCAN_RES] == COARSE):
-    #         self.yScan.put('PDLY', c_scan2_pdly)
-    #         fy_done.put(c_fy_force_done)
-    #     else:
-    #         self.yScan.put('PDLY', f_scan2_pdly)
-    #         fy_done.put(f_fy_force_done)
-    #
-    # def optimize_sample_pointspec_scan(self):
-    #     '''
-    #     To be implemented by the inheriting class
-    #     This function is meant to retrieve from the ini file the section for its scan and set any PDLY's
-    #     and any other settings required to optimize the scan for speed.
-    #     Typically this is used by the scans that move the fine piezo stages as their status response can greatly
-    #     mprove the performance if it is optimized.
-    #
-    #     appConfig.get_value('SAMPLE_IMAGE', 'whatever')
-    #     c_scan1_pdly=0.0
-    #     c_scan2_pdly=0.0
-    #     f_scan2_pdly=0.0
-    #     f_scan1_pdly=0.15
-    #     # force done values are: 0=NORMAL, 1=FORCED, 2=INTERNAL_TIMED
-    #     f_fx_force_done=2
-    #     f_fy_force_done=1
-    #     '''
-    #     appConfig.update()
-    #     c_scan1_pdly = float(appConfig.get_value('SAMPLE_POINT_SPEC_SCAN', 'c_scan1_pdly'))
-    #     c_scan2_pdly = float(appConfig.get_value('SAMPLE_POINT_SPEC_SCAN', 'c_scan2_pdly'))
-    #     f_scan1_pdly = float(appConfig.get_value('SAMPLE_POINT_SPEC_SCAN', 'f_scan1_pdly'))
-    #     f_scan2_pdly = float(appConfig.get_value('SAMPLE_POINT_SPEC_SCAN', 'f_scan2_pdly'))
-    #     c_fx_force_done = float(appConfig.get_value('SAMPLE_POINT_SPEC_SCAN', 'c_fx_force_done'))
-    #     c_fy_force_done = float(appConfig.get_value('SAMPLE_POINT_SPEC_SCAN', 'c_fy_force_done'))
-    #     f_fx_force_done = float(appConfig.get_value('SAMPLE_POINT_SPEC_SCAN', 'f_fx_force_done'))
-    #     f_fy_force_done = float(appConfig.get_value('SAMPLE_POINT_SPEC_SCAN', 'f_fy_force_done'))
-    #     fx_done = MAIN_OBJ.device('FX_force_done')
-    #     fy_done = MAIN_OBJ.device('FY_force_done')
-    #
-    #     if (self.x_roi[SCAN_RES] == COARSE):
-    #         self.xyScan.put('PDLY', c_scan1_pdly)
-    #         fx_done.put(c_fx_force_done)
-    #         fy_done.put(c_fy_force_done)
-    #     else:
-    #         self.xyScan.put('PDLY', f_scan1_pdly)
-    #         fx_done.put(f_fx_force_done)
-    #         fy_done.put(f_fy_force_done)
-    #
-    #
-    # def optimize_hdw_accel_scan(self):
-    #     pass
-    #
-    # def on_abort_scan(self):
-    #     """
-    #     on_abort_scan(): description
-    #
-    #     :returns: None
-    #     """
-    #     if (self.main_obj.device('Shutter').is_auto()):
-    #         self.main_obj.device('Shutter').close()
-    #     self._abort = True
-    #     if(self.use_hdw_accel):
-    #         #tell E712 wavegen to stop
-    #         self.e712_wg.stop_wave_generator()
-    #
-    #
-    # def validate_scan_assignments(self):
-    #     """ a simple checker to verify that the scans are assigned to the correct epics sscan records
-    #     """
-    #
-    #     pass_tst = True
-    #     if (self.scan_type == scan_types.SAMPLE_POINT_SPECTRA):
-    #         if (self.evScan.get_name() != '%s:scan3' % self.scan_prefix):
-    #             pass_tst = False
-    #         if (self.polScan.get_name() != '%s:scan2' % self.scan_prefix):
-    #             pass_tst = False
-    #         if (self.xyScan.get_name() != '%s:scan1' % self.scan_prefix):
-    #             pass_tst = False
-    #     return (pass_tst)
 
     def configure(self, wdg_com, sp_id=0, ev_idx=0, line=True, block_disconnect_emit=False):
         """
@@ -944,153 +598,12 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
             _logger.error('SampleImageWithEnergySSCAN: unable to determine scan type [%d]' % self.scan_type)
             return
 
-        # users can request that the the ev and polarity portions of the scan can be executed in different orders
-        # based on the order that requires a certain what for the sscan clases to be assigned in terms of their "level" so handle that in
-        # another function
-        # self.set_ev_pol_order(self.ev_pol_order)
-        # if (self.ev_pol_order == energy_scan_order_types.EV_THEN_POL):
-        #
-        #     if (self.is_point_spec):
-        #         if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
-        #             _id = 'goni_ev_pol_pnt_spec'
-        #         else:
-        #             _id = 'ev_pol_pnt_spec'
-        #     elif (self.is_lxl):
-        #         if(self.use_hdw_accel):
-        #             #use the wavegen config
-        #             if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
-        #                 _id = 'ev_pol_wg_gt'
-        #             else:
-        #                 _id = 'ev_pol_wg'
-        #         else:
-        #             _id = 'ev_pol_lxl'
-        #     else:
-        #         if (self.use_hdw_accel):
-        #             # use the wavegen config
-        #             if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
-        #                 _id = 'ev_pol_wg_gt'
-        #             else:
-        #                 _id = 'ev_pol_wg'
-        #         else:
-        #             # _id = 'ev_pol_pxp'
-        #             _id = 'ev_pol_pxp_2recs'
-        #
-        # elif (self.ev_pol_order == energy_scan_order_types.POL_THEN_EV):
-        #     if (self.is_point_spec):
-        #         _id = 'pol_ev_pnt_spec'
-        #     elif (self.is_lxl):
-        #         if (self.use_hdw_accel):
-        #             # use the wavegen config
-        #             _id = 'pol_ev_wg'
-        #         else:
-        #             _id = 'pol_ev_lxl'
-        #     else:
-        #         _id = 'pol_ev_pxp'
-        #
-        # else:
-        #     _logger.error('unsupported ev polarity order [%d]' % self.ev_pol_order)
-        #     return
-
-        # parms = self.cmdfile_parms[_id]
-
-        #adjust params so that the data_done and scan_done signals work properly
-        #only change the image params leave point spec as default
-        # if(not self.is_point_spec):
-        #     if(self.stack or (self.numSPIDS > 1)):
-        #         if (self.is_fine_scan):
-        #             parms['on_data_level_done'] = self.on_done_save_jpg_and_tmp_file
-        #             parms['on_scan_done'] = self.on_single_image_scan_done
-        #         else:
-        #             # coarse scan, dont change defaults
-        #             parms['on_data_level_done'] = self.on_done_save_jpg_and_tmp_file_no_check_for_done
-        #             parms['on_scan_done'] = self.chk_for_more_evregions
-        #     else:
-        #         if(self.is_fine_scan):
-        #             #single image scan
-        #             parms['on_data_level_done'] = self.on_single_image_scan_done
-        #             #parms['on_scan_done'] = self.on_scan_done_discon_sigs
-        #             parms['on_scan_done'] = None
-        #         else:
-        #             #coarse scan, dont change defaults
-        #             parms['on_data_level_done'] = self.on_single_image_scan_done
-        #             #parms['on_data_level_done'] = self.save_hdr
-        #             #parms['on_data_level_done'] = self.chk_for_more_evregions
-        #             #parms['on_scan_done'] = self.chk_for_more_evregions
-        #             parms['on_scan_done'] = None
-        #
-        #
-        # self.set_cmdfile_params(parms)
-
-        # if (not self.validate_scan_assignments()):
-        #     _logger.error('Scans are not correctly assigned')
-        #     return
-
-        # cause the low level sscan records to clear their previous values and reload their common settings
-        #self.setupScan.reload_base_scan_config()
-        # self.reload_base_scan_config()
-
-        # set the function that will be called to make fine adjustments to the scan performance before scan starts
-        # these optimization values are taken dynamically from tehj stxmMain.ini file so that they can be tested without restarting pySTXM
-
-        # reset to the default then decide if to change it
-        # self.set_optimize_scan_func(None)
-
-        # if (self.use_hdw_accel):
-        #     self.set_optimize_scan_func(self.optimize_hdw_accel_scan)
-        #
-        # elif((self.scan_type == scan_types.SAMPLE_IMAGE) or (self.scan_type == scan_types.SAMPLE_IMAGE_STACK)):
-        #     if (self.scan_sub_type == scan_sub_types.LINE_UNIDIR):
-        #         # LINE_UNIDIR
-        #         # if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
-        #         #    self.set_optimize_scan_func(self.optimize_goni_scan)
-        #         # else:
-        #         self.set_optimize_scan_func(self.optimize_sample_line_scan)
-        #     else:
-        #         # POINT_BY_POINT
-        #         self.set_optimize_scan_func(self.optimize_sample_point_scan)
-        #
-        # elif (self.scan_type == scan_types.SAMPLE_POINT_SPECTRA):
-        #     # self.pdlys = {'scan2': 0.05, 'scan1': 0.05}
-        #     self.set_optimize_scan_func(self.optimize_sample_pointspec_scan)
-        #
-        # else:
-        #     _logger.error(
-        #         'SampleImageWithEnergySSCAN: set optimize:  unable to determine scan type [%d]' % self.scan_type)
-        #     return
-
-        #if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
         if (self.fine_sample_positioning_mode == sample_fine_positioning_modes.ZONEPLATE):
             self.is_zp_scan = True
         else:
             self.is_zp_scan = False
             # determine and setup for line or point by point
-        # if (self.is_lxl):
-        #     if (self.use_hdw_accel):
-        #         #self.set_ImageLineScan_use_hdw_accel_sscan_rec(self.sp_db, e_roi, zp_scan)
-        #         self.set_ImageLineScan_use_hdw_accel_sscan_rec(self.sp_db, e_roi, zp_scan, single_lsts={'sps':sps, 'evs':evs, 'pols':pols, 'dwells':dwells})
-        #     else:
-        #         self.set_ImageLineScan_line_sscan_rec(self.sp_db, e_roi, zp_scan)
-        # else:
-        #     if (self.is_point_spec):
-        #         self.set_sample_point_spec_sscan_rec(self.sp_db, e_roi, zp_scan)
-        #     else:
-        #         if (self.use_hdw_accel):
-        #             #self.set_ImageLineScan_use_hdw_accel_sscan_rec(self.sp_db, e_roi, zp_scan)
-        #             self.set_ImageLineScan_use_hdw_accel_sscan_rec(self.sp_db, e_roi, zp_scan,
-        #                                                            single_lsts={'sps': sps, 'evs': evs, 'pols': pols,
-        #                                                                         'dwells': dwells})
-        #         else:
-        #             self.set_ImageLineScan_point_sscan_rec(self.sp_db, e_roi, zp_scan)
-
         self.ttl_pnts = 0
-        # reset signals so we can start clean
-        # if (block_disconnect_emit):
-        #     self.blockSignals(True)
-        #
-        # self.disconnect_signals()
-        #
-        # if (block_disconnect_emit):
-        #     self.blockSignals(False)
 
         # depending on the scan size the positioners used in the scan will be different, use a singe
         # function to find out which we are to use and return those names in a dct
@@ -1135,7 +648,6 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
         # self.counter.start()
         # self.counter.wait_till_running()
         ######################################################
-
 
         self.new_spatial_start.emit(sp_id)
 

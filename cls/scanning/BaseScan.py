@@ -322,11 +322,17 @@ class BaseScan(BaseObject):
         else:
             return (self.make_lxl_scan_plan(dets, gate, md=md, bi_dir=bi_dir))
 
-    def make_standard_data_metadata(self, entry_name, scan_type, primary_det=DNM_DEFAULT_COUNTER, override_xy_posner_nms=False):
+    def make_standard_metadata(self, entry_name, scan_type, primary_det=DNM_DEFAULT_COUNTER, override_xy_posner_nms=False):
         '''
         return a dict that is standard for all scans and that gives teh data suitcase all it needs to be able to save
         the nxstxm datafile
+
+        :param entry_name:
+        :param scan_type:
+        :param primary_det:
+        :param override_xy_posner_nms:
         :return:
+
         '''
 
         dct = {}
@@ -340,7 +346,8 @@ class BaseScan(BaseObject):
         dct['primary_det'] = primary_det
         dct['zp_def'] = self.get_zoneplate_info_dct()
         dct['wdg_com'] = dict_to_json(self.wdg_com)
-        dct['img_idx_map'] = dict_to_json(self.img_idx_map)
+        dct['img_idx_map'] = dict_to_json(self.img_idx_map['%d' % self._current_img_idx])
+        dct['rev_lu_dct'] = self.main_obj.get_device_reverse_lu_dct()
         return(dct)
 
     def get_rois_dict(self, override_xy_posner_nms=False):
@@ -2148,7 +2155,7 @@ class BaseScan(BaseObject):
 
 
             if(self.save_jpgs):
-                self.hdr.save_image_jpg(self.data_dct)
+                self.hdr.save_image_thumbnail(self.data_dct)
 
             self.busy_saving = False
             self._data = self.spid_data[counter][_sp_id][0]
@@ -2367,7 +2374,7 @@ class BaseScan(BaseObject):
 
             elif(self.is_lxl or self.is_pxp):
                 #save a jpg thumbnail
-                self.hdr.save_image_jpg(dct)
+                self.hdr.save_image_thumbnail(dct)
                 self.incr_imgidx()
                 self.new_spatial_start.emit(_spatial_roi_idx)
 
@@ -3057,7 +3064,10 @@ class BaseScan(BaseObject):
         elif(self.scan_type == scan_types.COARSE_GONI_SCAN):
             #single spatial
             self.data_shape = ('numE', 'numY', 'numX')
-        
+
+        elif (self.scan_type == scan_types.PATTERN_GEN_SCAN):
+            self.data_shape = ('numImages', 'numY', 'numX')
+
         else:
             _logger.error('unsupported scan type [%d]' % self.scan_type)
             self.data_shape = (None, None, None)
@@ -3817,24 +3827,24 @@ class BaseScan(BaseObject):
 
         :returns: None
         """
-        x_posnum = 1
-        self.numX = npts
-        
-        if(self.xyScan is not None):
-            xscan = self.xyScan
-        elif(self.xScan is not None):
-            xscan = self.xScan
-        else:
-            _logger.error('config_samplex_start_stop: no required xScan or xyScan')
-            return
-        
-        xscan.put('P%dPV' % x_posnum, pos_pv + '.VAL') #positioner pv
-        xscan.put('R%dPV' % x_posnum, pos_pv + '.RBV') #positioner pv
+        # x_posnum = 1
+        # self.numX = npts
+        #
+        # if(self.xyScan is not None):
+        #     xscan = self.xyScan
+        # elif(self.xScan is not None):
+        #     xscan = self.xScan
+        # else:
+        #     _logger.error('config_samplex_start_stop: no required xScan or xyScan')
+        #     return
+        #
+        # xscan.put('P%dPV' % x_posnum, pos_pv + '.VAL') #positioner pv
+        # xscan.put('R%dPV' % x_posnum, pos_pv + '.RBV') #positioner pv
         if(line):
             lstart = start-accRange
             lstop = stop + deccRange
             #start
-            self._config_start_stop(xscan, x_posnum, lstart, lstop, 2)
+            #self._config_start_stop(xscan, x_posnum, lstart, lstop, 2)
             self.sample_mtrx.put('ScanStart', lstart)
             self.sample_mtrx.put('ScanStop', lstop)
             self.sample_mtrx.put('MarkerStart', start)
@@ -4363,26 +4373,28 @@ class BaseScan(BaseObject):
         
         """
         #set the X Y positioners for the scan, for goni scans these are always the fine stages
-        if((self.is_point_spec or self.is_pxp) and (self.xyScan is not None)):
-            self.xyScan.set_positioner(1,  self.main_obj.device(dct['sx_name']))
-            self.xyScan.set_positioner(2,  self.main_obj.device(dct['sy_name']))
-                
-        else:
-            self.xScan.set_positioner(1,  self.main_obj.device(dct['sx_name']))
-            self.yScan.set_positioner(1,  self.main_obj.device(dct['sy_name']))
-
-        if(self.setupScan is not None):
-            self.setupScan.set_positioner(1,  self.main_obj.device(DNM_GONI_X))
-            self.setupScan.set_positioner(2,  self.main_obj.device(DNM_GONI_Y))
-            self.setupScan.set_positioner(3,  self.main_obj.device(DNM_OSA_X))
-            #self.setupScan.set_positioner(4,  self.main_obj.device(DNM_OSA_Y))
+        # if((self.is_point_spec or self.is_pxp) and (self.xyScan is not None)):
+        #     self.xyScan.set_positioner(1,  self.main_obj.device(dct['sx_name']))
+        #     self.xyScan.set_positioner(2,  self.main_obj.device(dct['sy_name']))
+        #
+        # else:
+        #     self.xScan.set_positioner(1,  self.main_obj.device(dct['sx_name']))
+        #     self.yScan.set_positioner(1,  self.main_obj.device(dct['sy_name']))
+        #
+        # if(self.setupScan is not None):
+        #     self.setupScan.set_positioner(1,  self.main_obj.device(DNM_GONI_X))
+        #     self.setupScan.set_positioner(2,  self.main_obj.device(DNM_GONI_Y))
+        #     self.setupScan.set_positioner(3,  self.main_obj.device(DNM_OSA_X))
+        #     #self.setupScan.set_positioner(4,  self.main_obj.device(DNM_OSA_Y))
         
-        gx_mtr = self.main_obj.device( dct['cx_name'] )
-        gy_mtr = self.main_obj.device( dct['cy_name'] )
+        # gx_mtr = self.main_obj.device( dct['cx_name'] )
+        # gy_mtr = self.main_obj.device( dct['cy_name'] )
+        gx_mtr = self.main_obj.get_sample_positioner('X')
+        gy_mtr = self.main_obj.get_sample_positioner('Y')
         
-        self.set_config_devices_func(self.on_this_dev_cfg)
+        #self.set_config_devices_func(self.on_this_dev_cfg)
         
-        self.main_obj.device( dct['cx_name'] )
+        # self.main_obj.device( dct['cx_name'] )
         self.sample_mtrx = self.sample_finex = self.main_obj.device(DNM_ZONEPLATE_X)
         self.sample_mtry = self.sample_finey = self.main_obj.device(DNM_ZONEPLATE_Y)
             
@@ -4392,7 +4404,7 @@ class BaseScan(BaseObject):
             pass
         else:
             #Gx is moving to scan center nd zx is centered around 0, so move Gx to scan center
-            self.main_obj.device( dct['cx_name'] ).put('user_setpoint', self.gx_roi[CENTER])
+            gx_mtr.move(self.gx_roi[CENTER])
             
         #if(self.is_within_dband( gy_mtr.get_position(), self.gy_roi[CENTER], 15.0)):
         if(self.zy_roi[CENTER] != 0.0):
@@ -4400,45 +4412,45 @@ class BaseScan(BaseObject):
             pass
         else:
             #Gy is moving to scan center nd zy is centered around 0, so move Gy to scan center
-            self.main_obj.device( dct['cy_name'] ).put('user_setpoint', self.gy_roi[CENTER])
+            gy_mtr.move(self.gy_roi[CENTER])
         
         #setup X
-        if( self.is_pxp or self.is_point_spec):
-            #if(hasattr(self, 'xyScan')):
-            if(self.xyScan is not None):
-                self.xyScan.put('P2PV', dct['fine_pv_nm']['Y'] + '.VAL')
-                self.xyScan.put('R2PV', dct['fine_pv_nm']['Y'] + '.RBV')
-                scan_velo = self.get_mtr_max_velo(self.xyScan.P1)
-                self.xyScan.put('BSPV', dct['coarse_pv_nm']['X'] + '.VELO')
-            else:
-                self.yScan.put('P1PV', dct['fine_pv_nm']['Y'] + '.VAL')
-                self.yScan.put('R1PV', dct['fine_pv_nm']['Y'] + '.RBV')    
-                scan_velo = self.get_mtr_max_velo(self.xScan.P1)
-                self.xScan.put('BSPV', dct['coarse_pv_nm']['X'] + '.VELO')
-            #x needs one extra to switch the row
-            npts = self.numX
-            dwell = self.dwell
-            accRange = 0
-            deccRange = 0
-            line = False
-        else:
-            self.yScan.put('P1PV', dct['fine_pv_nm']['Y'] + '.VAL')
-            self.yScan.put('R1PV', dct['fine_pv_nm']['Y'] + '.RBV')    
-            _ev_idx = self.get_evidx()
-            e_roi = self.e_rois[_ev_idx]
-            vmax = self.get_mtr_max_velo(self.xScan.P1)
-            #its not a point scan so determine the scan velo and accRange
-            (scan_velo , npts, dwell) = ensure_valid_values(self.zx_roi[START],  self.zx_roi[STOP],  self.dwell,  self.numZX, vmax, do_points=True)
-            accRange = calc_accRange(dct['fx_name'], self.zx_roi[SCAN_RES], self.zx_roi[RANGE], scan_velo , dwell, accTime=0.04)
-            deccRange = accRange
-            self.numX = npts
-            self.x_roi[NPOINTS] = npts
-            line = True
-            e_roi[DWELL] = dwell
-            self.dwell = dwell
-        
-        print('goniometer scan: accRange=%.2f um' % (accRange))
-        print('goniometer scan: deccRange=%.2f um' % (deccRange))
+        # if( self.is_pxp or self.is_point_spec):
+        #     #if(hasattr(self, 'xyScan')):
+        #     if(self.xyScan is not None):
+        #         self.xyScan.put('P2PV', dct['fine_pv_nm']['Y'] + '.VAL')
+        #         self.xyScan.put('R2PV', dct['fine_pv_nm']['Y'] + '.RBV')
+        #         scan_velo = self.get_mtr_max_velo(self.xyScan.P1)
+        #         self.xyScan.put('BSPV', dct['coarse_pv_nm']['X'] + '.VELO')
+        #     else:
+        #         self.yScan.put('P1PV', dct['fine_pv_nm']['Y'] + '.VAL')
+        #         self.yScan.put('R1PV', dct['fine_pv_nm']['Y'] + '.RBV')
+        #         scan_velo = self.get_mtr_max_velo(self.xScan.P1)
+        #         self.xScan.put('BSPV', dct['coarse_pv_nm']['X'] + '.VELO')
+        #     #x needs one extra to switch the row
+        #     npts = self.numX
+        #     dwell = self.dwell
+        #     accRange = 0
+        #     deccRange = 0
+        #     line = False
+        # else:
+        #     self.yScan.put('P1PV', dct['fine_pv_nm']['Y'] + '.VAL')
+        #     self.yScan.put('R1PV', dct['fine_pv_nm']['Y'] + '.RBV')
+        #     _ev_idx = self.get_evidx()
+        #     e_roi = self.e_rois[_ev_idx]
+        #     vmax = self.get_mtr_max_velo(self.xScan.P1)
+        #     #its not a point scan so determine the scan velo and accRange
+        #     (scan_velo , npts, dwell) = ensure_valid_values(self.zx_roi[START],  self.zx_roi[STOP],  self.dwell,  self.numZX, vmax, do_points=True)
+        #     accRange = calc_accRange(dct['fx_name'], self.zx_roi[SCAN_RES], self.zx_roi[RANGE], scan_velo , dwell, accTime=0.04)
+        #     deccRange = accRange
+        #     self.numX = npts
+        #     self.x_roi[NPOINTS] = npts
+        #     line = True
+        #     e_roi[DWELL] = dwell
+        #     self.dwell = dwell
+        #
+        # print('goniometer scan: accRange=%.2f um' % (accRange))
+        # print('goniometer scan: deccRange=%.2f um' % (deccRange))
 
         if(self.is_lxl):
             self.config_samplex_start_stop(dct['fine_pv_nm']['X'], self.zx_roi[START], self.zx_roi[STOP], self.numZX, accRange=accRange, deccRange=deccRange, line=True)
@@ -4449,38 +4461,38 @@ class BaseScan(BaseObject):
         
         #config the sscan that makes sure to move goni xy and osa xy to the correct position for scan
         #the setupScan will be executed as the top level but not monitored
-        if(self.setupScan is not None):
-            self.setupScan.put('NPTS', 1)
-            self.setupScan.put('P1PV', '%s.VAL' % self.main_obj.device(DNM_GONI_X).get_name())
-            self.setupScan.put('R1PV', '%s.RBV' % self.main_obj.device(DNM_GONI_X).get_name())
-            self.setupScan.put('P1CP', self.gx_roi[CENTER])
-
-            self.setupScan.put('P2PV', '%s.VAL' % self.main_obj.device(DNM_GONI_Y).get_name())
-            self.setupScan.put('R2PV', '%s.RBV' % self.main_obj.device(DNM_GONI_Y).get_name())
-            self.setupScan.put('P2CP', self.gy_roi[CENTER])
-
-            self.setupScan.put('P3PV', '%s.VAL' % self.main_obj.device(DNM_OSA_X).get_name())
-            self.setupScan.put('R3PV', '%s.RBV' % self.main_obj.device(DNM_OSA_X).get_name())
-            self.setupScan.put('P3CP', self.ox_roi[CENTER])
-            #self.setupScan.put('P3CP', 3000.0)
-        
-        #self.main_obj.device( dct['fx_name'] ).put('user_setpoint', dct['xstart'])
-        self.set_x_scan_velo(scan_velo)
-        self.num_points = self.numY
-        
-        #self.confirm_stopped(self.mtr_list)
-        #set teh velocity in teh sscan rec for X
-        if(self.is_pxp or self.is_point_spec):
-            #force it to toggle, not sure why this doesnt just work
-            self.sample_mtrx.put('Mode', MODE_POINT)
-            if(self.xyScan is not None):
-                self.xyScan.put('BSPV', dct['fine_pv_nm']['X'] + '.VELO')
-            else:
-                self.xScan.put('BSPV', dct['fine_pv_nm']['X'] + '.VELO')
-        else:
-            #force it to toggle, not sure why this doesnt just work
-            self.sample_mtrx.put('Mode', MODE_LINE_UNIDIR)
-            self.xScan.put('BSPV', dct['fine_pv_nm']['X'] + '.VELO')
+        # if(self.setupScan is not None):
+        #     self.setupScan.put('NPTS', 1)
+        #     self.setupScan.put('P1PV', '%s.VAL' % self.main_obj.device(DNM_GONI_X).get_name())
+        #     self.setupScan.put('R1PV', '%s.RBV' % self.main_obj.device(DNM_GONI_X).get_name())
+        #     self.setupScan.put('P1CP', self.gx_roi[CENTER])
+        #
+        #     self.setupScan.put('P2PV', '%s.VAL' % self.main_obj.device(DNM_GONI_Y).get_name())
+        #     self.setupScan.put('R2PV', '%s.RBV' % self.main_obj.device(DNM_GONI_Y).get_name())
+        #     self.setupScan.put('P2CP', self.gy_roi[CENTER])
+        #
+        #     self.setupScan.put('P3PV', '%s.VAL' % self.main_obj.device(DNM_OSA_X).get_name())
+        #     self.setupScan.put('R3PV', '%s.RBV' % self.main_obj.device(DNM_OSA_X).get_name())
+        #     self.setupScan.put('P3CP', self.ox_roi[CENTER])
+        #     #self.setupScan.put('P3CP', 3000.0)
+        #
+        # #self.main_obj.device( dct['fx_name'] ).put('user_setpoint', dct['xstart'])
+        # self.set_x_scan_velo(scan_velo)
+        # self.num_points = self.numY
+        #
+        # #self.confirm_stopped(self.mtr_list)
+        # #set teh velocity in teh sscan rec for X
+        # if(self.is_pxp or self.is_point_spec):
+        #     #force it to toggle, not sure why this doesnt just work
+        #     self.sample_mtrx.put('Mode', MODE_POINT)
+        #     if(self.xyScan is not None):
+        #         self.xyScan.put('BSPV', dct['fine_pv_nm']['X'] + '.VELO')
+        #     else:
+        #         self.xScan.put('BSPV', dct['fine_pv_nm']['X'] + '.VELO')
+        # else:
+        #     #force it to toggle, not sure why this doesnt just work
+        #     self.sample_mtrx.put('Mode', MODE_LINE_UNIDIR)
+        #    self.xScan.put('BSPV', dct['fine_pv_nm']['X'] + '.VELO')
                 
         
     def config_for_sample_holder_scan(self, dct):
@@ -4945,9 +4957,7 @@ class BaseScan(BaseObject):
         x_useddl_flags = []
         x_reinitddl_flags = []
         x_startatend_flags = []
-
         y_start_mode = []
-
         sp_roi_ids = []
 
         for sp_id in sp_rois:
@@ -4955,7 +4965,6 @@ class BaseScan(BaseObject):
             e_rois = dct_get(sp_db, SPDB_EV_ROIS)
             ev_idx = self.get_evidx()
             dwell = e_rois[ev_idx][DWELL]
-
 
             #if(fine_sample_positioning_mode == sample_fine_positioning_modes.ZONEPLATE):
             if (sample_positioning_mode == sample_positioning_modes.GONIOMETER):
@@ -5067,7 +5076,8 @@ class BaseScan(BaseObject):
 
     def make_single_image_plan(self, dets, gate, md=None, bi_dir=False, do_baseline=True):
         _logger.error('make_single_image_plan: THIS NEEDS TO BE IMPLEMENTED')
-    # def make_single_image_plan(self, dets, gate, md=None, bi_dir=False, do_baseline=True):
+
+    # def make_single_pxp_image_plan(self, dets, gate, md=None, bi_dir=False, do_baseline=True):
     #     '''
     #
     #     this needs to be adapted to be a fly scan, setup SampleX to trigger at correct location, set scan velo and acc range
@@ -5100,7 +5110,7 @@ class BaseScan(BaseObject):
     #     det.configure(self.x_roi[NPOINTS], self.scan_type)
     #     if (md is None):
     #         md = {'metadata': dict_to_json(
-    #             self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type))}
+    #             self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
     #         # if(not skip_baseline):
     #         #     @bpp.baseline_decorator(dev_list)
     #
@@ -5123,8 +5133,7 @@ class BaseScan(BaseObject):
     #
     #         # now do a horizontal line for every new zoneplate Z setpoint
     #         yield from scan_nd(dets, mtr_y, self.y_roi[START], self.y_roi[STOP], self.y_roi[NPOINTS, \
-    #                                 mtr_x, self.x_roi[START], self.x_roi[STOP], self.x_roi[NPOINTS], \
-    #                                 md=md)
+    #                                 mtr_x, self.x_roi[START], self.x_roi[STOP], self.x_roi[NPOINTS])
     #
     #
     #         shutter.close()
@@ -5134,6 +5143,41 @@ class BaseScan(BaseObject):
     #         print('CoarseSampleImageScanClass LxL: make_scan_plan Leaving')
     #
     #     return (yield from do_scan())
+
+    def make_single_pxp_image_plan(self, dets, gate, md=None, bi_dir=False, do_baseline=True):
+        dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
+        self._bi_dir = bi_dir
+        if (md is None):
+            md = {'metadata': dict_to_json(
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+
+        @conditional_decorator(bpp.baseline_decorator(dev_list), do_baseline)
+        #@bpp.baseline_decorator(dev_list)
+        @bpp.stage_decorator(dets)
+        # @bpp.run_decorator(md={'entry_name': 'entry0', 'scan_type': scan_types.DETECTOR_IMAGE})
+        def do_scan():
+            # Declare the end of the run.
+
+            # x_roi = self.sp_db['X']
+            # y_roi = self.sp_db['Y']
+            mtr_x = self.main_obj.get_sample_fine_positioner('X')
+            mtr_y = self.main_obj.get_sample_fine_positioner('Y')
+            shutter = self.main_obj.device(DNM_SHUTTER)
+            #md = self.make_standard_metadata(entry_num=0, scan_type=self.scan_type)
+            yield from bps.stage(gate)
+            shutter.open()
+            yield from grid_scan(dets,
+                          mtr_y, self.y_roi[START], self.y_roi[STOP], self.y_roi[NPOINTS],
+                          mtr_x, self.x_roi[START], self.x_roi[STOP], self.x_roi[NPOINTS],
+                                 bi_dir,
+                                 md=md)
+
+            shutter.close()
+            # yield from bps.wait(group='e712_wavgen')
+            yield from bps.unstage(gate)
+            print('BaseScan: make_pxp_scan_plan: Leaving')
+
+        return (yield from do_scan())
 
     def make_single_image_e712_plan(self, dets, gate, md=None, bi_dir=False, do_baseline=True):
         '''
@@ -5146,7 +5190,7 @@ class BaseScan(BaseObject):
         :param do_baseline:
         :return:
         '''
-        print('entering: make_single_image_e712_plan, baseline is:', do_baseline)
+        #print('entering: make_single_image_e712_plan, baseline is:', do_baseline)
         #zp_def = self.get_zoneplate_info_dct()
         dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
         e712_dev = self.main_obj.device(DNM_E712_OPHYD_DEV)
@@ -5178,7 +5222,7 @@ class BaseScan(BaseObject):
         #det.set_num_points(self.x_roi[NPOINTS])
         det.configure(self.x_roi[NPOINTS], self.scan_type)
         if(md is None):
-            md = {'metadata': dict_to_json(self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type))}
+            md = {'metadata': dict_to_json(self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
         # if(not skip_baseline):
         #     @bpp.baseline_decorator(dev_list)
 
@@ -5186,7 +5230,11 @@ class BaseScan(BaseObject):
         @bpp.stage_decorator(stagers)
         @bpp.run_decorator(md=md)
         def do_scan():
-            print('starting: make_single_image_e712_plan:  do_scan()')
+            if(do_baseline):
+                print('starting: make_single_image_e712_plan:  do_scan() TAKING A BASELINE OF DEVICES')
+            else:
+                print('starting: make_single_image_e712_plan:  do_scan()')
+
             # load the sp_id for wavegen
             x_tbl_id, y_tbl_id = e712_wdg.get_wg_table_ids(self.sp_id)
             print('make_single_image_e712_plan: putting x_tbl_id=%d, y_tbl_id=%d' % (x_tbl_id, y_tbl_id))
@@ -5259,10 +5307,7 @@ class BaseScan(BaseObject):
 
         self.sample_mtrx.put('Mode', 0)
 
-        #setup the E712 wavtable's and other relevant params, because tomo is always only a single spatial but many
-        # theta angles only send the one spatial to the hdw config
-        sp_id = list(self.sp_rois.keys())[0]
-        self.modify_config_for_hdw_accel(sp_rois={sp_id: self.sp_rois[sp_id]} )
+        self.modify_config_for_hdw_accel(self.sp_rois)
 
 
     def configure(self, wdg_com, sp_id=0, ev_idx=0, line=True, spectra=False, block_disconnect_emit=False, restore=True, z_enabled=False):

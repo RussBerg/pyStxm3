@@ -74,7 +74,7 @@ class CoarseSampleImageSCAN(BaseScan):
         self._bi_dir = bi_dir
         #zp_def = self.get_zoneplate_info_dct()
         mtr_dct = self.determine_samplexy_posner_pvs()
-        md = copy.deepcopy(self.make_standard_data_metadata(entry_num=0, scan_type=self.scan_type))
+        md = copy.deepcopy(self.make_standard_metadata(entry_num=0, scan_type=self.scan_type))
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)
         # @bpp.run_decorator(md={'entry_name': 'entry0', 'scan_type': scan_types.DETECTOR_IMAGE})
@@ -88,7 +88,7 @@ class CoarseSampleImageSCAN(BaseScan):
             shutter = self.main_obj.device(DNM_SHUTTER)
 
             det = dets[0]
-            #md = self.make_standard_data_metadata(entry_num=0, scan_type=self.scan_type)
+            #md = self.make_standard_metadata(entry_num=0, scan_type=self.scan_type)
             #md['x_roi'] = x_roi
             #md['y_roi'] = y_roi
             yield from bps.stage(gate)

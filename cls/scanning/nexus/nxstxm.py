@@ -179,8 +179,8 @@ def get_group(class_name, root_element):
                 else:
                     name = dtype
                 group_fields[name] = get_group(name, child)
-                #group_fields[dtype] = get_classes('group', child)
-                #classes = get_classes('group', child)
+                #group_fields[dtype] = get_nexpy_classes('group', child)
+                #classes = get_nexpy_classes('group', child)
             try:
                 dtype = child.attrib['type']
                 name = child.attrib['name']

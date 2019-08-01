@@ -48,6 +48,7 @@ class SaveSettings(QtCore.QObject):
         else:    
             #read from disk
             self.defdct = self.loadJson(fname)
+            self.defdct['fpath'] = self.fname
     
     def add_section(self, section, value, overwrite=False):
         dct_put(self.defdct, section, value, overwrite)

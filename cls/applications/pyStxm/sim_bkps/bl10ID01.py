@@ -98,6 +98,7 @@ class dev_config_sim_ambient(dev_config_base):
     def init_presets(self):
         self.devices['PRESETS']['MAX_SCAN_RANGE_X'] = 350
         self.devices['PRESETS']['MAX_SCAN_RANGE_Y'] = 200
+        self.devices['PRESETS']['USE_E712_HDW_ACCEL'] = True
 
         self.devices['PVS']['Energy_enable'].put(0)
 
@@ -146,6 +147,7 @@ class dev_config_amb(dev_config_base):
     def init_presets(self):
         self.devices['PRESETS']['MAX_SCAN_RANGE_X'] = 350
         self.devices['PRESETS']['MAX_SCAN_RANGE_Y'] = 200
+        self.devices['PRESETS']['USE_E712_HDW_ACCEL'] = True
         use_laser = appConfig.get_value('DEFAULT', 'use_laser')
 
         self.devices['PVS']['Energy_enable'].put(0)
@@ -295,6 +297,7 @@ class dev_config_uhv(dev_config_base):
         maxFX = appConfig.get_value('SCAN_RANGES', 'fine_x')
         maxFY = appConfig.get_value('SCAN_RANGES', 'fine_y')
         use_laser = appConfig.get_value('DEFAULT', 'use_laser')
+        self.devices['PRESETS']['USE_E712_HDW_ACCEL'] = True
 
 
 
@@ -491,7 +494,7 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
     #dev_dct['PVS']['Calcd_Zpz'] = BaseDevice('BL1610-I10:ENERGY:%s:zp:fbk:tr.L' % prfx)
     dev_dct['PVS']['Calcd_Zpz'] = BaseDevice('BL1610-I10:ENERGY:%s:zp:fbk:tr.I' % prfx)
 
-    dev_dct['PVS']['Zpz_adjust'] = BaseDevice('BL1610-I10:ENERGY:%s:zp:adjust_zpz' % prfx)
+    dev_dct['PVS'][DNM_ZONEPLATE_Z_ADJUST] = BaseDevice('BL1610-I10:ENERGY:%s:zp:adjust_zpz' % prfx)
 
     devcfg.msg_splash("connecting to: [%s]" % DNM_ZONEPLATE_SCAN_MODE)
     #dev_dct['PVS']['Zpz_scanModeFlag'] = Mbbo('BL1610-I10:ENERGY:%s:zp:scanselflag' % prfx) #used to control which value gets sent to Zpz, fl or fl - A0
@@ -669,7 +672,7 @@ def connect_heartbeats(dev_dct, prfx='uhv'):
 
 
 def connect_e712(dev_dct, prfx='uhv', e712_prfx='IOCE712'):
-    
+
     # dev_dct['SSCANS']['SampleImageWithE712Wavegen'] = SampleImageWithE712Wavegen()
     dev_dct['WIDGETS'][DNM_E712_WIDGET] = E712ControlWidget('%s:' % e712_prfx,
                                                                 counter=dev_dct['DETECTORS'][DNM_COUNTER_APD],

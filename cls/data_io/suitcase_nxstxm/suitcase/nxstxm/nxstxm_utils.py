@@ -33,6 +33,7 @@ from bcm.devices.device_names import *
 _logger = get_module_logger(__name__)
 
 
+
 def readin_base_classes(desired_class=None):
     clss = get_classes('base_classes', desired_class)
     return (clss)
@@ -49,6 +50,12 @@ def readin_contributed_definition_classes(desired_class=None):
 
 
 def get_classes(class_dir, desired_class=None):
+    '''
+    read the nexpy classes xml files and turn them into dicts, and return the desired class dict
+    :param class_dir:
+    :param desired_class:
+    :return:
+    '''
     base_class_path = pkg_resources.resource_filename('nexpy', 'definitions/%s' % class_dir)
     nxdl_files = list(map(os.path.basename, glob.glob(os.path.join(base_class_path, '*.nxdl.xml'))))
     pattern = re.compile(r'[\t\n ]+')
@@ -176,8 +183,8 @@ def get_group(class_name, root_element):
                 else:
                     name = dtype
                 group_fields[name] = get_group(name, child)
-                # group_fields[dtype] = get_classes('group', child)
-                # classes = get_classes('group', child)
+                # group_fields[dtype] = get_nexpy_classes('group', child)
+                # classes = get_nexpy_classes('group', child)
             try:
                 dtype = child.attrib['type']
                 name = child.attrib['name']
@@ -275,7 +282,7 @@ def translate_scan_type(old_type):
         return (scan_types.SAMPLE_FOCUS)
 
     elif (old_type == 'Point_Scan'):
-        return (scan_types.SAMPLE_POINT_SPECTRA)
+        return (scan_types.SAMPLE_POINT_SPECTRUM)
 
     elif (old_type == 'ImagePointByPoint'):
         return (scan_types.SAMPLE_IMAGE)
@@ -536,7 +543,7 @@ def _data_as_1D(data_dct, sp_id=None):
             yp1ra = []
             ypnts = []
 
-    if (scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+    if (scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
         # the order of the data shape is different than other scans
         # (numPol, numEv, numX) or ( # images, # rows per image, #cols per image)
         # so translate so that the shape will be standard, where numEV typically is # images
@@ -567,7 +574,7 @@ def _data_as_1D(data_dct, sp_id=None):
             numP = int(numY * numX * numZ)
 
             # pull these out because they are required in EVERY NXData group
-    if (scan_type == scan_types.SAMPLE_POINT_SPECTRA):
+    if (scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
         # cant use the RBV positions because they will be from teh last sp_db and not from THIS sp_db
         # so use the setpoint for this sp_db
         sx_pnts = x_roi[START]
@@ -599,8 +606,8 @@ def _data_as_1D(data_dct, sp_id=None):
     dct_put(dct, 'NUM_E.SLIT_Y', make_1d_array(numE, SlitY))
     dct_put(dct, 'NUM_E.M3_PITCH', make_1d_array(numE, M3STXMPitch))
 
-    dct_put(dct, 'NUM_E.SAMPLE_X', sx_pnts)
-    dct_put(dct, 'NUM_E.SAMPLE_Y', sy_pnts)
+    dct_put(dct, 'NUM_E.nxkd.SAMPLE_X', sx_pnts)
+    dct_put(dct, 'NUM_E.nxkd.SAMPLE_Y', sy_pnts)
 
     dct_put(dct, 'NUM_E.DATA', data_numE)
 
@@ -625,7 +632,7 @@ def _data_as_1D(data_dct, sp_id=None):
 
     elif (len(data_E_shape) == 3):
         # print '_data_as_1D: 3D data not totally supported yet'
-        if ((scan_type == scan_types.SAMPLE_POINT_SPECTRA) or (scan_type == scan_types.GENERIC_SCAN)):
+        if ((scan_type == scan_types.SAMPLE_POINT_SPECTRUM) or (scan_type == scan_types.GENERIC_SCAN)):
             cols = data_E_shape[0]
             oned_sdata = np.zeros(cols, dtype=np.float32)
             oned_sdata.fill(sr_current)
@@ -665,7 +672,7 @@ def _data_as_1D(data_dct, sp_id=None):
     dct_put(dct, 'NUM_P.EPU_GAP', make_1d_array(numP, EPUGap))
     dct_put(dct, 'NUM_P.EPU_HARMONIC', make_1d_array(numP, EPUHarmonic))
 
-    if (scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+    if (scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
         xpnts2 = np.tile(xpnts, numY)
         sample_x = np.tile(xpnts2, numE)
         ypnts2 = np.tile(ypnts, numX)
@@ -673,14 +680,14 @@ def _data_as_1D(data_dct, sp_id=None):
         dct_put(dct, 'NUM_P.MOTOR_X', sample_x)
         dct_put(dct, 'NUM_P.MOTOR_Y', sample_y)
 
-        dct_put(dct, 'NUM_P.SAMPLE_X', sample_x)
-        dct_put(dct, 'NUM_P.SAMPLE_Y', sample_y)
+        dct_put(dct, 'NUM_P.nxkd.SAMPLE_X', sample_x)
+        dct_put(dct, 'NUM_P.nxkd.SAMPLE_Y', sample_y)
     else:
         dct_put(dct, 'NUM_P.MOTOR_X', sample_x)
         dct_put(dct, 'NUM_P.MOTOR_Y', sample_y)
 
-        dct_put(dct, 'NUM_P.SAMPLE_X', sample_x)
-        dct_put(dct, 'NUM_P.SAMPLE_Y', sample_y)
+        dct_put(dct, 'NUM_P.nxkd.SAMPLE_X', sample_x)
+        dct_put(dct, 'NUM_P.nxkd.SAMPLE_Y', sample_y)
 
     if (numZ > 0):
         dct_put(dct, 'NUM_P.MOTOR_Z', np.repeat(zpnts, (numY * numX)))
@@ -868,7 +875,7 @@ def _data_as_1D_new(data_dct, entry_name=None, sp_id=None, sp_idx=None, pol_idx=
             yp1ra = []
             ypnts = []
 
-    if (scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+    if (scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
         # the order of the data shape is different than other scans
         # (numPol, numEv, numX) or ( # images, # rows per image, #cols per image)
         # so translate so that the shape will be standard, where numEV typically is # images
@@ -896,7 +903,7 @@ def _data_as_1D_new(data_dct, entry_name=None, sp_id=None, sp_idx=None, pol_idx=
             numP = int(numY * numX * numZ)
 
             # pull these out because they are required in EVERY NXData group
-    if (scan_type == scan_types.SAMPLE_POINT_SPECTRA):
+    if (scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
         # cant use the RBV positions because they will be from teh last sp_db and not from THIS sp_db
         # so use the setpoint for this sp_db
         sx_pnts = x_roi[START]
@@ -941,8 +948,8 @@ def _data_as_1D_new(data_dct, entry_name=None, sp_id=None, sp_idx=None, pol_idx=
     dct_put(dct, 'NUM_E.SLIT_Y', make_1d_array(numE, SlitY))
     dct_put(dct, 'NUM_E.M3_PITCH', make_1d_array(numE, M3STXMPitch))
 
-    dct_put(dct, 'NUM_E.SAMPLE_X', sx_pnts)
-    dct_put(dct, 'NUM_E.SAMPLE_Y', sy_pnts)
+    dct_put(dct, 'NUM_E.nxkd.SAMPLE_X', sx_pnts)
+    dct_put(dct, 'NUM_E.nxkd.SAMPLE_Y', sy_pnts)
 
     # do all counters
     dct_put(dct, 'NUM_E.DATA', data_numE)
@@ -968,7 +975,7 @@ def _data_as_1D_new(data_dct, entry_name=None, sp_id=None, sp_idx=None, pol_idx=
 
     elif (len(data_E_shape) == 3):
         # print '_data_as_1D: 3D data not totally supported yet'
-        if ((scan_type == scan_types.SAMPLE_POINT_SPECTRA) or (scan_type == scan_types.GENERIC_SCAN)):
+        if ((scan_type == scan_types.SAMPLE_POINT_SPECTRUM) or (scan_type == scan_types.GENERIC_SCAN)):
             cols = data_E_shape[0]
             oned_sdata = np.zeros(cols, dtype=np.float32)
             oned_sdata.fill(sr_current)
@@ -1023,7 +1030,7 @@ def _data_as_1D_new(data_dct, entry_name=None, sp_id=None, sp_idx=None, pol_idx=
     # dct_put(dct, 'NUM_P.STOKES_S2', np.repeat(s2, _numXY))
     # dct_put(dct, 'NUM_P.STOKES_S3', np.repeat(s3, _numXY))
 
-    if (scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+    if (scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
         xpnts2 = np.tile(xpnts, numY)
         sample_x = np.tile(xpnts2, numE)
         ypnts2 = np.tile(ypnts, numX)
@@ -1031,14 +1038,14 @@ def _data_as_1D_new(data_dct, entry_name=None, sp_id=None, sp_idx=None, pol_idx=
         dct_put(dct, 'NUM_P.MOTOR_X', sample_x)
         dct_put(dct, 'NUM_P.MOTOR_Y', sample_y)
 
-        dct_put(dct, 'NUM_P.SAMPLE_X', sample_x)
-        dct_put(dct, 'NUM_P.SAMPLE_Y', sample_y)
+        dct_put(dct, 'NUM_P.nxkd.SAMPLE_X', sample_x)
+        dct_put(dct, 'NUM_P.nxkd.SAMPLE_Y', sample_y)
     else:
         dct_put(dct, 'NUM_P.MOTOR_X', sample_x)
         dct_put(dct, 'NUM_P.MOTOR_Y', sample_y)
 
-        dct_put(dct, 'NUM_P.SAMPLE_X', sample_x)
-        dct_put(dct, 'NUM_P.SAMPLE_Y', sample_y)
+        dct_put(dct, 'NUM_P.nxkd.SAMPLE_X', sample_x)
+        dct_put(dct, 'NUM_P.nxkd.SAMPLE_Y', sample_y)
 
     if (numZ > 0):
         dct_put(dct, 'NUM_P.MOTOR_Z', np.repeat(zpnts, (numY * numX)))
@@ -1192,7 +1199,7 @@ def _data_as_1D_polarities_are_entries(data_dct):
         yp1ra = []
         ypnts = []
 
-    if (scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+    if (scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
         # the order of the data shape is different than other scans
         # (numPol, numEv, numX) or ( # images, # rows per image, #cols per image)
         # so translate so that the shape will be standard, where numEV typically is # images
@@ -1270,7 +1277,7 @@ def _data_as_1D_polarities_are_entries(data_dct):
 
     elif (len(data_E_shape) == 3):
         print('_data_as_1D: 3D data not totally supported yet')
-        if (scan_type == scan_types.SAMPLE_POINT_SPECTRA):
+        if (scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
             cols = data_E_shape[0]
             oned_sdata = np.zeros(cols, dtype=np.float32)
             oned_sdata.fill(sr_current)
@@ -1306,7 +1313,7 @@ def _data_as_1D_polarities_are_entries(data_dct):
     dct_put(dct, 'NUM_P.EPU_GAP', make_1d_array(numP, EPUGap))
     dct_put(dct, 'NUM_P.EPU_HARMONIC', make_1d_array(numP, EPUHarmonic))
 
-    if (scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+    if (scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
         xpnts2 = np.tile(xpnts, numY)
         sample_x = np.tile(xpnts2, numE)
         ypnts2 = np.tile(ypnts, numX)
@@ -1467,8 +1474,8 @@ def make_data_section(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_IMAGE, 
     ypnts_E = dct_get(data_dct, 'NUM_E.MOTOR_Y')
     zpnts_E = dct_get(data_dct, 'NUM_E.MOTOR_Z')
 
-    sxpnts_E = dct_get(data_dct, 'NUM_E.SAMPLE_X')
-    sypnts_E = dct_get(data_dct, 'NUM_E.SAMPLE_Y')
+    sxpnts_E = dct_get(data_dct, 'NUM_E.nxkd.SAMPLE_X')
+    sypnts_E = dct_get(data_dct, 'NUM_E.nxkd.SAMPLE_Y')
 
     data_P = dct_get(data_dct, 'NUM_P.DATA')
     e_pnts_P = dct_get(data_dct, 'NUM_P.EV')
@@ -1477,8 +1484,8 @@ def make_data_section(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_IMAGE, 
     count_time_P = dct_get(data_dct, 'NUM_P.COUNT_TIME')
     xpnts_P = dct_get(data_dct, 'NUM_P.MOTOR_X')
     ypnts_P = dct_get(data_dct, 'NUM_P.MOTOR_Y')
-    sxpnts_P = dct_get(data_dct, 'NUM_P.SAMPLE_X')
-    sypnts_P = dct_get(data_dct, 'NUM_P.SAMPLE_Y')
+    sxpnts_P = dct_get(data_dct, 'NUM_P.nxkd.SAMPLE_X')
+    sypnts_P = dct_get(data_dct, 'NUM_P.nxkd.SAMPLE_Y')
 
     line_position_P = dct_get(data_dct, 'NUM_P.LINE_POSITION')
 
@@ -1489,8 +1496,8 @@ def make_data_section(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_IMAGE, 
     if (z_roi[NPOINTS] > 0):
         zpnts = dct_get(data_dct, 'NUM_E.MOTOR_Z')
 
-    # type_a_scans = [scan_types.SAMPLE_POINT_SPECTRA, scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK] #, scan_types.SAMPLE_FOCUS]
-    type_a_scans = [scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK,
+    # type_a_scans = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK] #, scan_types.SAMPLE_FOCUS]
+    type_a_scans = [scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK,
                     scan_types.TOMOGRAPHY_SCAN]  # , scan_types.SAMPLE_FOCUS]
 
     if (name not in list(nf.keys())):
@@ -1550,7 +1557,7 @@ def make_data_section(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_IMAGE, 
             _string_attr(ctrl_grp, 'signal', nxkd.NXD_DATA)
 
         # set attributes
-        if (scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+        if (scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
             if (modify):
                 # src_grp['axes'][()] = ['energy','line_position']
                 src_grp['line_position'][()] = line_position_P
@@ -1665,7 +1672,7 @@ def make_data_section(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_IMAGE, 
                 # _dataset(ctrl_grp, 'sample_x', sxpnts_E, 'NX_FLOAT')
                 # _dataset(ctrl_grp, 'sample_y', sypnts_E, 'NX_FLOAT')
 
-    elif (scan_type == scan_types.SAMPLE_POINT_SPECTRA):
+    elif (scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
         if (modify):
             src_grp['count_time'][()] = count_time_E
             src_grp['energy'][()] = e_pnts_E
@@ -2053,8 +2060,8 @@ def make_data_section_new(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_IMA
     zpnts_E = dct_get(data_dct, 'NUM_E.MOTOR_Z')
     stokes_E = dct_get(data_dct, 'NUM_E.STOKES')
 
-    sxpnts_E = dct_get(data_dct, 'NUM_E.SAMPLE_X')
-    sypnts_E = dct_get(data_dct, 'NUM_E.SAMPLE_Y')
+    sxpnts_E = dct_get(data_dct, 'NUM_E.nxkd.SAMPLE_X')
+    sypnts_E = dct_get(data_dct, 'NUM_E.nxkd.SAMPLE_Y')
 
     # #data_P = dct_get(data_dct, 'NUM_P.DATA')
     # e_pnts_P = dct_get(data_dct, 'NUM_P.EV')
@@ -2063,8 +2070,8 @@ def make_data_section_new(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_IMA
     # count_time_P = dct_get(data_dct, 'NUM_P.COUNT_TIME')
     # xpnts_P = dct_get(data_dct, 'NUM_P.MOTOR_X')
     # ypnts_P = dct_get(data_dct, 'NUM_P.MOTOR_Y')
-    # sxpnts_P = dct_get(data_dct, 'NUM_P.SAMPLE_X')
-    # sypnts_P = dct_get(data_dct, 'NUM_P.SAMPLE_Y')
+    # sxpnts_P = dct_get(data_dct, 'NUM_P.nxkd.SAMPLE_X')
+    # sypnts_P = dct_get(data_dct, 'NUM_P.nxkd.SAMPLE_Y')
 
     line_position_P = dct_get(data_dct, 'NUM_P.LINE_POSITION')
 
@@ -2075,8 +2082,8 @@ def make_data_section_new(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_IMA
     if (z_roi[NPOINTS] > 0):
         zpnts = dct_get(data_dct, 'NUM_E.MOTOR_Z')
 
-    # type_a_scans = [scan_types.SAMPLE_POINT_SPECTRA, scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK] #, scan_types.SAMPLE_FOCUS]
-    type_a_scans = [scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE,
+    # type_a_scans = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK] #, scan_types.SAMPLE_FOCUS]
+    type_a_scans = [scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE,
                     scan_types.SAMPLE_IMAGE_STACK]  # , scan_types.SAMPLE_FOCUS]
 
     if (name not in list(nf.keys())):
@@ -2109,7 +2116,7 @@ def make_data_section_new(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_IMA
             _string_attr(src_grp, 'signal', nxkd.NXD_DATA)
 
         # set attributes
-        if (scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+        if (scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
             if (modify):
                 # src_grp['axes'][()] = ['energy','line_position']
                 src_grp['line_position'][()] = line_position_P
@@ -2184,7 +2191,7 @@ def make_data_section_new(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_IMA
 
 
 
-    elif (scan_type == scan_types.SAMPLE_POINT_SPECTRA):
+    elif (scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
         if (modify):
             src_grp['count_time'][()] = count_time_E
             src_grp['energy'][()] = e_pnts_E
@@ -2403,8 +2410,8 @@ def make_control_section_new(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_
     ypnts_E = dct_get(data_dct, 'NUM_E.MOTOR_Y')
     zpnts_E = dct_get(data_dct, 'NUM_E.MOTOR_Z')
 
-    sxpnts_E = dct_get(data_dct, 'NUM_E.SAMPLE_X')
-    sypnts_E = dct_get(data_dct, 'NUM_E.SAMPLE_Y')
+    sxpnts_E = dct_get(data_dct, 'NUM_E.nxkd.SAMPLE_X')
+    sypnts_E = dct_get(data_dct, 'NUM_E.nxkd.SAMPLE_Y')
 
     line_position_P = dct_get(data_dct, 'NUM_P.LINE_POSITION')
 
@@ -2415,8 +2422,8 @@ def make_control_section_new(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_
     if (z_roi[NPOINTS] > 0):
         zpnts = dct_get(data_dct, 'NUM_E.MOTOR_Z')
 
-    # type_a_scans = [scan_types.SAMPLE_POINT_SPECTRA, scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK] #, scan_types.SAMPLE_FOCUS]
-    type_a_scans = [scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE,
+    # type_a_scans = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK] #, scan_types.SAMPLE_FOCUS]
+    type_a_scans = [scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE,
                     scan_types.SAMPLE_IMAGE_STACK, scan_types.TOMOGRAPHY_SCAN]  # , scan_types.SAMPLE_FOCUS]
 
     if ('control' not in list(nf.keys())):
@@ -2443,7 +2450,7 @@ def make_control_section_new(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_
             _string_attr(ctrl_grp, 'signal', nxkd.NXD_DATA)
 
         # set attributes
-        if (scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+        if (scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
             if (modify):
                 ctrl_grp[nxkd.NXD_DATA][()] = data_E
                 ctrl_grp['line_position'][()] = line_position_P
@@ -2507,7 +2514,7 @@ def make_control_section_new(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_
                 # _dataset(ctrl_grp, 'sample_x', sxpnts_E, 'NX_FLOAT')
                 # _dataset(ctrl_grp, 'sample_y', sypnts_E, 'NX_FLOAT')
 
-    elif (scan_type == scan_types.SAMPLE_POINT_SPECTRA):
+    elif (scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
         if (modify):
             ctrl_grp['energy'][()] = e_pnts_E
             ctrl_grp['sample_x'][()] = xpnts_E
@@ -2736,7 +2743,7 @@ def update_data_section(fname, entry_str, counter_str='counter0', data_dct={}, s
     if (z_roi[NPOINTS] > 0):
         zpnts = dct_get(data_dct, 'NUM_E.MOTOR_Z')
 
-    type_a_scans = [scan_types.SAMPLE_POINT_SPECTRA, scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE,
+    type_a_scans = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE,
                     scan_types.SAMPLE_IMAGE_STACK]  # , scan_types.SAMPLE_FOCUS]
 
     if entry_str in list(nf.keys()):
@@ -2754,11 +2761,11 @@ def update_data_section(fname, entry_str, counter_str='counter0', data_dct={}, s
 
     if (scan_type in type_a_scans):
 
-        if (scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+        if (scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
             src_grp[()] = data_E
             ctrl_grp[()] = data_E
 
-        elif (scan_type == scan_types.SAMPLE_POINT_SPECTRA):
+        elif (scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
             src_grp[()] = data_P
             ctrl_grp[()] = oneD_srdata
 
@@ -3033,7 +3040,7 @@ def make_instrument(nxgrp, doc, scan_type=scan_types.SAMPLE_IMAGE, modify=False,
 
     make_counter(nx_inst_grp, 'counter0', data_dct, 'NXdetector', 'NX_FLOAT', modify=modify)
 
-    type_a_scans = [scan_types.SAMPLE_POINT_SPECTRA, scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE,
+    type_a_scans = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE,
                     scan_types.SAMPLE_IMAGE_STACK, scan_types.SAMPLE_FOCUS]
 
     xpnts = dct_get(data_dct, 'NUM_P.MOTOR_X')
@@ -3042,7 +3049,7 @@ def make_instrument(nxgrp, doc, scan_type=scan_types.SAMPLE_IMAGE, modify=False,
     zmtr_name = None
 
     if (scan_type in type_a_scans):
-        if (scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+        if (scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
             xmtr_name = 'sample_x'
             ymtr_name = 'sample_y'
             # _dataset(src_grp, 'line_position', np.linspace(ystart, ystop, num=numy_pnts), 'NX_FLOAT')
@@ -3104,7 +3111,7 @@ def make_instrument_new(nxgrp, doc, counter='counter0', scan_type=scan_types.SAM
         make_epu_new(nx_inst_grp, data_dct=data_dct, modify=modify, pol_pnt=pol_pnt)
         make_zoneplate(nx_inst_grp, data_dct=data_dct, modify=modify)
         count_time = dct_get(data_dct, 'NUM_P.COUNT_TIME')
-        type_a_scans = [scan_types.SAMPLE_POINT_SPECTRA, scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE,
+        type_a_scans = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE,
                         scan_types.SAMPLE_IMAGE_STACK, scan_types.SAMPLE_FOCUS]
 
         xpnts = dct_get(data_dct, 'NUM_P.MOTOR_X')
@@ -3113,7 +3120,7 @@ def make_instrument_new(nxgrp, doc, counter='counter0', scan_type=scan_types.SAM
         zmtr_name = None
 
         if (scan_type in type_a_scans):
-            if (scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+            if (scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
                 xmtr_name = 'sample_x'
                 ymtr_name = 'sample_y'
                 # _dataset(src_grp, 'line_position', np.linspace(ystart, ystop, num=numy_pnts), 'NX_FLOAT')
@@ -4615,7 +4622,7 @@ if __name__ == '__main__':
 # dct_put(data_dct, ADO_CFG_DATA_DIR, r'C:/controls/py2.7/Beamlines/sm/data/guest/May19/')
 # dct_put(data_dct, ADO_CFG_DATA_FILE_NAME, r'C:/controls/py2.7/Beamlines/sm/data/guest/May19/C160519030.hdf5')
 # spatial_roi_id = dct_get(data_dct, ADO_CFG_CUR_SPATIAL_ROI_IDX)
-# create_NXstxm_file(r'C:/controls/py2.7/Beamlines/sm/data/guest/May19/C160519099.hdf5', scan_types.SAMPLE_LINE_SPECTRA, data_dct=data_dct, intermediate_file=False)
+# create_NXstxm_file(r'C:/controls/py2.7/Beamlines/sm/data/guest/May19/C160519099.hdf5', scan_types.SAMPLE_LINE_SPECTRUM, data_dct=data_dct, intermediate_file=False)
 
 
 # try_this()
@@ -4685,8 +4692,8 @@ if __name__ == '__main__':
 #         data_dct['SCAN'][nxkd.NXD_DATA]['CHANNELS'].append(xim_dat.copy())
 #     
 #     
-#     #create_NXstxm_file('sample_point_spectra.hdf5', dtype[0], data_dct)
-#     #create_NXstxm_file('sample_line_spectra.hdf5', dtype[1], data_dct)
+#     #create_NXstxm_file('sample_point_spectrum.hdf5', dtype[0], data_dct)
+#     #create_NXstxm_file('sample_line_spectrum.hdf5', dtype[1], data_dct)
 #     #epnts = data_dct['ScanDefinition']['StackAxis']['EV']['NumPoints']
 #     #xpnts = data_dct['ScanDefinition']['Regions'][1]['PAxis']['NumPoints']
 #     #ypnts = data_dct['ScanDefinition']['Regions'][1]['QAxis']['NumPoints']

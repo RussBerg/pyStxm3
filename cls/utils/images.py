@@ -22,10 +22,22 @@ def image_to_array(image):
     return (arr)
 
 
-def array_to_image(data, suffix='tif'):
-    im = Image.fromarray(data, mode="P")
-    return (im)
+def array_to_image(data, flip_ud=False):
+    # must normalize to 0->255
+    max = int(data.max())
+    if(max is 0):
+        max = 255
 
+    # must be dtype uint8
+    data = np.multiply(data, 255/max).astype(np.uint8)
+
+    #data *= 255 / max
+    # must flip it upside down
+    if (flip_ud):
+        data = np.flipud(data).copy()
+    # turn array into image
+    im = Image.fromarray(data, mode="L")
+    return (im)
 
 # im.save('test.tif')
 

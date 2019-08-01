@@ -127,6 +127,7 @@ class ScanParamWidget(QtWidgets.QFrame):
         object)  # when a scan parameter has changed a new estemate is recalc'd and emitted with this signal
     test_scan = QtCore.pyqtSignal(int)
     update_shape_limits = QtCore.pyqtSignal(object)
+    call_main_func = QtCore.pyqtSignal(str, object) # function name, **kwargs
 
     def __init__(self, main_obj=None, data_io=None, dflts=None):
         #QtWidgets.QFrame.__init__(self)
@@ -2269,7 +2270,6 @@ class ScanParamWidget(QtWidgets.QFrame):
         mtr_gt = self.main_obj.device(self.positioners['GT'])
         mtr_oz = self.main_obj.device(self.positioners['OZ'])
 
-
         # here we need to turn the absolute scan region (goni XY) that the user selected
         # into one that is centered around 0 as our ZP XY is
         if (is_focus):
@@ -2421,11 +2421,15 @@ class ScanParamWidget(QtWidgets.QFrame):
 
         if (hasattr(self, 'autoDDLRadBtn')):
             dct_put(sp_db, SPDB_HDW_ACCEL_AUTO_DDL, self.autoDDLRadBtn.isChecked())
+            #make sure this is set in case teh plugin ui widget had its useE712WavegenBtn removed for space
+            dct_put(sp_db, SPDB_HDW_ACCEL_USE, True)
         else:
             dct_put(sp_db, SPDB_HDW_ACCEL_AUTO_DDL, False)
 
         if (hasattr(self, 'reinitDDLRadBtn')):
             dct_put(sp_db, SPDB_HDW_ACCEL_REINIT_DDL, self.reinitDDLRadBtn.isChecked())
+            # make sure this is set in case teh plugin ui widget had its useE712WavegenBtn removed for space
+            dct_put(sp_db, SPDB_HDW_ACCEL_USE, True)
         else:
             dct_put(sp_db, SPDB_HDW_ACCEL_REINIT_DDL, False)
 

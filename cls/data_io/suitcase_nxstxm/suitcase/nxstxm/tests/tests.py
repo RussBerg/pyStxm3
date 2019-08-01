@@ -1,7 +1,7 @@
 # Tests should generate (and then clean up) any files they need for testing. No
 # binary files should be included in the repository.
 
-from suitcase.nxstxm_baseline import export
+from suitcase.nxstxm import export
 
 
 def test_export(tmp_path, example_data):

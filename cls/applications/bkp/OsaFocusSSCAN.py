@@ -60,7 +60,7 @@ class OsaFocusSSCAN(BaseScan):
         #       'primary_det': DNM_DEFAULT_COUNTER,
         #       'zp_def': zp_def,
         #       'wdg_com': dict_to_json(self.wdg_com)}
-        md = {'metadata': dict_to_json(self.make_standard_data_metadata(entry_num=0, scan_type=self.scan_type))}
+        md = {'metadata': dict_to_json(self.make_standard_metadata(entry_num=0, scan_type=self.scan_type))}
 
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)

@@ -9,6 +9,9 @@ from cls.zeromq.epics.qt5_cepics_client_pubsub import qt5_zmqClientWidget, compr
 from cls.utils.roi_dict_defs import *
 from cls.utils.log import get_module_logger
 
+from cls.types.stxmTypes import scan_types, scan_sub_types, sample_fine_positioning_modes, sample_positioning_modes
+
+
 from cls.scan_engine.bluesky.qt_run_engine import EngineWidget
 from bcm.devices.device_names import *
 
@@ -116,18 +119,59 @@ class main_object_base(QtCore.QObject):
         #self.init_zmq_socket()
         self.zmq_client = None
         #if(self.zmq_sock is not None):
-        self.zmq_client = qt5_zmqClientWidget(compression_type=compression_types.PICKLE)
+        #self.zmq_client = qt5_zmqClientWidget(compression_type=compression_types.PICKLE)
+        self.zmq_client = None
         #self.zmq_client = qt5_zmqClientWidget(compression_type=compression_types.MSGPACK)
             #self.zmq_client = zmq_epicsClient(self.zmq_sock)
 
         self.engine_widget = EngineWidget()
 
+    def get_sample_positioner(self, axis='X'):
+        '''
+        return based on the sample positioning mode which sample positioner
+        :return:
+        '''
+
+        # self.sample_positioning_mode
+        # self.sample_fine_positioning_mode
+        if(axis.find('X') > -1):
+            if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
+                posner = self.device(DNM_GONI_X)
+            else:
+                posner = self.device(DNM_SAMPLE_X)
+        else:
+            if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
+                posner = self.device(DNM_GONI_Y)
+            else:
+                posner = self.device(DNM_SAMPLE_Y)
+        return(posner)
+
+    def get_sample_fine_positioner(self, axis='X'):
+        '''
+        return based on the sample positioning mode which sample positioner
+        :return:
+        '''
+
+        # self.sample_positioning_mode
+        # self.sample_fine_positioning_mode
+        if(axis.find('X') > -1):
+            if(self.sample_fine_positioning_mode == sample_fine_positioning_modes.ZONEPLATE):
+                posner = self.device(DNM_ZONEPLATE_X)
+            else:
+                posner = self.device(DNM_SAMPLE_FINE_X)
+        else:
+            if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
+                posner = self.device(DNM_ZONEPLATE_Y)
+            else:
+                posner = self.device(DNM_SAMPLE_FINE_Y)
+        return(posner)
 
     def get_device_reverse_lu_dct(self):
         return(self.main_obj['DEVICES'].device_reverse_lookup_dct)
 
     def cleanup(self):
-        self.zmq_client.terminate()
+        #self.zmq_client.terminate()
+        pass
 
     def engine_assign_baseline_devs(self, baseline_dev_lst):
         '''
@@ -155,25 +199,31 @@ class main_object_base(QtCore.QObject):
     #def zmq_client_new_scan(self, fname=None, upd_lst=[]):
     # self.zmq_client.init_new_scan(fname=fname,upd_lst=upd_lst)
     def zmq_client_new_scan(self, fname=None, subdir=None):
-        self.zmq_client.set_new_filename(fname=fname, subdir=subdir)
+        #self.zmq_client.set_new_filename(fname=fname, subdir=subdir)
+        pass
 
     def zmq_set_new_subdir(self, subdir=None):
-        self.zmq_client.set_new_subdir(subdir=subdir)
+        #self.zmq_client.set_new_subdir(subdir=subdir)
+        pass
 
     def zmq_save_dict_to_tmp_file(self, dct):
-        self.zmq_client.send_dict_to_tmp_file(dct)
-
+        #self.zmq_client.send_dict_to_tmp_file(dct)
+        pass
     def zmq_starttime_to_tmp_file(self):
-        self.zmq_client.starttime_to_tmp_file()
+        #self.zmq_client.starttime_to_tmp_file()
+        pass
 
     def zmq_stoptime_to_tmp_file(self):
-        self.zmq_client.stoptime_to_tmp_file()
+        #self.zmq_client.stoptime_to_tmp_file()
+        pass
 
     def zmq_rename_tmp_to_final(self):
-        self.zmq_client.rename_tmp_to_final()
+        #self.zmq_client.rename_tmp_to_final()
+        pass
 
     def zmq_save_img_idx_map(self, img_idx_map=None):
-        self.zmq_client.send_img_idx_map(img_idx_map)
+        #self.zmq_client.send_img_idx_map(img_idx_map)
+        pass
 
     def get_beamline_id(self):
         return(self.beamline_id)

@@ -87,7 +87,11 @@ icoDir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','icons')
 import copy
 
 color_list = {}
-for k in list(COLORS.keys()):
+clr_keys = list(COLORS.keys())
+#move red to the last color from being the first
+del(clr_keys[0])
+clr_keys.append("r")
+for k in clr_keys:
     color_list[k] = {}
     color_list[k]['clr'] = COLORS[k]
     color_list[k]['used'] = False
@@ -97,9 +101,11 @@ color_list['k']['used'] = True
 def get_next_color(use_dflt=True):
     global color_list
 #    clr_keys = color_list.keys()
-    clr_str='blue'
+    #clr_str='blue'
+    clr_str = '#6063ff'
     if(use_dflt):
-        clr_str='blue'
+        #clr_str='blue'
+        clr_str ='#6063ff'
     else:    
         #print 'get_next_color: clr_idx = %d' % color_idx
         for k in list(color_list.keys()):

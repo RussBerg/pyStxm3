@@ -111,8 +111,26 @@ class TomographyWithE712WavegenScanClass(BaseScan):
 
 
     def on_scan_done(self):
+        '''
+        when scan is done
+        :return:
+        '''
         e712_wdg = self.main_obj.device(DNM_E712_WIDGET)
         e712_wdg.on_wavegen_scan_done()
+
+
+    # def configure_devs(self, dets, gate):
+    #     if (self.is_pxp):
+    #         dets[0].set_mode(0)
+    #         gate.set_trig_src(trig_src_types.E712)
+    #         gate.set_num_points(1)
+    #         gate.set_mode(bs_dev_modes.E712)
+    #     else:
+    #         # if (self.is_lxl):
+    #         dets[0].set_mode(1)
+    #         gate.set_mode(1)
+    #         gate.set_num_points(self.x_roi[NPOINTS])
+    #         gate.set_trig_src(trig_src_types.E712)
 
 
     def make_scan_plan(self, dets, gate, md=None, bi_dir=False):
@@ -161,7 +179,7 @@ class TomographyWithE712WavegenScanClass(BaseScan):
             self.update_roi_member_vars(self.sp_rois[self.sp_id])
             zpz_adjust_vals = dct_get(self.sp_rois[self.sp_id], SPDB_G_ZPZ_ADJUST)
 
-            idx = 0
+            self._current_img_idx = 0
             entry_idx = 0
             zpz_adjust_idx = 0
             #move goni_t and ev to start (these are the slowest)
@@ -202,9 +220,9 @@ class TomographyWithE712WavegenScanClass(BaseScan):
                             # self.update_roi_member_vars(self.sp_rois[self.sp_id])
 
                             # take a single image that will be saved with its own run scan id
-                            img_dct = self.img_idx_map['%d'%idx]
+                            img_dct = self.img_idx_map['%d' % self._current_img_idx]
                             md = {'metadata': dict_to_json(
-                                    self.make_standard_data_metadata(entry_name=img_dct['entry'], scan_type=self.scan_type))}
+                                    self.make_standard_metadata(entry_name=img_dct['entry'], scan_type=self.scan_type))}
 
                             if(img_dct['entry'] not in entrys_lst):
                                 entrys_lst.append(img_dct['entry'])
@@ -222,7 +240,7 @@ class TomographyWithE712WavegenScanClass(BaseScan):
                                 else:
                                     yield from self.make_single_image_plan(dets, gate, md=md, do_baseline=False)
 
-                            idx += 1
+                            self._current_img_idx += 1
 
                 entry_idx += 1
 

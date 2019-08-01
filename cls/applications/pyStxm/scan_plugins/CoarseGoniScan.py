@@ -51,7 +51,7 @@ class CoarseGoniScanClass(BaseScan):
         self._bi_dir = bi_dir
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)
         def do_scan():
@@ -64,7 +64,7 @@ class CoarseGoniScanClass(BaseScan):
             shutter = self.main_obj.device(DNM_SHUTTER)
 
             det = dets[0]
-            #md = self.make_standard_data_metadata(entry_num=0, scan_type=self.scan_type)
+            #md = self.make_standard_metadata(entry_num=0, scan_type=self.scan_type)
             #md['x_roi'] = x_roi
             #md['y_roi'] = y_roi
             yield from bps.stage(gate)

@@ -369,8 +369,8 @@ class CoarseGoniScanParam(ScanParamWidget):
 		if(y_roi[STEP] != None):
 			self.set_parm(self.stepYFld, y_roi[STEP], type='float', floor=0)
 		
-		if(sp_db[CMND] == widget_com_cmnd_types.SELECT_ROI):
- 			self.update_last_settings()
+		# if(sp_db[CMND] == widget_com_cmnd_types.SELECT_ROI):
+ 		# 	self.update_last_settings()
 
 
 

@@ -154,21 +154,6 @@ def get_base_roi(name, positionerName, center, rng, npoints, stepSize=None, max_
 
 		determine_setpoints(roi_def, stepSize)
 	
-# 	if((roi_def[START] == None) or (roi_def[NPOINTS] == 0) or (roi_def[RANGE] == 0)):
-# 		roi_def[SETPOINTS] = []
-# 	else:
-# 		if(stepSize):
-# 			#NOTE this produces NPOINTS + 1 points 
-# 			#use arange
-# 			roi_def[ROI_STEP] = stepSize
-# 			roi_def[SETPOINTS] = np.arange(roi_def[START] + roi_def[OFFSET], roi_def[STOP] + roi_def[OFFSET] + stepSize, stepSize)
-# 		else:	
-# 			#roi_def[SETPOINTS] = np.linspace(roi_def[START], roi_def[STOP], roi_def[NPOINTS])
-# 			#roi_def[SETPOINTS] = np.linspace(roi_def[START], roi_def[STOP], roi_def[NPOINTS], endpoint=False)
-# 			#roi_def[SETPOINTS] = np.linspace(roi_def[START], roi_def[STOP], roi_def[NPOINTS]-1, endpoint=True)
-# 			roi_def[SETPOINTS], roi_def[ROI_STEP] = np.linspace(roi_def[START] + roi_def[OFFSET], roi_def[STOP] + roi_def[OFFSET], roi_def[NPOINTS], endpoint=True, retstep=True)
-
-				
 	roi_def[POSITIONER] = positionerName
 	roi_def[SRC] = src
 	roi_def[TOP_LEVEL] = False

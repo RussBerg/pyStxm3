@@ -289,7 +289,8 @@ class LineDetectorDevice(BaseCounterInputDevice):
                     self._plot_dct[CNTR2PLOT_ROW] = int(row)
                     self._plot_dct[CNTR2PLOT_COL] = 0
 
-                self._plot_dct[CNTR2PLOT_VAL] = data[0:self.p_num_points]
+                #self._plot_dct[CNTR2PLOT_VAL] = data[0:self.p_num_points]
+                self._plot_dct[CNTR2PLOT_VAL] = data
                 self._plot_dct[CNTR2PLOT_IS_LINE] = True
                 self._plot_dct[CNTR2PLOT_SCAN_TYPE] = self._scan_type
                 self.sigs.changed.emit(self._plot_dct)

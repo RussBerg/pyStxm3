@@ -1,0 +1,9 @@
+[Core]
+Name = Pattern Generator scan params
+Module = pattern_gen_scan
+
+[Documentation]
+Author = Russ Berg
+Version = 0.1
+Website = http://lateral.netmanagers.com.ar
+Description = Params for pattern generator scan

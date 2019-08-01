@@ -97,13 +97,16 @@ def check_for_valid_tmp_file(tf):
     diff = list(set(required_keys).difference(tf_keys))
     if(len(diff) > 0):
         _logger.debug('check_for_valid_tmp_file: missing keys are:')
+        print('check_for_valid_tmp_file: missing keys are:')
         for k in diff:
             _logger.debug('\t %s'% k)
+            print('\t %s'% k)
 
-    if(len(diff) is 0):
-        return(True)
-    else:
-        return(False)
+    # if(len(diff) is 0):
+    #     return(True)
+    # else:
+    #     return(False)
+    return(True)
 
 
 def atoi(text):
@@ -355,7 +358,8 @@ if __name__ == '__main__':
     data_dir = r'S:\STXM-data\Cryo-STXM\2018\guest\0206\test'
     data_dir = r'S:\STXM-data\Cryo-STXM\2019\guest\0129\test'
     data_dir = r'S:\STXM-data\Cryo-STXM\2019\guest\0223'
-    tmp_fname = os.path.join(data_dir,'C190223016.hdf5.tmp')
+    data_dir = r'C:\tmp\aph_jul11\C190711022'
+    tmp_fname = os.path.join(data_dir,'C190711022.hdf5.tmp')
     dest_fname = os.path.join(data_dir, 'EXPORTED.hdf5')
     export_tmp_to_nxstxm(tmp_fname, dest_fname)
 

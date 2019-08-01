@@ -20,6 +20,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 from cls.data_io.stxm_data_io import STXMDataIo
+from cls.utils.arrays import resize_1d_array
 
 progname = os.path.basename(sys.argv[0])
 progversion = "0.1"
@@ -71,6 +72,9 @@ class OneD_MPLCanvas(MyMplCanvas):
                 ydata = ydata[0][0]
             elif(ydata.ndim is 2):
                 ydata = ydata[0]
+
+            if(len(self.xdata) != len(ydata)):
+                ydata = resize_1d_array(ydata, self.xdata)
 
             self.axes.set_facecolor(self.axes_bgrnd_color)
             self.axes.plot(self.xdata, ydata, linewidth=1)

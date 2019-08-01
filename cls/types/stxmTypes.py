@@ -39,7 +39,8 @@ scan_panel_order = Enum('detector_scan', \
 					'focus_scan', \
 					'point_scan', \
 					'line_scan', \
-					'positioner_scan'
+					'positioner_scan', \
+					'pattern_gen_scan'
 					)
 
 scan_types = Enum('detector_image', \
@@ -53,11 +54,12 @@ scan_types = Enum('detector_image', \
 				'generic_scan', \
 				'coarse_image_scan', \
 				'coarse_goni_scan', \
-				'tomography_scan')
+				'tomography_scan', \
+				'pattern_gen_scan')
 
 spectra_type_scans = [scan_types.SAMPLE_POINT_SPECTRA, scan_types.GENERIC_SCAN]
 image_type_scans = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.OSA_FOCUS , scan_types.SAMPLE_FOCUS , scan_types.SAMPLE_LINE_SPECTRA , scan_types.SAMPLE_IMAGE , scan_types.SAMPLE_IMAGE_STACK , \
-					scan_types.COARSE_IMAGE_SCAN, scan_types.COARSE_GONI_SCAN, scan_types.TOMOGRAPHY_SCAN]
+					scan_types.COARSE_IMAGE_SCAN, scan_types.COARSE_GONI_SCAN, scan_types.TOMOGRAPHY_SCAN, scan_types.PATTERN_GEN_SCAN]
 single_entry_scans = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.OSA_FOCUS , scan_types.SAMPLE_FOCUS , scan_types.SAMPLE_LINE_SPECTRA , scan_types.SAMPLE_IMAGE , scan_types.COARSE_IMAGE_SCAN, \
 					  scan_types.COARSE_GONI_SCAN, scan_types.GENERIC_SCAN]
 multi_entry_scans = [scan_types.SAMPLE_IMAGE_STACK , scan_types.SAMPLE_POINT_SPECTRA, scan_types.TOMOGRAPHY_SCAN]
@@ -90,6 +92,7 @@ scan_image_types = {scan_types.DETECTOR_IMAGE: image_types.IMAGE, \
 				scan_types.SAMPLE_IMAGE_STACK: image_types.IMAGE, \
 				scan_types.TOMOGRAPHY_SCAN: image_types.IMAGE, \
 				scan_types.COARSE_GONI_SCAN: image_types.IMAGE, \
+				scan_types.PATTERN_GEN_SCAN: image_types.IMAGE,
 				}
 
 		

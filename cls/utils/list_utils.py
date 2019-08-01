@@ -20,3 +20,9 @@ def merge_to_one_list(lists):
 def merge_two_to_one(lista, listb):
     rc = [response for ab in zip(lista, listb) for response in ab]
     return(rc)
+
+def sort_str_list(lst):
+    ''' take a list of strings that may contain integers and sort'''
+    #lst.sort(key=lambda f: int(list(filter(str.isdigit, f))))
+    lst.sort(key=lambda x: int(''.join(filter(str.isdigit, x))))
+    return(lst)

@@ -579,8 +579,9 @@ class ScanQueueTableWidget(QtWidgets.QWidget):
         ttl = self.table_view.get_total_progress()
         #print 'ttl=', ttl
         #print 'self.max_progress_val=',self.max_progress_val
-        prcnt = float(ttl/self.max_progress_val) * 100.0
-        self.total_prog.emit(prcnt)
+        if(self.max_progress_val > 0):
+            prcnt = float(ttl/self.max_progress_val) * 100.0
+            self.total_prog.emit(prcnt)
 
     def on_set_pixmap(self):
         row = int(str(self.rowFld.text()))
@@ -837,7 +838,7 @@ class ScanQueueTableWidget(QtWidgets.QWidget):
             else:
                 scan_queue_list = merge_to_one_list(spdb_lst)
 
-            _cntr = 0
+            _cntr = 1
             for l in scan_queue_list:
                 # the filename is the first in the list
                 fname = l[0]
@@ -1327,10 +1328,10 @@ class ScanQueueTableWidget(QtWidgets.QWidget):
         # datafile_name = dct_get(ado_obj, ADO_CFG_DATA_FILE_NAME)
 
         idx = 0
-        for e_roi in e_rois:
-            for e in e_roi[SETPOINTS]:
-                for pol in e_roi[EPU_POL_PNTS]:
-                    for gt in gt_roi[SETPOINTS]:
+        for gt in gt_roi[SETPOINTS]:
+            for e_roi in e_rois:
+                for e in e_roi[SETPOINTS]:
+                    for pol in e_roi[EPU_POL_PNTS]:
                         lst = []
                         if (len(self.fname_list) > 0):
                             lst.append(self.fname_list[idx])
@@ -1362,7 +1363,7 @@ class ScanQueueTableWidget(QtWidgets.QWidget):
         return (fname)
 
     def make_image_fname(self, prfx, row_num, sample_pos=1):
-        fname = '%s%d-%05d%s img/%d' % (prfx, sample_pos, 0, self.file_suffix, row_num)
+        fname = '%s%d-%05d%s img/%d' % (prfx, sample_pos, 0, self.file_suffix, row_num + 1)
         if (row_num < len(self.fname_list)):
 
     # fn = self.fname_list[row_num]

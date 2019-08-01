@@ -119,7 +119,8 @@ MIN_DATAREC_RATE = 0.00005
 #MIN_LINE_RETURN_TIME = 0.04
 MIN_LINE_RETURN_TIME = 0.005
 
-PNT_TIME_RES = WAVEFORM_GEN_CYCLE_TIME
+MIN_PNT_TIME_RES = 0.00005
+PNT_TIME_RES = MIN_PNT_TIME_RES
 MAX_WAVTBL_PTS = 262144
 MAX_WAVTBL_TIME = PNT_TIME_RES * MAX_WAVTBL_PTS #13.1072 seconds, this needs to be shared between all 4 Wavetables
 #WIDTH_DISTORTION_FUDGE = 0.01
@@ -131,6 +132,42 @@ SEND_LIST = []
 
 except_busy = False
 
+def on_wave_table_rate_changed(wave_table_rate):
+    global PNT_TIME_RES, MIN_DATAREC_RATE, MAX_WAVTBL_TIME, WAVEFORM_GEN_CYCLE_TIME
+    PNT_TIME_RES = WAVEFORM_GEN_CYCLE_TIME = MIN_DATAREC_RATE * wave_table_rate
+    MAX_WAVTBL_TIME = PNT_TIME_RES * MAX_WAVTBL_PTS
+
+def calc_optimal_wavetable_rate(npoints, dwell_sec, forced_rate=None):
+    '''
+    find the minnimum wavetable rate that will allow npoints of dwell time to fir into the finite wavegen table memory
+    :param npoints:
+    :param dwell_ms:
+    :param forced_rate:
+    :return:
+    '''
+    global MIN_PNT_TIME_RES, PNT_TIME_RES, MIN_DATAREC_RATE, MAX_WAVTBL_TIME
+    #start at wavetable rate of 1 and increase until the points fit in the memory (max num points of 262144)
+    time_between_pnts = 0.005
+    line_time = (dwell_sec + time_between_pnts) * npoints
+    print('calc_optimal_wavetable_rate: line time = %.2f sec' % line_time)
+    if(forced_rate is not None):
+        t_per_pnt = MIN_PNT_TIME_RES * forced_rate
+        num_wgpnts_needed = line_time / t_per_pnt
+        # only look at using 1/2 max because I need points for X and Y
+        half_max_wgpnts = MAX_WAVTBL_PTS * 0.5
+        if (num_wgpnts_needed < half_max_wgpnts):
+            print('wavetable rate is forced to %d = %d pnts/%d' % (forced_rate, num_wgpnts_needed, MAX_WAVTBL_PTS))
+        rate = forced_rate
+    else:
+        for rate in range(1,100):
+            t_per_pnt = MIN_PNT_TIME_RES * rate
+            num_wgpnts_needed = line_time / t_per_pnt
+            #only look at using 1/2 max because I need points for X and Y
+            half_max_wgpnts = MAX_WAVTBL_PTS * 0.5
+            if(num_wgpnts_needed < half_max_wgpnts):
+                print('optimal wavetable rate is %d = %d pnts/%d' % (rate, num_wgpnts_needed, MAX_WAVTBL_PTS))
+                break
+    return(rate)
 
 def excepthook(excType, excValue, tracebackobj):
     """
@@ -535,8 +572,12 @@ class PI_E712(QtCore.QObject):
         return(int(val))
 
 
+    # def set_wave_table_rate(self, rate):
+    #     self.wave_tbl_rate.put(int(rate))
     def set_wave_table_rate(self, rate):
         self.wave_tbl_rate.put(int(rate))
+        #update the timing constants
+        on_wave_table_rate_changed(rate)
 
     def get_wave_table_rate(self):
         val = self.wave_tbl_rate_rbv.get()
@@ -1473,7 +1514,7 @@ class PI_E712(QtCore.QObject):
         step_time = 3.0
         return (step_time * 0.001)
 
-    def do_point_by_point(self, dwell, x_roi, y_roi, y_is_pxp=False):
+    def do_point_by_point(self, dwell, x_roi, y_roi, y_is_pxp=False, x_tbl_id=None, y_tbl_id=None, forced_rate=None):
         '''
         WAV 3 X LIN 2000 0.25 0 2000 0 400
         WAV 3 & LIN 1000 0 0.25 1000 0 0
@@ -1491,13 +1532,22 @@ class PI_E712(QtCore.QObject):
         scan_velo = 9000000.0
         #dwell = e_roi[DWELL]
         xdwell = dwell * 0.001
+
+        if(x_tbl_id is None):
+            x_tbl_id = X_WAVE_TABLE_ID
+        if(y_tbl_id is None):
+            y_tbl_id = Y_WAVE_TABLE_ID
+
+        # recalc the wave table rate and set it here before doing anything else
+        new_rate = calc_optimal_wavetable_rate(x_roi[NPOINTS], xdwell, forced_rate=forced_rate)
+        self.set_wave_table_rate(new_rate)
         # create one complete line assuming starting from 0 and stepping up by one step, the actual starting offset is handled elsewhere
 
         #xpoints = self.define_pxp_segments(0.0, x_roi[STEP], x_roi[NPOINTS] + NUM_FOR_EDIFF, xdwell, send=True, tblid=3, do_clear=True)
         #xpoints = self.define_pxp_segments(0.0, x_roi[STEP], int(x_roi[NPOINTS]) + NUM_FOR_EDIFF, xdwell, send=False,
         #                                   tblid=X_WAVE_TABLE_ID, do_clear=True, use_fit_function=True)
         xpoints = self.define_pxp_segments(0.0, x_roi[STEP], int(x_roi[NPOINTS]) + NUM_FOR_EDIFF, xdwell,
-                                           send=False, tblid=X_WAVE_TABLE_ID, do_clear=True, use_fit_function=False)
+                                           send=False, tblid=x_tbl_id, do_clear=True, use_fit_function=False)
 
         self.send_list(xpoints)
 
@@ -1645,6 +1695,7 @@ class E712ControlWidget(QtWidgets.QWidget):
         settings_dct = make_dflt_settings_dct()
         self.ss = SaveSettings('e712.ini', dct_template=settings_dct)
 
+        self.forced_rate = None
         self.running_automated = False
         self.cur_job = None
         self.cur_job_idx = 0
@@ -1771,6 +1822,19 @@ class E712ControlWidget(QtWidgets.QWidget):
         self.reload_settings()
         self.idx = 0
 
+    def set_forced_rate(self, rate=None):
+        '''
+        this param if set to a None positive integer it will force the wave table rate to use this value
+        instead of auto calculating the optimal wave table rate, this was added so that for the pattern generator
+        scans all of the pattern pads will use a specified wave table rate
+        :param rate:
+        :return:
+        '''
+        if(rate is not None):
+            if(rate < 1):
+                rate = 1
+        self.forced_rate = rate
+        self.e712.set_wave_table_rate(rate)
 
     def set_automated_filepath(self, fpath):
         self.automated_data_dir = fpath
@@ -3018,6 +3082,7 @@ class E712ControlWidget(QtWidgets.QWidget):
         self.ss.set('numX', dct['numX'])
         dct['numY'] = int(self.ynpointsFld.text())
         self.ss.set('numY', dct['numY'])
+
         dct['startX'] = float(self.xstartFld.text())
         self.ss.set('startX', dct['startX'])
         dct['stopX'] = float(self.xstopFld.text())
@@ -3026,6 +3091,7 @@ class E712ControlWidget(QtWidgets.QWidget):
         self.ss.set('startY', dct['startY'])
         dct['stopY'] = float(self.ystopFld.text())
         self.ss.set('stopY', dct['stopY'])
+
 
 
         # #validate that there are enough points in the table to execute this scan
@@ -3151,7 +3217,7 @@ class E712ControlWidget(QtWidgets.QWidget):
             y_tbl_id = tbl_ids[self.base_zero(Y_WAVE_TABLE_ID)]
         return((x_tbl_id, y_tbl_id))
 
-    def send_wave(self, sp_id, x_roi, y_roi, dwell, mode, x_auto_ddl=True, x_force_reinit=False, x_wavtable_id=X_WAVE_TABLE_ID, y_wavtable_id=Y_WAVE_TABLE_ID, y_is_pxp=False, do_datarecord=True):
+    def send_wave(self, sp_id, x_roi, y_roi, dwell, mode, x_auto_ddl=True, x_force_reinit=False, y_is_pxp=False, do_datarecord=True):
         '''
         This function takes all the arguments needed to create the waveforms and configure the controller to execute
         a scan with the waveform generators.
@@ -3196,6 +3262,7 @@ class E712ControlWidget(QtWidgets.QWidget):
         # x_tbl_id = tbl_ids[self.base_zero(X_WAVE_TABLE_ID)]
         # y_tbl_id = tbl_ids[self.base_zero(Y_WAVE_TABLE_ID)]
         x_tbl_id, y_tbl_id = self.get_wg_table_ids(sp_id)
+        print('x_tbl_id=%d, y_tbl_id=%d' % (x_tbl_id, y_tbl_id))
 
         self.e712.reset_run_scan_config()
 
@@ -3205,7 +3272,7 @@ class E712ControlWidget(QtWidgets.QWidget):
         if (mode is 0):
             print('Doing PXP test')
             self.uncheck_xddl_flags()
-            lines = self.e712.do_point_by_point(dwell, self.x_roi, self.y_roi, y_is_pxp=y_is_pxp)
+            lines = self.e712.do_point_by_point(dwell, self.x_roi, self.y_roi, y_is_pxp=y_is_pxp, x_tbl_id=x_tbl_id, y_tbl_id=y_tbl_id, forced_rate=self.forced_rate)
         else:
             print('Doing LXL ')
 

@@ -87,6 +87,7 @@ from cls.utils.roi_utils import get_first_sp_db_from_wdg_com, make_spatial_db_di
 from cls.utils.roi_dict_defs import *
 from cls.plotWidgets.color_def import get_normal_clr, get_alarm_clr, get_warn_clr, get_normal_fill_pattern, get_warn_fill_pattern, \
     get_alarm_fill_pattern
+from cls.plotWidgets.shapes.pattern_gen import add_pattern_to_plot
 
 import cls.types.stxmTypes as types
 
@@ -98,6 +99,9 @@ from cls.scanning.dataRecorder import DataIo
 from cls.plotWidgets.CLSPlotItemBuilder import clsPlotItemBuilder
 
 from cls.utils.threaded_image_loader import ThreadpoolImageLoader
+
+from cls.plotWidgets.shapes.utils import create_rect_centerd_at, create_rectangle, create_simple_circle
+
 
 #plotDir = os.path.dirname(os.path.abspath(__file__)) + '/'
 plotDir = os.path.dirname(os.path.abspath(__file__))
@@ -285,6 +289,7 @@ class ImageWidget(ImageDialog):
     region_selected = pyqtSignal(object)
     new_ellipse = pyqtSignal(object)
     target_moved = pyqtSignal(object)
+    shape_moved = pyqtSignal(object)
     new_roi_center = pyqtSignal(object)
     scan_loaded = pyqtSignal(object)
     dropped = QtCore.pyqtSignal(QtCore.QMimeData)
@@ -414,6 +419,7 @@ class ImageWidget(ImageDialog):
         self.settings_fname = os.path.join(plotDir, settings_fname)
         if(not os.path.exists(self.settings_fname)):
             osa_smplhldr_dct = make_dflt_stxm_osa_smplholder_settings_dct(self.settings_fname)
+
         else:
             osa_smplhldr_dct = file_to_json(self.settings_fname)
 
@@ -482,7 +488,7 @@ class ImageWidget(ImageDialog):
         self.legend.setDefaultItemMode(Qwt.QwtLegendData.Checkable)
         #self.plot.insertLegend(self.legend, Qwt.QwtPlot.RightLegend)
         self.plot.insertLegend(self.legend, Qwt.QwtPlot.BottomLegend)
-        #
+
         self.plot.SIG_ITEM_SELECTION_CHANGED.connect(self.selected_item_changed)
         self.plot.SIG_ITEMS_CHANGED.connect(self.items_changed)
         self.plot.SIG_ITEM_MOVED.connect(self.active_item_moved)
@@ -518,6 +524,21 @@ class ImageWidget(ImageDialog):
         self.setAcceptDrops(True)
         #
         self.init_param_cross_marker()
+
+        self._shape_registry = {}
+
+    #def register_shape_info(self, shape_info_dct={'shape_title': None, 'on_selected': None}):
+    def register_shape_info(self, shape_info_dct={}):
+        self._shape_registry[shape_info_dct['shape_title']] = shape_info_dct
+
+    def get_shape_titles_from_registry(self):
+        return(self._shape_registry.keys())
+
+
+    def get_shape_from_registry(self, shape_title):
+        if (shape_title in self._shape_registry.keys()):
+            return(self._shape_registry[shape_title])
+
 
     def set_grid_colors(self):
         fg_clr = rgb_as_hex(master_colors['plot_forgrnd'])
@@ -1907,22 +1928,16 @@ class ImageWidget(ImageDialog):
             xc, yc = self.ss.get('OSA_AMBIENT.CENTER')
             rect = self.ss.get('OSA_AMBIENT.RECT')
 
-            self.create_rectangle(rect, title='osa_rect')
-            # from outboard to inboard
-            #self.create_simple_circle(rect[0] + 500, rect[1] - 500, 35, title='osa_1') #
-            #self.create_simple_circle(rect[0] + 1000, rect[1] - 500, 30, title='osa_2') #
-            #self.create_simple_circle(rect[0] + 1500, rect[1] - 500, 25, title='osa_3') #
-            # self.create_simple_circle(rect[0] + 2000, rect[1] - 500, 20,
-            # title='osa_4') #
+            create_rectangle(rect, title='osa_rect', plot=self.plot)
 
-            self.create_simple_circle(
-                rect[0] + 500, rect[1] - 500, 20, title='osa_1')
-            self.create_simple_circle(
-                rect[0] + 1000, rect[1] - 500, 25, title='osa_2')
-            self.create_simple_circle(
-                rect[0] + 1500, rect[1] - 500, 30, title='osa_3')
-            self.create_simple_circle(
-                rect[0] + 2000, rect[1] - 500, 35, title='osa_4')
+            create_simple_circle(
+                rect[0] + 500, rect[1] - 500, 20, title='osa_1', plot=self.plot)
+            create_simple_circle(
+                rect[0] + 1000, rect[1] - 500, 25, title='osa_2', plot=self.plot)
+            create_simple_circle(
+                rect[0] + 1500, rect[1] - 500, 30, title='osa_3', plot=self.plot)
+            create_simple_circle(
+                rect[0] + 2000, rect[1] - 500, 35, title='osa_4', plot=self.plot)
 
         else:
             # remove the sample_holder
@@ -1975,10 +1990,10 @@ class ImageWidget(ImageDialog):
             rect = self.ss.get('OSA_CRYO.RECT')
             x2 = rect[2]
             y1 = rect[1]
-            self.create_rectangle(rect, title='osa_rect')
+            create_rectangle(rect, title='osa_rect', plot=self.plot)
             # from outboard to inboard
-            self.create_simple_circle(x2 - 250, y1 - 250, 35, title='osa_1')
-            self.create_simple_circle(x2 - 250, y1 - 2250, 35, title='osa_2')
+            create_simple_circle(x2 - 250, y1 - 250, 35, title='osa_1', plot=self.plot)
+            create_simple_circle(x2 - 250, y1 - 2250, 35, title='osa_2', plot=self.plot)
 
         else:
             # remove the sample_holder
@@ -2012,15 +2027,15 @@ class ImageWidget(ImageDialog):
             xc = (rect[0] + rect[2]) * 0.5
             yc = (rect[1] + rect[3] - 5000) * 0.5
 
-            self.create_rectangle(rect, title='sh_rect')
+            create_rectangle(rect, title='sh_rect')
 
-            self.create_simple_circle(xc - 5000, yc, rad, title='sh_1')
-            self.create_simple_circle(xc, yc, rad, title='sh_2')
-            self.create_simple_circle(xc + 5000, yc, rad, title='sh_3')
+            create_simple_circle(xc - 5000, yc, rad, title='sh_1', plot=self.plot)
+            create_simple_circle(xc, yc, rad, title='sh_2', plot=self.plot)
+            create_simple_circle(xc + 5000, yc, rad, title='sh_3', plot=self.plot)
 
-            self.create_simple_circle(xc - 5000, yc + 5000, rad, title='sh_4')
-            self.create_simple_circle(xc, yc + 5000, rad, title='sh_5')
-            self.create_simple_circle(xc + 5000, yc + 5000, rad, title='sh_6')
+            create_simple_circle(xc - 5000, yc + 5000, rad, title='sh_4', plot=self.plot)
+            create_simple_circle(xc, yc + 5000, rad, title='sh_5', plot=self.plot)
+            create_simple_circle(xc + 5000, yc + 5000, rad, title='sh_6', plot=self.plot)
         else:
             # remove the sample_holder
             self.blockSignals(True)
@@ -2057,14 +2072,14 @@ class ImageWidget(ImageDialog):
 
 
             #self.create_rectangle(new_rect, title='sh_rect')
-            self.create_rect_centerd_at(frame, xc , yc , title='sh_rect')
-            self.create_rect_centerd_at(hole, frame_outbrd_edge + 385.0, yc, title='sh_1')
-            self.create_rect_centerd_at(hole, frame_outbrd_edge + 660.0, yc , title='sh_1')
-            self.create_rect_centerd_at(hole, frame_outbrd_edge + 935.0, yc , title='sh_2')
-            self.create_rect_centerd_at(hole, frame_outbrd_edge + 1210.0, yc , title='sh_3')
-            self.create_rect_centerd_at(hole, frame_outbrd_edge + 1485.0, yc , title='sh_4')
-            self.create_rect_centerd_at(hole, frame_outbrd_edge + 1760.0, yc , title='sh_5')
-            self.create_rect_centerd_at(hole, frame_outbrd_edge + 2035.0, yc , title='sh_6')
+            create_rect_centerd_at(frame, xc , yc , title='sh_rect', plot=self.plot)
+            create_rect_centerd_at(hole, frame_outbrd_edge + 385.0, yc, title='sh_1', plot=self.plot)
+            create_rect_centerd_at(hole, frame_outbrd_edge + 660.0, yc , title='sh_1', plot=self.plot)
+            create_rect_centerd_at(hole, frame_outbrd_edge + 935.0, yc , title='sh_2', plot=self.plot)
+            create_rect_centerd_at(hole, frame_outbrd_edge + 1210.0, yc , title='sh_3', plot=self.plot)
+            create_rect_centerd_at(hole, frame_outbrd_edge + 1485.0, yc , title='sh_4', plot=self.plot)
+            create_rect_centerd_at(hole, frame_outbrd_edge + 1760.0, yc , title='sh_5', plot=self.plot)
+            create_rect_centerd_at(hole, frame_outbrd_edge + 2035.0, yc , title='sh_6', plot=self.plot)
             #self.create_rect_centerd_at(hole, frame_outbrd_edge + 1945.0, yc , title='sh_7')
             #self.create_rect_centerd_at(hole, frame_outbrd_edge + 100.0, yc , title='sh_8')
 
@@ -2084,116 +2099,61 @@ class ImageWidget(ImageDialog):
             self.blockSignals(False)
         self.plot.replot()
 
-    def create_rect_centerd_at(self, rect, xc, yc, title):
-        dx = (rect[2] - rect[0]) * 0.5
-        dy = (rect[1] - rect[3]) * 0.5
-        self.create_rectangle((xc - dx, yc + dy , xc + dx, yc - dy), title=title)
+    def show_pattern(self, do_show=True):
+        #passing self will allow the pattern to be added to the plotter
+        if(do_show):
+            (x, y) = self.plot.get_active_axes()
+            xmin, xmax = self.plot.get_axis_limits(x)
+            ymin, ymax = self.plot.get_axis_limits(y)
+            #xc, yc = self.ss.get('PATTERN.CENTER')
+            xc = (xmax + xmin) * 0.5
+            yc = (ymax + ymin) * 0.5
+            #need to get the current centers
+            add_pattern_to_plot(self, xc, yc)
+            self.register_shape_info(shape_info_dct={'shape_title': 'pattern', 'on_selected': self.select_pattern, 'on_deselected': self.deselect_pattern})
+        else:
+            # remove the pattern
+            self.blockSignals(True)
+            shapes = self.plot.get_items(item_type=IShapeItemType)
+            for shape in shapes:
+                title = ''
+                if (hasattr(shape, 'annotationparam')):
+                    title = shape.annotationparam._title
+                elif (hasattr(shape, 'shapeparam')):
+                    title = shape.shapeparam._title
+                if (title.find('pattern') > -1):
+                    self.delPlotItem(shape)
+            self.blockSignals(False)
+
+    def select_pattern(self):
+        '''
+        select the pattern shape
+        :return:
+        '''
+        selected_shapes = self.select_main_rect_of_shape('pattern')
+        return(selected_shapes)
+
+    def deselect_pattern(self):
+        #self.deselect_main_rect_of_shape('pattern')
+        pass
+
+    def move_shape_to_new_center(self, title, xc, yc):
+        '''
+        select the shapes with name 'title' and move them based on a new center
+        :param title:
+        :param xc:
+        :param yc:
+        :return:
+        '''
+        selected_shapes = self.select_main_rect_of_shape(title)
+        for shape in selected_shapes:
+            #shape.add_point((3,3))
+            old_cntr = shape.get_center()
+            new_center = (xc + old_cntr[0]  , yc + old_cntr[1])
+            shape.move_shape(old_cntr, new_center)
 
 
-    def create_rectangle(self, rect, title='None'):
-        r = make.rectangle(rect[0], rect[1], rect[2], rect[3], title=title)
-        r.set_resizable(False)
-        sh = r.shapeparam
-        sh._title = title
-        sh.fill.alpha = 0.05
-        sh.sel_fill.alpha = 0.05
-        sh.symbol.alpha = 0.05
-        sh.sel_symbol.alpha = 0.05
 
-        sh.symbol.marker = 'NoSymbol'
-        sh.sel_symbol.marker = 'NoSymbol'
-
-        r.set_item_parameters({"ShapeParam": sh})
-
-        self.plot.add_item(r, z=999999999)
-
-    def create_simple_circle(self, xc, yc, rad, title='None', clr=None, fill_alpha=0.05):
-        """
-        create_simple_circle(): description
-
-        :param xc: xc description
-        :type xc: xc type
-
-        :param yc: yc description
-        :type yc: yc type
-
-        :param rad: rad description
-        :type rad: rad type
-
-        :returns: None
-        """
-        from guiqwt.styles import ShapeParam
-        #circ = make.annotated_circle(x0, y0, x1, y1, ratio, title, subtitle)
-        #rad = val/2.0
-        circ = make.circle(xc, yc + rad, xc, yc - rad, title=title)
-        circ.set_resizable(False)
-        sh = circ.shapeparam
-        sh._title = title
-        if(clr is not None):
-            sh.sel_fill.color = clr
-            sh.fill.color = clr
-
-        sh.fill.alpha = fill_alpha
-        sh.sel_fill.alpha = fill_alpha
-        sh.symbol.alpha = fill_alpha
-        sh.sel_symbol.alpha = fill_alpha
-        sh.symbol.marker = 'NoSymbol'
-        sh.sel_symbol.marker = 'NoSymbol'
-
-#         shape.shapeparam
-#         Shape:
-#             _styles:
-#               _ShapeParam___line:
-#                 LineStyleParam:
-#                   Style: Solid line
-#                   Color: black
-#                   Width: 1.0
-#                 LineStyleParam:
-#                   Style: Solid line
-#                   Color: black
-#                   Width: 1.0
-#               _ShapeParam___sym:
-#                 SymbolParam:
-#                   Style: No symbol
-#                   Size: 9
-#                   Border: gray
-#                   Background color: yellow
-#                   Background alpha: 1.0
-#                 SymbolParam:
-#                   Style: No symbol
-#                   Size: 9
-#                   Border: gray
-#                   Background color: yellow
-#                   Background alpha: 1.0
-#               _ShapeParam___fill:
-#                 BrushStyleParam:
-#                   Style: Uniform color
-#                   Color: black
-#                   Alpha: 1.0
-#                   Angle: 0.0
-#                   sx: 1.0
-#                   sy: 1.0
-#                 BrushStyleParam:
-#                   Style: Uniform color
-#                   Color: black
-#                   Alpha: 1.0
-#                   Angle: 0.0
-#                   sx: 1.0
-#                   sy: 1.0
-#             : False
-#             : False
-
-        # circ.set_resizable(False)
-        # offset teh annotation so that it is not on the center
-        #circ.shape.shapeparam.fill = circ.shape.shapeparam.sel_fill
-        #circ.shape.shapeparam.line = circ.shape.shapeparam.sel_line
-        #circ.label.C = (50,50)
-        # circ.set_label_visible(False)
-        # print circ.curve_item.curveparam
-        # circ.set_style(, option)
-        circ.set_item_parameters({"ShapeParam": sh})
-
-        self.plot.add_item(circ, z=999999999)
 
     def addPlotItem(self, item):
         """
@@ -2354,24 +2314,59 @@ class ImageWidget(ImageDialog):
     def select_osa(self):
         self.select_main_rect_of_shape('osa_')
 
+
+
     def select_main_rect_of_shape(self, _title='sh_'):
-        main_rect = None
+        print('select_main_rect_of_shape: looking for shapes with the name [%s] in it' % _title)
+        num_found = 0
         shapes = self.plot.get_items(item_type=IShapeItemType)
+        selected_shapes = []
+
         for shape in shapes:
+            _rect = shape.get_rect()
+            # QtCore.QRectF( top left, btm right)
+            qrect = QtCore.QRectF(QtCore.QPointF(_rect[0], _rect[2]), QtCore.QPointF(_rect[3], _rect[1]))
+
             title = ''
             if (hasattr(shape, 'annotationparam')):
                 title = shape.annotationparam._title
             elif (hasattr(shape, 'shapeparam')):
                 title = shape.shapeparam._title
-            if(title.find(_title) > -1):
-                shape.select()
-            if(title.find('%srect' % _title) > -1):
-                main_rect = shape
+            print('select_main_rect_of_shape: checking [%s]' % title)
+            if(hasattr(shape, 'selection_name')):
+                sel_name = shape.selection_name
+                if(sel_name.find(_title[0:5]) > -1):
+                    #shape.select()
+                    selected_shapes.append(shape)
+                    print('select_main_rect_of_shape: found selection_name [%d]' % num_found)
+                    num_found += 1
+            elif(title.find(_title[0:5]) > -1):
+                #shape.select()
+                print('select_main_rect_of_shape: found name [%d]' % num_found)
+                selected_shapes.append(shape)
+                num_found += 1
+                # if (title.find('%srect' % _title) > -1):
+                #     #main_rect = shape
+                #     shape.select()
+                #     #we will selct this one as the last one before we leave
+                # else:
+                #     #still want to select all in the shape
+                #     shape.select()
+                #     #_toselect.append(shape)
+            # if(main_rect is None):
+            #     main_rect = qrect
+            # else:
+            #     main_rect = main_rect.united(qrect)
+            else:
+                print('select_main_rect_of_shape: the shape title [%s] didnt match [%s]' % (title, _title))
+        if(len(selected_shapes) > 0):
+            selected_shapes.reverse()
+            for sh in selected_shapes:
+                print('selecting [%s]' % sh.selection_name)
+                sh.select()
+        #self.target_moved.emit(main_rect)
+        return(selected_shapes)
 
-        # make sure the main rect is the last selected so its position will be
-        # tracked
-        if(main_rect is not None):
-            main_rect.select()
 
     def selected_item_changed(self, plot):
         """
@@ -2387,8 +2382,13 @@ class ImageWidget(ImageDialog):
 
         :returns: None
         """
-        # print 'selected_item_changed: ' if(self._cur_shape_uid is not item.unique_id):
+        is_regd_shape = False
+        shape = None
         item = plot.get_active_item()
+        print('selected_item_changed:', item)
+        if(isinstance(item, AnnotatedRectangle)):
+            print('ok here is an Annotated Rect, does it have a selection name?: ', hasattr(item, 'selection_name'))
+
         if (hasattr(item, 'unique_id')):
             self._cur_shape_uid = item.unique_id
 
@@ -2396,15 +2396,56 @@ class ImageWidget(ImageDialog):
             if(hasattr(item, 'shapeparam')):
                 shape = item.shapeparam
                 title = shape._title
-                if(title.find('sh_') > -1):
-                    # select all sample holder items
-                    self.select_sample_holder()
+            else:
+                title = item.title().text()
+            if (hasattr(item, 'shape')):
+                shape = item.shape
 
-                if(title.find('osa_') > -1):
-                    # select all sample holder items
-                    self.select_osa()
+            if(title.find('sh_') > -1):
+                # select all sample holder items
+                self.select_sample_holder()
 
-                self.sel_item_id = title
+            if(title.find('osa_') > -1):
+                # select all sample holder items
+                self.select_osa()
+
+
+            if (hasattr(item, 'selection_name')):
+                sel_name = item.selection_name
+                print('sel_name is [%s]' % sel_name)
+                sel_prefix = sel_name.split('_')[0]
+                regd_shape = self.get_shape_from_registry(sel_prefix)
+                if (regd_shape):
+                    # only look at first 5 chars
+                    if (sel_prefix.find(regd_shape['shape_title'][0:5]) > -1):
+                        # call teh regsitered handler
+                        if (regd_shape['on_selected']):
+                            regd_shape['on_selected']()
+                            is_regd_shape = True
+                        else:
+                            _logger.error(
+                                'selected_item_changed: on_selected handler registered for [%s]' % regd_shape[
+                                    'shape_title'])
+
+            #
+            # regd_shape = self.get_shape_from_registry(title)
+            # if(regd_shape):
+            #     #only look at first 5 chars
+            #
+            #     if (title.find(regd_shape['shape_title'][0:5]) > -1):
+            #         #call teh regsitered handler
+            #         if(regd_shape['on_selected']):
+            #             regd_shape['on_selected']()
+            #             is_regd_shape = True
+            #         else:
+            #             _logger.error('selected_item_changed: on_selected handler registered for [%s]' % regd_shape['shape_title'])
+
+            if(not is_regd_shape):
+                pass
+            else:
+                print('is_regd_shape is True')
+            self.sel_item_id = title
+
 
             if(hasattr(item, 'unique_id')):
                 set_current_unique_id(item.unique_id)
@@ -2506,8 +2547,9 @@ class ImageWidget(ImageDialog):
 
         :returns: None
         """
-        # print 'active_item_moved'
+
         if hasattr(item, 'annotationparam'):
+            title = item.annotationparam.title
             if(item.annotationparam.title == 'Target'):
                 cntr = item.get_center()
                 (self.zoom_scale, dud) = item.get_tr_size()
@@ -2516,11 +2558,14 @@ class ImageWidget(ImageDialog):
             else:
                 if(self.inputState.keyisPressed[Qt.Key_Alt]):
                     self._emit_new_roi(self.image_type)
-        if hasattr(item, 'shapeparam'):
+
+        elif hasattr(item, 'shapeparam'):
             shape = item.shapeparam
             title = shape._title
         else:
             title = ''
+
+        print('active_item_moved', (title, item.get_center()))
 
         if(title.find('osa_') > -1):
             shape = self.get_shape_with_this_title('osa_rect')
@@ -2535,6 +2580,17 @@ class ImageWidget(ImageDialog):
                 self.ss.set('%s.CENTER' % self.sample_hldr_type, shape.get_center())
                 self.ss.set('%s.RECT' % self.sample_hldr_type, shape.get_rect())
                 self.ss.update()
+
+        regd_shape = self.get_shape_from_registry(title)
+        if (regd_shape):
+            # only look at first 5 chars
+            if(title.find(regd_shape['shape_title'][0:5]) > -1):
+                cntr = item.get_center()
+                self.ss.set('%s.CENTER' % regd_shape['shape_title'].upper(), cntr)
+                #self.ss.set('%s.RECT' % regd_shape['shape_title'].upper(), shape.get_rect())
+                self.ss.update()
+                self._emit_new_roi(self.image_type)
+
 
         else:
             # print 'active_item_moved: event for this item not handled' , item
@@ -3099,7 +3155,7 @@ class ImageWidget(ImageDialog):
                 sh.update_param(item.shape)
                 return(qrect)
 
-            elif isinstance(item, AnnotatedRectangle):
+            elif (isinstance(item, AnnotatedRectangle)  or isinstance(item, RectangleShape)):
                 #                 BRUSHSTYLE_CHOICES = [
                 #                     ("NoBrush", _("No brush pattern"), "nobrush.png"),
                 #                     ("SolidPattern", _("Uniform color"), "solidpattern.png"),
@@ -3291,7 +3347,7 @@ class ImageWidget(ImageDialog):
         dct_put(dct, SPDB_ZRANGE, None)
         dct_put(dct, SPDB_PLOT_IMAGE_TYPE, img_type)
 
-        # print 'emitting new roi: ', rect
+        #print('emitting new roi: ', rect)
         self.new_roi_center.emit(dct)
 
     def on_update_region(self, data):
@@ -3914,7 +3970,7 @@ class ImageWidget(ImageDialog):
                 col = cols - 1
 
             #self.data[:, col] = copy.deepcopy(line)
-            self.data[:, col] = line
+            self.data[:, col] = line[0:rows]
             if(show):
                 self.show_data(self.data)
         else:
@@ -4461,7 +4517,8 @@ class ImageWidget(ImageDialog):
             item_id,
             rect,
             item_type=types.spatial_type_prefix.ROI,
-            re_center=False):
+            re_center=False,
+            show_anno=True):
         """
         addShapePlotItem(): description
 
@@ -4490,7 +4547,10 @@ class ImageWidget(ImageDialog):
             self.roiNum += 1
             #title = types.spatial_type_prefix[roi] + ' %d' % self.roiNum
             title = types.spatial_type_prefix[roi] + ' %d' % item_id
-            item = make.annotated_rectangle(x1, y1, x2, y2, title=title)
+            if(show_anno):
+                item = make.annotated_rectangle(x1, y1, x2, y2, title=title)
+            else:
+                item = make.rectangle(x1, y1, x2, y2, title=title)
             item.shape_id = item_id
             item.unique_id = item_id
             item.max_range = (None, None)
@@ -4500,7 +4560,10 @@ class ImageWidget(ImageDialog):
             self.segNum += 1
             #title = types.spatial_type_prefix[seg] + ' %d' % self.segNum
             title = types.spatial_type_prefix[seg] + ' %d' % item_id
-            item = make.annotated_segment(x1, y1, x2, y2, title=title)
+            if (show_anno):
+                item = make.annotated_segment(x1, y1, x2, y2, title=title)
+            else:
+                item = make.segment(x1, y1, x2, y2, title=title)
             item.shape_id = item_id
             item.unique_id = item_id
             item.max_range = (None, None)
@@ -4511,7 +4574,10 @@ class ImageWidget(ImageDialog):
             self.pntNum += 1
             #title = types.spatial_type_prefix[pnt] + ' %d' % self.pntNum
             title = types.spatial_type_prefix[pnt] + ' %d' % item_id
-            item = make.annotated_point(x1, y1, title=title)
+            if (show_anno):
+                item = make.annotated_point(x1, y1, title=title)
+            else:
+                item = make.point(x1, y1, title=title)
             item.set_pos(x1, y1)
             item.shape_id = item_id
             item.unique_id = item_id
@@ -5105,7 +5171,7 @@ class ImageWidget(ImageDialog):
         plot = self.get_plot()
         #add it to the top of the plot items (z=0)
         #plot.add_item(image, z=0)
-        item = make.trimage(image.data, dx=.1, dy=.1, alpha=0.6)
+        item = make.trimage(image.data, dx=.1, dy=.1, alpha=0.4, colormap='gist_gray')
         item.set_selectable(True)
         item.set_movable(True)
         item.set_resizable(True)
@@ -5544,7 +5610,7 @@ def get_percentage_of_qrect(qrect, p):
 
 
 #def make_default_stand_alone_stxm_imagewidget(parent=None, data_io=None, _type=None, sample_positioning_mode=types.sample_positioning_modes):
-def make_default_stand_alone_stxm_imagewidget(parent=None, data_io=None, _type=None):
+def make_default_stand_alone_stxm_imagewidget(parent=None, data_io=None, _type=None, bndg_rect=None):
     #from cls.applications.pyStxm.widgets.beam_spot_fbk import BeamSpotFeedbackObjStandAlone
     #from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
 
@@ -5582,11 +5648,15 @@ def make_default_stand_alone_stxm_imagewidget(parent=None, data_io=None, _type=N
 
     win.set_enable_multi_region(False)
     win.enable_beam_spot(True)
-    bounding_qrect = QRectF(QPointF(-1000, 1000), QPointF(1000, -1000))
+    if(bndg_rect is None):
+        bounding_qrect = QRectF(QPointF(-1000, 1000), QPointF(1000, -1000))
+    else:
+        bounding_qrect = QRectF(QPointF(bndg_rect[0], bndg_rect[1]), QPointF(bndg_rect[2], bndg_rect[3]))
+
     warn_qrect = get_percentage_of_qrect(bounding_qrect, 0.90)  # %80 of max
     alarm_qrect = get_percentage_of_qrect(bounding_qrect, 0.95)  # %95 of max
-    normal_qrect = QtCore.QRectF(
-        QtCore.QPointF(-400, 400), QtCore.QPointF(400, -400))
+    #normal_qrect = QtCore.QRectF(QtCore.QPointF(-400, 400), QtCore.QPointF(400, -400))
+    normal_qrect = get_percentage_of_qrect(bounding_qrect, 0.40)
 
     bounding = ROILimitObj(
         bounding_qrect,
@@ -5709,14 +5779,36 @@ def make_pystxm_window():
     win.resize(900, 900)
     return(win)
 
+
+def make_test_pattern_gen_window():
+    from cls.data_io.stxm_data_io import STXMDataIo
+
+    fg_clr = rgb_as_hex(master_colors['plot_forgrnd'])
+    bg_clr = rgb_as_hex(master_colors['plot_bckgrnd'])
+    min_clr = rgb_as_hex(master_colors['plot_gridmaj'])
+    maj_clr = rgb_as_hex(master_colors['plot_gridmin'])
+
+    win = ImageWidget(parent=None, filtStr=FILTER_STRING, type=None,
+                            options=dict(lock_aspect_ratio=True, show_contrast=True, show_xsection=True, show_ysection=True,
+                            xlabel=("microns", ""), ylabel=("microns", ""), colormap="gist_gray"))
+    win.set_enable_multi_region(False)
+    win.enable_image_param_display(False)
+    win.enable_grab_btn()
+    win.enable_tool_by_name('tools.clsOpenFileTool', False)
+    win.addTool('tools.clsMultiLineTool')
+    win.setObjectName("lineByLineImageDataWidget")
+    win.set_dataIO(STXMDataIo)
+    win.resize(900, 900)
+    return(win)
+
 class qobj_OBJ(QObject):
     new_beam_pos = pyqtSignal(float, float)
     def __init__(self):
         QObject.__init__(self)
-        self.zx = apsMotor('IOC:m102')
-        self.zy = apsMotor('IOC:m103')
-        self.gx = apsMotor('IOC:m107')
-        self.gy = apsMotor('IOC:m108')
+        self.zx = apsMotor('IOC:m102', name='zoneplateX')
+        self.zy = apsMotor('IOC:m103', name='zoneplateY')
+        self.gx = apsMotor('IOC:m107', name='goniX')
+        self.gy = apsMotor('IOC:m108', name='goniX')
         self.zx.add_callback('RBV', self.on_mtr_fbk_changed)
 
     def on_mtr_fbk_changed(self, **kwargs):
@@ -5729,9 +5821,61 @@ class qobj_OBJ(QObject):
         y = zypos + gypos
         self.new_beam_pos.emit(x, y)
 
+def test_pattern_gen(win):
+    from cls.utils.roi_utils import get_base_roi
+
+
+
+    # print 'on_scanpluggin_roi_changed: rect=' , (rect)
+    centers = [0.5, 2.5, 4.5]
+    item_idx = 0
+    ltr_lst = ['A','B','C','D','E','F','G','H','I']
+    ltr_lst.reverse()
+    rois_dct = {}
+    main_rect = None
+    for x_center in centers:
+        for y_center in centers:
+            letter = ltr_lst.pop()
+            x_roi = get_base_roi('pattrn_%sx' % letter, '', x_center, 1.0, 10, enable=True, is_point=False, src=None)
+            y_roi = get_base_roi('pattrn_%sy' % letter, '', y_center, 1.0, 10, enable=True, is_point=False, src=None)
+
+            x1 = float(x_roi['START'])
+            y1 = float(y_roi['START'])
+            x2 = float(x_roi['STOP'])
+            y2 = float(y_roi['STOP'])
+
+            # print 'on_scanpluggin_roi_changed: item_id = %d' % item_id
+
+            rect = (x1, y1, x2, y2)
+
+            #win.addShapePlotItem(item_idx, rect, show_anno=False)
+            # if(item_idx is 4):
+            #     #the middle one, will be the one that is selected
+            #     title = 'patternrect'
+            #     print('patternrect', rect)
+            # else:
+            title = 'pattern'
+            #     create_rectangle(rect, title='pattern', plot=win.plot, annotated=True)
+            # else:
+            #     create_rectangle(rect, title='pattern', plot=win.plot, annotated=False)
+            create_rectangle(rect, title=title, plot=win.plot, annotated=False)
+            qrect = QtCore.QRectF(QtCore.QPointF(rect[0], rect[2]), QtCore.QPointF(rect[3], rect[1]))
+
+            if (main_rect is None):
+                main_rect = qrect
+            else:
+                main_rect = main_rect.united(qrect)
+            item_idx += 1
+            rois_dct[letter] = {'X': x_roi, 'Y': y_roi}
+
+    shape, z = create_rectangle(main_rect.getRect(), title='pattern', plot=win.plot, annotated=True, alpha=0.01, l_style='DashLine', l_clr='#645d03')
+    shape.unique_id = get_unique_roi_id()
+
+    return(rois_dct)
 
 
 def go():
+    from cls.utils.roi_utils import on_centerxy_changed
     ss = get_style('dark')
     app = guidata.qapplication()
     sys.excepthook = excepthook
@@ -5740,7 +5884,9 @@ def go():
 
     # win = make_default_stand_alone_stxm_imagewidget()
     # win = make_default_stand_alone_stxm_imagewidget(_type='analyze')
-    win = make_default_stand_alone_stxm_imagewidget()
+    #(-1000, 1000), QPointF(1000, -1000)
+    bndg_rect = (-5.0, 10.0, 10.0, -5.0)
+    win = make_default_stand_alone_stxm_imagewidget(bndg_rect=bndg_rect)
 
     # win.create_beam_spot(0.0, 0.0, size=0.35)
 
@@ -5750,6 +5896,48 @@ def go():
         # print wdg_com['RECT']
         print('on_new_roi_center', wdg_com['X'][CENTER], wdg_com['Y'][CENTER])
 
+    def select_pattern(img_plot):
+        main_rect = img_plot.select_main_rect_of_shape('pattern')
+
+    def assign_centers(dct, cntrs):
+        dct['X']['CENTER'] = cntrs[0]
+        dct['Y']['CENTER'] = cntrs[1]
+        on_centerxy_changed(dct['X'])
+        on_centerxy_changed(dct['Y'])
+
+    def on_target_moved(Ex, Ey):
+        #Ex = main_rect.center().x()
+        #Ey = main_rect.center().y()
+
+        #row 1
+        Ac = (Ex-2.0,   Ey-2.0)
+        Bc = (Ex,       Ey-2.0)
+        Cc = (Ex+2.0,   Ey-2.0)
+        #row 2
+        Dc = (Ex-2.0,   Ey)
+        #Ec
+        Fc = (Ex+2.0,   Ey)
+        #row 3
+        Gc = (Ex,       Ey+2.0)
+        Hc = (Ex,       Ey+2.0)
+        Ic = (Ex+2.0,   Ey+2.0)
+
+        assign_centers(rois_dct['A'], Ac)
+        assign_centers(rois_dct['B'], Bc)
+        assign_centers(rois_dct['C'], Cc)
+        assign_centers(rois_dct['D'], Dc)
+        assign_centers(rois_dct['F'], Fc)
+        assign_centers(rois_dct['G'], Gc)
+        assign_centers(rois_dct['H'], Hc)
+        assign_centers(rois_dct['I'], Ic)
+
+        #print('cntr:', (Ex, Ey))
+        #print('A center: (%.4f, %.4f)' % (rois_dct['A']['X']['CENTER'], rois_dct['A']['Y']['CENTER']))
+        #print('I center: (%.4f, %.4f)' % (rois_dct['I']['X']['CENTER'], rois_dct['I']['Y']['CENTER']))
+        #print('A setpoints: ' , rois_dct['A']['X']['SETPOINTS'])
+
+    def on_new_roi(object):
+        on_target_moved(object['X']['CENTER'], object['Y']['CENTER'])
 
     # win.set_data_dir(r'S:\STXM-data\Cryo-STXM\2017\guest\0201')
     win.set_data_dir(r'S:\STXM-data\Cryo-STXM\2017\guest\0922')
@@ -5764,7 +5952,7 @@ def go():
     # win = make_flea_camera_widow()
     # win = make_uhvstxm_distance_verification_window()
     # win.new_roi_center.connect(on_new_roi_center)
-    win.enable_image_param_display(True)
+    #win.enable_image_param_display(True)
 
     # win.show()
     upd_styleBtn = QtWidgets.QPushButton('Update Style')
@@ -5775,6 +5963,13 @@ def go():
     # testing beam spot feedback
     # win.move_beam_spot(5, 10)
     win.enable_menu_action('Clear Plot', True)
+
+    win.register_shape_info(shape_info_dct={'shape_title': 'pattern', 'on_selected': select_pattern})
+
+    win.target_moved.connect(on_target_moved)
+    win.new_roi_center.connect(on_new_roi)
+
+    rois_dct = test_pattern_gen(win)
     app.exec_()
 
 
@@ -5784,63 +5979,10 @@ if __name__ == "__main__":
     import guidata
     from PyQt5 import QtWidgets
     from cls.app_data.defaults import  get_style
-    from bcm.devices.epics.motor_v2 import Motor_V2 as apsMotor
+    from bcm.devices import Motor_Qt as apsMotor
     from PyQt5.QtCore import pyqtSignal, QObject
     from cls.utils.profiling import determine_profile_bias_val, profile_it
 
     #profile_it('go', bias_val=7.40181638985e-07)
     go()
 
-#     ss = get_style('dark')
-#     app = guidata.qapplication()
-#     sys.excepthook = excepthook
-#
-#     qobj = qobj_OBJ()
-#
-#     # win = make_default_stand_alone_stxm_imagewidget()
-#     #win = make_default_stand_alone_stxm_imagewidget(_type='analyze')
-#     win = make_default_stand_alone_stxm_imagewidget()
-#     #win.create_beam_spot(0.0, 0.0, size=0.35)
-#
-#     def on_new_roi_center(wdg_com):
-#         #print wdg_com.keys()
-#         #print wdg_com['SPATIAL_IDS']
-#         #print wdg_com['RECT']
-#         print 'on_new_roi_center' , wdg_com['X'][CENTER],wdg_com['Y'][CENTER]
-#
-#     def on_new_beam_spot_pos(xc, yc):
-#         global win
-#         win.move_beam_spot(xc, yc)
-#
-#     qobj.new_beam_pos.connect(on_new_beam_spot_pos)
-#
-#     #win.set_data_dir(r'S:\STXM-data\Cryo-STXM\2017\guest\0201')
-#     win.set_data_dir(r'S:\STXM-data\Cryo-STXM\2017\guest\0907')
-#
-#     win.register_osa_and_samplehldr_tool(sample_pos_mode=types.sample_positioning_modes.GONIOMETER)
-#     win.setStyleSheet(ss)
-# #     widg = QtWidgets.QFrame()
-# #     vbox = QtWidgets.QVBoxLayout()
-# #     vbox.addWidget(win)
-# #     widg.setLayout(vbox)
-#     win.show()
-#     #win = make_flea_camera_widow()
-#     #win = make_uhvstxm_distance_verification_window()
-#     #win.new_roi_center.connect(on_new_roi_center)
-#     win.enable_image_param_display(True)
-#
-#     #win.show()
-#     #widg.show()
-#     upd_styleBtn = QtWidgets.QPushButton('Update Style')
-#     vbox = QtWidgets.QVBoxLayout()
-#     vbox.addWidget(upd_styleBtn)
-#     upd_styleBtn.clicked.connect(win.update_style)
-#     win.layout().addLayout(vbox)
-#
-#     #testing beam spot feedback
-#
-#     #win.move_beam_spot(5, 10)
-#
-#
-#
-#     app.exec_()

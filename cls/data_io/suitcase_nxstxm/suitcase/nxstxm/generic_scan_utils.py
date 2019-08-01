@@ -1,9 +1,9 @@
 
 import numpy as np
 
-from cls.utils.roi_dict_defs import *
-from cls.types.stxmTypes import scan_types, single_entry_scans, multi_entry_scans, two_posner_scans, three_posner_scans
-from bcm.devices.device_names import *
+
+from suitcase.nxstxm.device_names import *
+from suitcase.nxstxm.roi_dict_defs import *
 from suitcase.nxstxm.nxstxm_utils import (make_signal, _dataset, _string_attr, _group, make_1d_array, \
                                           get_nx_standard_epu_mode, get_nx_standard_epu_harmonic_new, translate_pol_id_to_stokes_vector, \
                                           readin_base_classes, make_NXclass, remove_unused_NXsensor_fields)
@@ -20,17 +20,17 @@ def modify_generic_scan_ctrl_data_grps(parent, nxgrp, doc, scan_type):
     '''
     resize_data = False
     rois = parent.get_rois_from_current_md(doc['run_start'])
-    x_src = parent.get_devname(rois['X']['POSITIONER'])
-    x_posnr_nm = parent.fix_posner_nm(rois['X']['POSITIONER'])
+    x_src = parent.get_devname(rois[SPDB_X][POSITIONER])
+    x_posnr_nm = parent.fix_posner_nm(rois[SPDB_X][POSITIONER])
 
-    xnpoints = rois['X']['NPOINTS']
+    xnpoints = rois[SPDB_X][NPOINTS]
     ttlpnts = xnpoints
     uid = parent.get_current_uid()
     prim_data_lst = parent._data['primary'][x_src][uid]['data']
     if (len(prim_data_lst) < ttlpnts):
         resize_data = True
         # scan was aborted so use setpoint data here
-        xdata = np.array(rois['X']['SETPOINTS'], dtype=np.float32)
+        xdata = np.array(rois[SPDB_X]['SETPOINTS'], dtype=np.float32)
     else:
         # use actual data
         # xdata is teh first xnpoints
@@ -57,7 +57,7 @@ def modify_generic_scan_ctrl_str_attrs(parent, nxgrp, doc):
     :return:
     '''
     rois = parent.get_rois_from_current_md(doc['run_start'])
-    x_posnr_nm = parent.fix_posner_nm(rois['X']['POSITIONER'])
+    x_posnr_nm = parent.fix_posner_nm(rois[SPDB_X][POSITIONER])
 
     _string_attr(nxgrp, 'axes', [x_posnr_nm])
 
@@ -73,17 +73,17 @@ def modify_generic_scan_nxdata_group(parent, data_nxgrp, doc, scan_type):
     resize_data = False
 
     rois = parent.get_rois_from_current_md(doc['run_start'])
-    x_src = parent.get_devname(rois['X'][POSITIONER])
-    x_posnr_nm = parent.fix_posner_nm(rois['X'][POSITIONER])
+    x_src = parent.get_devname(rois[SPDB_X][POSITIONER])
+    x_posnr_nm = parent.fix_posner_nm(rois[SPDB_X][POSITIONER])
 
-    xnpoints = rois['X'][NPOINTS]
+    xnpoints = rois[SPDB_X][NPOINTS]
     ttlpnts = xnpoints
     uid = parent.get_current_uid()
     prim_data_lst = parent._data['primary'][x_src][uid]['data']
     if (len(prim_data_lst) < ttlpnts):
         resize_data = True
         # scan was aborted so use setpoint data here
-        xdata = np.array(rois['X'][SETPOINTS], dtype=np.float32)
+        xdata = np.array(rois[SPDB_X][SETPOINTS], dtype=np.float32)
 
     else:
         # use actual data
@@ -115,21 +115,21 @@ def modify_generic_scan_instrument_group(parent, inst_nxgrp, doc, scan_type):
     det_nm = parent.get_primary_det_nm(doc['run_start'])
     scan_type = parent.get_stxm_scan_type(doc['run_start'])
     uid = parent.get_current_uid()
-    ttl_pnts = rois['X']['NPOINTS'] * rois['Y']['NPOINTS']
+    ttl_pnts = rois[SPDB_X][NPOINTS] * rois[SPDB_Y][NPOINTS]
 
     det_data = np.array(parent._data['primary'][det_nm][uid]['data'])  # .reshape((ynpoints, xnpoints))
     parent.make_detector(inst_nxgrp, parent._primary_det_prefix, det_data, dwell, ttl_pnts, units='counts')
 
     sample_x_data = make_1d_array(ttl_pnts, parent.get_sample_x_data('start'))
     sample_y_data = make_1d_array(ttl_pnts, parent.get_sample_y_data('start'))
-    parent.make_detector(inst_nxgrp, 'sample_x', sample_x_data, dwell, ttl_pnts, units='um')
-    parent.make_detector(inst_nxgrp, 'sample_y', sample_y_data, dwell, ttl_pnts, units='um')
+    parent.make_detector(inst_nxgrp, nxkd.SAMPLE_X, sample_x_data, dwell, ttl_pnts, units='um')
+    parent.make_detector(inst_nxgrp, nxkd.SAMPLE_Y, sample_y_data, dwell, ttl_pnts, units='um')
 
-    xnpoints = rois['X']['NPOINTS']
-    ttl_pnts = rois['X']['NPOINTS']
+    xnpoints = rois[SPDB_X][NPOINTS]
+    ttl_pnts = rois[SPDB_X][NPOINTS]
 
-    x_src = parent.get_devname(rois['X']['POSITIONER'])
-    x_posnr_nm = parent.fix_posner_nm(rois['X']['POSITIONER'])
+    x_src = parent.get_devname(rois[SPDB_X][POSITIONER])
+    x_posnr_nm = parent.fix_posner_nm(rois[SPDB_X][POSITIONER])
 
     # xdata is teh first xnpoints
     xdata = parent._data['primary'][x_src][uid]['data'][0:xnpoints]

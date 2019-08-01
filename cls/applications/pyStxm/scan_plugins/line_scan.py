@@ -91,7 +91,8 @@ class LineScansParam(ScanParamWidget):
         self.zp_focus_mode = zp_focus_modes.A0MOD
         self.data_file_pfx = MAIN_OBJ.get_datafile_prefix()
         self.plot_item_type = spatial_type_prefix.SEG
-        self.enable_multi_region = MAIN_OBJ.get_is_multi_region_enabled()
+        #self.enable_multi_region = MAIN_OBJ.get_is_multi_region_enabled()
+        self.enable_multi_region = False
         self.multi_ev = True
 
     def on_plugin_focus(self):

@@ -24,11 +24,14 @@ import simplejson as json
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+from PIL import Image
+
 from bcm.devices.epu import convert_wrapper_epu_to_str
 from bcm.devices.device_names import *
 
+from cls.utils.arrays import flip_data_upsdown
 from cls.utils.images import array_to_gray_qpixmap
-
+from cls.utils.images import array_to_image
 from cls.applications.pyStxm import abs_path_to_ini_file
 from cls.applications.pyStxm.widgets.print_stxm_thumbnail import PrintSTXMThumbnailWidget
 from cls.app_data.defaults import master_colors, get_style, rgb_as_hex
@@ -270,9 +273,12 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
         prevAction = QtWidgets.QAction("Print Preview", self)
         # prevAction.triggered.connect(self.preview_it)
 
+        saveTiffAction = QtWidgets.QAction("Save as Tiff file", self)
+
         menu.addAction(prevAction)
         # menu.addAction(printAction)
         menu.addAction(launchAction)
+        menu.addAction(saveTiffAction)
 
         selectedAction = menu.exec_(event.screenPos())
         # if(printAction == selectedAction):
@@ -282,6 +288,8 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
             self.launch_vwr(self)
         elif (prevAction == selectedAction):
             self.preview_it(self)
+        elif (saveTiffAction == selectedAction):
+            self.save_tif(self)
 
     def print_it(self, sender):
         '''
@@ -364,6 +372,21 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
         # print 'print_it called: %s'% self.fname
 
         self.preview_thumb.emit(dct)
+
+    def save_tif(self, sender):
+        '''
+        call PrintSTXMThumbnailWidget()
+        :param sender:
+        :return:
+        '''
+        size = 512
+        self = sender
+        _data = flip_data_upsdown(self.data)
+        im = array_to_image(_data)
+        im = im.resize([size, size], Image.NEAREST)  # Image.ANTIALIAS)  # resizes to 256x512 exactly
+        im.save(self.fname.replace('.hdf5', '.tif'))
+
+
 
     def create_gradient_pmap(self, _min, _max):
         box = QtCore.QSize(20, THUMB_HEIGHT)
@@ -1250,16 +1273,27 @@ class ContactSheet(QtWidgets.QWidget):
 
         try:
             if (len(data_lst) > 0):
-                dl = len(data_lst[0])
-                data = np.zeros((num_entries, dl))
+                stack_dir = 1
+                #dl = len(data_lst[0])
+                dl_shape = data_lst[0].shape
+                if(data_lst[0].ndim == 1):
+                    data = np.zeros((num_entries, dl_shape[0]))
+                elif(data_lst[0].ndim == 2):
+                    data = np.zeros((num_entries, dl_shape[0], dl_shape[1]))
+                elif (data_lst[0].ndim == 3):
+                    data = np.zeros((num_entries, dl_shape[0], dl_shape[1], dl_shape[2]))
+
+                #data = np.zeros((num_entries, dl_shape[0], dl_shape[1]))
                 for i in range(num_entries):
                     data[i] = data_lst[i]
                 sp_db = sp_db_lst[0]
 
         except:
             _logger.error('get_sp_db_and_data: problem with [%s]' % fname)
-
-        return (sp_db, data)
+        if(stack_dir):
+            return(sp_db_lst, data_lst)
+        else:
+            return (sp_db, data)
 
     def ensure_instance_of_data_io_class(self, fname):
         data_dir, fprefix, fsuffix = get_file_path_as_parts(fname)
@@ -1523,8 +1557,19 @@ class ContactSheet(QtWidgets.QWidget):
             s = '%s' % self.format_info_text('File:', dct['file'], start_preformat=True)
             s += '%s %s' % (
             self.format_info_text('Date:', dct['date'], newline=False), self.format_info_text('Time:', dct['end_time']))
-            s += '%s' % self.format_info_text('Scan Type:', dct['scan_type'])
-            if (is_folder and ( (_scan_type in spectra_scans) or (_scan_type in stack_scans)) ):
+
+            if(_scan_type is scan_types.GENERIC_SCAN):
+                #add the positioner name
+                #s += '%s' % self.format_info_text('Scan Type:', dct['scan_type'] + ' %s' % dct_get(sp_db, SPDB_XPOSITIONER))
+                s += '%s' % self.format_info_text('Scan Type:',dct['scan_type'] , newline=False)
+                s += ' %s' % self.format_info_text(dct_get(sp_db, SPDB_XPOSITIONER),'')
+
+            else:
+                s += '%s' % self.format_info_text('Scan Type:', dct['scan_type'])
+
+            #s += '%s' % self.format_info_text('Scan Type:', dct['scan_type'])
+            #if (is_folder and ( (_scan_type in spectra_scans) or (_scan_type in stack_scans)) ):
+            if ((_scan_type in spectra_scans) or (_scan_type in stack_scans)):
                 #s += '%s' % self.format_info_text('Energy:', '[%.2f ---> %.2f] eV' % (dct['estart'], dct['estop']))
                 #s += '%s' % self.format_info_text('Num Energy Points:', '%d' % dct['e_npnts'])
                 #s += '%s' % self.format_info_text('Energy:', '[%.2f ---> %.2f] eV   %s' % (dct['estart'], dct['estop'],
@@ -1619,7 +1664,8 @@ class ContactSheet(QtWidgets.QWidget):
             dirs, data_fnames = dirlist_withdirs(dir, self.data_file_extension)
             fname = os.path.join(dir, data_fnames[0])
             sp_db, data = self.get_stack_data(fname)
-            self.load_stack_into_view(data_fnames[0])
+            #self.load_stack_into_view(data_fnames[0])
+            self.load_entries_into_view(data_fnames[0])
 
             self.fsys_mon.set_data_dir(self.data_dir)
             # QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(prev_cursor))
@@ -2109,6 +2155,67 @@ class ContactSheet(QtWidgets.QWidget):
 
         self.update_scenes()
 
+    def load_entries_into_view(self, fname):
+        """
+        load_stack_into_view(): description
+
+        :param fname: fname description
+        :type fname: fname type
+
+        :returns: None
+        """
+        fstr = os.path.join(self.data_dir, fname)
+        sp_db_lst, data_lst = self.get_sp_db_and_data(fstr, stack_dir=True)
+        self.clear_grid_layout(self.images_graphics_wdg, self.images_view, self.images_scene)
+        self.clear_grid_layout(self.spectra_graphics_wdg, self.spectra_view, self.spectra_scene)
+
+        #num_images, rows, cols = data.shape
+        num_ev, rows, cols = data_lst[0].shape
+        num_images = len(sp_db_lst) * num_ev
+        num_images += 1 #because we are adding an updir thumbnailwidget
+
+        ROWS = math.ceil(num_images / MAX_THUMB_COLUMNS)
+        # rowcol = itertools.product(range(ROWS),range(MAX_THUMB_COLUMNS))
+        rowcol = list(itertools.product(range(ROWS + 1), range(MAX_THUMB_COLUMNS)))
+        rowcol_iter = 0
+        ev_idx = 0
+        i = 0
+        row, column = rowcol[rowcol_iter]
+        status = self.add_to_view(os.path.join(self.data_dir,'..'), None, None, image_num=0, ev_idx=ev_idx, ev_pnt=0.0, pol_idx=0, pol_pnt=0, row=row, col=column, update_scene=False)
+        rowcol_iter += 1
+        sp_id_idx = 0
+        for sp_db in sp_db_lst:
+            for ev_roi in sp_db[EV_ROIS]:
+                # ev_idx = 0
+                enpnts = int(ev_roi[NPOINTS])
+                polnpnts = len(ev_roi[POL_ROIS])
+                ev_pol_idxs = list(itertools.product(range(enpnts), range(polnpnts)))
+                ev_pol_iter = 0
+
+                # for ev_pol_idxs in itertools.product(range(enpnts), range(polnpnts) ):
+                for x in range(enpnts):
+                    # for row, column in itertools.product(range(ROWS),range(MAX_THUMB_COLUMNS)):
+                    # print 'load_stack_into_view: %d of %d' % (x, enpnts)
+                    for p in range(polnpnts):
+                        row, column = rowcol[rowcol_iter]
+                        ev_pnt, pol_idx = ev_pol_idxs[ev_pol_iter]
+                        #print('load_stack_into_view: calling add_to_view for next_iter=%d, i=%d at rowcol (%d, %d)' % (rowcol_iter, i, row, column))
+                        ev_pol_iter += 1
+                        rowcol_iter += 1
+                        if(i < num_ev):
+                            status = self.add_to_view(fname, sp_db, data_lst[sp_id_idx][i], image_num=i, ev_idx=ev_idx, ev_pnt=ev_pnt,
+                                                      pol_idx=pol_idx, pol_pnt=0, row=row, col=column, update_scene=False)
+
+                        if (not status):
+                            continue
+                        i += 1
+                    # pol_idx += 1
+                ev_idx += 1
+                self.spectra_graphics_wdg.set_cur_row(row + 1)
+                self.spectra_graphics_wdg.set_cur_column(column + 1)
+            sp_id_idx += 1
+        self.update_scenes()
+
     # def create_directory_thumbs(self, dirs, progress_callback=None):
     #     dirs = sorted(dirs)
     #     reversed(dirs)
@@ -2245,6 +2352,14 @@ class ContactSheet(QtWidgets.QWidget):
                     if((sp_db is None) or (data is None)):
                         _logger.error('reload_view: problem loading [%s]' % fstr)
                         continue
+                    if(type(sp_db) is list):
+                        #_scan_type = dct_get(sp_db[0], SPDB_SCAN_PLUGIN_TYPE)
+                        sp_db = sp_db[0]
+                        data = data[0]
+                    # else:
+                    #     _scan_type = dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE)
+
+                    #if (_scan_type not in spectra_type_scans):
                     if (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in spectra_type_scans):
                         fstr = os.path.join(self.data_dir, thumb_fnames[i])
                         info_str, info_jstr = self.build_image_params(fstr, sp_db, data, ev_idx=0, pol_idx=0)
@@ -2525,6 +2640,7 @@ if __name__ == "__main__":
     dir = r'S:\STXM-data\Cryo-STXM\2018\guest\1214'
     dir = r'S:\STXM-data\Cryo-STXM\2019\guest\test\0215'
     dir = r'C:\controls\stxm-data\guest\0515'
+    dir = r'C:\controls\stxm-data\guest\0724'
     # dir = r'/home/bergr/git/testing/py27_qt5/py2.7/cls/data/guest'
     # main = ContactSheet(r'S:\STXM-data\Cryo-STXM\2016\guest\test')
     # main = ContactSheet(dir, BioxasDataIo)

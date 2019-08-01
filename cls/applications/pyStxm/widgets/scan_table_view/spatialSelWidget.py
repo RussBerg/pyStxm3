@@ -133,8 +133,9 @@ class SpatialSelWidget(BaseSelectionWidget):
 
         scan = self.get_row_data_by_item_id(self.scan_id)
         if(scan is not None):
-            if(self.use_hdw_accel):
-                self.check_e712params(scan)
+            # commented out Jul 17 2019, part of the auto wavetable rate calculation changes
+            # if(self.use_hdw_accel):
+            #     self.check_e712params(scan)
 
             self.spatial_row_changed.emit(scan)
 
@@ -171,8 +172,9 @@ class SpatialSelWidget(BaseSelectionWidget):
         #print 'SpatialSelWidget: on_scan_changed row(%d) scan_id(%d)' % (row, scan[SPDB_ID_VAL])
         #_logger.debug('SpatialSelWidget: on_scan_changed, emitting spatial_row_changed sig')
         self.spatial_row_changed.emit(scan)
-        if (self.use_hdw_accel):
-            self.check_e712params(scan)
+        # commented out Jul 17 2019, part of the auto wavetable rate calculation changes
+        # if(self.use_hdw_accel):
+        #     self.check_e712params(scan)
         self.check_if_table_empty()
     
     def deselect_all(self):

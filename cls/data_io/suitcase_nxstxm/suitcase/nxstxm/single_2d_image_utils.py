@@ -1,13 +1,15 @@
 
 import numpy as np
 
-from cls.utils.roi_dict_defs import *
-from cls.types.stxmTypes import scan_types, single_entry_scans, multi_entry_scans, two_posner_scans, three_posner_scans
-from bcm.devices.device_names import *
+from suitcase.nxstxm.stxm_types import scan_types, two_posner_scans
+from suitcase.nxstxm.device_names import *
+from suitcase.nxstxm.utils import dct_get, dct_put
+from suitcase.nxstxm.roi_dict_defs import *
+from cls.types.stxmTypes import scan_types
+
 from suitcase.nxstxm.nxstxm_utils import (make_signal, _dataset, _string_attr, _group, make_1d_array, \
                                           get_nx_standard_epu_mode, get_nx_standard_epu_harmonic_new, translate_pol_id_to_stokes_vector, \
                                           readin_base_classes, make_NXclass, remove_unused_NXsensor_fields)
-
 import suitcase.nxstxm.nx_key_defs as nxkd
 
 MARK_DATA = False
@@ -25,23 +27,23 @@ def modify_2posner_ctrl_data_grps(parent, nxgrp, doc, scan_type):
     '''
     resize_data = False
     rois = parent.get_rois_from_current_md(doc['run_start'])
-    x_src = parent.get_devname(rois['X']['POSITIONER'])
-    x_posnr_nm = parent.fix_posner_nm(rois['X']['POSITIONER'])
-    # x_posnr_src = rois['X']['SRC']
-    y_src = parent.get_devname(rois['Y']['POSITIONER'])
-    y_posnr_nm = parent.fix_posner_nm(rois['Y']['POSITIONER'])
-    # y_posnr_src = rois['Y']['SRC']
+    x_src = parent.get_devname(rois[SPDB_X][POSITIONER])
+    x_posnr_nm = parent.fix_posner_nm(rois[SPDB_X][POSITIONER])
+    # x_posnr_src = rois[SPDB_X]['SRC']
+    y_src = parent.get_devname(rois[SPDB_Y][POSITIONER])
+    y_posnr_nm = parent.fix_posner_nm(rois[SPDB_Y][POSITIONER])
+    # y_posnr_src = rois[SPDB_Y]['SRC']
     uid = parent.get_current_uid()
 
-    xnpoints = rois['X']['NPOINTS']
-    ynpoints = rois['Y']['NPOINTS']
+    xnpoints = rois[SPDB_X][NPOINTS]
+    ynpoints = rois[SPDB_Y][NPOINTS]
     ttlpnts = xnpoints * ynpoints
     prim_data_lst = parent._data['primary'][x_src][uid]['data']
     if (len(prim_data_lst) < ttlpnts):
         resize_data = True
         # scan was aborted so use setpoint data here
-        xdata = np.array(rois['X']['SETPOINTS'], dtype=np.float32)
-        ydata = np.array(rois['Y']['SETPOINTS'], dtype=np.float32)
+        xdata = np.array(rois[SPDB_X][SETPOINTS], dtype=np.float32)
+        ydata = np.array(rois[SPDB_Y][SETPOINTS], dtype=np.float32)
     else:
         # use actual data
         # xdata is teh first xnpoints
@@ -69,8 +71,8 @@ def modify_2posner_ctrl_str_attrs(parent, nxgrp, doc):
     :return:
     '''
     rois = parent.get_rois_from_current_md(doc['run_start'])
-    x_posnr_nm = parent.fix_posner_nm(rois['X']['POSITIONER'])
-    y_posnr_nm = parent.fix_posner_nm(rois['Y']['POSITIONER'])
+    x_posnr_nm = parent.fix_posner_nm(rois[SPDB_X][POSITIONER])
+    y_posnr_nm = parent.fix_posner_nm(rois[SPDB_Y][POSITIONER])
 
     _string_attr(nxgrp, 'axes', [y_posnr_nm, x_posnr_nm])
 
@@ -86,23 +88,21 @@ def modify_base_2d_nxdata_group(parent, data_nxgrp, doc, scan_type):
     resize_data = False
 
     rois = parent.get_rois_from_current_md(doc['run_start'])
-    x_src = parent.get_devname(rois['X']['POSITIONER'])
-    x_posnr_nm = parent.fix_posner_nm(rois['X']['POSITIONER'])
-    # x_posnr_src = rois['X']['SRC']
-    y_src = parent.get_devname(rois['Y']['POSITIONER'])
-    y_posnr_nm = parent.fix_posner_nm(rois['Y']['POSITIONER'])
-    # y_posnr_src = rois['Y']['SRC']
+    x_src = parent.get_devname(rois[SPDB_X][POSITIONER])
+    x_posnr_nm = parent.fix_posner_nm(rois[SPDB_X][POSITIONER])
+    y_src = parent.get_devname(rois[SPDB_Y][POSITIONER])
+    y_posnr_nm = parent.fix_posner_nm(rois[SPDB_Y][POSITIONER])
     uid = parent.get_current_uid()
-    xnpoints = rois['X']['NPOINTS']
-    ynpoints = rois['Y']['NPOINTS']
+    xnpoints = rois[SPDB_X][NPOINTS]
+    ynpoints = rois[SPDB_Y][NPOINTS]
     ttlpnts = xnpoints * ynpoints
     prim_data_lst = parent._data['primary'][x_src][uid]['data']
 
     if (len(prim_data_lst) < ttlpnts):
         resize_data = True
         # scan was aborted so use setpoint data here
-        xdata = np.array(rois['X']['SETPOINTS'], dtype=np.float32)
-        ydata = np.array(rois['Y']['SETPOINTS'], dtype=np.float32)
+        xdata = np.array(rois[SPDB_X][SETPOINTS], dtype=np.float32)
+        ydata = np.array(rois[SPDB_Y][SETPOINTS], dtype=np.float32)
     else:
         # use actual data
         # xdata is teh first xnpoints
@@ -155,25 +155,25 @@ def modify_base_2d_instrument_group(parent, inst_nxgrp, doc, scan_type):
     det_nm = parent.get_primary_det_nm(doc['run_start'])
     scan_type = parent.get_stxm_scan_type(doc['run_start'])
     uid = parent.get_current_uid()
-    ttl_pnts = rois['X']['NPOINTS'] * rois['Y']['NPOINTS']
+    ttl_pnts = rois[SPDB_X][NPOINTS] * rois[SPDB_Y][NPOINTS]
 
     det_data = np.array(parent._data['primary'][det_nm][uid]['data'])  # .reshape((ynpoints, xnpoints))
     parent.make_detector(inst_nxgrp, parent._primary_det_prefix, det_data, dwell, ttl_pnts, units='counts')
 
     sample_x_data = make_1d_array(ttl_pnts, parent.get_sample_x_data('start'))
     sample_y_data = make_1d_array(ttl_pnts, parent.get_sample_y_data('start'))
-    parent.make_detector(inst_nxgrp, 'sample_x', sample_x_data, dwell, ttl_pnts, units='um')
-    parent.make_detector(inst_nxgrp, 'sample_y', sample_y_data, dwell, ttl_pnts, units='um')
+    parent.make_detector(inst_nxgrp, nxkd.SAMPLE_X, sample_x_data, dwell, ttl_pnts, units='um')
+    parent.make_detector(inst_nxgrp, nxkd.SAMPLE_Y, sample_y_data, dwell, ttl_pnts, units='um')
 
     if (scan_type in two_posner_scans):
-        xnpoints = rois['X']['NPOINTS']
-        ynpoints = rois['Y']['NPOINTS']
-        ttl_pnts = rois['X']['NPOINTS'] * rois['Y']['NPOINTS']
+        xnpoints = rois[SPDB_X][NPOINTS]
+        ynpoints = rois[SPDB_Y][NPOINTS]
+        ttl_pnts = rois[SPDB_X][NPOINTS] * rois[SPDB_Y][NPOINTS]
 
-        x_src = parent.get_devname(rois['X']['POSITIONER'])
-        x_posnr_nm = parent.fix_posner_nm(rois['X']['POSITIONER'])
-        y_src = parent.get_devname(rois['Y']['POSITIONER'])
-        y_posnr_nm = parent.fix_posner_nm(rois['Y']['POSITIONER'])
+        x_src = parent.get_devname(rois[SPDB_X][POSITIONER])
+        x_posnr_nm = parent.fix_posner_nm(rois[SPDB_X][POSITIONER])
+        y_src = parent.get_devname(rois[SPDB_Y][POSITIONER])
+        y_posnr_nm = parent.fix_posner_nm(rois[SPDB_Y][POSITIONER])
 
         # xdata is teh first xnpoints
         xdata = parent._data['primary'][x_src][uid]['data'][0:xnpoints]

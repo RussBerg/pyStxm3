@@ -340,6 +340,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.enable_energy_change(True)
 
         MAIN_OBJ.engine_widget.engine.exec_result.connect(self.on_execution_completed)
+        MAIN_OBJ.engine_widget.engine.prog_changed.connect(self.on_run_engine_progress)
         self.status_label = EngineLabel('Engine Status')
 
     def setup_preferences_panel(self):
@@ -1099,6 +1100,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             scans[idx].selected.connect(self.set_current_scan_pluggin)
             scans[idx].clear_all_sig.connect(self.on_clear_all)
             scans[idx].new_est_scan_time.connect(self.on_new_est_scan_time)
+            scans[idx].call_main_func.connect(self.scan_plugin_func_call)
 
             scans[idx].test_scan.connect(self.on_test_scan)
             scans[idx].update_plot_strs.connect(self.on_update_plot_strs)
@@ -1301,18 +1303,25 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                     x2 = float(dct_get(sp_db, SPDB_XSTOP))
                     y2 = float(dct_get(sp_db, SPDB_YSTOP))
 
+                xc = float(dct_get(sp_db, SPDB_XCENTER))
+                yc = float(dct_get(sp_db, SPDB_YCENTER))
+
                 # print 'on_scanpluggin_roi_changed: item_id = %d' % item_id
                 if (hasattr(self, 'lineByLineImageDataWidget')):
                     item = self.lineByLineImageDataWidget.getShapePlotItem(item_id, plot_item_type)
                     #self.lineByLineImageDataWidget.set_shape_item_max_range(item, dct_get(sp_db, SPDB_SCAN_PLUGIN_MAX_SCANRANGE))
 
-                    rect =     (x1, y1, x2, y2)
+                    rect = (x1, y1, x2, y2)
 
                     #print 'on_scanpluggin_roi_changed: rect=' , (rect)
                     skip_list = [scan_types.SAMPLE_FOCUS, scan_types.OSA_FOCUS]
-                    if(item is None):
+                    if((item is None) and not(scan_item_type is scan_types.PATTERN_GEN_SCAN)):
                         if(scan_item_type not in skip_list):
                             self.lineByLineImageDataWidget.addShapePlotItem(item_id, rect, item_type=plot_item_type, re_center=True)
+                    elif(scan_item_type is scan_types.PATTERN_GEN_SCAN):
+
+                        self.lineByLineImageDataWidget.move_shape_to_new_center('pattern', xc, yc)
+
                     else:
                         self.lineByLineImageDataWidget.blockSignals(True)
                         if(wdg_com[WDGCOM_CMND] == widget_com_cmnd_types.SELECT_ROI):
@@ -1337,7 +1346,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         :returns: None
         """
         """ make call to update the scans params defined in the plugin """
-        # print 'on_plotitem_roi_changed: ', dct
+        #print('on_plotitem_roi_changed: ', wdg_com)
         if (self.scan_in_progress):
             return
 
@@ -1436,6 +1445,18 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                self.lineByLineImageDataWidget.set_enable_multi_region(False)
 
             self.lineByLineImageDataWidget.blockSignals(False)
+
+    def show_pattern_generator_pattern(self, chkd):
+        '''
+        called by the pattern generator scan plugin
+        :return:
+        '''
+        if(chkd):
+            #check to see if it is currently visible if so hide it if not show it
+
+            self.lineByLineImageDataWidget.show_pattern(True)
+        else:
+            self.lineByLineImageDataWidget.show_pattern(False)
 
     def setup_image_plot(self):
         """
@@ -1704,8 +1725,11 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             #but only switch if it is not a point scan as the selection for a point scan is done on a 2D image
             if(idx is scan_panel_order.POINT_SCAN):
                 # it is a point scan so zoom the plot to a valid range
-                sx = MAIN_OBJ.device(DNM_SAMPLE_X)
-                sy = MAIN_OBJ.device(DNM_SAMPLE_Y)
+                #sx = MAIN_OBJ.device(DNM_SAMPLE_X)
+                #sy = MAIN_OBJ.device(DNM_SAMPLE_Y)
+                sx = MAIN_OBJ.get_sample_positioner('X')
+                sy = MAIN_OBJ.get_sample_positioner('Y')
+
                 centers = (sx.get_position(), sy.get_position())
                 self.lineByLineImageDataWidget.set_center_at_XY(centers, max_scan_range)
             else:
@@ -1727,8 +1751,10 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                         #we are likely already where we want to be on the plotter if the user switched to one of these scans
                         pass
                     else:
-                        sx = MAIN_OBJ.device(DNM_SAMPLE_X)
-                        sy = MAIN_OBJ.device(DNM_SAMPLE_Y)
+                        #sx = MAIN_OBJ.device(DNM_SAMPLE_X)
+                        #sy = MAIN_OBJ.device(DNM_SAMPLE_Y)
+                        sx = MAIN_OBJ.get_sample_positioner('X')
+                        sy = MAIN_OBJ.get_sample_positioner('Y')
                         centers = (sx.get_position(), sy.get_position())
                         self.lineByLineImageDataWidget.set_center_at_XY(centers, ranges)
 
@@ -1756,9 +1782,21 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
         wdg_com = scan_pluggin.update_data()
 
+        #if(scan_type is scan_types.PATTERN_GEN_SCAN):
+        #    self.show_pattern_generator_pattern()
+
         # if(wdg_com):
         #    if(len(wdg_com['SPATIAL_ROIS']) > 0):
         #        self.scan_progress_table.load_wdg_com(wdg_com)
+
+
+    def scan_plugin_func_call(self, func_nm, chkd):
+        #allow the scan pluggins to (if they know about a function here in stxmMain) to call it by name
+        if(hasattr(self, func_nm)):
+            func = getattr(self, func_nm)
+            func(chkd)
+        else:
+            _logger.info('Scan plugin called a function in stxmMain that doesnt exist: [%s]' % func_nm)
 
 
     def on_update_plot_strs(self, axis_strs):
@@ -1865,6 +1903,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         # self.cur_image_idx = _dct['img_idx']
 
         #print('add_line_to_plot: row[%d]' % row)
+        #print('add_line_to_plot: ', (row, line_data))
 
         if (self.executingScan.scan_type == scan_types.SAMPLE_LINE_SPECTRA):
             # if(not self.image_started and (col == 0)):
@@ -1936,13 +1975,14 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         img_cntr = counter_to_plotter_com_dct[CNTR2PLOT_IMG_CNTR]
         ev_cntr = counter_to_plotter_com_dct[CNTR2PLOT_EV_CNTR]
         cur_scan_type = counter_to_plotter_com_dct[CNTR2PLOT_SCAN_TYPE]
+        sp_id = self.executingScan._current_sp_id
 
-        #print('add_point_to_plot:',counter_to_plotter_com_dct)
+        print('add_point_to_plot:',sp_id, counter_to_plotter_com_dct)
 
         #if (self.get_cur_scan_type() == scan_types.SAMPLE_LINE_SPECTRA):
         if (cur_scan_type == scan_types.SAMPLE_LINE_SPECTRA):
             if (not self.executingScan.image_started and (ev_cntr == 0) and ((col == 0) and (row == 0))):
-                self.on_image_start()
+                self.on_image_start(sp_id=sp_id)
 
             if (col > 0):
                 self.executingScan.image_started = False
@@ -1951,7 +1991,9 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
         else:
             if (not self.executingScan.image_started and (row == 0)):
-                self.on_image_start()
+                self.on_image_start(sp_id=sp_id)
+            elif( self.executingScan.image_started and ((col == 0) and (row == 0))):
+                self.on_image_start(sp_id=sp_id)
 
             #print('add_point_to_plot: row=%d, point=%d, val=%d' % (row, point, val))
             self.lineByLineImageDataWidget.addPoint(row, point, val, True)
@@ -2322,7 +2364,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             else:
                 scan_class.init_subscriptions(MAIN_OBJ.engine_widget, self.add_point_to_plot)
 
-        elif (scan_type == scan_types.SAMPLE_IMAGE_STACK or scan_type == scan_types.TOMOGRAPHY_SCAN):
+        elif (scan_type == scan_types.SAMPLE_IMAGE_STACK or scan_type == scan_types.TOMOGRAPHY_SCAN or scan_type == scan_types.PATTERN_GEN_SCAN):
             # use first sp_DB to determine if point by point or line unidir
             idx = 0
             img_idx_fname_dct = {}
@@ -2357,10 +2399,12 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                     scan_plan = scan_class.generate_scan_plan(detectors=[self.line_det_flyer], gate=self.gate)
                 else:
                     # use point detector
-                    scan_plan = scan_class.generate_scan_plan(detectors=[self.point_det, self.ring_ma], gate=self.gate)
+                    scan_plan = scan_class.generate_scan_plan(detectors=[self.point_det], gate=self.gate)
             else:
                 scan_plan = scan_class.generate_scan_plan(detectors=[self.line_det_flyer], gate=self.gate)
 
+            if (scan_type == scan_types.PATTERN_GEN_SCAN):
+                scan_class.init_subscriptions(MAIN_OBJ.engine_widget, self.add_point_to_plot)
             #now create a sequential list of image names in spatial id order
             cntr = 0
             for i in range(num_images):
@@ -2371,57 +2415,6 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                     cntr += 1
 
             d = img_idx_fname_dct
-
-        # elif (scan_type == scan_types.TOMOGRAPHY_SCAN):
-        #     # use first sp_DB to determine if point by point or line unidir
-        #     idx = 0
-        #     img_idx_fname_dct = {}
-        #     sp_db_seq_names = []
-        #     for sp_id in sp_ids:
-        #         sp_db = sp_rois[sp_id]
-        #         # num_images = int(sp_db[SPDB_EV_NPOINTS] * sp_db[SPDB_POL_NPOINTS] * len(sp_ids))
-        #         num_images = self.determine_num_thumbnail_images_required(self.cur_wdg_com, as_num=True)
-        #         d = master_get_seq_names(self.active_user.get_data_dir(), prefix_char='C', thumb_ext='jpg', dat_ext='hdf5',
-        #                                  num_desired_datafiles=num_images, new_stack_dir=True)
-        #         sp_db_seq_names.append(d)
-        #         d_keys = list(d.keys())
-        #         if (len(sp_ids) > 1):
-        #             # each spatial roi needs a filename dict
-        #             for i in range(num_images):
-        #                 k = d_keys[i]
-        #                 self.assign_datafile_names_to_sp_db(sp_db, d[k], image_idx=i)
-        #         else:
-        #             self.assign_datafile_names_to_sp_db(sp_rois[sp_ids[0]], d[0])
-        #         #idx += 1
-        #
-        #     self.set_cur_scan_sub_type(dct_get(sp_db, SPDB_SCAN_PLUGIN_SUBTYPE))
-        #     scan_class.set_datafile_names_dict(d)
-        #     sp_id = scan_class.get_next_spatial_id()
-        #     scan_class.configure(self.cur_wdg_com, sp_id=sp_id, ev_idx=0, line=True)
-        #     self.line_det.set_scan_type(scan_type)
-        #     if (scan_sub_type is scan_sub_types.POINT_BY_POINT):
-        #         self.point_det.set_scan_type(scan_type)
-        #         if (scan_class.e712_enabled):
-        #             # use the flyer scan because we are using the E712 wavegenerator
-        #             scan_plan = scan_class.generate_scan_plan(detectors=[self.line_det_flyer], gate=self.gate)
-        #         else:
-        #             # use point detector
-        #             scan_plan = scan_class.generate_scan_plan(detectors=[self.point_det, self.ring_ma], gate=self.gate)
-        #     else:
-        #         scan_plan = scan_class.generate_scan_plan(detectors=[self.line_det_flyer], gate=self.gate)
-        #
-        #     #now create a sequential list of image names in spatial id order
-        #     cntr = 0
-        #     ttl_images = self.determine_num_thumbnail_images_required(self.cur_wdg_com, as_num=True)
-        #     fname = sp_db_seq_names[0][0]['data_name']
-        #     for i in range(ttl_images):
-        #         stack_flbl = '%s img/%d' % (sp_db_seq_names[0][i]['data_name'], cntr)
-        #         sp_db_seq_names[0][i]['stack_flbl'] = stack_flbl
-        #         img_idx_fname_dct[cntr] = sp_db_seq_names[0][i]
-        #         cntr += 1
-        #
-        #     d = img_idx_fname_dct
-
 
         else:
             _logger.error('start_scan: unsupported scan type [%d]' % scan_type)
@@ -2445,14 +2438,19 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             return
 
         # ok all good lets run the scan
-        # if (hasattr(self, 'scan_progress_table')):
-        #     self.scan_progress_table.set_queue_file_list(get_thumb_file_name_list(d))
-        #     #self.scan_progress_table.load_wdg_com(self.cur_wdg_com, sp_id)
-        #     self.scan_progress_table.load_wdg_com(self.cur_wdg_com, sorted(sp_rois.keys()))
-        #     if (scan_type == scan_types.SAMPLE_IMAGE_STACK):
-        #         self.scan_progress_table.set_directory_label(d[list(d.keys())[0]]['stack_dir'])
-        #     else:
-        #         self.scan_progress_table.set_directory_label(d[list(d.keys())[0]]['data_dir'])
+        if (hasattr(self, 'scan_progress_table')):
+            self.scan_progress_table.set_queue_file_list(get_thumb_file_name_list(d))
+            #self.scan_progress_table.load_wdg_com(self.cur_wdg_com, sp_id)
+            if (scan_type == scan_types.TOMOGRAPHY_SCAN):
+                #tomo only has one spatial ID yet there is one defined per angle, anly send one though
+                self.scan_progress_table.load_wdg_com(self.cur_wdg_com, sorted([list(sp_rois.keys())[0]]))
+            else:
+                self.scan_progress_table.load_wdg_com(self.cur_wdg_com, sorted(list(sp_rois.keys())))
+
+            if (scan_type == scan_types.SAMPLE_IMAGE_STACK):
+                self.scan_progress_table.set_directory_label(d[list(d.keys())[0]]['stack_dir'])
+            else:
+                self.scan_progress_table.set_directory_label(d[list(d.keys())[0]]['data_dir'])
 
         self.connect_executingScan_signals(testing=testing)
 
@@ -2460,13 +2458,11 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             self.executingScan.set_save_all_data(True)
 
         self.executingScan.image_started = False
-        #self.executingScan.reset_consecutive_scan_idx()
-        #self.executingScan.start()
 
-        # Start the RunEngine, counter intuitive I know but emitting idle is connecterd to engine start
-        MAIN_OBJ.engine_widget.control.state_widgets['start'].clicked.emit()
+        # Start the RunEngine
         MAIN_OBJ.engine_widget.engine.md['user'] = 'bergr'
         MAIN_OBJ.engine_widget.engine.md['host'] = 'myNotebook'
+        MAIN_OBJ.engine_widget.control.state_widgets['start'].clicked.emit()
 
         self.start_time = time.time()
 
@@ -2491,6 +2487,11 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             final_arr = _1d_arr.reshape(final_shape)
         return(final_arr)
 
+    def on_run_engine_progress(self, re_prog_dct):
+        #print(re_prog_dct)
+        dct = make_progress_dict(sp_id=0, percent=re_prog_dct['prog'], cur_img_idx=re_prog_dct['scan_idx'])
+        self.on_scan_progress(dct)
+
     def on_execution_completed(self, run_uids):
         print('on_execution_completed: ', run_uids)
         self.on_state_changed('Idle', run_uids)
@@ -2508,14 +2509,15 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             self.disconnect_executingScan_signals()
             self.set_buttons_for_starting()
 
-            #fireoff a thread to handle saving data to an nxstxm file
-            worker = Worker(self.do_data_export, run_uids, 'datadir', False)  # Any other args, kwargs are passed to the run function
-            #worker.signals.result.connect(self.load_thumbs)
-            #worker.signals.progress.connect(self.progress_fn)
-            #worker.signals.finished.connect(self.thread_complete)
+            if(self.executingScan.scan_type is not scan_types.PATTERN_GEN_SCAN):
+                #fireoff a thread to handle saving data to an nxstxm file
+                worker = Worker(self.do_data_export, run_uids, 'datadir', False)  # Any other args, kwargs are passed to the run function
+                #worker.signals.result.connect(self.load_thumbs)
+                #worker.signals.progress.connect(self.progress_fn)
+                #worker.signals.finished.connect(self.thread_complete)
 
-            # Execute
-            self._threadpool.start(worker)
+                # Execute
+                self._threadpool.start(worker)
 
 
     def check_data_export_good_to_go(self):
@@ -2533,34 +2535,38 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         executes inside a threadpool so it doesnt bog down the main event loop
         :return:
         '''
+
+        _logger.info('do_data_export: ok starting export')
         from cls.utils.file_system_tools import get_next_file_num_in_seq
         data_dir = self.active_user.get_data_dir()
         fprefix = 'C' + str(get_next_file_num_in_seq(data_dir, extension='hdf5'))
 
         scan_type = self.get_cur_scan_type()
-        uid = run_uids[0]
+        first_uid = run_uids[0]
 
         if(scan_type in [scan_types.SAMPLE_IMAGE_STACK, scan_types.TOMOGRAPHY_SCAN]):
             #could also just be multiple rois on a single energy
             self.do_multi_entry_export(run_uids, data_dir, fprefix)
 
-        elif(scan_type is scan_types.SAMPLE_POINT_SPECTRA):
+        #elif(scan_type is scan_types.SAMPLE_POINT_SPECTRA):
+        elif (scan_type in spectra_type_scans):
             self.do_point_spec_export(run_uids, data_dir, fprefix)
 
         else:
             img_idx_map = {}
             idx = 0
             for _uid in run_uids:
-                print('starting basic export [%s]' % uid)
-                header = MAIN_OBJ.engine_widget.db[uid]
+                print('starting basic export [%s]' % first_uid)
+                header = MAIN_OBJ.engine_widget.db[first_uid]
                 md = json.loads(header['start']['metadata'])
                 _img_idx_map = json.loads(md['img_idx_map'])
                 #img_idx_map[uid] = copy.copy(_img_idx_map['%d' % 0])
                 primary_docs = header.documents(fill=True)
-                suit_nxstxm.export(primary_docs, data_dir, file_prefix=fprefix, index=0, rev_lu_dct=MAIN_OBJ.get_device_reverse_lu_dct(), \
-                                img_idx_map=_img_idx_map['0'], first_uid=uid, last_uid=_uid)
-
-        suit_nxstxm.finish_export(data_dir, fprefix, uid)
+                # suit_nxstxm.export(primary_docs, data_dir, file_prefix=fprefix, index=0, rev_lu_dct=MAIN_OBJ.get_device_reverse_lu_dct(), \
+                #                 img_idx_map=_img_idx_map['0'], first_uid=uid, last_uid=_uid)
+                #suit_nxstxm.export(primary_docs, data_dir, file_prefix=fprefix, first_uid=first_uid)
+                suit_nxstxm.export(primary_docs, data_dir, file_prefix=fprefix)
+        suit_nxstxm.finish_export(data_dir, fprefix, first_uid)
 
     def get_counter_from_table(self, tbl, prime_cntr):
         for k in list(tbl.keys()):
@@ -2583,13 +2589,14 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         _img_idx_map = json.loads(md['img_idx_map'])
         img_idx_map = {}
         idx = 0
-        uid = run_uids[0]
-        print('starting point_spec export [%s]' % uid)
-        header = MAIN_OBJ.engine_widget.db[uid]
+        first_uid = run_uids[0]
+        print('starting point_spec export [%s]' % first_uid)
+        header = MAIN_OBJ.engine_widget.db[first_uid]
         primary_docs = header.documents(fill=True)
-        suit_nxstxm.export(primary_docs, data_dir, file_prefix=fprefix, index=0,
-                               rev_lu_dct=MAIN_OBJ.get_device_reverse_lu_dct(), img_idx_map=_img_idx_map, \
-                               first_uid=uid, last_uid=uid)
+        # suit_nxstxm.export(primary_docs, data_dir, file_prefix=fprefix, index=0,
+        #                        rev_lu_dct=MAIN_OBJ.get_device_reverse_lu_dct(), img_idx_map=_img_idx_map, \
+        #                        first_uid=first_uid, last_uid=uid)
+        suit_nxstxm.export(primary_docs, data_dir, file_prefix=fprefix, first_uid=first_uid)
 
 
     def do_multi_entry_export(self, run_uids, data_dir, fprefix):
@@ -2610,7 +2617,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             if(idx is 0):
                 first_uid = uid
             #img_idx_map['%d'%idx]['uid'] = uid
-            img_idx_map[uid] = copy.copy(_img_idx_map['%d'%idx])
+            #img_idx_map[uid] = copy.copy(_img_idx_map['%d'%idx])
             idx += 1
         last_uid = uid
         idx = 0
@@ -2619,9 +2626,10 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             #export each uid as an nxstxm entry
             header = MAIN_OBJ.engine_widget.db[uid]
             primary_docs = header.documents(fill=True)
-            suit_nxstxm.export(primary_docs, data_dir, file_prefix=fprefix, index=0,
-                               rev_lu_dct=MAIN_OBJ.get_device_reverse_lu_dct(), img_idx_map=_img_idx_map['%d'%idx], \
-                               first_uid=first_uid, last_uid=last_uid)
+            # #suit_nxstxm.export(primary_docs, data_dir, file_prefix=fprefix, index=0,
+            #                    rev_lu_dct=MAIN_OBJ.get_device_reverse_lu_dct(), img_idx_map=_img_idx_map['%d'%idx], \
+            #                    first_uid=first_uid, last_uid=last_uid)
+            suit_nxstxm.export(primary_docs, data_dir, file_prefix=fprefix, first_uid=first_uid)
             idx += 1
 
 
@@ -2655,14 +2663,26 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
         sp_ids = list(self.cur_sp_rois.keys())
 
+        if(len(sp_ids) == 1):
+            use_dflt = True
+        else:
+            use_dflt = False
+
         for sp_id in sp_ids:
             # self.spectraWidget.create_curve('point_spectra_%d' % i,curve_style='Lines')
-            clr = get_next_color(use_dflt=False)
+            clr = get_next_color(use_dflt=use_dflt)
             style = get_basic_line_style(clr, marker='Star1')
             self.spectraWidget.create_curve('sp_id_%d' % sp_id, curve_style=style)
 
 
     def is_add_line_to_plot_type(self, scan_type, scan_sub_type, use_hdw_accel):
+        '''
+        a single function to decide if the scan type is the kind that adds a line to a plot
+        :param scan_type:
+        :param scan_sub_type:
+        :param use_hdw_accel:
+        :return:
+        '''
 
         if ((scan_type == scan_types.SAMPLE_IMAGE) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
                     ((scan_type == scan_types.SAMPLE_IMAGE) and (
@@ -2677,7 +2697,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                         scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
                         ((scan_type == scan_types.SAMPLE_LINE_SPECTRA) and (
                                     scan_sub_type == scan_sub_types.POINT_BY_POINT)) or \
-                        (scan_type == scan_types.SAMPLE_FOCUS) and (scan_sub_type == scan_sub_types.LINE_UNIDIR)):
+                        (scan_type == scan_types.SAMPLE_FOCUS) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) ):
             return(True)
         elif(scan_type == scan_types.COARSE_IMAGE_SCAN):
             return (True)
@@ -2686,6 +2706,13 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
 
     def is_add_point_to_plot_type(self, scan_type, scan_sub_type, use_hdw_accel):
+        '''
+        a single function to decide if the scan type is the kind that adds a point to a 2d plot
+        :param scan_type:
+        :param scan_sub_type:
+        :param use_hdw_accel:
+        :return:
+        '''
         if ((scan_type == scan_types.DETECTOR_IMAGE) or \
                     ((scan_type == scan_types.SAMPLE_IMAGE) and (scan_sub_type == scan_sub_types.POINT_BY_POINT) and (
                     not use_hdw_accel)) or \
@@ -2695,83 +2722,26 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                     #            scan_sub_type == scan_sub_types.POINT_BY_POINT)) or \
                     (scan_type == scan_types.SAMPLE_FOCUS) or \
                     (scan_type == scan_types.COARSE_IMAGE_SCAN) or \
-                    (scan_type == scan_types.COARSE_GONI_SCAN)):
+                    (scan_type == scan_types.COARSE_GONI_SCAN) or \
+                    (scan_type == scan_types.PATTERN_GEN_SCAN)):
             return(True)
         else:
             return(False)
 
     def is_add_point_to_spectra_type(self, scan_type, scan_sub_type, use_hdw_accel):
+        '''
+        a single function to decide if the scan type is the kind that adds a point to a line  plot
+        :param scan_type:
+        :param scan_sub_type:
+        :param use_hdw_accel:
+        :return:
+        '''
         if ((scan_type == scan_types.SAMPLE_POINT_SPECTRA) or \
                     (scan_type == scan_types.GENERIC_SCAN)):
             return(True)
         else:
             return(False)
 
-
-
-    # def connect_executingScan_signals(self):
-    #     """
-    #     connect_executingScan_signals(): description
-    #
-    #     :returns: None
-    #     """
-    #     scan_type = self.get_cur_scan_type()
-    #     scan_sub_type = self.get_cur_scan_sub_type()
-    #     sp_db = self.executingScan.sp_db
-    #     use_hdw_accel = dct_get(sp_db, SPDB_HDW_ACCEL_USE)
-    #
-    #
-    #     # _logger.info('GUI: connect_executingScan_signals')
-    #     if ((scan_type == scan_types.SAMPLE_IMAGE) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
-    #                     ((scan_type == scan_types.SAMPLE_IMAGE) and (scan_sub_type == scan_sub_types.POINT_BY_POINT) and use_hdw_accel) or \
-    #                     (scan_type == scan_types.SAMPLE_IMAGE_STACK) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
-    #                     (scan_type == scan_types.SAMPLE_IMAGE_STACK) and (scan_sub_type == scan_sub_types.POINT_BY_POINT) or \
-    #                 (scan_type == scan_types.SAMPLE_LINE_SPECTRA) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
-    #                     (scan_type == scan_types.SAMPLE_FOCUS) and (scan_sub_type == scan_sub_types.LINE_UNIDIR)):
-    #         self.executingScan.sigs.changed.connect(self.add_line_to_plot)
-    #
-    #         if (not (scan_type == scan_types.SAMPLE_LINE_SPECTRA)):
-    #             # dont connect this for line_spec scans because the data level is energy which would cause a
-    #             # new image for each energy line which is not what we want
-    #             self.executingScan.data_start.connect(self.on_image_start)
-    #
-    #     #elif (((scan_type == scan_types.SAMPLE_IMAGE) and (scan_sub_type == scan_sub_types.POINT_BY_POINT)) or \
-    #     #                  (scan_type == scan_types.SAMPLE_IMAGE_STACK) and ( scan_sub_type == scan_sub_types.POINT_BY_POINT) or \
-    #     elif((scan_type == scan_types.DETECTOR_IMAGE) or \
-    #                  ((scan_type == scan_types.SAMPLE_IMAGE) and (scan_sub_type == scan_sub_types.POINT_BY_POINT) and (not use_hdw_accel)) or \
-    #                  (scan_type == scan_types.OSA_IMAGE) or \
-    #                   (scan_type == scan_types.OSA_FOCUS) or \
-    #                   ((scan_type == scan_types.SAMPLE_LINE_SPECTRA) and (
-    #                       scan_sub_type == scan_sub_types.POINT_BY_POINT)) or \
-    #                   (scan_type == scan_types.SAMPLE_FOCUS) or \
-    #                   (scan_type == scan_types.ZP_IMAGE_SCAN)):
-    #         self.executingScan.sigs.changed.connect(self.add_point_to_plot)
-    #
-    #         if (not (scan_type == scan_types.SAMPLE_LINE_SPECTRA)):
-    #             # dont connect this for line_spec scans because the data level is energy which would cause a
-    #             # new image for each energy line which is not what we want
-    #             self.executingScan.data_start.connect(self.on_image_start)
-    #
-    #
-    #     elif ((scan_type == scan_types.SAMPLE_POINT_SPECTRA) or \
-    #                   (scan_type == scan_types.GENERIC_SCAN)):
-    #         self.executingScan.sigs.changed.connect(self.add_point_to_spectra)
-    #         # self.executingScan.new_spatial_start.connect(self.init_point_spectra)
-    #
-    #     else:
-    #         _logger.error('connect_executingScan_signals: executingScan type [%d] not supported', scan_type)
-    #
-    #     self.executingScan.sigs.status.connect(self.on_scan_status)
-    #     # self.executingScan.sigs.progress.connect(self.on_scan_progress)
-    #     self.executingScan.top_level_progress.connect(self.on_total_scan_progress)
-    #     self.executingScan.low_level_progress.connect(self.on_scan_progress)
-    #     self.executingScan.sigs_disconnected.connect(self.on_executing_scan_sigs_discon)
-    #     self.executingScan.sigs.aborted.connect(self.on_scan_done)
-    #     self.executingScan.all_done.connect(self.on_scan_done)
-    #
-    #     self.executingScan.saving_data.connect(self.on_saving_data)
-    #
-    #     # _logger.debug('executingScan signals connected')
 
     def connect_executingScan_signals(self, testing=False):
         """
@@ -2922,65 +2892,6 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self._set_scan_btns.emit('SET_FOR_STARTING')
         self.on_scan_status('idle')
 
-    # def disconnect_executingScan_signals(self):
-    #     """
-    #     disconnect_executingScan_signals(): description
-    #
-    #     :returns: None
-    #     """
-    #     scan_type = self.get_cur_scan_type()
-    #     scan_sub_type = self.get_cur_scan_sub_type()
-    #
-    #     # _logger.debug('disconnect_executingScan_signals: TOP')
-    #     #if ((scan_type == scan_types.SAMPLE_IMAGE) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
-    #     #                (scan_type == scan_types.SAMPLE_IMAGE_STACK) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
-    #     if ((scan_type == scan_types.SAMPLE_IMAGE) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
-    #                     ((scan_type == scan_types.SAMPLE_IMAGE) and (scan_sub_type == scan_sub_types.POINT_BY_POINT)) or \
-    #                     (scan_type == scan_types.SAMPLE_IMAGE_STACK) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
-    #                     (scan_type == scan_types.SAMPLE_IMAGE_STACK) and (scan_sub_type == scan_sub_types.POINT_BY_POINT) or \
-    #                     (scan_type == scan_types.SAMPLE_LINE_SPECTRA) and (scan_sub_type == scan_sub_types.LINE_UNIDIR) or \
-    #                     (scan_type == scan_types.SAMPLE_FOCUS) and (scan_sub_type == scan_sub_types.LINE_UNIDIR)):
-    #         self.executingScan.sigs.changed.disconnect(self.add_line_to_plot)
-    #
-    #         if (not (scan_type == scan_types.SAMPLE_LINE_SPECTRA)):
-    #             self.executingScan.data_start.disconnect(self.on_image_start)
-    #
-    #     elif (((scan_type == scan_types.SAMPLE_IMAGE) and (scan_sub_type == scan_sub_types.POINT_BY_POINT)) or \
-    #                       (scan_type == scan_types.SAMPLE_IMAGE_STACK) and (
-    #                       scan_sub_type == scan_sub_types.POINT_BY_POINT) or \
-    #                   (scan_type == scan_types.DETECTOR_IMAGE) or \
-    #                   (scan_type == scan_types.OSA_IMAGE) or \
-    #                   (scan_type == scan_types.OSA_FOCUS) or \
-    #                   ((scan_type == scan_types.SAMPLE_LINE_SPECTRA) and (
-    #                       scan_sub_type == scan_sub_types.POINT_BY_POINT)) or \
-    #                   (scan_type == scan_types.SAMPLE_FOCUS) or \
-    #                   (scan_type == scan_types.ZP_IMAGE_SCAN)):
-    #         self.executingScan.sigs.changed.disconnect(self.add_point_to_plot)
-    #
-    #         if (not (scan_type == scan_types.SAMPLE_LINE_SPECTRA)):
-    #             self.executingScan.data_start.disconnect(self.on_image_start)
-    #
-    #     elif ((scan_type == scan_types.SAMPLE_POINT_SPECTRA) or \
-    #                   (scan_type == scan_types.GENERIC_SCAN)):
-    #         self.executingScan.sigs.changed.disconnect(self.add_point_to_spectra)
-    #         # self.executingScan.new_spatial_start.disconnect(self.init_point_spectra)
-    #
-    #     else:
-    #         _logger.error('disconnect_executingScan_signals: executingScan type [%d] not supported', scan_type)
-    #
-    #     self.executingScan.sigs.status.disconnect(self.on_scan_status)
-    #     # self.executingScan.sigs.progress.disconnect(self.on_scan_progress)
-    #     self.executingScan.top_level_progress.disconnect(self.on_total_scan_progress)
-    #     self.executingScan.low_level_progress.disconnect(self.on_scan_progress)
-    #     self.executingScan.sigs_disconnected.disconnect(self.on_executing_scan_sigs_discon)
-    #     self.executingScan.sigs.aborted.disconnect(self.on_scan_done)
-    #     self.executingScan.all_done.disconnect(self.on_scan_done)
-    #
-    #     self.executingScan.saving_data.disconnect(self.on_saving_data)
-    #
-    #     self._set_scan_btns.emit('SET_FOR_STARTING')
-    #     self.on_scan_status('idle')
-
 
     def on_saving_data(self, msg):
         self.scanActionLbl.setText(msg)
@@ -3038,7 +2949,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             x_roi = sp_db['X']
             y_roi = sp_db['Y']
 
-            # _logger.info('on_image_start: rect = (%.2f, %.2f, %.2f, %.2f)' % (rect[0], rect[1], rect[2], rect[3]))
+            _logger.info('on_image_start: rect = (%.2f, %.2f, %.2f, %.2f)' % (rect[0], rect[1], rect[2], rect[3]))
             # _logger.info('on_image_start: rois (%.2f, %.2f, %.2f, %.2f)' % (x_roi[START], y_roi[START], x_roi[STOP], y_roi[STOP]))
             # _logger.debug('GUI: on_image_start')
             if (scan_type == scan_types.SAMPLE_FOCUS):
@@ -3130,16 +3041,17 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
         :returns: None
         """
-        if (cur_scan_progress < 1.0):
-            cur_scan_progress = 1
-        if (self.start_time is None):
-            self.start_time = time.time()
-        self.elapsed_time = time.time() - self.start_time
-        time_left = ((100.0 / cur_scan_progress) * self.elapsed_time) - self.elapsed_time
-        # cs_sts['elapsed_time'] = self.secondsToStr(self.elapsed_time)
-        self.elapsedTimeLbl.setText(self.secondsToStr(self.elapsed_time))
-        # cs_sts['time_left'] = self.secondsToStr(time_left)
-        self.timeLeftLbl.setText(self.secondsToStr(time_left))
+        return
+        # if (cur_scan_progress < 1.0):
+        #     cur_scan_progress = 1
+        # if (self.start_time is None):
+        #     self.start_time = time.time()
+        # self.elapsed_time = time.time() - self.start_time
+        # time_left = ((100.0 / cur_scan_progress) * self.elapsed_time) - self.elapsed_time
+        # # cs_sts['elapsed_time'] = self.secondsToStr(self.elapsed_time)
+        # self.elapsedTimeLbl.setText(self.secondsToStr(self.elapsed_time))
+        # # cs_sts['time_left'] = self.secondsToStr(time_left)
+        # self.timeLeftLbl.setText(self.secondsToStr(time_left))
 
 
     def on_new_est_scan_time(self, xxx_todo_changeme):
@@ -3231,7 +3143,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
         :returns: None
         """
-        return
+
 
 
         # idx = self.executingScan.get_consecutive_scan_idx()
@@ -3308,7 +3220,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                 if (hasattr(self, 'scan_progress_table')):
                     self.scan_progress_table.set_pixmap(idx, scan_status_types.PAUSED)
                 # request a pause
-                MAIN_OBJ.engine_widget.control.state_widgets['paused'].clicked.emit()
+                MAIN_OBJ.engine_widget.control.state_widgets['pause'].clicked.emit()
             else:
                 #self.executingScan.resume()
                 # request a pause
@@ -3325,6 +3237,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         :returns: None
 
         """
+        self.on_shutterCntrlComboBox(0)  # Auto
+        self.set_buttons_for_starting()
         if (self.executingScan):
             # idx = self.executingScan.get_imgidx()
             idx = self.executingScan.get_consecutive_scan_idx()
@@ -3335,11 +3249,10 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             #self.executingScan.disconnect_signals()
 
             # stop
-            MAIN_OBJ.engine_widget.control.state_widgets['stop'].clicked.emit()
+            #MAIN_OBJ.engine_widget.control.state_widgets['stop'].clicked.emit()
+            MAIN_OBJ.engine_widget.control.on_stop_clicked()
 
 
-
-        self.set_buttons_for_starting()
 
 
     def on_exit(self):
@@ -3446,7 +3359,7 @@ def profile_it():
         :returns: None
     """
 
-    # determine_profile_bias_val()
+    bval = determine_profile_bias_val()
 
     profile.Profile.bias = 1.36987840635e-05
 
@@ -3462,8 +3375,8 @@ if __name__ == '__main__':
 
     # motorCfgObj = StxmMotorConfig(r'C:\controls\py2.7\Beamlines\sm\stxm_control\StxmDir\Microscope Configuration\Motor.cfg')
     # app = QtWidgets.QApplication(sys.argv)
-    #go()
-    profile_it()
+    go()
+    #profile_it()
 
     # test()
     # app = QtWidgets.QApplication(sys.argv)

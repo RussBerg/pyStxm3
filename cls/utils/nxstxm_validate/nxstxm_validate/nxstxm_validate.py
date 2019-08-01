@@ -270,8 +270,8 @@ def get_group(class_name, root_element):
                 else:
                     name = dtype
                 group_fields[name] = get_group(name, child)
-                #group_fields[dtype] = get_classes('group', child)
-                #classes = get_classes('group', child)
+                #group_fields[dtype] = get_nexpy_classes('group', child)
+                #classes = get_nexpy_classes('group', child)
             try:
                 dtype = child.attrib['type']
                 name = child.attrib['name']
@@ -679,7 +679,7 @@ def check_nxdata_group(nf, cntr_lst=[], nxstxm_nxdl=None):
         cntr_grp = nxstxm_nxdl['definition']['group']['group'][2]
         fld_dct = get_NXstxm_NXentry_fieldnames(cntr_grp['field'])
         #fld_dct = dct_merge(_dct, {'source': 'NXsource'})
-        #fld_lst = get_control_axes_indices_names(nf[cntr].attrs, remove_indices=True) + ['count_time', 'data', 'energy','stxm_scan_type']
+        #fld_lst = get_control_axes_names(nf[cntr].attrs, remove_indices=True) + ['count_time', 'data', 'energy','stxm_scan_type']
         #if(not check_fields_of_nxclass_list(nxentry[cntr], nexus_grp_lst=lst_as_lowercase(['count_time', 'data', 'energy','sample_x', 'sample_y','stxm_scan_type']))):
         #if(not check_fields_of_nxclass_list(nxentry[cntr], nexus_grp_lst=fld_lst)):
         if(not check_fields_of_nxclass(nf[cntr], nexus_grp_dct=fld_dct)):
@@ -848,7 +848,7 @@ def check_nxsource_group(nf, nxstxm_nxdl=None):
     #check keys of collection group
     tprint(num_tabs+2, '### checking <source> fields:')
     #if(not check_fields_of_nxclass(nxentry['instrument'], nexus_grp_dct=fld_dct)):
-    #    tprint(num_tabs+3, ' !! NXmonitor group does not contain correct set of fields')
+    #    tabbed_print(num_tabs+3, ' !! NXmonitor group does not contain correct set of fields')
     #    res = False
 
     fld_dct = get_NXstxm_NXentry_fieldnames(src_grp['field'])
@@ -965,7 +965,7 @@ def check_stxm_file(stxm_file, nxstxm_nxdl):
             print_check_error(entry, 'entry[%s] is not an NXstxm type ' % entry)
             break
 
-        #tprint(num_tabs, 'entry[%s] is an NXstxm type ' % entry)
+        #tabbed_print(num_tabs, 'entry[%s] is an NXstxm type ' % entry)
         if(not check_nxentry_group(nf, entry, nxstxm_nxdl)):
             print_check_error(entry, 'NXstxm file has non-standard NXentry group named [%s]' % entry)
             #break

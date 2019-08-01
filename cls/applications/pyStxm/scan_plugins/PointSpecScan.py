@@ -67,7 +67,7 @@ class PointSpecScanClass(BaseScan):
 
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_data_metadata(entry_name='entry0', scan_type=self.scan_type, override_xy_posner_nms=True))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, override_xy_posner_nms=True))}
         #override the POSIIONER so tha nxstxm and can export properly
         #md = self.add_spids_xy_setpoints(md)
         @bpp.baseline_decorator(dev_list)

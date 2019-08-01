@@ -16,7 +16,7 @@ from PIL import Image
 from PyQt5.QtCore import QObject, pyqtSignal
 import numpy as np
 
-
+from cls.utils.images import array_to_image
 from cls.utils.arrays import flip_data_upsdown
 from cls.utils.fileUtils import get_file_path_as_parts
 from cls.utils.log import get_module_logger
@@ -103,25 +103,30 @@ class ThreadXSPSave(threading.Thread):
         #_logger.info('ThreadXSPSave:[%s] DONE' % self.name) 
         
 
-
-        
-    
-
 class ThreadImageSave(threading.Thread):
     """Threaded file Save"""
     def __init__(self, data_dct, name=''):
         threading.Thread.__init__(self, name=name)
         self.data_dct = data_dct
         self.name = 'Image-SV.' + name
+        if(self.name.find('tif') > -1):
+            self.thumb_ftype = 'tif'
+        elif(self.name.find('jpg') > -1):
+            self.thumb_ftype = 'jpg'
+        else:
+            #default to jpg
+            self.thumb_ftype = 'jpg'
+
         #jpeg thumbnail size
-        self.size = (128, 128)
+        #self.size = (128, 128)
         #print 'ThreadImageSave: [%s] started' % self.name
         
     def run(self):
         import scipy
+        from tifffile import imsave
         try:
             if self.data_dct != None:
-                fname = dct_get(self.data_dct, ADO_CFG_DATA_THUMB_NAME) + '.jpg'
+                #fname = dct_get(self.data_dct, ADO_CFG_DATA_THUMB_NAME) + '.jpg'
                 data = dct_get(self.data_dct, ADO_DATA_POINTS)
                 datadir = dct_get(self.data_dct, ADO_CFG_DATA_DIR)
                 #print 'ThreadImageSave'
@@ -139,11 +144,29 @@ class ThreadImageSave(threading.Thread):
                     if (_data.ndim is 2):
                         _data = flip_data_upsdown(_data)
 
-                        im = scipy.misc.toimage(_data, cmin=np.min(_data), cmax=np.max(_data)).resize(self.size, Image.NEAREST)
-                        fstr = os.path.join(datadir, fname)
-                        im.save(fstr)
-        except ValueError:
-            print('ERROR')
+                        if(self.thumb_ftype.find('tif') > -1):
+
+                            fname = dct_get(self.data_dct, ADO_CFG_DATA_THUMB_NAME) + '.tif'
+                            fstr = os.path.join(datadir, fname)
+                            # save 32bit float (== single) tiff
+                            # imsave('test.tif', _data)  # , description="hohoho")
+                            im = array_to_image(_data)
+                            im.save(fstr)
+
+
+                        elif(self.thumb_ftype.find('jpg') > -1):
+                            fname = dct_get(self.data_dct, ADO_CFG_DATA_THUMB_NAME) + '.jpg'
+                            fstr = os.path.join(datadir, fname)
+                            #im = scipy.misc.toimage(_data, cmin=np.min(_data), cmax=np.max(_data)).resize(self.size,
+                            #                                                                              Image.NEAREST)
+                            im = array_to_image(_data)
+                            im.save(fstr)
+
+
+        #except ValueError:
+        except :
+            print('ThreadImageSave: ERROR')
+            raise
 
 
 #@QTasync
@@ -637,7 +660,7 @@ class HdrData(DataRecorder):
     """
     A class to create then configure based on dataType
     API calls used by BaseScan:
-        save_image_jpg         - for saving a thumbnail
+        save_image_thumbnail         - for saving a thumbnail
         save                   - saves the entire file
         save_image_nxdf        - for saving point spec image (currently unused )
         save_entry             - saves an individual entry into a data file
@@ -652,7 +675,7 @@ class HdrData(DataRecorder):
         super(HdrData, self).__init__(data_dir, fname, data_format=data_format)
         self.remove_tmp_file()
 
-    def save_image_jpg(self, data_dct):
+    def save_image_thumbnail(self, data_dct):
         self.save_image_obj(data_dct)
     
 

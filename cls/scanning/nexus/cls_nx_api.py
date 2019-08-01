@@ -72,7 +72,7 @@ def nx_open(fname, force_new=False, rd_only=False):
         flg = "a"
 
     nf = h5py.File(fname,  flg)
-    nf.swmr_mode = True
+    #nf.swmr_mode = True
 
     return(nf)
 

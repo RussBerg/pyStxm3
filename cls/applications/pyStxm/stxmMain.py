@@ -771,7 +771,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             ev_en_dev = dev_obj.device('Energy_enable')
             self.esPosPanel.append_toggle_btn_device('  FL change with Energy  ',
                                                    'Enable the Focal Length (FL==Zpz stage) to move to new focal length based on Energy',
-                                                   ev_en_dev, off_val=0, on_val=1,
+                                                   ev_en_dev, off_val=0, on_val=1, fbk_dev=ev_en_dev,
                                                    off_str='Disabled', on_str='Enabled')
 
             #add the beam defocus device
@@ -786,7 +786,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             osay_track_dev = dev_obj.device(DNM_OSAY_TRACKING)
             self.esPosPanel.append_toggle_btn_device('  OSA vertical tracking  ',
                                                    'Toggle the OSA vertical tracking during zoneplate scanning',
-                                                     osay_track_dev, off_val=0, on_val=1, off_str='Off', on_str='On')
+                                                     osay_track_dev, off_val=0, on_val=1, fbk_dev=osay_track_dev,
+                                                     off_str='Off', on_str='On')
 
             # add the Focusing Mode
             foc_mode_dev = dev_obj.device(DNM_ZONEPLATE_SCAN_MODE)

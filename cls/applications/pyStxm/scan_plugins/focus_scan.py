@@ -538,36 +538,41 @@ class FocusScanParam(ScanParamWidget):
         :returns: None
       
         """
+        sx = sy = ex = ey = None
+        (sx, sy, sz, s0) = roi[START]
+        (ex, ey, ez, e0) = roi[STOP]
+
         (cx, cy, cz, c0) = roi[CENTER]
         (rx, ry, rz, s0) = roi[RANGE]
         (nx, ny, nz, n0) = roi[NPOINTS]
-        (sx, sy, sz, s0) = roi[STEP]
+        (stpx, stpy, stpz, stp0) = roi[STEP]
                 
         if('DWELL' in roi):
             self.set_parm(self.dwellFld, roi[DWELL])
-        
-        self.set_parm(self.startXFld, cx)
-        self.set_parm(self.startYFld, cy)
+
+        self.set_parm(self.startXFld, sx)
+        self.set_parm(self.startYFld, sy)
+        # self.set_parm(self.startXFld, cx)
+        # self.set_parm(self.startYFld, cy)
         #we want the ZP center to always be the current Zpz pozition
         zpz_pos = self.main_obj.device(DNM_ZONEPLATE_Z).get_position()
         self.set_parm(self.centerZPFld, zpz_pos)
-        
-        if(rx != None):
-            self.set_parm(self.endXFld, rx)
-        
-        if(ry != None):
-            self.set_parm(self.endYFld, ry)    
-        
-        if(rz != None):
+
+        if (ex != None):
+            self.set_parm(self.endXFld, ex)
+
+        if (ey != None):
+            self.set_parm(self.endYFld, ey)
+
+        if (rz != None):
             self.set_parm(self.rangeZPFld, rz)
-        
-        if(nx != None):
+
+        if (nx != None):
             self.set_parm(self.npointsXFld, nx, type='int', floor=0)
-        
-        if(nz != None):
-            self.set_parm(self.npointsZPFld, nz, type='int', floor=0)    
-            
-        
+
+        if (nz != None):
+            self.set_parm(self.npointsZPFld, nz, type='int', floor=0)
+
     def mod_roi(self, sp_db, do_recalc=True, sp_only=False):
         """
         sp_db is a widget_com dict
@@ -616,12 +621,15 @@ class FocusScanParam(ScanParamWidget):
         '''
         x_roi = self.sp_db[SPDB_X]
         y_roi = self.sp_db[SPDB_Y]
+        zz_roi = dct_get(self.sp_db, SPDB_ZZ)
         e_rois = self.sp_db[SPDB_EV_ROIS]
 
-        DEFAULTS.set('SCAN.FOCUS.CENTER', (x_roi[CENTER], y_roi[CENTER], 0, 0))
-        DEFAULTS.set('SCAN.FOCUS.RANGE', (x_roi[RANGE], y_roi[RANGE], 0, 0))
-        DEFAULTS.set('SCAN.FOCUS.NPOINTS', (x_roi[NPOINTS], y_roi[NPOINTS], 0, 0))
-        DEFAULTS.set('SCAN.FOCUS.STEP', (x_roi[STEP], y_roi[STEP], 0, 0))
+        DEFAULTS.set('SCAN.FOCUS.START', (x_roi[START], y_roi[START], zz_roi[START], 0))
+        DEFAULTS.set('SCAN.FOCUS.STOP', (x_roi[STOP], y_roi[STOP], zz_roi[STOP], 0))
+        DEFAULTS.set('SCAN.FOCUS.CENTER', (x_roi[CENTER], y_roi[CENTER], zz_roi[CENTER], 0))
+        DEFAULTS.set('SCAN.FOCUS.RANGE', (x_roi[RANGE], y_roi[RANGE], zz_roi[RANGE], 0))
+        DEFAULTS.set('SCAN.FOCUS.NPOINTS', (x_roi[NPOINTS], y_roi[NPOINTS], zz_roi[NPOINTS], 0))
+        DEFAULTS.set('SCAN.FOCUS.STEP', (x_roi[STEP], y_roi[STEP], zz_roi[STEP], 0))
         DEFAULTS.set('SCAN.FOCUS.DWELL', e_rois[0][DWELL])
         DEFAULTS.update()
 

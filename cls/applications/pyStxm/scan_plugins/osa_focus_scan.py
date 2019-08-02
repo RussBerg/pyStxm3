@@ -236,7 +236,7 @@ class OsaFocusScanParam(ScanParamWidget):
         (cx, cy, cz, c0) = roi[CENTER]
         (rx, ry, rz, s0) = roi[RANGE]
         (nx, ny, nz, n0) = roi[NPOINTS]
-        (sx, sy, sz, s0) = roi[STEP]
+        (stpx, stpy, stpz, stp0) = roi[STEP]
         
         if('DWELL' in roi):
             self.set_parm(self.dwellFld, roi[DWELL])

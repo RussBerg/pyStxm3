@@ -284,7 +284,7 @@ class PositionersPanel(QtWidgets.QWidget):
 		widg = QtWidgets.QWidget()
 		dev_ui = btn_small_pass_a_btn()
 		if(fbk_dev):
-			pBtn = ophydPushBtnWithFbk(dev, sig_change_kw='char_value', off_val=off_val, on_val=on_val, off_str=off_str, on_str=on_str,fbk_dev=fbk_dev,toggle=toggle)
+			pBtn = ophydPushBtnWithFbk(dev, sig_change_kw='value', off_val=off_val, on_val=on_val, off_str=off_str, on_str=on_str,fbk_dev=fbk_dev,toggle=toggle)
 		else:
 			pBtn = ophydPushBtn(dev, off_val=off_val, on_val=on_val, off_str=off_str, on_str=on_str)
 
@@ -416,7 +416,11 @@ class PositionersPanel(QtWidgets.QWidget):
 		pvname = str(fld.statusTip())
 		(dev, dev_ui, widg, mtr) = self.mtr_dict[pvname]
 		pos = float(str(self.sender().text()))
-		sts = mtr.move(pos, wait=False)
+		if(hasattr(mtr, 'check_tr_A')):
+			mtr.check_tr_A.put(pos)
+			sts = 'success'
+		else:
+			sts = mtr.move(pos, wait=False)
 		
 		if(sts == OUTSIDE_LIMITS):
 			#outside the limits

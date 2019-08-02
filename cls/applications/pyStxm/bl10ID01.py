@@ -19,6 +19,7 @@ from bcm.devices import camera
 from bcm.devices import BaseDevice
 from bcm.devices import Mbbi
 from bcm.devices import Mbbo
+from bcm.devices import Bo
 
 from bcm.devices import Motor_Qt
 from bcm.devices import sample_motor, sample_abstract_motor, e712_sample_motor
@@ -498,8 +499,8 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
 
     devcfg.msg_splash("connecting to: [%s]" % DNM_ZONEPLATE_SCAN_MODE)
     #dev_dct['PVS']['Zpz_scanModeFlag'] = Mbbo('BL1610-I10:ENERGY:%s:zp:scanselflag' % prfx) #used to control which value gets sent to Zpz, fl or fl - A0
-    dev_dct['PVS'][DNM_ZONEPLATE_SCAN_MODE] = BaseDevice('BL1610-I10:ENERGY:%s:zp:scanselflag' % prfx)  # used to control which value gets sent to Zpz, fl or fl - A0
-    dev_dct['PVS'][DNM_ZONEPLATE_INOUT] = BaseDevice('BL1610-I10:%s:zp_inout' % prfx)  # used to convieniently move zp z in and out
+    dev_dct['PVS'][DNM_ZONEPLATE_SCAN_MODE] = Bo('BL1610-I10:ENERGY:%s:zp:scanselflag' % prfx, val_only=False, val_kw='value')  # used to control which value gets sent to Zpz, fl or fl - A0
+    dev_dct['PVS'][DNM_ZONEPLATE_INOUT] = Bo('BL1610-I10:%s:zp_inout' % prfx, val_only=False, val_kw='value')  # used to convieniently move zp z in and out
     dev_dct['PVS'][DNM_ZONEPLATE_INOUT_FBK] = Mbbi('BL1610-I10:%s:zp_inout:fbk' % prfx)  # used to convieniently move zp z in and out
     #used to adjust the current focus value, the delta represents the relative microns for zpz to move to new focus position
     dev_dct['PVS']['Delta_A0'] = BaseDevice('BL1610-I10:ENERGY:%s:delta_A0' % prfx)
@@ -517,7 +518,8 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
     dev_dct['PVS']['OSA_select'] = Mbbo('BL1610-I10:ENERGY:%s:osa' % prfx)
 
     devcfg.msg_splash("connecting to: [%s]" % 'Energy_enable')
-    dev_dct['PVS']['Energy_enable'] = BaseDevice('BL1610-I10:ENERGY:%s:enabled' % prfx)
+    #dev_dct['PVS']['Energy_enable'] = Bo('BL1610-I10:ENERGY:%s:enabled' % prfx)
+    dev_dct['PVS']['Energy_enable'] = Bo('BL1610-I10:ENERGY:%s:enabled' % prfx, val_only=False, val_kw='value')
     dev_dct['PVS']['ENERGY_RBV'] = BaseDevice('BL1610-I10:ENERGY.RBV', egu='um')
     dev_dct['PVS']['ZPZ_RBV'] = BaseDevice('IOC:m111C.RBV', egu='um')
     dev_dct['PVS']['Zp_def.A'] = BaseDevice('BL1610-I10:ENERGY:%s:zp:def.A' % prfx)
@@ -582,9 +584,9 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
 #    dev_dct['PVS_DONT_RECORD']['OX_force_done'] = BaseDevice('IOC:m104:ForceDone')
 #    dev_dct['PVS_DONT_RECORD']['OY_force_done'] = BaseDevice('IOC:m105:ForceDone')
 
-    dev_dct['PVS_DONT_RECORD'][DNM_OSAX_TRACKING] = BaseDevice('BL1610-I10:ENERGY:%s:osax_track_enabled' % prfx)
-    dev_dct['PVS_DONT_RECORD'][DNM_OSAY_TRACKING] = BaseDevice('BL1610-I10:ENERGY:%s:osay_track_enabled' % prfx)
-    dev_dct['PVS_DONT_RECORD'][DNM_OSAZ_TRACKING] = BaseDevice('BL1610-I10:ENERGY:%s:osaz_track_enabled' % prfx)
+    dev_dct['PVS_DONT_RECORD'][DNM_OSAX_TRACKING] = Bo('BL1610-I10:ENERGY:%s:osax_track_enabled' % prfx, val_only=False, val_kw='value')
+    dev_dct['PVS_DONT_RECORD'][DNM_OSAY_TRACKING] = Bo('BL1610-I10:ENERGY:%s:osay_track_enabled' % prfx, val_only=False, val_kw='value')
+    dev_dct['PVS_DONT_RECORD'][DNM_OSAZ_TRACKING] = Bo('BL1610-I10:ENERGY:%s:osaz_track_enabled' % prfx, val_only=False, val_kw='value')
 
 #    dev_dct['PVS_DONT_RECORD']['OSAXYZ_lockposition_enabled'] = BaseDevice('BL1610-I10:ENERGY:%s:osaxyz_lockpos_enabled' % prfx)
 

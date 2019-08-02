@@ -7,8 +7,11 @@ Created on 2011-03-07
 
 from PyQt5 import QtGui, QtCore, QtWidgets
 
+from cls.utils.log import get_module_logger
+
 from bcm.devices import BaseDevice
 from bcm.devices import Mbbi
+from bcm.devices.ophyd.bo import Bo
 
 from cls.app_data.defaults import master_colors
 from cls.applications.pyStxm.widgets.button_small_wbtn import Ui_Form as btn_small_pass_a_btn
@@ -21,11 +24,16 @@ one_color = 'rgb(79, 255, 144);'
 # Moving color
 two_color = 'rgb(79, 255, 144);'
 
+
+# def mycallback(kwargs):
+#     print(kwargs)
+
 def format_btn(title_color='black', bgcolor='transparent'):
 
     s = 'color: %s; background-color: %s;' % (title_color, bgcolor)
     return s
 
+_logger = get_module_logger(__name__)
 
 class ophydPushBtn(QtWidgets.QPushButton):
 
@@ -35,6 +43,9 @@ class ophydPushBtn(QtWidgets.QPushButton):
 
     def __init__(self, device, off_val, on_val, off_str, on_str, cb=None, sig_change_kw='value', btn=None, fbk_dev=None):
         super(ophydPushBtn, self).__init__(off_str)
+        if(type(device) != Bo):
+            _logger.error('ophydPushBtn: Invalid device type: requires device to be of type Bo')
+            return
 
         if(btn is not None):
             #the user has passed in a different button for us to use so clone it
@@ -111,7 +122,7 @@ class ophydPushBtn(QtWidgets.QPushButton):
 
     def init_fbk(self):
         self.btn.setEnabled(True)
-        dct = {self.sig_change_kw: self.device.get()}
+        dct = {self.sig_change_kw: self.device.get_position()}
         # print 'emiting changed[%d]' % init_val
         self.changed.emit(dct)
 
@@ -128,6 +139,7 @@ class ophydPushBtn(QtWidgets.QPushButton):
 
         self.update_counter = 1
         self.device.put(val)
+
 
     def on_connect(self,  pvname=None, conn=None, pv=None):
         '''
@@ -180,9 +192,11 @@ class ophydPushBtnWithFbk(QtWidgets.QPushButton):
     connected = QtCore.pyqtSignal()
     disconnected = QtCore.pyqtSignal()
 
-    def __init__(self, device, off_val, on_val, off_str, on_str, cb=None, sig_change_kw='value', btn=None, fbk_dev=None, toggle=True):
+    def __init__(self, device, off_val, on_val, off_str=None, on_str=None, cb=None, sig_change_kw='value', btn=None, fbk_dev=None, toggle=True):
         super(ophydPushBtnWithFbk, self).__init__(off_str)
-
+        if (type(device) != Bo):
+            _logger.error('ophydPushBtnWithFbk: Invalid device type: requires device to be of type Bo')
+            return
         if(btn is not None):
             #the user has passed in a different button for us to use so clone it
             #skiplist = ['staticMetaObject', '__weakref__', 'parent', 'parentWidget']
@@ -229,10 +243,18 @@ class ophydPushBtnWithFbk(QtWidgets.QPushButton):
             self.fbk_dev.changed.connect(self._signal_change)
             val = self.fbk_dev.get('VAL')
 
-            if(val == 0):
-                val_str = str(self.fbk_dev.get('ZRST'))
+            if((off_str is None) and (off_val == val)):
+                val_str = str(self.fbk_dev.get('ZNAM'))
+                self.off_str = val_str
             else:
-                val_str = str(self.fbk_dev.get('ONST'))
+                val_str = off_str
+
+            if ((on_str is None) and (on_val == val)):
+                val_str = str(self.fbk_dev.get('ONAM'))
+                self.on_str = val_str
+            else:
+                val_str = on_str
+
             self.btn.blockSignals(True)
             if(val == self.on_val):
                 self.btn.setText(val_str)
@@ -244,7 +266,8 @@ class ophydPushBtnWithFbk(QtWidgets.QPushButton):
                 self.btn_state = False
             self.btn.blockSignals(False)
         else:
-            self.device.add_callback(self._signal_change)
+            self.fdevice.changed.connect(self._signal_change)
+
 
         #self.pv.pv.connection_callbacks.append(self.on_connect)
 
@@ -286,10 +309,10 @@ class ophydPushBtnWithFbk(QtWidgets.QPushButton):
     def init_fbk(self):
         self.btn.setEnabled(True)
         if(self.fbk_dev):
-            dct = {self.sig_change_kw: self.fbk_dev.get()}
+            dct = {self.sig_change_kw: self.fbk_dev.get_position()}
         else:
-            dct = {self.sig_change_kw: self.device.get()}
-        # print 'emiting changed[%d]' % init_val
+            dct = {self.sig_change_kw: self.device.get_position()}
+        print('init_fbk: emiting changed', dct)
         self.changed.emit(dct)
 
     def on_btn_dev_push(self, chkd):
@@ -338,14 +361,22 @@ class ophydPushBtnWithFbk(QtWidgets.QPushButton):
         :return:
         '''
         val = dct[self.sig_change_kw]
-        #print val
-        txt_str = val
-        self.btn.setText(txt_str)
         self.btn.blockSignals(True)
-        if(val.find(self.on_str) > -1):
+        #print val
+        if(val == self.on_val):
+            txt_str = self.on_str
             self.make_checked(True)
-        else:
+
+        elif(val == self.off_val):
+            txt_str = self.off_str
             self.make_checked(False)
+
+        #txt_str = val
+        self.btn.setText(txt_str)
+        # if(val.find(self.on_str) > -1):
+        #     self.make_checked(True)
+        # else:
+        #     self.make_checked(False)
 
         self.btn.blockSignals(False)
         self.change_btn_color(dct['value'])
@@ -365,13 +396,14 @@ class ophydPushBtnWithFbk(QtWidgets.QPushButton):
         self.btn.setStyleSheet(s)
 
 
-    def _signal_change(self, **kw):
+    def _signal_change(self, kw):
         '''
         this is an epics callback, gets the cur value and emits a Qt signal so the widget can be updated
         :param kw:
         :return:
         '''
         #print kw[self.sig_change_kw]
+        #print('_signal_change: ophydPushBtnWithFbk: ', kw)
         dct = {}
         dct[self.sig_change_kw] = kw[self.sig_change_kw]
         dct['value'] = kw['value']
@@ -387,51 +419,65 @@ class test(QtWidgets.QWidget):
     def __init__(self):
         QtWidgets.QWidget.__init__(self)
         from PyQt5.QtWidgets import QVBoxLayout, QPushButton
+        from bcm.devices import Bo
 
         widg = QtWidgets.QWidget()
         dev_ui = btn_small_pass_a_btn()
-        dev = BaseDevice('BL1610-I10:ENERGY:uhv:osay_track_enabled', val_only=True)
+        # dev = BaseDevice('BL1610-I10:ENERGY:uhv:osay_track_enabled', val_only=True)
+        #
+        # pBtn = ophydPushBtn(dev, off_val=0, on_val=1, off_str='Disabled', on_str='Enabled')
+        # dev_ui.setupUi(widg, pBtn)
+        #
+        #
+        # dev_ui.mtrNameFld.setText('TEST')
+        # id = dev.get_name() + '_btn'
+        # dev_ui.pushBtn.setObjectName(id)
+        #
+        # fl_mode_dev = BaseDevice('BL1610-I10:ENERGY:uhv:zp:scanselflag', val_only=True)
+        # # pv, init_val, off_val, on_val, off_str, on_str, cb=None):
+        # self.mode_pb = ophydPushBtn(fl_mode_dev, off_val=1, on_val=0, off_str='Sample Focused',
+        #                     on_str='OSA Focused')
+        #
+        # en_mode_dev = BaseDevice('BL1610-I10:ENERGY:uhv:enabled', write_pv='BL1610-I10:ENERGY:uhv:enabled.VAL',val_only=True)
+        # # pv, init_val, off_val, on_val, off_str, on_str, cb=None):
+        # self.en_mode_pb = ophydPushBtn(en_mode_dev, off_val=0, on_val=1, off_str='UHV IS Disabled',
+        #                             on_str='UHV IS ENABLED')
+        #
+        # discon_dev = BaseDevice('BL1610-I10:ENERGY:uhv:zp:scanselflag', val_only=True)
+        # # pv, init_val, off_val, on_val, off_str, on_str, cb=None):
+        # self.discon_pb = ophydPushBtn(discon_dev, off_val=0, on_val=1, off_str='Some PV Off',
+        #                          on_str='Some PV On')
+        #
+        # zp_inout_dev = BaseDevice('BL1610-I10:uhv:zp_inout', val_only=True)
+        # zp_inoutfbk_dev = Mbbi('BL1610-I10:uhv:zp_inout:fbk', val_only=True)
+        # # pv, init_val, off_val, on_val, off_str, on_str, cb=None):
+        # self.zp_pb = ophydPushBtnWithFbk(zp_inout_dev, sig_change_kw='char_value', off_val=0, on_val=1, off_str='ZP_IN',
+        #                            on_str='ZP_OUT', fbk_dev=zp_inoutfbk_dev, toggle=False)
 
-        pBtn = ophydPushBtn(dev, off_val=0, on_val=1, off_str='Disabled', on_str='Enabled')
-        dev_ui.setupUi(widg, pBtn)
+        #ev_en_dev = Bo('BL1610-I10:ENERGY:uhv:enabled', val_only=False, val_kw='value')
+        #ev_en_dev.changed.connect(mycallback)
 
-
-        dev_ui.mtrNameFld.setText('TEST')
-        id = dev.get_name() + '_btn'
-        dev_ui.pushBtn.setObjectName(id)
-
-        fl_mode_dev = BaseDevice('BL1610-I10:ENERGY:uhv:zp:scanselflag', val_only=True)
+        ev_en_dev = Bo('BL1610-I10:ENERGY:uhv:enabled', val_only=False, val_kw='value')
+        #zp_inoutfbk_dev = Mbbi('BL1610-I10:uhv:zp_inout:fbk', val_only=True)
         # pv, init_val, off_val, on_val, off_str, on_str, cb=None):
-        self.mode_pb = ophydPushBtn(fl_mode_dev, off_val=1, on_val=0, off_str='Sample Focused',
-                            on_str='OSA Focused')
+        self.ev_en_pb = ophydPushBtnWithFbk(ev_en_dev, sig_change_kw='value', off_val=0, on_val=1, off_str='DISABLED',
+                                         on_str='ENABLED', fbk_dev=ev_en_dev, toggle=True)
 
-        en_mode_dev = BaseDevice('BL1610-I10:ENERGY:uhv:enabled', write_pv='BL1610-I10:ENERGY:uhv:enabled.VAL',val_only=True)
-        # pv, init_val, off_val, on_val, off_str, on_str, cb=None):
-        self.en_mode_pb = ophydPushBtn(en_mode_dev, off_val=0, on_val=1, off_str='UHV IS Disabled',
-                                    on_str='UHV IS ENABLED')
-
-        discon_dev = BaseDevice('BL1610-I10:ENERGY:uhv:zp:scanselflag', val_only=True)
-        # pv, init_val, off_val, on_val, off_str, on_str, cb=None):
-        self.discon_pb = ophydPushBtn(discon_dev, off_val=0, on_val=1, off_str='Some PV Off',
-                                 on_str='Some PV On')
-
-        zp_inout_dev = BaseDevice('BL1610-I10:uhv:zp_inout', val_only=True)
-        zp_inoutfbk_dev = Mbbi('BL1610-I10:uhv:zp_inout:fbk', val_only=True)
-        # pv, init_val, off_val, on_val, off_str, on_str, cb=None):
-        self.zp_pb = ophydPushBtnWithFbk(zp_inout_dev, sig_change_kw='char_value', off_val=0, on_val=1, off_str='ZP_IN',
-                                   on_str='ZP_OUT', fbk_dev=zp_inoutfbk_dev, toggle=False)
-
-
+        osa_y_dev  = Bo('BL1610-I10:ENERGY:uhv:osay_track_enabled', val_only=False, val_kw='value')
+        self.osa_y_dev_pb = ophydPushBtnWithFbk(osa_y_dev, sig_change_kw='value', off_val=0, on_val=1, off_str='OSAY Tracking Off',
+                                            on_str='OSAY Tracking On', fbk_dev=osa_y_dev, toggle=True)
         layout = QVBoxLayout()
 
 
 
         #layout.addWidget(self.pb)
         layout.addWidget(widg)
-        layout.addWidget(self.mode_pb)
-        layout.addWidget(self.discon_pb)
-        layout.addWidget(self.zp_pb)
-        layout.addWidget(self.en_mode_pb)
+        # layout.addWidget(self.mode_pb)
+        # layout.addWidget(self.discon_pb)
+        # layout.addWidget(self.zp_pb)
+        # layout.addWidget(self.en_mode_pb)
+        layout.addWidget(self.ev_en_pb)
+        layout.addWidget(self.osa_y_dev_pb)
 
         self.setLayout(layout)
 

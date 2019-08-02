@@ -249,6 +249,7 @@ class InputState(object):
         # the id of the currently selected plotItem
         self.plotitem_id = None  # a unique ID number
         self.plotitem_title = None  # the title ex: SEG 2
+        self.plotitem_shape = None  # the current shape item
         # the type of the plot item, one of the types.spatial_type_prefix types (PNT,
         # SEG, ROI)
         self.plotitem_type = None
@@ -277,6 +278,7 @@ class InputState(object):
         # the id of the currently selected plotItem
         self.plotitem_id = None  # a unique ID number
         self.plotitem_title = None  # the title ex: SEG 2
+        self.plotitem_shape = None  # the current shape item
         # the type of the plot item, one of the types.spatial_type_prefix types (PNT,
         # SEG, ROI)
         self.plotitem_type = None
@@ -791,8 +793,10 @@ class ImageWidget(ImageDialog):
             self.inputState.plotitem_type = None
             #sept 18 2017
             self.inputState.plotitem_id = get_current_unique_id()
+            self.inputState.plotitem_shape = self.param_cross_marker
             #print 'on_select_tool_changed: emitting_new_roi'
             self._emit_new_roi(self.image_type)
+
             #print 'x=%.1f y=%.1f' % (pos.x(), pos.y())
             #x, y = self.plot.cross_marker.axes_to_canvas(pos.x(), pos.y())
 
@@ -2362,7 +2366,7 @@ class ImageWidget(ImageDialog):
         if(len(selected_shapes) > 0):
             selected_shapes.reverse()
             for sh in selected_shapes:
-                print('selecting [%s]' % sh.selection_name)
+                #print('selecting [%s]' % sh.selection_name)
                 sh.select()
         #self.target_moved.emit(main_rect)
         return(selected_shapes)
@@ -2565,7 +2569,7 @@ class ImageWidget(ImageDialog):
         else:
             title = ''
 
-        print('active_item_moved', (title, item.get_center()))
+        #print('active_item_moved', (title, item.get_center()))
 
         if(title.find('osa_') > -1):
             shape = self.get_shape_with_this_title('osa_rect')
@@ -2848,6 +2852,7 @@ class ImageWidget(ImageDialog):
 
             self.inputState.plotitem_title = str(item.title().text())
             self.inputState.plotitem_type = types.spatial_type_prefix.PNT
+            self.inputState.plotitem_shape = item
             # print '<drag> %s id(item)=%d, unique=%d' %
             # (self.inputState.plotitem_title, id(item), item.unique_id)
             if(hasattr(item, 'unique_id')):
@@ -2890,6 +2895,8 @@ class ImageWidget(ImageDialog):
             else:
                 self.inputState.rect = item.get_rect()
 
+            self.inputState.plotitem_shape = item
+
             if(hasattr(item, 'unique_id')):
                 if(item.unique_id is not -1):
                     #print 'AnnotatedHorizontalSegment: annotation_item_changed: emitting new_roi'
@@ -2920,6 +2927,7 @@ class ImageWidget(ImageDialog):
             self.inputState.plotitem_title = str(item.title().text())
             self.inputState.plotitem_type = types.spatial_type_prefix.SEG
             self.inputState.rect = item.get_rect()
+            self.inputState.plotitem_shape = item
 
             # dont boundary check teh measureing tool
             if(item.get_text().find('Measure') == -1):
@@ -2954,6 +2962,7 @@ class ImageWidget(ImageDialog):
                     return
             self.inputState.plotitem_title = str(item.title().text())
             self.inputState.plotitem_type = types.spatial_type_prefix.ROI
+            self.inputState.plotitem_shape = item
             # print 'annotation_item_changed: ', item.unique_id
 
             if(self.checkRegionEnabled):
@@ -2973,6 +2982,7 @@ class ImageWidget(ImageDialog):
                 if(item.unique_id is None):
                     item.unique_id = get_current_unique_id()
                 self.inputState.plotitem_id = item.unique_id
+                self.inputState.plotitem_shape = item
 
             if(self.checkRegionEnabled):
                 qrect = self._check_valid_region(item)
@@ -2984,6 +2994,7 @@ class ImageWidget(ImageDialog):
                 qrect = self._check_valid_region(item)
             if(hasattr(item, "get_tr_center")):
                 ret = self._anno_spatial_to_region(item)
+            self.inputState.plotitem_shape = item
 
         if(self.xTransform > 0.0):
             item.annotationparam.transform_matrix = [[self.xTransform, 0.0, 0.0], [
@@ -3324,15 +3335,24 @@ class ImageWidget(ImageDialog):
             pass
 
         if(cntr is not None):
-            dct_put(dct, SPDB_XCENTER, cx)
-            dct_put(dct, SPDB_YCENTER, cy)
-            dct_put(dct, SPDB_XSTART, x1)
-            dct_put(dct, SPDB_YSTART, y1)
-            dct_put(dct, SPDB_XSTOP, x2)
-            dct_put(dct, SPDB_YSTOP, y2)
-
-        else:
-            return
+            if (self.image_type in [types.image_types.FOCUS, types.image_types.OSAFOCUS]):
+            # this is a focus scan so Y is actually the ZP Z axis so copy Y to Z
+                dct_put(dct, SPDB_XCENTER, cx)
+                dct_put(dct, SPDB_ZZCENTER, cy)
+                dct_put(dct, SPDB_YCENTER, None)
+                dct_put(dct, SPDB_XSTART, x1)
+                dct_put(dct, SPDB_ZZSTART, y1)
+                dct_put(dct, SPDB_YSTART, None)
+                dct_put(dct, SPDB_XSTOP, x2)
+                dct_put(dct, SPDB_ZZSTOP, y2)
+                dct_put(dct, SPDB_YSTOP, None)
+            else:
+                dct_put(dct, SPDB_XCENTER, cx)
+                dct_put(dct, SPDB_YCENTER, cy)
+                dct_put(dct, SPDB_XSTART, x1)
+                dct_put(dct, SPDB_YSTART, y1)
+                dct_put(dct, SPDB_XSTOP, x2)
+                dct_put(dct, SPDB_YSTOP, y2)
 
         if(rx is not None):
             dct_put(dct, SPDB_XRANGE, abs(rx))
@@ -3340,11 +3360,15 @@ class ImageWidget(ImageDialog):
             dct_put(dct, SPDB_XRANGE, None)
 
         if(ry is not None):
-            dct_put(dct, SPDB_YRANGE, abs(ry))
+            if (self.image_type in [types.image_types.FOCUS, types.image_types.OSAFOCUS]):
+                # this is a focus scan so Y is actually the ZP Z axis so copy Y to Z
+                dct_put(dct, SPDB_ZZRANGE, abs(ry))
+            else:
+                dct_put(dct, SPDB_YRANGE, abs(ry))
         else:
             dct_put(dct, SPDB_YRANGE, None)
 
-        dct_put(dct, SPDB_ZRANGE, None)
+        #dct_put(dct, SPDB_ZRANGE, None)
         dct_put(dct, SPDB_PLOT_IMAGE_TYPE, img_type)
 
         #print('emitting new roi: ', rect)
@@ -4183,6 +4207,7 @@ class ImageWidget(ImageDialog):
 
                     self.inputState.plotitem_id = active_item.unique_id
                     self.inputState.plotitem_title = title
+                    self.inputState.plotitem_shape = active_item
                     self.inputState.center = ret['center']
                     self.inputState.range = ret['range']
                     self.inputState.rect = ret['rect']

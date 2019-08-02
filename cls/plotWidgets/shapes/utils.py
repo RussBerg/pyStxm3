@@ -88,8 +88,8 @@ def create_rect_centerd_at(rect, xc, yc, title, plot=None):
     '''
     dx = (rect[2] - rect[0]) * 0.5
     dy = (rect[1] - rect[3]) * 0.5
-    r = create_rectangle((xc - dx, yc + dy , xc + dx, yc - dy), title=title)
-    z = 999999999
+    r, z = create_rectangle((xc - dx, yc + dy , xc + dx, yc - dy), title=title)
+    #z = 999999999
 
     if(plot):
         plot.add_item(r, z)

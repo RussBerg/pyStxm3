@@ -35,6 +35,7 @@ elif(USE_OPHYD_EPICS):
     from .ophyd.camera import camera
     from .ophyd.mbbi import Mbbi
     from .ophyd.mbbo import Mbbo
+    from .ophyd.bo import Bo
     from .ophyd.shutter import PvShutter
     from .ophyd.scan import Scan
     from .ophyd.transform import Transform

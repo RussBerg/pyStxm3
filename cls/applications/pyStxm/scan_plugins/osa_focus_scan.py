@@ -78,7 +78,7 @@ class OsaFocusScanParam(ScanParamWidget):
         '''
         if (self.isEnabled()):
             #make sure that the OSA vertical tracking is off if it is on
-            self.osay_trcking_was = self.main_obj.device(DNM_OSAY_TRACKING).get()
+            self.osay_trcking_was = self.main_obj.device(DNM_OSAY_TRACKING).get_position()
             self.main_obj.device(DNM_OSAY_TRACKING).put(0) #off
 
 

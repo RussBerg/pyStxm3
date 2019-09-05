@@ -117,7 +117,7 @@ def fix_links():
                 lorig = flines[lineno]
                 flines[lineno] = flines[lineno].replace('<' + target_orig + '>', '<' + target + '>')
                 flines[lineno] = flines[lineno].replace('`' + target_orig + '`', '`' + target + '`')
-                print((lorig + flines[lineno]))
+                print(lorig + flines[lineno])
                 with io.open(fullp, "w", encoding="utf-8", newline='') as f:
                     f.write(''.join(flines))
 
@@ -157,14 +157,14 @@ def auto_fix_links():
                     lorig = flines[lineno]
                     flines[lineno] = flines[lineno].replace('<' + target + '>', '<' + fix + '>')
                     flines[lineno] = flines[lineno].replace('`' + target + '`', '`' + fix + '`')
-                    print((lorig + flines[lineno]))
+                    print(lorig + flines[lineno])
                     with io.open(fullp, "w", encoding="utf-8", newline='') as f:
                         f.write(''.join(flines))
 
     if success == total:
         print("\nSuccessfully fixed all links automatically!")
     elif success > 0:
-        print(("\nSuccessfully fixed %s links automatically, run this script again to try manually." % success))
+        print("\nSuccessfully fixed %s links automatically, run this script again to try manually." % success)
     else:
         print("Failed to fix any links automatically :(")
 
@@ -227,11 +227,11 @@ def main():
         num_broken = len(to_print) - 1
         clear_console()
         if num_broken > 0:
-            print(("Found: " + str(num_broken) + " broken links\n\n"
+            print("Found: " + str(num_broken) + " broken links\n\n"
                   "Now edit the link targets in the right column of broken_doc_links.txt (next to this script)\n\n"
                   "When finished, type \"done\" below, or anything else to cancel.\n\n"
-                  "You may also type \"auto\" to attempt to fix the links automatically.\n"))
-            response = eval(input("> "))
+                  "You may also type \"auto\" to attempt to fix the links automatically.\n")
+            response = input("> ")
             if response == "done":
                 fix_links()
             elif response == "auto":
@@ -249,8 +249,8 @@ def main():
         os.remove(EDIT_FILE + ".orig")
     except BaseException as ex:
         # in case file is locked
-        print(("WARNING: Unable to delete " + EDIT_FILE + " error: " + str(ex) + "\n"
-              "Make sure this file (and its \".orig\" duplicate) is deleted before committing."))
+        print("WARNING: Unable to delete " + EDIT_FILE + " error: " + str(ex) + "\n"
+              "Make sure this file (and its \".orig\" duplicate) is deleted before committing.")
 
 
 if __name__ == "__main__":

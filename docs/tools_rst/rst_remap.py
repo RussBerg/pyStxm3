@@ -111,7 +111,7 @@ def remap_data_create(base_path):
         file_path = compat_path(os.path.splitext(os.path.relpath(fn, base_path))[0])
         file_path_prev = remap_rst.get(file_hash)
         if file_path_prev is not None:
-            print(("Duplicate file contents: %r, %r" % (file_path_prev, file_path)))
+            print("Duplicate file contents: %r, %r" % (file_path_prev, file_path))
         else:
             remap_rst[file_hash] = file_path
 
@@ -122,7 +122,7 @@ def remap_data_create(base_path):
         file_path = compat_path(os.path.relpath(fn, base_path))
         file_path_prev = remap_images.get(file_hash)
         if file_path_prev is not None:
-            print(("Duplicate file contents: %r, %r" % (file_path_prev, file_path)))
+            print("Duplicate file contents: %r, %r" % (file_path_prev, file_path))
         else:
             remap_images[file_hash] = file_path
 
@@ -140,8 +140,8 @@ def remap_start(base_path):
     with open(filepath_remap, 'wb') as fh:
         import pickle
         pickle.dump(remap_data_src, fh, pickle.HIGHEST_PROTOCOL)
-    print(("Remap started, tracking (%d rst, %d image) files." %
-          (len(remap_data_src[0]), len(remap_data_src[1]))))
+    print("Remap started, tracking (%d rst, %d image) files." %
+          (len(remap_data_src[0]), len(remap_data_src[1])))
 
 
 def remap_finish(base_path):
@@ -172,11 +172,11 @@ def remap_finish_rst(base_path, remap_rst_src, remap_rst_dst):
     #                     /interface/introduction
     src_dst_map = {}
 
-    for file_hash, file_rstpath_src in list(remap_rst_src.items()):
+    for file_hash, file_rstpath_src in remap_rst_src.items():
         file_rstpath_dst = remap_rst_dst.get(file_hash)
         if file_rstpath_dst is None:
             # shouldn't happen often.
-            print(("warning: source '%s.rst' not found!" % file_rstpath_src[1:]))
+            print("warning: source '%s.rst' not found!" % file_rstpath_src[1:])
             file_rstpath_dst = file_rstpath_src
 
         src_dst_map[file_rstpath_src] = file_rstpath_dst
@@ -200,7 +200,7 @@ def remap_finish_rst(base_path, remap_rst_src, remap_rst_dst):
                     file_rstpath_dst = file_rstpath_dst + "#" + tail
                 d[-2] = file_rstpath_dst
             else:
-                print(("warning: unknown path %r" % file_rstpath_src))
+                print("warning: unknown path %r" % file_rstpath_src)
 
     # now move PO files
     if os.path.exists(LOCALE_DIR):
@@ -213,11 +213,11 @@ def remap_finish_rst(base_path, remap_rst_src, remap_rst_dst):
             check_output(["svn", "help"])
             has_svn = True
         except BaseException as ex:
-            print((
+            print(
                 "warning: command 'svn' not found in your PATH, error:" +
                 str(srr) +
                 " not updating translations!"
-            ))
+            )
             has_svn = False
 
         if has_svn:
@@ -226,18 +226,18 @@ def remap_finish_rst(base_path, remap_rst_src, remap_rst_dst):
                 if not d.startswith(".")
             ]
 
-            for file_path_src, file_path_dst in list(src_dst_map.items()):
+            for file_path_src, file_path_dst in src_dst_map.items():
                 if file_path_src != file_path_dst:
                     file_path_src = file_path_src.lstrip("\\/")
                     file_path_dst = file_path_dst.lstrip("\\/")
                     for locale_dir in translation_paths:
                         file_path_src_po = os.path.join(locale_dir, file_path_src) + ".po"
                         if not os.path.exists(file_path_src_po):
-                            print(("warning: PO file not found %r" % file_path_src_po))
+                            print("warning: PO file not found %r" % file_path_src_po)
                         else:
                             file_path_dst_po = os.path.join(locale_dir, file_path_dst) + ".po"
                             if os.path.exists(file_path_dst_po):
-                                print(("warning: PO file already exists %r" % file_path_dst_po))
+                                print("warning: PO file already exists %r" % file_path_dst_po)
                             else:
                                 dir_path_dst_po = os.path.dirname(file_path_dst_po)
                                 # ensure the new directory exist
@@ -256,11 +256,11 @@ def remap_finish_image(base_path, remap_image_src, remap_image_dst):
     #                     /images/my_image.jpg
     src_dst_map = {}
 
-    for file_hash, file_imagepath_src in list(remap_image_src.items()):
+    for file_hash, file_imagepath_src in remap_image_src.items():
         file_imagepath_dst = remap_image_dst.get(file_hash)
         if file_imagepath_dst is None:
             # shouldn't happen often.
-            print(("warning: source '%s' not found!" % file_imagepath_src[1:]))
+            print("warning: source '%s' not found!" % file_imagepath_src[1:])
             file_imagepath_dst = file_imagepath_src
 
         src_dst_map[file_imagepath_src] = file_imagepath_dst
@@ -278,7 +278,7 @@ def remap_finish_image(base_path, remap_image_src, remap_image_dst):
             if file_imagepath_dst is not None:
                 d[-1] = file_imagepath_dst
             else:
-                print(("warning: unknown path %r" % file_imagepath_src))
+                print("warning: unknown path %r" % file_imagepath_src)
 
 
 def main(argv=sys.argv):

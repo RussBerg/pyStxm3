@@ -162,14 +162,14 @@ def text_extract_help(text, args, static_strings):
     args_long = {}
     args_used = set()
 
-    for (arg_short, arg_long), value in list(args.items()):
+    for (arg_short, arg_long), value in args.items():
         if arg_short is not None:
             args_short[arg_short] = (arg_short, arg_long), value
         if arg_long is not None:
             args_long[arg_long] = (arg_short, arg_long), value
     # there is some overlap in short/long args, second pass to fix
     # by assigning long-only
-    for (arg_short, arg_long), value in list(args.items()):
+    for (arg_short, arg_long), value in args.items():
         if arg_short is not None:
             if arg_long is None:
                 args_short[arg_short] = (arg_short, arg_long), value

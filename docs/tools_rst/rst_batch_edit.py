@@ -228,7 +228,7 @@ def preset_wrap_lines(fn, data_src):
 
             # ignore directives since their formatting cant always be split
             if l.lstrip(" *-").startswith(".. "):
-                print(("Ignoring %s:%d: " % (fn, i + 1)))
+                print("Ignoring %s:%d: " % (fn, i + 1))
                 print(l_orig)
                 i += 1
                 continue
@@ -283,7 +283,7 @@ def preset_wrap_lines(fn, data_src):
                 lines[i:i + 1] = [l_orig[:index_best].rstrip(), (indent * " ") + l_orig[index_best:].lstrip()]
                 i -= 1
             else:
-                print(("Not found %s:%d: " % (fn, i + 1)))
+                print("Not found %s:%d: " % (fn, i + 1))
                 print(l_orig)
 
         # lines[i] = l
@@ -300,8 +300,8 @@ def preset_help(operations):
     import textwrap
     print("Operations:\n")
     for op, op_arg, op_fn in operations:
-        print(("%s:" % op_arg))
-        print((textwrap.indent(op_fn.__doc__.strip(), "  ")))
+        print("%s:" % op_arg)
+        print(textwrap.indent(op_fn.__doc__.strip(), "  "))
         print()
 
 
@@ -310,7 +310,7 @@ def operation_from_args():
     namespace = globals()
 
     operations = []
-    for op, op_fn in list(namespace.items()):
+    for op, op_fn in namespace.items():
         if op.startswith("preset_"):
             if callable(op_fn):
                 op_arg = "--%s" % op[7:]
@@ -327,9 +327,9 @@ def operation_from_args():
                 operation = op_fn
                 break
             else:
-                print((
+                print(
                     "Argument '%s' not in %s" %
-                    (arg, " ".join(sorted(operations_map.keys())))))
+                    (arg, " ".join(sorted(operations_map.keys()))))
                 return None
 
     if operation is None:

@@ -49,7 +49,7 @@ master_doc = 'index'
 #copyright = u'2018, Russ Berg'
 
 project = 'pySTXM %s Manual' % pystxm_version
-copyright = '2018, Canadian Lightsource'
+copyright = u'2018, Canadian Lightsource'
 author = 'Russ Berg'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -214,8 +214,8 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', '.tex', '. Documentation',
-   'Russ Berg', 'manual'),
+  ('index', '.tex', u'. Documentation',
+   u'Russ Berg', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -244,8 +244,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', '', '. Documentation',
-     ['Russ Berg'], 1)
+    ('index', '', u'. Documentation',
+     [u'Russ Berg'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -258,8 +258,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', '', '. Documentation',
-   'Russ Berg', '', 'One line description of project.',
+  ('index', '', u'. Documentation',
+   u'Russ Berg', '', 'One line description of project.',
    'Miscellaneous'),
 ]
 
@@ -276,10 +276,10 @@ texinfo_documents = [
 # -- Options for Epub output ---------------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = '.'
-epub_author = 'Russ Berg'
-epub_publisher = 'Russ Berg'
-epub_copyright = '2018, Russ Berg'
+epub_title = u'.'
+epub_author = u'Russ Berg'
+epub_publisher = u'Russ Berg'
+epub_copyright = u'2018, Russ Berg'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.

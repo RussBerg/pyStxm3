@@ -33,11 +33,11 @@ def files_recursive(path, ext_test):
 
 
 def print_title_multiline(title, underline="="):
-    print((
+    print(
         '\n' +
         title.upper() + '\n' +
         (underline * max(len(l) for l in title.splitlines()))
-    ))
+    )
 
 
 # -----------------------------------------------------------------------------
@@ -141,13 +141,13 @@ def check_image_names_report(name_data):
         """
         found = False
         multi = False
-        for keyprime, listprime in list(name_data.items()):
+        for keyprime, listprime in name_data.items():
             for ent in listprime:
                 if keyprime == "icon" or keyprime == "ok":
                     name_report[keyprime].append(ent)
                 else:
                     # recursively loop over the list
-                    for keyrec, listrec in list(name_data.items()):
+                    for keyrec, listrec in name_data.items():
                         for rec in listrec:
                             if (
                                     ent["image_ext"] == rec["image_ext"] and
@@ -189,8 +189,8 @@ def check_image_names_report(name_data):
         if len(name_report[id]) != 0:
             print_title_multiline("List of images " + messages[id])
             for ent in name_report[id]:
-                print((ent["filepath"] + ":" + str(ent["lineno"] + 1) + " " + ent["image_name"] + ent["image_ext"]))
-                print(("   Should be: " + ent["file_derive"]))
+                print(ent["filepath"] + ":" + str(ent["lineno"] + 1) + " " + ent["image_name"] + ent["image_ext"])
+                print("   Should be: " + ent["file_derive"])
 
 
 def main():

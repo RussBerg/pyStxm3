@@ -26,7 +26,7 @@ def find_vcs_root(test, dirs=(".svn", ".git"), default=None):
 
 def run(cmd):
     if VERBOSE:
-        print((">>> ", cmd))
+        print(">>> ", cmd)
 
     import subprocess
     proc = subprocess.Popen(cmd, shell=False)
@@ -60,7 +60,7 @@ def main():
             os.remove(TMP_NAME)
 
         if os.path.exists(TMP_NAME):
-            print(("Error removing %r" % TMP_NAME))
+            print("Error removing %r" % TMP_NAME)
 
         cmd = [
             "pngcrush",
@@ -80,7 +80,7 @@ def main():
             if d != 0:
                 fac = d / s
                 if fac < (1.0 - FACTOR):
-                    print(("Replacing: %r" % f))
+                    print("Replacing: %r" % f)
                     os.remove(f)
                     os.rename(TMP_NAME, f)
 

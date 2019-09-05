@@ -293,7 +293,7 @@ class RstSpellingVisitor(docutils.nodes.NodeVisitor):
     # Visitors (docutils callbacks)
 
     def visit_author(self, node):
-        print(("AUTHOR", node[0]))
+        print("AUTHOR", node[0])
 
     # TODO
     def visit_section(self, node):

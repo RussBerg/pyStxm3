@@ -71,7 +71,7 @@ def warn_long_lines(fn, data_src):
             if l_strip.startswith(".. figure:: "):
                 continue
 
-            print(("%s:%d: long line %d" % (fn, i + 1, len(l))))
+            print("%s:%d: long line %d" % (fn, i + 1, len(l)))
 
     return None
 
@@ -100,7 +100,7 @@ def warn_role_kbd(fn, data_src):
                     out = content
                     if content != k:
                         out += "| " + k
-                    print((fn_rel + ":" + str(lineno + 1) + " '" + out + "' " + "invalid keyboard shortcut"))
+                    print(fn_rel + ":" + str(lineno + 1) + " '" + out + "' " + "invalid keyboard shortcut")
 
     return None
 
@@ -165,17 +165,17 @@ operations_checks = {
 
 # generic arg parsing
 def print_help():
-    print(("Blender manual checks\n"
+    print("Blender manual checks\n"
           "    Usage: %s { %s }\n" %
           (os.path.basename(__file__),
-           " ".join(arg for arg in sorted(operations_checks.keys())))))
+           " ".join(arg for arg in sorted(operations_checks.keys()))))
 
 
 for arg in sys.argv[1:]:
     operation = operations_checks.get(arg)
     if operation is None:
         print_help()
-        print(("Unknown argument %r" % arg))
+        print("Unknown argument %r" % arg)
         sys.exit(1)
 
     operations.append(operation)

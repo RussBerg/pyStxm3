@@ -120,7 +120,7 @@ def main(argv=None):
             with open(f, 'w', encoding='utf-8') as f_handle:
                 f_handle.write(data_dst)
         else:
-            print(("Path not found! $r" % f))
+            print("Path not found! $r" % f)
 
 
 if __name__ == "__main__":

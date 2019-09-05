@@ -32,7 +32,8 @@ class MultiRegionWidget(BaseSelectionWidget):
     spatial_row_changed = QtCore.pyqtSignal(object)
     spatial_row_deleted = QtCore.pyqtSignal(object)
 
-    def __init__(self,use_center=True, is_point=False, is_arb_line=False, enable_multi_spatial=False, single_ev_model=True, max_range=100, use_hdw_accel=True, *args):
+    def __init__(self,use_center=True, is_point=False, is_arb_line=False, enable_multi_spatial=False, single_ev_model=True, max_range=100, use_hdw_accel=True,
+                 min_sp_rois=0, x_cntr=None, y_cntr=None, *args):
         """
         __init__(): description
 
@@ -46,6 +47,7 @@ class MultiRegionWidget(BaseSelectionWidget):
         
         self.use_center = use_center
         self.enable_multi_spatial = enable_multi_spatial
+        self.min_sp_rois = min_sp_rois
         self.ev_polarity_scan_order = energy_scan_order_types.EV_THEN_POL
         
         self.loadScanBtn = QtWidgets.QPushButton('Load Scan')
@@ -73,9 +75,13 @@ class MultiRegionWidget(BaseSelectionWidget):
         else:
             single_sp = True
 
-        self.sp_widg = SpatialSelWidget(self.ev_widg, use_center=use_center, is_point=is_point, is_arb_line=is_arb_line, \
-                                        single_ev_model=single_ev_model, max_range=max_range, use_hdw_accel=use_hdw_accel, \
-                                        single_sp_region=single_sp)
+        # self.sp_widg = SpatialSelWidget(self.ev_widg, use_center=use_center, is_point=is_point, is_arb_line=is_arb_line, \
+        #                                 single_ev_model=single_ev_model, max_range=max_range, use_hdw_accel=use_hdw_accel, \
+        #                                 single_sp_region=single_sp)
+        self.sp_widg = SpatialSelWidget(self.ev_widg, use_center=use_center, is_point=is_point, is_arb_line=is_arb_line,
+                                        single_ev_model=single_ev_model, max_range=max_range,
+                                        use_hdw_accel=use_hdw_accel, single_sp_region=single_sp,
+                                        min_sp_rois=min_sp_rois, x_cntr=x_cntr, y_cntr=y_cntr)
 
         #self.dark_ss = get_style('dark')
         #self.sp_widg.setStyleSheet(self.dark_ss)
@@ -797,7 +803,9 @@ if __name__ == '__main__':
     #spatial.show()
     
     #multi = MultiRegionWidget(use_center=True, enable_multi_spatial=True)
-    multi = MultiRegionWidget(use_center=True, enable_multi_spatial=True, is_point=False, single_ev_model=False)
+    # multi = MultiRegionWidget(use_center=True, enable_multi_spatial=True, is_point=False, single_ev_model=False)
+    multi = MultiRegionWidget(use_center=True, enable_multi_spatial=True, is_point=False, single_ev_model=False,
+                              min_sp_rois=1)
     #multi.enable_add_spatial_region_menu(True)
     multi.show_load_btn()
     multi.show_getdata_btn()

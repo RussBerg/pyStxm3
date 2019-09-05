@@ -74,7 +74,19 @@ class FineImageScansParam(ScanParamWidget):
         # self.positioners['ANG'] = DNM_EPU_ANGLE
 
         uic.loadUi( os.path.join(plugin_dir, 'fine_image_scans.ui'), self)
-        self.multi_region_widget = MultiRegionWidget(enable_multi_spatial=self.enable_multi_region, max_range=MAX_SCAN_RANGE_FINEX)
+
+        if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
+            x_cntr = self.main_obj.device(DNM_GONI_X).get_position()
+            y_cntr = self.main_obj.device(DNM_GONI_Y).get_position()
+        else:
+            x_cntr = self.main_obj.device(DNM_SAMPLE_X).get_position()
+            y_cntr = self.main_obj.device(DNM_SAMPLE_Y).get_position()
+
+        self.multi_region_widget = MultiRegionWidget(enable_multi_spatial=self.enable_multi_region,
+                                                      single_ev_model=True, max_range=MAX_SCAN_RANGE_FINEX, min_sp_rois=1,
+                                                     x_cntr=x_cntr, y_cntr=y_cntr)
+
+        #self.multi_region_widget = MultiRegionWidget(enable_multi_spatial=self.enable_multi_region, max_range=MAX_SCAN_RANGE_FINEX)
         self.multi_region_widget.spatial_row_selected.connect(self.on_spatial_row_selected)
         self.multi_region_widget.spatial_row_changed.connect(self.on_spatial_row_changed)
         self.multi_region_widget.spatial_row_deleted.connect(self.on_spatial_row_deleted)
@@ -115,9 +127,9 @@ class FineImageScansParam(ScanParamWidget):
         self.axis_strings = ['Sample Y microns', 'Sample X microns', '', '']
         self.zp_focus_mode = zp_focus_modes.A0MOD
         # data_file_pfx = 'i'
-        self.data_file_pfx = MAIN_OBJ.get_datafile_prefix()
+        self.data_file_pfx = self.main_obj.get_datafile_prefix()
         self.plot_item_type = spatial_type_prefix.ROI
-        self.enable_multi_region = MAIN_OBJ.get_is_multi_region_enabled()
+        self.enable_multi_region = self.main_obj.get_is_multi_region_enabled()
         self.multi_ev = True
 
     def on_plugin_focus(self):
@@ -187,10 +199,10 @@ class FineImageScansParam(ScanParamWidget):
         if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
             self.gen_GONI_SCAN_max_scan_range_limit_def()
         else:
-            mtr_sx = MAIN_OBJ.device(self.positioners['SX'])
-            mtr_sy = MAIN_OBJ.device(self.positioners['SY'])
-            mtr_sfx = MAIN_OBJ.device(self.positioners['SFX'])
-            mtr_sfy = MAIN_OBJ.device(self.positioners['SFY'])
+            mtr_sx = self.main_obj.device(self.positioners['SX'])
+            mtr_sy = self.main_obj.device(self.positioners['SY'])
+            mtr_sfx = self.main_obj.device(self.positioners['SFX'])
+            mtr_sfy = self.main_obj.device(self.positioners['SFY'])
             center_x = mtr_sx.get_position()
             center_y = mtr_sy.get_position()
 
@@ -503,12 +515,12 @@ class FineImageScansParam(ScanParamWidget):
     def gen_GONI_SCAN_max_scan_range_limit_def(self):
         """ to be overridden by inheriting class
         """    
-        mtr_zpx = MAIN_OBJ.device(self.positioners['ZX'])
-        mtr_zpy = MAIN_OBJ.device(self.positioners['ZY'])
-        #mtr_osax = MAIN_OBJ.device('OSAX.X')
-        #mtr_osay = MAIN_OBJ.device('OSAY.Y')
-        mtr_gx = MAIN_OBJ.device(self.positioners['GX'])
-        mtr_gy = MAIN_OBJ.device(self.positioners['GY'])
+        mtr_zpx = self.main_obj.device(self.positioners['ZX'])
+        mtr_zpy = self.main_obj.device(self.positioners['ZY'])
+        #mtr_osax = self.main_obj.device('OSAX.X')
+        #mtr_osay = self.main_obj.device('OSAY.Y')
+        mtr_gx = self.main_obj.device(self.positioners['GX'])
+        mtr_gy = self.main_obj.device(self.positioners['GY'])
         
         gx_pos = mtr_gx.get_position()
         gy_pos = mtr_gy.get_position()
@@ -547,15 +559,15 @@ class FineImageScansParam(ScanParamWidget):
         display coordinates around the current goni center
         '''
         if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
-            mtr_x = MAIN_OBJ.device(self.positioners['GX'])
-            mtr_y = MAIN_OBJ.device(self.positioners['GY'])
+            mtr_x = self.main_obj.device(self.positioners['GX'])
+            mtr_y = self.main_obj.device(self.positioners['GY'])
         else:
             #if('SX' in list(self.positioners.keys())):
-            mtr_x = MAIN_OBJ.device(self.positioners['SX'])
-            mtr_y = MAIN_OBJ.device(self.positioners['SY'])
+            mtr_x = self.main_obj.device(self.positioners['SX'])
+            mtr_y = self.main_obj.device(self.positioners['SY'])
         # elif('GX' in list(self.positioners.keys())):
-        #     mtr_x = MAIN_OBJ.device(self.positioners['GX'])
-        #     mtr_y = MAIN_OBJ.device(self.positioners['GY'])
+        #     mtr_x = self.main_obj.device(self.positioners['GX'])
+        #     mtr_y = self.main_obj.device(self.positioners['GY'])
         # else:
         #     return((0.0, 0.0))
         return((mtr_x.get_position(), mtr_y.get_position()))

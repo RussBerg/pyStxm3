@@ -178,15 +178,14 @@ def load_json_files():
                             if (mtr_dct[pv_nm][fld] is ''):
                                 mtr_dct[pv_nm][fld] = '0'
 
-                            dct['SIM_' + pv_nm + '.%s' % fld]['value'] = mtr_dct[pv_nm][fld]
-                            print('serving MOTOR: [%s], value=[%s]' % ('SIM_' + pv_nm + '.%s' % fld, mtr_dct[pv_nm][fld]))
-                    # for field in list(mtr_dct[pv_nm].keys())):
-                    #     dct['SIM_' + pv_nm + '.%s' % field] = mtr_dct[pv_nm][field]
-                    # dct['SIM_' + pv_nm]['type'] = 'DoubleMotor'
-                    #f.write('caput %s.VAL %.2f' % jdct[fname][pv_nm]['value'])
+                            if(fld.find('MSTA') > -1):
+                                #force it to be a good status value
+                                dct['SIM_' + pv_nm + '.%s' % fld]['value'] = 18690
+                            else:
+                                dct['SIM_' + pv_nm + '.%s' % fld]['value'] = mtr_dct[pv_nm][fld]
+                            print('serving MOTOR: [%s], value=[%s]' % ('SIM_' + pv_nm + '.%s' % fld, dct['SIM_' + pv_nm + '.%s' % fld]['value']))
                 else:
                     dct['SIM_' + pv_nm] = jdct[fname][pv_nm]
-                    #print('serving: [%s]' % ('SIM_' + pv_nm))
 
                 #fout.write('caput %s %s\n' % ('SIM_' + pv_nm, jdct[fname][pv_nm]['value']))
     #fout.close()

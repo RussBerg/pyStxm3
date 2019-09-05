@@ -81,7 +81,7 @@ class CoarseImageScanParam(ScanParamWidget):
         self.axis_strings = ['Sample Y microns', 'Sample X microns', '', '']
         self.zp_focus_mode = zp_focus_modes.A0MOD
         # data_file_pfx = 'd'
-        self.data_file_pfx = MAIN_OBJ.get_datafile_prefix()
+        self.data_file_pfx = self.main_obj.get_datafile_prefix()
         self.plot_item_type = spatial_type_prefix.ROI
 
     def on_plugin_focus(self):
@@ -130,8 +130,8 @@ class CoarseImageScanParam(ScanParamWidget):
 
     def connect_paramfield_signals(self):
 
-        mtr_x = MAIN_OBJ.device(DNM_SAMPLE_X)
-        mtr_y = MAIN_OBJ.device(DNM_SAMPLE_Y)
+        mtr_x = self.main_obj.device(DNM_SAMPLE_X)
+        mtr_y = self.main_obj.device(DNM_SAMPLE_Y)
 
         xllm = mtr_x.get_low_limit()
         xhlm = mtr_x.get_high_limit()
@@ -167,8 +167,8 @@ class CoarseImageScanParam(ScanParamWidget):
 
     def update_min_max(self):
 
-        mtr_x = MAIN_OBJ.device(DNM_SAMPLE_X)
-        mtr_y = MAIN_OBJ.device(DNM_SAMPLE_Y)
+        mtr_x = self.main_obj.device(DNM_SAMPLE_X)
+        mtr_y = self.main_obj.device(DNM_SAMPLE_Y)
 
         xllm = mtr_x.get_low_limit()
         xhlm = mtr_x.get_high_limit()
@@ -192,8 +192,8 @@ class CoarseImageScanParam(ScanParamWidget):
     def gen_max_scan_range_limit_def(self):
         """ to be overridden by inheriting class
         """
-        mtr_x = MAIN_OBJ.device(DNM_SAMPLE_X)
-        mtr_y = MAIN_OBJ.device(DNM_SAMPLE_Y)
+        mtr_x = self.main_obj.device(DNM_SAMPLE_X)
+        mtr_y = self.main_obj.device(DNM_SAMPLE_Y)
 
         xllm = mtr_x.get_low_limit()
         xhlm = mtr_x.get_high_limit()
@@ -235,7 +235,7 @@ class CoarseImageScanParam(ScanParamWidget):
         y_roi = get_base_roi(SPDB_Y, DNM_SAMPLE_Y, cy, ry, ny, sy)
         z_roi = get_base_roi(SPDB_Z, DNM_DETECTOR_Z, 0, 0, 0, enable=False)
 
-        energy_pos = MAIN_OBJ.device(DNM_ENERGY).get_position()
+        energy_pos = self.main_obj.device(DNM_ENERGY).get_position()
         e_roi = get_base_energy_roi(SPDB_EV, DNM_ENERGY, energy_pos, energy_pos, 0, 1, dwell, None, enable=False)
 
         self.sp_db = make_spatial_db_dict(x_roi=x_roi, y_roi=y_roi, z_roi=z_roi, e_roi=e_roi)

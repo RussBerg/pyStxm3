@@ -623,6 +623,7 @@ class ScanParamWidget(QtWidgets.QFrame):
         # d = master_get_seq_names(datadir, prefix_char=prfx, thumb_ext='jpg', dat_ext='json', stack_dir=False, num_desired_datafiles=1)[0]
         wdg_com = make_active_data_dict()
         dct_put(wdg_com, ADO_CFG_WDG_COM, dct)
+        dct_put(wdg_com, ADO_CFG_SCAN_TYPE, self.type)
         j = json.dumps(wdg_com, sort_keys=True, indent=4, cls=NumpyAwareJSONEncoder)
         f = open(fname, "w")
         f.write(j)
@@ -1739,6 +1740,13 @@ class ScanParamWidget(QtWidgets.QFrame):
         if (hasattr(self, 'rangeZPFld')):
             zz_roi[RANGE] = float(str(self.rangeZPFld.text()))
             on_range_changed(zz_roi)
+
+        #support the pattern generators pad size field which sets the xy range
+        if (hasattr(self, 'padSizeFld')):
+            x_roi[RANGE] = float(str(self.padSizeFld.text()))
+            y_roi[RANGE] = float(str(self.padSizeFld.text()))
+            on_range_changed(x_roi)
+            on_range_changed(y_roi)
 
         self.mod_roi(self.sp_db, do_recalc=False)
 

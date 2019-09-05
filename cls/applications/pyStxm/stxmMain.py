@@ -145,11 +145,11 @@ class EngineLabel(QtWidgets.QLabel):
     color_map : dict
         Mapping of Engine states to color displays
     """
-    changed = QtCore.pyqtSignal(object)
+    changed = QtCore.pyqtSignal(object, str)
 
-    color_map = {'running': 'green',
-                 'paused': 'yellow',
-                 'idle': 'red'}
+    color_map = {'running': 'yellow',
+                 'paused': 'rgb(255, 157, 44);',
+                 'idle': 'rgb(114, 148, 240);'}
 
     @QtCore.pyqtSlot('QString', 'QString')
     def on_state_change(self, state, old_state):
@@ -158,8 +158,9 @@ class EngineLabel(QtWidgets.QLabel):
         self.setText(state.capitalize())
         # Update the background color
         color = self.color_map[state]
-        self.setStyleSheet('QLabel {background-color: %s}' % color)
-        self.changed.emit(state.capitalize())
+        ss = 'QLabel {color: black; background-color: %s}' % color
+        #self.setStyleSheet('QLabel {background-color: %s}' % color)
+        self.changed.emit(state.capitalize(), ss)
 
     def connect(self, engine):
         """Connect an existing QRunEngine"""
@@ -342,6 +343,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         MAIN_OBJ.engine_widget.engine.exec_result.connect(self.on_execution_completed)
         MAIN_OBJ.engine_widget.engine.prog_changed.connect(self.on_run_engine_progress)
         self.status_label = EngineLabel('Engine Status')
+        self.status_label.changed.connect(self.on_status_changed)
+        self.status_label.connect(MAIN_OBJ.engine_widget.engine)
 
     def setup_preferences_panel(self):
         '''
@@ -886,7 +889,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.setup_ioc_software_status()
 
         #load the sscan status panel
-        self.setup_sscan_status()
+        #self.setup_sscan_status()
 
         #self.check_if_pv_exists()
 
@@ -1320,8 +1323,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                         if(scan_item_type not in skip_list):
                             self.lineByLineImageDataWidget.addShapePlotItem(item_id, rect, item_type=plot_item_type, re_center=True)
                     elif(scan_item_type is scan_types.PATTERN_GEN_SCAN):
-
-                        self.lineByLineImageDataWidget.move_shape_to_new_center('pattern', xc, yc)
+                        xc, yc = self.scan_pluggin.get_saved_center()
+                        #self.lineByLineImageDataWidget.move_shape_to_new_center('pattern', xc, yc)
 
                     else:
                         self.lineByLineImageDataWidget.blockSignals(True)
@@ -1447,17 +1450,18 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
             self.lineByLineImageDataWidget.blockSignals(False)
 
-    def show_pattern_generator_pattern(self, chkd):
+    def show_pattern_generator_pattern(self, tple):
         '''
         called by the pattern generator scan plugin
         :return:
         '''
+        chkd, xc, yc, pad_size = tple
         if(chkd):
             #check to see if it is currently visible if so hide it if not show it
 
-            self.lineByLineImageDataWidget.show_pattern(True)
+            self.lineByLineImageDataWidget.show_pattern( xc, yc, pad_size, do_show=True)
         else:
-            self.lineByLineImageDataWidget.show_pattern(False)
+            self.lineByLineImageDataWidget.show_pattern(xc, yc, pad_size, do_show=False)
 
     def setup_image_plot(self):
         """
@@ -1616,39 +1620,40 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             print('[%s] has [%d] cbs for FAZE with Ids [%s]' % (ss.NAME, num_cbs, id_str))
 
     def init_sscans_for_console(self):
-        devs = MAIN_OBJ.get_devices()
-        sscans = devs['SSCANS']
-        sscan1 = sscans['uhvstxm:scan1']
-        sscan2 = sscans['uhvstxm:scan2']
-        sscan3 = sscans['uhvstxm:scan3']
-        sscan4 = sscans['uhvstxm:scan4']
-        sscan5 = sscans['uhvstxm:scan5']
-        sscan6 = sscans['uhvstxm:scan6']
-        sscan7 = sscans['uhvstxm:scan7']
-        sscan8 = sscans['uhvstxm:scan8']
-
-        sscan1_fazecbs = sscan1._pvs['FAZE'].callbacks
-        sscan2_fazecbs = sscan2._pvs['FAZE'].callbacks
-        sscan3_fazecbs = sscan3._pvs['FAZE'].callbacks
-        sscan4_fazecbs = sscan4._pvs['FAZE'].callbacks
-        sscan5_fazecbs = sscan5._pvs['FAZE'].callbacks
-        sscan6_fazecbs = sscan6._pvs['FAZE'].callbacks
-        sscan7_fazecbs = sscan7._pvs['FAZE'].callbacks
-        sscan8_fazecbs = sscan8._pvs['FAZE'].callbacks
-
-        sscans = {}
-        sscans['sscan1'] = {'sscan': sscan1, 'cbs': sscan1_fazecbs}
-        sscans['sscan2'] = {'sscan': sscan2, 'cbs': sscan2_fazecbs}
-        sscans['sscan3'] = {'sscan': sscan3, 'cbs': sscan3_fazecbs}
-        sscans['sscan4'] = {'sscan': sscan4, 'cbs': sscan4_fazecbs}
-        sscans['sscan5'] = {'sscan': sscan5, 'cbs': sscan5_fazecbs}
-        sscans['sscan6'] = {'sscan': sscan6, 'cbs': sscan6_fazecbs}
-        sscans['sscan7'] = {'sscan': sscan7, 'cbs': sscan7_fazecbs}
-        sscans['sscan8'] = {'sscan': sscan8, 'cbs': sscan8_fazecbs}
-
-        #self.sscan_faze_cb_report(sscans)
-
-        return(sscans)
+        # devs = MAIN_OBJ.get_devices()
+        # sscans = devs['SSCANS']
+        # sscan1 = sscans['uhvstxm:scan1']
+        # sscan2 = sscans['uhvstxm:scan2']
+        # sscan3 = sscans['uhvstxm:scan3']
+        # sscan4 = sscans['uhvstxm:scan4']
+        # sscan5 = sscans['uhvstxm:scan5']
+        # sscan6 = sscans['uhvstxm:scan6']
+        # sscan7 = sscans['uhvstxm:scan7']
+        # sscan8 = sscans['uhvstxm:scan8']
+        #
+        # sscan1_fazecbs = sscan1._pvs['FAZE'].callbacks
+        # sscan2_fazecbs = sscan2._pvs['FAZE'].callbacks
+        # sscan3_fazecbs = sscan3._pvs['FAZE'].callbacks
+        # sscan4_fazecbs = sscan4._pvs['FAZE'].callbacks
+        # sscan5_fazecbs = sscan5._pvs['FAZE'].callbacks
+        # sscan6_fazecbs = sscan6._pvs['FAZE'].callbacks
+        # sscan7_fazecbs = sscan7._pvs['FAZE'].callbacks
+        # sscan8_fazecbs = sscan8._pvs['FAZE'].callbacks
+        #
+        # sscans = {}
+        # sscans['sscan1'] = {'sscan': sscan1, 'cbs': sscan1_fazecbs}
+        # sscans['sscan2'] = {'sscan': sscan2, 'cbs': sscan2_fazecbs}
+        # sscans['sscan3'] = {'sscan': sscan3, 'cbs': sscan3_fazecbs}
+        # sscans['sscan4'] = {'sscan': sscan4, 'cbs': sscan4_fazecbs}
+        # sscans['sscan5'] = {'sscan': sscan5, 'cbs': sscan5_fazecbs}
+        # sscans['sscan6'] = {'sscan': sscan6, 'cbs': sscan6_fazecbs}
+        # sscans['sscan7'] = {'sscan': sscan7, 'cbs': sscan7_fazecbs}
+        # sscans['sscan8'] = {'sscan': sscan8, 'cbs': sscan8_fazecbs}
+        #
+        # #self.sscan_faze_cb_report(sscans)
+        #
+        # return(sscans)
+        pass
 
     def setup_info_dock(self):
         """
@@ -1657,8 +1662,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         :returns: None
         """
         # ns = {'main': self, 'widget': self, 'det_scan' : scans[1]}
-        sscans = self.init_sscans_for_console()
-        #self.sscan_faze_cb_report(sscans)
+        #sscans = self.init_sscans_for_console()
         ns = {'main': self, 'pythonShell': self.pythonshell, 'g': globals(), 'MAIN_OBJ': MAIN_OBJ, 'scans_plgins': self.scan_tbox_widgets}
         # msg = "Try for example: widget.set_text('foobar') or win.close()"
         #self.pythonshell = ShellWidget(parent=None, namespace=ns, commands=[], multithreaded=True, exitfunc=exit)
@@ -1693,6 +1697,9 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.scan_panel_idx = idx
 
         if (len(self.scan_tbox_widgets) > 0):
+
+            self.lineByLineImageDataWidget.delShapePlotItems()
+
             if (hasattr(self, 'scan_progress_table')):
                 self.scan_progress_table.clear_table()
             sample_positioning_mode = MAIN_OBJ.get_sample_positioning_mode()
@@ -1702,6 +1709,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
             scan_pluggin = self.scan_tbox_widgets[self.scan_panel_idx]
             self.scan_pluggin = scan_pluggin
+
             scan_pluggin.on_plugin_focus()
 
             if(not scan_pluggin.isEnabled()):
@@ -1720,7 +1728,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             # wdg_com = self.scan_tbox_widgets[self.scan_panel_idx].update_data()
             # self.scan_progress_table.load_wdg_com(wdg_com)
 
-        self.lineByLineImageDataWidget.delShapePlotItems()
+        #self.lineByLineImageDataWidget.delShapePlotItems()
 
         if (idx in spectra_plot_types):
             #but only switch if it is not a point scan as the selection for a point scan is done on a 2D image
@@ -1757,7 +1765,10 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                         sx = MAIN_OBJ.get_sample_positioner('X')
                         sy = MAIN_OBJ.get_sample_positioner('Y')
                         centers = (sx.get_position(), sy.get_position())
-                        self.lineByLineImageDataWidget.set_center_at_XY(centers, ranges)
+                        if (scan_type is scan_types.PATTERN_GEN_SCAN):
+                            self.lineByLineImageDataWidget.set_center_at_XY(centers, (ranges[0]*10, ranges[1]*10))
+                        else:
+                            self.lineByLineImageDataWidget.set_center_at_XY(centers, ranges)
 
                 # self.lineByLineImageDataWidget.set_shape_limits(shape=plot_item_type, limit_def=limit_def)
                 self.lineByLineImageDataWidget.setPlotAxisStrs(axis_strs[0], axis_strs[1])
@@ -1791,11 +1802,12 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         #        self.scan_progress_table.load_wdg_com(wdg_com)
 
 
-    def scan_plugin_func_call(self, func_nm, chkd):
+    #def scan_plugin_func_call(self, func_nm, chkd):
+    def scan_plugin_func_call(self, func_nm, tuple):
         #allow the scan pluggins to (if they know about a function here in stxmMain) to call it by name
         if(hasattr(self, func_nm)):
             func = getattr(self, func_nm)
-            func(chkd)
+            func(tuple)
         else:
             _logger.info('Scan plugin called a function in stxmMain that doesnt exist: [%s]' % func_nm)
 
@@ -1978,7 +1990,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         cur_scan_type = counter_to_plotter_com_dct[CNTR2PLOT_SCAN_TYPE]
         sp_id = self.executingScan._current_sp_id
 
-        print('add_point_to_plot:',sp_id, counter_to_plotter_com_dct)
+        #print('add_point_to_plot:',sp_id, counter_to_plotter_com_dct)
 
         #if (self.get_cur_scan_type() == scan_types.SAMPLE_LINE_SPECTRA):
         if (cur_scan_type == scan_types.SAMPLE_LINE_SPECTRA):
@@ -1992,8 +2004,10 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
         else:
             if (not self.executingScan.image_started and (row == 0)):
+                #print('add_point_to_plot: 1')
                 self.on_image_start(sp_id=sp_id)
             elif( self.executingScan.image_started and ((col == 0) and (row == 0))):
+                #print('add_point_to_plot: 2')
                 self.on_image_start(sp_id=sp_id)
 
             #print('add_point_to_plot: row=%d, point=%d, val=%d' % (row, point, val))
@@ -2426,7 +2440,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         MAIN_OBJ.engine_widget.engine.plan_creator = lambda: scan_plan
         #self.status_label = EngineLabel('Engine Status')
         #self.status_label.connect(MAIN_OBJ.engine_widget.engine)
-        #self.status_label.changed.connect(self.on_state_changed)
+
         # MAIN_OBJ.engine_widget.engine.exec_result.connect(self.on_execution_completed)
 
         MAIN_OBJ.set('SCAN.CFG.WDG_COM', self.cur_wdg_com)
@@ -2496,6 +2510,10 @@ class pySTXMWindow(QtWidgets.QMainWindow):
     def on_execution_completed(self, run_uids):
         print('on_execution_completed: ', run_uids)
         self.on_state_changed('Idle', run_uids)
+
+    def on_status_changed(self, state_str, style_sheet):
+        self.scanActionLbl.setText(state_str)
+        self.scanActionLbl.setStyleSheet(style_sheet)
 
     def on_state_changed(self, state_str, run_uids):
         '''

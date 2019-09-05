@@ -232,6 +232,14 @@ class PatternGenWithE712WavegenScanClass(BaseScan):
             # , starts=starts, stops=stops, npts=npts, group='e712_wavgen', wait=True)
             # this starts the wavgen and waits for it to finish without blocking the Qt event loop
             #now load and execute each spatial region
+            # mtr_y.msta_dct.msta_fields
+            mtr_x = self.main_obj.get_sample_fine_positioner('X')
+            mtr_y = self.main_obj.get_sample_fine_positioner('Y')
+            if (not self.motor_ready_check([mtr_x, mtr_y])):
+                _logger.error(
+                    'The scan cannot execute because one or more motors for the scan are not in a ready state')
+                return (None)
+
             for sp_id in self.sp_ids:
                 self.sp_id = sp_id
                 self.dwell = self.sp_rois[sp_id][SPDB_EV_ROIS][0][DWELL]

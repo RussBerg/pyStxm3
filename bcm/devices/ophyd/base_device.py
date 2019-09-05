@@ -11,7 +11,7 @@ from cls.utils.log import get_module_logger
 
 _logger = get_module_logger(__name__)
 
-SIMULATE = False
+SIMULATE = True
 
 class BaseDevice(QtCore.QObject):
 

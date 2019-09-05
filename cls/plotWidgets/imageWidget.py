@@ -2103,18 +2103,22 @@ class ImageWidget(ImageDialog):
             self.blockSignals(False)
         self.plot.replot()
 
-    def show_pattern(self, do_show=True):
+    def show_pattern(self, xc=None, yc=None, pad_size=1.0, do_show=True):
         #passing self will allow the pattern to be added to the plotter
         if(do_show):
-            (x, y) = self.plot.get_active_axes()
-            xmin, xmax = self.plot.get_axis_limits(x)
-            ymin, ymax = self.plot.get_axis_limits(y)
-            #xc, yc = self.ss.get('PATTERN.CENTER')
-            xc = (xmax + xmin) * 0.5
-            yc = (ymax + ymin) * 0.5
+            if((xc or yc) == None):
+                (x, y) = self.plot.get_active_axes()
+                xmin, xmax = self.plot.get_axis_limits(x)
+                ymin, ymax = self.plot.get_axis_limits(y)
+                #xc, yc = self.ss.get('PATTERN.CENTER')
+                xc = (xmax + xmin) * 0.5
+                yc = (ymax + ymin) * 0.5
+
             #need to get the current centers
-            add_pattern_to_plot(self, xc, yc)
+            add_pattern_to_plot(self, xc, yc, pad_size)
             self.register_shape_info(shape_info_dct={'shape_title': 'pattern', 'on_selected': self.select_pattern, 'on_deselected': self.deselect_pattern})
+
+            self.set_center_at_XY((xc, yc), (pad_size * 10, pad_size * 10))
         else:
             # remove the pattern
             self.blockSignals(True)
@@ -2321,7 +2325,7 @@ class ImageWidget(ImageDialog):
 
 
     def select_main_rect_of_shape(self, _title='sh_'):
-        print('select_main_rect_of_shape: looking for shapes with the name [%s] in it' % _title)
+        #print('select_main_rect_of_shape: looking for shapes with the name [%s] in it' % _title)
         num_found = 0
         shapes = self.plot.get_items(item_type=IShapeItemType)
         selected_shapes = []
@@ -2336,17 +2340,17 @@ class ImageWidget(ImageDialog):
                 title = shape.annotationparam._title
             elif (hasattr(shape, 'shapeparam')):
                 title = shape.shapeparam._title
-            print('select_main_rect_of_shape: checking [%s]' % title)
+            #print('select_main_rect_of_shape: checking [%s]' % title)
             if(hasattr(shape, 'selection_name')):
                 sel_name = shape.selection_name
                 if(sel_name.find(_title[0:5]) > -1):
                     #shape.select()
                     selected_shapes.append(shape)
-                    print('select_main_rect_of_shape: found selection_name [%d]' % num_found)
+                    #print('select_main_rect_of_shape: found selection_name [%d]' % num_found)
                     num_found += 1
             elif(title.find(_title[0:5]) > -1):
                 #shape.select()
-                print('select_main_rect_of_shape: found name [%d]' % num_found)
+                #print('select_main_rect_of_shape: found name [%d]' % num_found)
                 selected_shapes.append(shape)
                 num_found += 1
                 # if (title.find('%srect' % _title) > -1):
@@ -2389,7 +2393,7 @@ class ImageWidget(ImageDialog):
         is_regd_shape = False
         shape = None
         item = plot.get_active_item()
-        print('selected_item_changed:', item)
+        #print('selected_item_changed:', item)
         if(isinstance(item, AnnotatedRectangle)):
             print('ok here is an Annotated Rect, does it have a selection name?: ', hasattr(item, 'selection_name'))
 

@@ -45,17 +45,29 @@ class LineScansParam(ScanParamWidget):
         #uic.loadUi(plugin_dir + '\\image_lxl_scan.ui', self)
         uic.loadUi( os.path.join(plugin_dir, 'line_scan.ui'), self)
 
-        if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
-            self.positioners = {'ZX':DNM_ZONEPLATE_X, 'ZY':DNM_ZONEPLATE_Y, 'ZZ':DNM_ZONEPLATE_Z, 'OX':DNM_OSA_X, 'OY':DNM_OSA_Y, 'OZ':DNM_OSA_Z, 'GX':DNM_GONI_X, 'GY':DNM_GONI_Y, 'GZ':DNM_GONI_Z, 'GT':DNM_GONI_THETA}
+        if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
+            self.positioners = {'ZX': DNM_ZONEPLATE_X, 'ZY': DNM_ZONEPLATE_Y, 'ZZ': DNM_ZONEPLATE_Z, 'OX': DNM_OSA_X,
+                                'OY': DNM_OSA_Y, 'OZ': DNM_OSA_Z, 'GX': DNM_GONI_X, 'GY': DNM_GONI_Y, 'GZ': DNM_GONI_Z,
+                                'GT': DNM_GONI_THETA}
+            x_cntr = self.main_obj.device(DNM_GONI_X).get_position()
+            y_cntr = self.main_obj.device(DNM_GONI_Y).get_position()
         else:
-            self.positioners = {'SX':DNM_SAMPLE_X, 'SY':DNM_SAMPLE_X, 'ZZ':DNM_ZONEPLATE_Z}
+            self.positioners = {'SX': DNM_SAMPLE_X, 'SY': DNM_SAMPLE_X, 'ZZ': DNM_ZONEPLATE_Z}
+            x_cntr = self.main_obj.device(DNM_SAMPLE_X).get_position()
+            y_cntr = self.main_obj.device(DNM_SAMPLE_Y).get_position()
 
         # more
         self.positioners['POL'] = DNM_EPU_POLARIZATION
         self.positioners['OFF'] = DNM_EPU_OFFSET
         self.positioners['ANG'] = DNM_EPU_ANGLE
 
-        self.multi_region_widget = MultiRegionWidget(use_center=False, is_arb_line=True, enable_multi_spatial=self.enable_multi_region, max_range=MAX_SCAN_RANGE_FINEX) #instead of using centerx etc use startX
+        #self.multi_region_widget = MultiRegionWidget(use_center=False, is_arb_line=True, enable_multi_spatial=self.enable_multi_region, max_range=MAX_SCAN_RANGE_FINEX) #instead of using centerx etc use startX
+        self.multi_region_widget = MultiRegionWidget(use_center=False, is_arb_line=True,
+                                                     enable_multi_spatial=self.enable_multi_region, \
+                                                     max_range=MAX_SCAN_RANGE_FINEX, use_hdw_accel=False, min_sp_rois=1,
+                                                     x_cntr=x_cntr,
+                                                     y_cntr=y_cntr)  # instead of using centerx etc use startX
+
         self.multi_region_widget.spatial_row_selected.connect(self.on_spatial_row_selected)
         self.multi_region_widget.spatial_row_changed.connect(self.on_spatial_row_changed)
         self.multi_region_widget.spatial_row_deleted.connect(self.on_spatial_row_deleted)
@@ -89,9 +101,9 @@ class LineScansParam(ScanParamWidget):
         self.section_id = 'LINE'
         self.axis_strings = ['XY microns', 'Energy eV', '', '']
         self.zp_focus_mode = zp_focus_modes.A0MOD
-        self.data_file_pfx = MAIN_OBJ.get_datafile_prefix()
+        self.data_file_pfx = self.main_obj.get_datafile_prefix()
         self.plot_item_type = spatial_type_prefix.SEG
-        #self.enable_multi_region = MAIN_OBJ.get_is_multi_region_enabled()
+        #self.enable_multi_region = self.main_obj.get_is_multi_region_enabled()
         self.enable_multi_region = False
         self.multi_ev = True
 
@@ -115,8 +127,8 @@ class LineScansParam(ScanParamWidget):
         if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
             self.gen_GONI_SCAN_max_scan_range_limit_def()
         else:
-            mtr_sx = MAIN_OBJ.device(self.positioners['SX'])
-            mtr_sy = MAIN_OBJ.device(self.positioners['SY'])
+            mtr_sx = self.main_obj.device(self.positioners['SX'])
+            mtr_sy = self.main_obj.device(self.positioners['SY'])
         
             xllm = mtr_sx.get_low_limit()
             xhlm = mtr_sx.get_high_limit()
@@ -302,8 +314,8 @@ class LineScansParam(ScanParamWidget):
     
     def add_goni_rois(self, wdg_com):
         
-        mtr_gx = MAIN_OBJ.device(self.positioners['GX'])
-        mtr_gy = MAIN_OBJ.device(self.positioners['GY'])
+        mtr_gx = self.main_obj.device(self.positioners['GX'])
+        mtr_gy = self.main_obj.device(self.positioners['GY'])
         
         self.sp_db = get_first_sp_db_from_wdg_com(wdg_com)
         gx_roi = dct_get(self.sp_db, SPDB_X)
@@ -371,12 +383,12 @@ class LineScansParam(ScanParamWidget):
     # def gen_GONI_SCAN_max_scan_range_limit_def(self):
     #     """ to be overridden by inheriting class
     #     """
-    #     mtr_zpx = MAIN_OBJ.device(self.positioners['ZX'])
-    #     mtr_zpy = MAIN_OBJ.device(self.positioners['ZY'])
-    #     #mtr_osax = MAIN_OBJ.device('OSAX.X')
-    #     #mtr_osay = MAIN_OBJ.device('OSAY.Y')
-    #     mtr_gx = MAIN_OBJ.device(self.positioners['GX'])
-    #     mtr_gy = MAIN_OBJ.device(self.positioners['GY'])
+    #     mtr_zpx = self.main_obj.device(self.positioners['ZX'])
+    #     mtr_zpy = self.main_obj.device(self.positioners['ZY'])
+    #     #mtr_osax = self.main_obj.device('OSAX.X')
+    #     #mtr_osay = self.main_obj.device('OSAY.Y')
+    #     mtr_gx = self.main_obj.device(self.positioners['GX'])
+    #     mtr_gy = self.main_obj.device(self.positioners['GY'])
     #
     #     gx_pos = mtr_gx.get_position()
     #     gy_pos = mtr_gy.get_position()
@@ -416,12 +428,12 @@ class LineScansParam(ScanParamWidget):
         '''
         """ to be overridden by inheriting class
                 """
-        mtr_zpx = MAIN_OBJ.device(self.positioners['ZX'])
-        mtr_zpy = MAIN_OBJ.device(self.positioners['ZY'])
-        # mtr_osax = MAIN_OBJ.device('OSAX.X')
-        # mtr_osay = MAIN_OBJ.device('OSAY.Y')
-        mtr_gx = MAIN_OBJ.device(self.positioners['GX'])
-        mtr_gy = MAIN_OBJ.device(self.positioners['GY'])
+        mtr_zpx = self.main_obj.device(self.positioners['ZX'])
+        mtr_zpy = self.main_obj.device(self.positioners['ZY'])
+        # mtr_osax = self.main_obj.device('OSAX.X')
+        # mtr_osay = self.main_obj.device('OSAY.Y')
+        mtr_gx = self.main_obj.device(self.positioners['GX'])
+        mtr_gy = self.main_obj.device(self.positioners['GY'])
 
         gx_pos = mtr_gx.get_position()
         gy_pos = mtr_gy.get_position()
@@ -454,12 +466,12 @@ class LineScansParam(ScanParamWidget):
 
         self.roi_limit_def = ROILimitDef(bounding, normal, warn, alarm)
         #
-        # mtr_zpx = MAIN_OBJ.device(self.positioners['ZX'])
-        # mtr_zpy = MAIN_OBJ.device(self.positioners['ZY'])
-        # # mtr_osax = MAIN_OBJ.device('OSAX.X')
-        # # mtr_osay = MAIN_OBJ.device('OSAY.Y')
-        # mtr_gx = MAIN_OBJ.device(self.positioners['GX'])
-        # mtr_gy = MAIN_OBJ.device(self.positioners['GY'])
+        # mtr_zpx = self.main_obj.device(self.positioners['ZX'])
+        # mtr_zpy = self.main_obj.device(self.positioners['ZY'])
+        # # mtr_osax = self.main_obj.device('OSAX.X')
+        # # mtr_osay = self.main_obj.device('OSAY.Y')
+        # mtr_gx = self.main_obj.device(self.positioners['GX'])
+        # mtr_gy = self.main_obj.device(self.positioners['GY'])
         #
         # gx_pos = mtr_gx.get_position()
         # gy_pos = mtr_gy.get_position()
@@ -513,11 +525,11 @@ class LineScansParam(ScanParamWidget):
         sub_spatials = {}
         sp_dbs = dct_get(wdg_com, WDGCOM_SPATIAL_ROIS)
         
-        mtr_gx = MAIN_OBJ.device(self.positioners['GX'])
-        mtr_gy = MAIN_OBJ.device(self.positioners['GY'])
-        mtr_gz = MAIN_OBJ.device(self.positioners['GZ'])
-        mtr_gt = MAIN_OBJ.device(self.positioners['GT'])
-        mtr_oz = MAIN_OBJ.device(self.positioners['OZ'])
+        mtr_gx = self.main_obj.device(self.positioners['GX'])
+        mtr_gy = self.main_obj.device(self.positioners['GY'])
+        mtr_gz = self.main_obj.device(self.positioners['GZ'])
+        mtr_gt = self.main_obj.device(self.positioners['GT'])
+        mtr_oz = self.main_obj.device(self.positioners['OZ'])
         
         for sp_id in sp_dbs:
             sp_db = sp_dbs[sp_id]

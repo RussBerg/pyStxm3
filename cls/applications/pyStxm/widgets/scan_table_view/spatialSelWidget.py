@@ -23,7 +23,8 @@ class SpatialSelWidget(BaseSelectionWidget):
     roi_deleted = QtCore.pyqtSignal(object)
     spatial_row_changed = QtCore.pyqtSignal(object)
     
-    def __init__(self, ev_sel_widget=None, use_center=True, is_point=False, is_arb_line=False, single_ev_model=True, use_hdw_accel=True, single_sp_region=False, max_range=100):
+    def __init__(self, ev_sel_widget=None, use_center=True, is_point=False, is_arb_line=False, single_ev_model=True, use_hdw_accel=True, single_sp_region=False, max_range=100,
+                 min_sp_rois=1, x_cntr=None, y_cntr=None):
         """
         __init__(): description
 
@@ -64,6 +65,7 @@ class SpatialSelWidget(BaseSelectionWidget):
         self.single_ev_model = single_ev_model
         self.single_ev_model_id = None
         self.single_sp_region = single_sp_region
+        self.min_sp_rois = min_sp_rois
         if(single_ev_model):
             self.ev_sel_widget.set_single_ev_model(True)
         else:
@@ -104,6 +106,10 @@ class SpatialSelWidget(BaseSelectionWidget):
         self.table_view.row_selected.connect(self.on_row_selected)
         
         self.table_view.add_region.connect(self.on_new_region)
+
+        if (min_sp_rois is 1):
+            # make sure there is at least 1 region
+            self.on_new_region(scan=None, add_energy_roi=True, ev_only=False, x_cntr=x_cntr, y_cntr=y_cntr)
     
     
     def set_positioners(self, xpos_name, ypos_name):
@@ -208,6 +214,14 @@ class SpatialSelWidget(BaseSelectionWidget):
         self.table_view.remove_model(model_id)
         self.check_if_table_empty()
         self.deselect_all()
+
+    def num_rows(self):
+        '''
+        return the current number of rows
+        :return:
+        '''
+        rois = self.get_regions()
+        return(len(rois))
     
     def delete_row(self, sp_model_id=None):
         """
@@ -233,6 +247,10 @@ class SpatialSelWidget(BaseSelectionWidget):
         """
         if(self.single_sp_region):
             #if single spatial only then we do not allow the deletion of it
+            return
+
+        if (self.num_rows() == self.min_sp_rois):
+            # we are already at the minimum number of rows so skip deleting it
             return
 
         if(sp_model_id is None):
@@ -377,7 +395,7 @@ class SpatialSelWidget(BaseSelectionWidget):
             self.table_view.remove_all_models()
         return(is_empty)
 
-    def on_new_region(self, scan=None, add_energy_roi=True, ev_only=False):
+    def on_new_region(self, scan=None, add_energy_roi=True, ev_only=False, x_cntr=None, y_cntr=None):
         """
         on_new_region(): on new spatial region
 
@@ -401,8 +419,15 @@ class SpatialSelWidget(BaseSelectionWidget):
             slist = self.table_view.get_scan_list()
             if((cur_scan is None) and (len(slist) == 0)):
                 #create a default
-                x_roi = get_base_roi(SPDB_X, self.xpos_name, 0, 50, 150, stepSize=None, max_scan_range=None, enable=True)
-                y_roi = get_base_roi(SPDB_Y, self.ypos_name, 0, 50, 150, stepSize=None, max_scan_range=None, enable=True)
+                if (x_cntr is None):
+                    x_cntr = 0
+                if (y_cntr is None):
+                    y_cntr = 0
+
+                x_roi = get_base_roi(SPDB_X, self.xpos_name, x_cntr, 50, 150, stepSize=None, max_scan_range=None,
+                                     enable=True)
+                y_roi = get_base_roi(SPDB_Y, self.ypos_name, y_cntr, 50, 150, stepSize=None, max_scan_range=None,
+                                     enable=True)
                 scan = make_spatial_db_dict(x_roi=x_roi, y_roi=y_roi)
             else:    
                 #get the last one

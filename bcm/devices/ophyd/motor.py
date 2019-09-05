@@ -23,6 +23,47 @@ WAIT_SLEEP = 0.002
 START_TIMEOUT = 20
 MOVE_TIMEOUT = 900000
 
+class motor_msta(object):
+    '''
+    a class that takes the integer value of the .MSTA EPICS motor field and sets the correct attribute fields
+    accordingly
+    '''
+    def __init__(self, msta):
+        self.msta_fields = {}
+        self.msta_fields['minus_ls'] = {'bit': 13, 'val': False } # minus limit switch
+        self.msta_fields['comm_err'] = {'bit': 12, 'val': False}  # communications error
+        self.msta_fields['gain_support'] = {'bit': 11, 'val': False }  # gain support, the motor supports closed loop position control
+        self.msta_fields['moving'] = {'bit': 10, 'val': False }  # non zero velocity present
+        self.msta_fields['problem'] = {'bit': 9, 'val': False } # motor driver stopped polling
+        self.msta_fields['present'] = {'bit': 8, 'val': False } # encoder is present
+        self.msta_fields['home'] = {'bit': 7, 'val': False } # if motor is at home
+        self.msta_fields['position'] = {'bit': 5, 'val': False } # closed loop position control enabled
+        self.msta_fields['homels'] = {'bit': 3, 'val': False } # state of home limit switch
+        self.msta_fields['plus_ls'] = {'bit': 2, 'val': False}  # plus limit switch
+        self.msta_fields['done'] = {'bit': 1, 'val': False } # motion is complete
+        self.msta_fields['direction'] = {'bit': 0, 'val': False} # last raw (0: neg,  1:pos)
+
+        self.set_msta(int(msta))
+
+    def _set_bool(self, bit, msta):
+        '''
+        if the shifted bit is a 1 then True else False
+        :param bit:
+        :param val:
+        :return:
+        '''
+        if(msta & (1<<bit)):
+            return(True)
+        else:
+            return(False)
+
+
+    def set_msta(self, msta):
+        self._msta = msta
+        for k, v_dct in self.msta_fields.items():
+            v_dct['val'] = self._set_bool(v_dct['bit'], msta)
+
+
 class Motor_Qt(EpicsMotor):
     """ just a convienience class so that PVs can be configured in the beamline configuration file
     and used as if they were other devices, making the rest of the code cleaner
@@ -32,7 +73,9 @@ class Motor_Qt(EpicsMotor):
     high_limit_val = Cpt(EpicsSignal, '.HLM', kind='omitted')
     low_limit_val = Cpt(EpicsSignal, '.LLM', kind='omitted')
     use_torque = Cpt(EpicsSignal, '.CNEN', kind='omitted')
+    ctrlr_status = Cpt(EpicsSignal, '.MSTA', kind='omitted')
 
+    calib_done = Cpt(EpicsSignal, ':calibDone', kind='omitted')
 
     def __init__(self, *args, **kwargs):
 
@@ -104,8 +147,24 @@ class Motor_Qt(EpicsMotor):
         self._dev_category = dev_categories.SIGNALS
         self.set_dev_units('um')
 
+
+        self.msta_dct = motor_msta(self.ctrlr_status.get())
     #def limits(self):
     #    return (self.get_low_limit(), self.get_high_limit())
+
+    #@required_for_connection
+    @ctrlr_status.sub_value
+    def _ctrlr_status_changed(self, timestamp=None, value=None, **kwargs):
+        '''Callback from EPICS, indicating a change in ctrlr_status'''
+        self.msta_dct = motor_msta(int(value))
+
+    def is_ready(self):
+        '''
+        an API function that returns if the motor is ready for scanning or not. Just check for errors and calibration
+        :return:
+        '''
+        res = (not self.msta_dct.msta_fields['problem']['val']) and self.calib_done.get()
+        return(res)
 
     def describe(self):
         """Return the description as a dictionary
@@ -220,15 +279,19 @@ class Motor_Qt(EpicsMotor):
         if (self.connected):
             return(self.low_limit_val.get())
         else:
-            print('get_low_limit: motor not connected')
-            return (None)
+            #print('get_low_limit: motor [%s] not connected' % self.get_name())
+            #return (None)
+            #try anyway
+            return (self.low_limit_val.get())
 
     def get_high_limit(self):
         if(self.connected):
             return(self.high_limit_val.get())
         else:
-            print('get_high_limit: motor not connected')
-            return(None)
+            #print('get_high_limit: motor [%s] not connected' % self.get_name())
+            #return(None)
+            # try anyway
+            return (self.high_limit_val.get())
 
     #
     # def count(self, val):

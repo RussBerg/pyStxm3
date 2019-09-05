@@ -16,14 +16,15 @@ import os
 from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, DEFAULTS
 from cls.scanning.base import ScanParamWidget, zp_focus_modes
 from cls.applications.pyStxm.scan_plugins import plugin_dir
-from cls.applications.pyStxm.scan_plugins.OsaScan import OsaScanClass
+from cls.applications.pyStxm.scan_plugins.PtychographyScan import PtychographyScanClass
 from bcm.devices.device_names import *
 from cls.scanning.paramLineEdit import intLineEditParamObj, dblLineEditParamObj
 from cls.data_io.stxm_data_io import STXMDataIo
 from cls.data_io.utils import test_eq, check_roi_for_match, get_first_entry_key, get_first_sp_db_from_entry, get_axis_setpoints_from_sp_db
 
 from cls.utils.roi_utils import get_base_roi, get_base_energy_roi, make_spatial_db_dict, widget_com_cmnd_types, on_range_changed, on_center_changed
-from cls.types.stxmTypes import scan_types, scan_panel_order, spatial_type_prefix, image_types
+from cls.types.stxmTypes import scan_types, scan_panel_order, spatial_type_prefix, image_types, sample_positioning_modes, sample_fine_positioning_modes
+
 from cls.plotWidgets.shape_restrictions import ROILimitObj, ROILimitDef
 from cls.plotWidgets.color_def import get_normal_clr, get_warn_clr, get_alarm_clr, get_normal_fill_pattern, get_warn_fill_pattern, get_alarm_fill_pattern
 
@@ -32,53 +33,57 @@ from cls.utils.roi_dict_defs import *
 from cls.utils.log import get_module_logger
 
 from cls.applications.pyStxm.scan_plugins.osa_scan_tester import test_sp_db
+MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
+MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
+MAX_SCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_X')
+MAX_SCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_Y')
+USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_int('USE_E712_HDW_ACCEL')
 
 _logger = get_module_logger(__name__)
     
-class OsaScanParam(ScanParamWidget):
+class PtychographyScanParam(ScanParamWidget):
 
     
     def __init__(self, parent=None):
         ScanParamWidget.__init__(self, main_obj=MAIN_OBJ, data_io=STXMDataIo, dflts=DEFAULTS)
         self._parent = parent
-        uic.loadUi( os.path.join(plugin_dir, 'osa_scan.ui'), self)
+        uic.loadUi( os.path.join(plugin_dir, 'ptychography_scan.ui'), self)
 
-        self.fbk_cntr = 0
-        self.scan_mod_path, self.scan_mod_name = self.derive_scan_mod_name(__file__)
+        if (self.sample_fine_positioning_mode != sample_fine_positioning_modes.ZONEPLATE):
+            self.name = "Ptychography Scan ---- [DISABLED by scanning mode] "
+            self.setEnabled(False)
+            self.setToolTip(
+                'PtychographyScanParam: Scan plugin is disabled while in none Zoneplate sample fine positioning mode')
+        else:
 
-        #self.setup_OSA_plotWidget()
-        self.scan_class = OsaScanClass()
-        
-        self.scribblerBtn.setVisible(False)
-        self.scribbler_enabled = False
-        self.plotWidget = None
-    
-        self.scribblerBtn.clicked.connect(self.on_do_scribbler)
-        self.osaInBtn.clicked.connect(self.on_osa_in)
-        self.setCenterBtn.clicked.connect(self.on_set_center)
-        self.loadScanBtn.clicked.connect(self.load_scan)
-
-        self.osay_trcking_was = self.main_obj.device(DNM_OSAY_TRACKING).get_position()
-        self.sp_db = None
-        self.load_from_defaults()
-        self.init_sp_db()
-        self.connect_paramfield_signals()
-        self.on_single_spatial_npoints_changed()
-        self.init_test_module()
+            self.fbk_cntr = 0
+            self.scan_mod_path, self.scan_mod_name = self.derive_scan_mod_name(__file__)
+            #self.setup_OSA_plotWidget()
+            self.scan_class = PtychographyScanClass()
+            self.plotWidget = None
+            self.loadScanBtn.clicked.connect(self.load_scan)
+            self.osay_trcking_was = self.main_obj.device(DNM_OSAY_TRACKING).get_position()
+            self.sp_db = None
+            self.load_from_defaults()
+            self.init_sp_db()
+            self.connect_paramfield_signals()
+            self.on_single_spatial_npoints_changed()
+            self.init_test_module()
+            self.init_loadscan_menu()
 
     def init_plugin(self):
         '''
         set the plugin specific details to common attributes
         :return:
         '''
-        self.name = "OSA Scan"
-        self.idx = scan_panel_order.OSA_SCAN
-        self.type = scan_types.OSA_IMAGE
+        self.name = "Ptychography Scan"
+        self.idx = scan_panel_order.PTYCHOGRAPHY_SCAN
+        self.type = scan_types.PTYCHOGRAPHY_SCAN
         self.data = {}
-        self.section_id = 'OSA'
-        self.axis_strings = ['OSA Y microns', 'OSA X microns', '', '']
+        self.section_id = 'PTYCHOGRAPHY'
+        self.axis_strings = ['Sample Y microns', 'Sample X microns', '', '']
         self.zp_focus_mode = zp_focus_modes.DO_NOTHING
-        self.data_file_pfx = MAIN_OBJ.get_datafile_prefix()
+        self.data_file_pfx = self.main_obj.get_datafile_prefix()
         self.plot_item_type = spatial_type_prefix.ROI
 
     def on_plugin_focus(self):
@@ -102,13 +107,13 @@ class OsaScanParam(ScanParamWidget):
             self.main_obj.device(DNM_OSAY_TRACKING).put(self.osay_trcking_was)
 
         # call the base class defocus
-        super(OsaScanParam, self).on_plugin_defocus()
+        super(PtychographyScanParam, self).on_plugin_defocus()
 
 
     def connect_paramfield_signals(self):
 
-        mtr_x = MAIN_OBJ.device(DNM_OSA_X)
-        mtr_y = MAIN_OBJ.device(DNM_OSA_Y)
+        mtr_x = self.main_obj.device(DNM_SAMPLE_FINE_X)
+        mtr_y = self.main_obj.device(DNM_SAMPLE_FINE_Y)
         
         xllm = mtr_x.get_low_limit()
         xhlm = mtr_x.get_high_limit()
@@ -126,8 +131,8 @@ class OsaScanParam(ScanParamWidget):
 
     def update_min_max(self):
 
-        mtr_x = MAIN_OBJ.device(DNM_OSA_X)
-        mtr_y = MAIN_OBJ.device(DNM_OSA_Y)
+        mtr_x = self.main_obj.device(DNM_SAMPLE_FINE_X)
+        mtr_y = self.main_obj.device(DNM_SAMPLE_FINE_Y)
 
         xllm = mtr_x.get_low_limit()
         xhlm = mtr_x.get_high_limit()
@@ -149,26 +154,97 @@ class OsaScanParam(ScanParamWidget):
         self.update_dpo_min_max(dpo, ry, ry)
 
     def gen_max_scan_range_limit_def(self):
+        """ this function only currently centers around 0,0, this is a problem because in order
+        to indicate when the range of the scan is larger than the fine ranges it must be valid around
+        whereever o,o is on the fine physical stage is, as this is nly generated and sent to teh plot
+        widget at startup it doesnt work properly when the scan is not around 0,0.
+        leaving this for future
+        """
+
+        if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
+            self.gen_GONI_SCAN_max_scan_range_limit_def()
+        else:
+            mtr_sx = self.main_obj.device(DNM_SAMPLE_X)
+            mtr_sy = self.main_obj.device(DNM_SAMPLE_Y)
+
+            mtr_sfx = self.main_obj.device(DNM_SAMPLE_FINE_X)
+            mtr_sfy = self.main_obj.device(DNM_SAMPLE_FINE_Y)
+
+            center_x = mtr_sx.get_position()
+            center_y = mtr_sy.get_position()
+
+            xllm = mtr_sx.get_low_limit()
+            xhlm = mtr_sx.get_high_limit()
+            yllm = mtr_sy.get_low_limit()
+            yhlm = mtr_sy.get_high_limit()
+
+            fxllm = center_x - (MAX_SCAN_RANGE_FINEX * 0.5)
+            fxhlm = center_x + (MAX_SCAN_RANGE_FINEX * 0.5)
+            fyllm = center_y - (MAX_SCAN_RANGE_FINEY * 0.5)
+            fyhlm = center_y + (MAX_SCAN_RANGE_FINEY * 0.5)
+
+            bounding_qrect = QtCore.QRectF(QtCore.QPointF(xllm, yhlm), QtCore.QPointF(xhlm, yllm))
+
+            # adjust the warn qrect by 0.1 in all directions so that a scan range of the exact size of the limit is still allowed
+            warn_qrect = QtCore.QRectF(QtCore.QPointF(fxllm - 0.1, fyhlm + 0.1),
+                                       QtCore.QPointF(fxhlm + 0.1, fyllm - 0.1))
+            alarm_qrect = self.get_percentage_of_qrect(warn_qrect, 0.99999)  # %99 of max
+
+            bounding = ROILimitObj(bounding_qrect, get_alarm_clr(255), 'Range is beyond SampleXY Capabilities',
+                                   get_warn_fill_pattern())
+            normal = ROILimitObj(bounding_qrect, get_normal_clr(45), 'Sample Image Fine Scan',
+                                 get_normal_fill_pattern())
+            # warn = ROILimitObj(warn_qrect, get_warn_clr(150), 'Sample Image Coarse Scan', get_warn_fill_pattern())
+            # warn = ROILimitObj(warn_qrect, get_warn_clr(150), 'Nearing Range Limit for Sample Image Scan', get_warn_fill_pattern())
+            warn = ROILimitObj(warn_qrect, get_warn_clr(150),
+                               'Coarse X/Y will have to be moved in order to perform scan',
+                               get_warn_fill_pattern())
+            alarm = ROILimitObj(alarm_qrect, get_alarm_clr(255), 'Beyond range of Sample Fine X/Y',
+                                get_alarm_fill_pattern())
+
+            self.roi_limit_def = ROILimitDef(bounding, normal, warn, alarm)
+
+    def gen_GONI_SCAN_max_scan_range_limit_def(self):
         """ to be overridden by inheriting class
-        """    
-        mtr_zpx = MAIN_OBJ.device(DNM_OSA_X)
-        mtr_zpy = MAIN_OBJ.device(DNM_OSA_Y)
-        
-        xllm = mtr_zpx.get_low_limit()
-        xhlm = mtr_zpx.get_high_limit()
-        yllm = mtr_zpy.get_low_limit()
-        yhlm = mtr_zpy.get_high_limit()
-        
-        bounding_qrect = QtCore.QRectF(QtCore.QPointF(xllm, yhlm), QtCore.QPointF(xhlm, yllm))
-        warn_qrect = self.get_percentage_of_qrect(bounding_qrect, 0.80) #%80 of max
-        alarm_qrect = self.get_percentage_of_qrect(bounding_qrect, 0.95) #%95 of max
-                
-        bounding = ROILimitObj(bounding_qrect, get_alarm_clr(255), 'Range is beyond OSA Capabilities', get_alarm_fill_pattern())        
-        normal = ROILimitObj(bounding_qrect, get_normal_clr(45), 'OSA Scan', get_normal_fill_pattern())
-        warn = ROILimitObj(warn_qrect, get_warn_clr(150), 'Nearing max Range of OSA X/Y', get_warn_fill_pattern())
-        alarm = ROILimitObj(alarm_qrect, get_alarm_clr(255), 'Beyond range of OSA X/Y', get_alarm_fill_pattern())
-        
-        self.roi_limit_def = ROILimitDef(bounding, normal, warn, alarm)    
+        """
+        mtr_zpx = self.main_obj.device(DNM_SAMPLE_FINE_X)
+        mtr_zpy = self.main_obj.device(DNM_SAMPLE_FINE_Y)
+
+        mtr_gx = self.main_obj.device(DNM_GONI_X)
+        mtr_gy = self.main_obj.device(DNM_GONI_Y)
+
+        gx_pos = mtr_gx.get_position()
+        gy_pos = mtr_gy.get_position()
+
+        # these are all added because the sign is in the LLIM
+        xllm = gx_pos - (MAX_SCAN_RANGE_FINEX * 0.5)
+        xhlm = gx_pos + (MAX_SCAN_RANGE_FINEX * 0.5)
+        yllm = gy_pos - (MAX_SCAN_RANGE_FINEY * 0.5)
+        yhlm = gy_pos + (MAX_SCAN_RANGE_FINEY * 0.5)
+
+        gxllm = mtr_gx.get_low_limit()
+        gxhlm = mtr_gx.get_high_limit()
+        gyllm = mtr_gy.get_low_limit()
+        gyhlm = mtr_gy.get_high_limit()
+
+        bounding_qrect = QtCore.QRectF(QtCore.QPointF(gxllm, gyhlm), QtCore.QPointF(gxhlm, gyllm))
+        # warn_qrect = self.get_percentage_of_qrect(bounding, 0.90) #%80 of max
+        # alarm_qrect = self.get_percentage_of_qrect(bounding, 0.95) #%95 of max
+        normal_qrect = QtCore.QRectF(QtCore.QPointF(xllm, yhlm), QtCore.QPointF(xhlm, yllm))
+        warn_qrect = self.get_percentage_of_qrect(normal_qrect, 1.01)  # %95 of max
+        alarm_qrect = self.get_percentage_of_qrect(normal_qrect, 1.0)  # %95 of max
+
+        bounding = ROILimitObj(bounding_qrect, get_alarm_clr(255), 'Range is beyond Goniometer Capabilities',
+                               get_alarm_fill_pattern())
+        normal = ROILimitObj(normal_qrect, get_normal_clr(45), 'Fine ZP Scan', get_normal_fill_pattern())
+        warn = ROILimitObj(warn_qrect, get_warn_clr(150), 'Goniometer will be required to move',
+                           get_warn_fill_pattern())
+        alarm = ROILimitObj(alarm_qrect, get_alarm_clr(255), 'Range is beyond ZP Capabilities',
+                            get_alarm_fill_pattern())
+
+        self.roi_limit_def = ROILimitDef(bounding, normal, warn, alarm)
+
+
         
     def init_sp_db(self):
         """
@@ -188,11 +264,11 @@ class OsaScanParam(ScanParamWidget):
         sx = float(str(self.stepXFld.text()))
         sy = float(str(self.stepYFld.text()))
         #now create the model that this pluggin will use to record its params
-        x_roi = get_base_roi(SPDB_X, DNM_OSA_X, cx, rx, nx, sx)
-        y_roi = get_base_roi(SPDB_Y, DNM_OSA_Y, cy, ry, ny, sy)
+        x_roi = get_base_roi(SPDB_X, DNM_SAMPLE_X, cx, rx, nx, sx)
+        y_roi = get_base_roi(SPDB_Y, DNM_SAMPLE_Y, cy, ry, ny, sy)
         z_roi = get_base_roi(SPDB_Z, None, 0, 0, 0, enable=False)
         #def get_base_energy_roi(name, positionerName, start, stop, rng, npoints, dwell, pol_rois, stepSize=None, enable=False):
-        energy_pos = MAIN_OBJ.device(DNM_ENERGY).get_position()
+        energy_pos = self.main_obj.device(DNM_ENERGY).get_position()
         #e_rois = [get_base_energy_roi('EV', DNM_ENERGY, energy_pos, energy_pos, 0, 1, dwell, None, enable=False )]
         e_roi = get_base_energy_roi('EV', DNM_ENERGY, energy_pos, energy_pos, 0, 1, dwell, None, enable=False )
         
@@ -205,15 +281,15 @@ class OsaScanParam(ScanParamWidget):
         
         This function should provide an explicit error log msg to aide the user
         '''
-        ret = self.check_center_range_xy_scan_limits(DNM_OSA_X, DNM_OSA_Y)
+        ret = self.check_center_range_xy_scan_limits(DNM_SAMPLE_X, DNM_SAMPLE_Y)
         return(ret)
     
     def on_set_center(self):
         centX = float(str(self.centerXFld.text())) 
         centY = float(str(self.centerYFld.text()))
         
-        mtrx = MAIN_OBJ.device(DNM_OSA_X)
-        mtry = MAIN_OBJ.device(DNM_OSA_Y)
+        mtrx = self.main_obj.device(DNM_SAMPLE_X)
+        mtry = self.main_obj.device(DNM_SAMPLE_Y)
         mtrx.move(centX)
         mtry.move(centY)
         
@@ -232,60 +308,13 @@ class OsaScanParam(ScanParamWidget):
         roi[STEP] = (None, None, None, None)
         self.set_roi(roi)
         
-        DEFAULTS.set('PRESETS.OSA.CENTER', (0, 0, 0.0, 0.0))
-        DEFAULTS.set('SCAN.OSA.CENTER', (0.0, 0.0, 0.0, 0.0))
-        DEFAULTS.set('SCAN.OSA_FOCUS.CENTER', (0.0, 0.0, 0.0, 0.0))
+        DEFAULTS.set('PRESETS.PTYCHOGRAPHY.CENTER', (0, 0, 0.0, 0.0))
+        DEFAULTS.set('SCAN.PTYCHOGRAPHY.CENTER', (0.0, 0.0, 0.0, 0.0))
+
         DEFAULTS.update()
 
         self.upd_timer.start(250)
     
-    
-    def on_osa_in(self):
-        osax_mtr = MAIN_OBJ.device(DNM_OSA_X)
-        osay_mtr = MAIN_OBJ.device(DNM_OSA_Y)
-        
-        #move to last recorded good center position
-        osax_mtr.move(DEFAULTS.get('PRESETS.OSA.CENTER')[0])
-        osay_mtr.move(DEFAULTS.get('PRESETS.OSA.CENTER')[1])
-        
-    def on_do_scribbler(self, checked):
-        if(checked):
-            #print 'osa_scan: scribbler enabled'
-            sizex = 2000
-            sizey = 2000
-            self.scribbler_enabled = True
-            #self.plotWidget = MAIN_OBJ.get('IMAGE_WIDGET')
-            #self.plotWidget.initData(image_types.IMAGE, sizex*2.0 ,  sizey*2.0, {SPDB_RECT: (-1*sizex, -1*sizey, sizex, sizey)})
-            #self.plotWidget.set_autoscale(fill_plot_window=True)
-            
-            #MAIN_OBJ.device('OsaCntr_Snapshot').changed.connect(self.on_new_osa_data)
-        else:
-            #print 'osa_scan: scribbler disabled'
-            self.scribbler_enabled = False
-            #MAIN_OBJ.device('OsaCntr_Snapshot').changed.disconnect(self.on_new_osa_data)
-            #self.plotWidget.delImagePlotItems()
-            
-        
-    
-    def on_osa_target_moved(self, cntr):
-        (x,y) = cntr
-        MAIN_OBJ.device(DNM_OSA_X).move(x)
-        MAIN_OBJ.device(DNM_OSA_Y).move(y)
-    
-    def on_new_osa_data(self, arr):
-        if(self.scribbler_enabled):
-            counts = arr[0]
-            x = arr[1]
-            y = arr[2]
-            self.plotWidget.addPixel(x, y, counts, 50, True)
-            self.fbk_cntr = 0
-        else:
-            self.fbk_cntr += 1
-        
-    def move_osaxy_mtrs(self, xpos, ypos):
-        MAIN_OBJ.device(DNM_OSA_X).move(xpos)
-        MAIN_OBJ.device(DNM_OSA_Y).move(ypos)
-        
     def set_roi(self, roi):
         """
         set_roi standard function supported by all scan pluggins to initialize the GUI for this scan with values
@@ -346,12 +375,6 @@ class OsaScanParam(ScanParamWidget):
       
         """
         if(sp_db[CMND] == widget_com_cmnd_types.DEL_ROI):
-            return
-        
-        if(self.scribbler_enabled):
-            x_roi = sp_db[SPDB_X]
-            y_roi = sp_db[SPDB_Y]
-            self.move_osaxy_mtrs(x_roi[CENTER], y_roi[CENTER])
             return
         
         if(sp_db[CMND] == widget_com_cmnd_types.LOAD_SCAN):
@@ -415,11 +438,11 @@ class OsaScanParam(ScanParamWidget):
         y_roi = self.sp_db[SPDB_Y]
         e_rois = self.sp_db[SPDB_EV_ROIS]
         
-        DEFAULTS.set('SCAN.OSA.CENTER',  (x_roi[CENTER], y_roi[CENTER], 0, 0))
-        DEFAULTS.set('SCAN.OSA.RANGE', (x_roi[RANGE], y_roi[RANGE], 0, 0))
-        DEFAULTS.set('SCAN.OSA.NPOINTS', (x_roi[NPOINTS], y_roi[NPOINTS], 0, 0))
-        DEFAULTS.set('SCAN.OSA.STEP', (x_roi[STEP], y_roi[STEP], 0, 0))
-        DEFAULTS.set('SCAN.OSA.DWELL', e_rois[0][DWELL])
+        DEFAULTS.set('SCAN.PTYCHOGRAPHY.CENTER',  (x_roi[CENTER], y_roi[CENTER], 0, 0))
+        DEFAULTS.set('SCAN.PTYCHOGRAPHY.RANGE', (x_roi[RANGE], y_roi[RANGE], 0, 0))
+        DEFAULTS.set('SCAN.PTYCHOGRAPHY.NPOINTS', (x_roi[NPOINTS], y_roi[NPOINTS], 0, 0))
+        DEFAULTS.set('SCAN.PTYCHOGRAPHY.STEP', (x_roi[STEP], y_roi[STEP], 0, 0))
+        DEFAULTS.set('SCAN.PTYCHOGRAPHY.DWELL', e_rois[0][DWELL])
         DEFAULTS.update()    
         
     def update_data(self):

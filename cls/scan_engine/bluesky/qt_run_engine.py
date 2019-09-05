@@ -45,7 +45,7 @@ class QRunEngine(QObject, RunEngine):
         self._execution_result = None
         #self.msg_hook = self.on_msg_hook
         self.subscribe(self.update_progess)
-        self.subscribe(self.print_msg)
+        #self.subscribe(self.print_msg)
         #self.waiting_hook = self.check_progress
         #self.waiting_hook = MyProgressBar
         # Create a kicker, not worried about doing this multiple times as this
@@ -425,8 +425,6 @@ class EngineWidget(QGroupBox):
         self.label = EngineLabel(parent=self)
         self.command_label = QLabel('Available Commands')
         self.status_label = QLabel('Engine Status')
-
-
 
         lay = QVBoxLayout()
         lay.addWidget(self.status_label)

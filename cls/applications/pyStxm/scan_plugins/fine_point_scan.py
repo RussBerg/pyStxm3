@@ -95,9 +95,9 @@ class FinePointScanParam(ScanParamWidget):
         self.axis_strings = ['counts', 'eV', '', '']
         self.zp_focus_mode = zp_focus_modes.A0MOD
         # data_file_pfx = 'p'
-        self.data_file_pfx = MAIN_OBJ.get_datafile_prefix()
+        self.data_file_pfx = self.main_obj.get_datafile_prefix()
         self.plot_item_type = spatial_type_prefix.PNT
-        self.enable_multi_region = MAIN_OBJ.get_is_multi_region_enabled()
+        self.enable_multi_region = self.main_obj.get_is_multi_region_enabled()
         self.multi_ev = True
 
     def on_plugin_focus(self):
@@ -133,8 +133,8 @@ class FinePointScanParam(ScanParamWidget):
     # def gen_max_scan_range_limit_def(self):
     #     """ to be overridden by inheriting class
     #     """
-    #     mtr_sx = MAIN_OBJ.device('SampleX')
-    #     mtr_sy = MAIN_OBJ.device('SampleY')
+    #     mtr_sx = self.main_obj.device('SampleX')
+    #     mtr_sy = self.main_obj.device('SampleY')
     #
     #     xllm = mtr_sx.get_low_limit()
     #     xhlm = mtr_sx.get_high_limit()
@@ -168,10 +168,10 @@ class FinePointScanParam(ScanParamWidget):
         # if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
         #     self.gen_GONI_SCAN_max_scan_range_limit_def()
         # else:
-        mtr_sx = MAIN_OBJ.device(self.positioners['SX'])
-        mtr_sy = MAIN_OBJ.device(self.positioners['SY'])
-        mtr_sfx = MAIN_OBJ.device(self.positioners['SFX'])
-        mtr_sfy = MAIN_OBJ.device(self.positioners['SFY'])
+        mtr_sx = self.main_obj.device(self.positioners['SX'])
+        mtr_sy = self.main_obj.device(self.positioners['SY'])
+        mtr_sfx = self.main_obj.device(self.positioners['SFX'])
+        mtr_sfy = self.main_obj.device(self.positioners['SFY'])
         center_x = mtr_sx.get_position()
         center_y = mtr_sy.get_position()
 

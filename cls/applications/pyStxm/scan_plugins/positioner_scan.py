@@ -57,13 +57,13 @@ class PositionerScanParam(ScanParamWidget):
         self.idx = scan_panel_order.POSITIONER_SCAN
         self.type = scan_types.GENERIC_SCAN
         self.section_id = 'POSITIONER'
-        devices = MAIN_OBJ.get_devices()
+        devices = self.main_obj.get_devices()
         posner_keys = list(devices['POSITIONERS'].keys())
         posner_keys.sort()
         self.axis_strings = ['Detector Counts', '%s microns' % posner_keys[0], '', '']
         # use the mode that adjusts the zoneplate by calculating the zpz using the A0 mod
         self.zp_focus_mode = zp_focus_modes.A0MOD
-        self.data_file_pfx = MAIN_OBJ.get_datafile_prefix()
+        self.data_file_pfx = self.main_obj.get_datafile_prefix()
         self.plot_item_type = spatial_type_prefix.SEG
 
     def on_plugin_focus(self):
@@ -73,7 +73,7 @@ class PositionerScanParam(ScanParamWidget):
         '''
         if (self.isEnabled()):
             #make sure that the OSA vertical tracking is off if it is on
-            self.osay_trcking_was = self.main_obj.device(DNM_OSAY_TRACKING).get()
+            self.osay_trcking_was = self.main_obj.device(DNM_OSAY_TRACKING).get_position()
             self.main_obj.device(DNM_OSAY_TRACKING).put(0) #off
 
 
@@ -91,7 +91,7 @@ class PositionerScanParam(ScanParamWidget):
 
     def connect_paramfield_signals(self):
 
-        mtr_x = MAIN_OBJ.device(self.positioner)
+        mtr_x = self.main_obj.device(self.positioner)
         self.axis_strings = ['Detector Counts', '%s microns' % self.positioner, '', '']
         self.update_plot_strs.emit(self.axis_strings)
         
@@ -106,7 +106,7 @@ class PositionerScanParam(ScanParamWidget):
         self.connect_param_flds_to_validator(lim_dct)
         
     def populate_positioner_cbox(self):
-        devices = MAIN_OBJ.get_devices()
+        devices = self.main_obj.get_devices()
         idx = 0
         keys = list(devices['POSITIONERS'].keys())
         keys.sort()
@@ -136,7 +136,7 @@ class PositionerScanParam(ScanParamWidget):
         y_roi = get_base_roi(SPDB_Y, 'None', 0, 0, 0, enable=False)
         z_roi = get_base_roi(SPDB_Z, 'None', 0, 0, 0, enable=False)
                 
-        energy_pos = MAIN_OBJ.device(DNM_ENERGY).get_position()
+        energy_pos = self.main_obj.device(DNM_ENERGY).get_position()
         e_roi = get_base_energy_roi('EV', DNM_ENERGY, energy_pos, energy_pos, 0, 1, dwell, None, enable=False )
         
         self.sp_db = make_spatial_db_dict(x_roi=x_roi, y_roi=y_roi, z_roi=z_roi, e_roi=e_roi)    

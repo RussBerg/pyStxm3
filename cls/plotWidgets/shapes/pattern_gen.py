@@ -5,9 +5,9 @@ from cls.utils.roi_utils import get_unique_roi_id
 from cls.plotWidgets.shapes.utils import create_rectangle, create_segment
 from cls.utils.roi_utils import get_base_roi
 
-PAD_SIZE = 1.2 #um
+#PAD_SIZE = 1.2 #um
 
-def add_pattern_to_plot(parent, xc=0.0, yc=0.0):
+def add_pattern_to_plot(parent, xc=0.0, yc=0.0, pad_size=1.0):
     '''
     parent is the imageWidget that is requesting the patter.
     The pattern is 9 1 by 1 um squares in 3 rows.
@@ -22,7 +22,7 @@ def add_pattern_to_plot(parent, xc=0.0, yc=0.0):
 
     # xcenters = [0.5, 2.5, 4.5]
     # ycenters = [0.5, 2.5, 4.5]
-    pad_width = PAD_SIZE + PAD_SIZE
+    pad_width = pad_size + pad_size
     xcenters = [xc-pad_width, xc, xc+pad_width]
     ycenters = [yc-pad_width, yc, yc+pad_width]
 
@@ -36,8 +36,8 @@ def add_pattern_to_plot(parent, xc=0.0, yc=0.0):
     for x_center in xcenters:
         for y_center in ycenters:
             letter = ltr_lst.pop()
-            x_roi = get_base_roi('pattrn_%sx' % letter, '', x_center, PAD_SIZE, 20, enable=True, is_point=False, src=None)
-            y_roi = get_base_roi('pattrn_%sy' % letter, '', y_center, PAD_SIZE, 20, enable=True, is_point=False, src=None)
+            x_roi = get_base_roi('pattrn_%sx' % letter, '', x_center, pad_size, 20, enable=True, is_point=False, src=None)
+            y_roi = get_base_roi('pattrn_%sy' % letter, '', y_center, pad_size, 20, enable=True, is_point=False, src=None)
 
             x1 = float(x_roi['START'])
             y1 = float(y_roi['START'])

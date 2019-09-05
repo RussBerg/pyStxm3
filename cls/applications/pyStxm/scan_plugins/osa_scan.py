@@ -65,6 +65,7 @@ class OsaScanParam(ScanParamWidget):
         self.connect_paramfield_signals()
         self.on_single_spatial_npoints_changed()
         self.init_test_module()
+        self.init_loadscan_menu()
 
     def init_plugin(self):
         '''
@@ -78,7 +79,7 @@ class OsaScanParam(ScanParamWidget):
         self.section_id = 'OSA'
         self.axis_strings = ['OSA Y microns', 'OSA X microns', '', '']
         self.zp_focus_mode = zp_focus_modes.DO_NOTHING
-        self.data_file_pfx = MAIN_OBJ.get_datafile_prefix()
+        self.data_file_pfx = self.main_obj.get_datafile_prefix()
         self.plot_item_type = spatial_type_prefix.ROI
 
     def on_plugin_focus(self):
@@ -107,8 +108,8 @@ class OsaScanParam(ScanParamWidget):
 
     def connect_paramfield_signals(self):
 
-        mtr_x = MAIN_OBJ.device(DNM_OSA_X)
-        mtr_y = MAIN_OBJ.device(DNM_OSA_Y)
+        mtr_x = self.main_obj.device(DNM_OSA_X)
+        mtr_y = self.main_obj.device(DNM_OSA_Y)
         
         xllm = mtr_x.get_low_limit()
         xhlm = mtr_x.get_high_limit()
@@ -126,8 +127,8 @@ class OsaScanParam(ScanParamWidget):
 
     def update_min_max(self):
 
-        mtr_x = MAIN_OBJ.device(DNM_OSA_X)
-        mtr_y = MAIN_OBJ.device(DNM_OSA_Y)
+        mtr_x = self.main_obj.device(DNM_OSA_X)
+        mtr_y = self.main_obj.device(DNM_OSA_Y)
 
         xllm = mtr_x.get_low_limit()
         xhlm = mtr_x.get_high_limit()
@@ -150,14 +151,14 @@ class OsaScanParam(ScanParamWidget):
 
     def gen_max_scan_range_limit_def(self):
         """ to be overridden by inheriting class
-        """    
-        mtr_zpx = MAIN_OBJ.device(DNM_OSA_X)
-        mtr_zpy = MAIN_OBJ.device(DNM_OSA_Y)
-        
-        xllm = mtr_zpx.get_low_limit()
-        xhlm = mtr_zpx.get_high_limit()
-        yllm = mtr_zpy.get_low_limit()
-        yhlm = mtr_zpy.get_high_limit()
+        """
+        mtr_x = self.main_obj.device(DNM_SAMPLE_X)
+        mtr_y = self.main_obj.device(DNM_SAMPLE_Y)
+
+        xllm = mtr_x.get_low_limit()
+        xhlm = mtr_x.get_high_limit()
+        yllm = mtr_y.get_low_limit()
+        yhlm = mtr_y.get_high_limit()
         
         bounding_qrect = QtCore.QRectF(QtCore.QPointF(xllm, yhlm), QtCore.QPointF(xhlm, yllm))
         warn_qrect = self.get_percentage_of_qrect(bounding_qrect, 0.80) #%80 of max
@@ -192,7 +193,7 @@ class OsaScanParam(ScanParamWidget):
         y_roi = get_base_roi(SPDB_Y, DNM_OSA_Y, cy, ry, ny, sy)
         z_roi = get_base_roi(SPDB_Z, None, 0, 0, 0, enable=False)
         #def get_base_energy_roi(name, positionerName, start, stop, rng, npoints, dwell, pol_rois, stepSize=None, enable=False):
-        energy_pos = MAIN_OBJ.device(DNM_ENERGY).get_position()
+        energy_pos = self.main_obj.device(DNM_ENERGY).get_position()
         #e_rois = [get_base_energy_roi('EV', DNM_ENERGY, energy_pos, energy_pos, 0, 1, dwell, None, enable=False )]
         e_roi = get_base_energy_roi('EV', DNM_ENERGY, energy_pos, energy_pos, 0, 1, dwell, None, enable=False )
         
@@ -212,8 +213,8 @@ class OsaScanParam(ScanParamWidget):
         centX = float(str(self.centerXFld.text())) 
         centY = float(str(self.centerYFld.text()))
         
-        mtrx = MAIN_OBJ.device(DNM_OSA_X)
-        mtry = MAIN_OBJ.device(DNM_OSA_Y)
+        mtrx = self.main_obj.device(DNM_OSA_X)
+        mtry = self.main_obj.device(DNM_OSA_Y)
         mtrx.move(centX)
         mtry.move(centY)
         
@@ -241,8 +242,8 @@ class OsaScanParam(ScanParamWidget):
     
     
     def on_osa_in(self):
-        osax_mtr = MAIN_OBJ.device(DNM_OSA_X)
-        osay_mtr = MAIN_OBJ.device(DNM_OSA_Y)
+        osax_mtr = self.main_obj.device(DNM_OSA_X)
+        osay_mtr = self.main_obj.device(DNM_OSA_Y)
         
         #move to last recorded good center position
         osax_mtr.move(DEFAULTS.get('PRESETS.OSA.CENTER')[0])
@@ -254,23 +255,23 @@ class OsaScanParam(ScanParamWidget):
             sizex = 2000
             sizey = 2000
             self.scribbler_enabled = True
-            #self.plotWidget = MAIN_OBJ.get('IMAGE_WIDGET')
+            #self.plotWidget = self.main_obj.get('IMAGE_WIDGET')
             #self.plotWidget.initData(image_types.IMAGE, sizex*2.0 ,  sizey*2.0, {SPDB_RECT: (-1*sizex, -1*sizey, sizex, sizey)})
             #self.plotWidget.set_autoscale(fill_plot_window=True)
             
-            #MAIN_OBJ.device('OsaCntr_Snapshot').changed.connect(self.on_new_osa_data)
+            #self.main_obj.device('OsaCntr_Snapshot').changed.connect(self.on_new_osa_data)
         else:
             #print 'osa_scan: scribbler disabled'
             self.scribbler_enabled = False
-            #MAIN_OBJ.device('OsaCntr_Snapshot').changed.disconnect(self.on_new_osa_data)
+            #self.main_obj.device('OsaCntr_Snapshot').changed.disconnect(self.on_new_osa_data)
             #self.plotWidget.delImagePlotItems()
             
         
     
     def on_osa_target_moved(self, cntr):
         (x,y) = cntr
-        MAIN_OBJ.device(DNM_OSA_X).move(x)
-        MAIN_OBJ.device(DNM_OSA_Y).move(y)
+        self.main_obj.device(DNM_OSA_X).move(x)
+        self.main_obj.device(DNM_OSA_Y).move(y)
     
     def on_new_osa_data(self, arr):
         if(self.scribbler_enabled):
@@ -283,8 +284,8 @@ class OsaScanParam(ScanParamWidget):
             self.fbk_cntr += 1
         
     def move_osaxy_mtrs(self, xpos, ypos):
-        MAIN_OBJ.device(DNM_OSA_X).move(xpos)
-        MAIN_OBJ.device(DNM_OSA_Y).move(ypos)
+        self.main_obj.device(DNM_OSA_X).move(xpos)
+        self.main_obj.device(DNM_OSA_Y).move(ypos)
         
     def set_roi(self, roi):
         """

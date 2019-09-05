@@ -29,11 +29,7 @@ from cls.utils.roi_dict_defs import *
 from cls.utils.log import get_module_logger
 
 _logger = get_module_logger(__name__)
-'''
-ToDO:
-    - add a tool that draws a horizontal line and allows you to place it over 
-    the area of contrast for performing the focus. 
-'''
+
 
 class OsaFocusScanParam(ScanParamWidget):
 
@@ -69,7 +65,7 @@ class OsaFocusScanParam(ScanParamWidget):
         self.p0_idx = 0
         self.p1_idx = 2
         # data_file_pfx = 'of'
-        self.data_file_pfx = MAIN_OBJ.get_datafile_prefix()
+        self.data_file_pfx = self.main_obj.get_datafile_prefix()
         # axis_strings = [<left>, <bottom>, <top>, <right>]
         self.axis_strings = ['ZP Z microns', 'OSA X microns', '', '']
         self.zp_focus_mode = zp_focus_modes.FL
@@ -100,9 +96,9 @@ class OsaFocusScanParam(ScanParamWidget):
 
     def connect_paramfield_signals(self):
 
-        mtr_x = MAIN_OBJ.device(DNM_OSA_X)
-        mtr_y = MAIN_OBJ.device(DNM_OSA_Y)
-        mtr_z = MAIN_OBJ.device(DNM_ZONEPLATE_Z)
+        mtr_x = self.main_obj.device(DNM_OSA_X)
+        mtr_y = self.main_obj.device(DNM_OSA_Y)
+        mtr_z = self.main_obj.device(DNM_ZONEPLATE_Z)
         
         xllm = mtr_x.get_low_limit()
         xhlm = mtr_x.get_high_limit()
@@ -125,8 +121,8 @@ class OsaFocusScanParam(ScanParamWidget):
     def gen_max_scan_range_limit_def(self):
         """ to be overridden by inheriting class
         """    
-        mtr_zpx = MAIN_OBJ.device(DNM_OSA_X)
-        mtr_zpy = MAIN_OBJ.device(DNM_OSA_Y)
+        mtr_zpx = self.main_obj.device(DNM_OSA_X)
+        mtr_zpy = self.main_obj.device(DNM_OSA_Y)
         
         xllm = mtr_zpx.get_low_limit()
         xhlm = mtr_zpx.get_high_limit()
@@ -168,11 +164,11 @@ class OsaFocusScanParam(ScanParamWidget):
         nz = int(str(self.npointsZPFld.text())) 
         
         #now create the model that this pluggin will use to record its params
-        x_roi = get_base_start_stop_roi(SPDB_X, DNM_OSA_X, sx, ex, nx, src=MAIN_OBJ.device(DNM_OSA_X).get_name())
-        y_roi = get_base_start_stop_roi(SPDB_Y, DNM_OSA_Y, sy, ey, ny, src=MAIN_OBJ.device(DNM_OSA_Y).get_name())
-        zz_roi = get_base_roi(SPDB_ZZ, DNM_ZONEPLATE_Z_BASE, cz, rz, nz, enable=False, src=MAIN_OBJ.device(DNM_ZONEPLATE_Z_BASE).get_name())
+        x_roi = get_base_start_stop_roi(SPDB_X, DNM_OSA_X, sx, ex, nx, src=self.main_obj.device(DNM_OSA_X).get_name())
+        y_roi = get_base_start_stop_roi(SPDB_Y, DNM_OSA_Y, sy, ey, ny, src=self.main_obj.device(DNM_OSA_Y).get_name())
+        zz_roi = get_base_roi(SPDB_ZZ, DNM_ZONEPLATE_Z_BASE, cz, rz, nz, enable=False, src=self.main_obj.device(DNM_ZONEPLATE_Z_BASE).get_name())
 
-        energy_pos = MAIN_OBJ.device(DNM_ENERGY).get_position()
+        energy_pos = self.main_obj.device(DNM_ENERGY).get_position()
         e_roi = get_base_energy_roi('EV', DNM_ENERGY, energy_pos, energy_pos, 0, 1, dwell, None, enable=False )
 
         zp_rois = {}
@@ -198,22 +194,22 @@ class OsaFocusScanParam(ScanParamWidget):
             return(False)
             
     def on_center_btn(self):
-        sflag = MAIN_OBJ.device('Zpz_scanModeFlag')
-        a0 = MAIN_OBJ.device('A0')
+        sflag = self.main_obj.device('Zpz_scanModeFlag')
+        a0 = self.main_obj.device('A0')
         #1 for OSA focus scan 0 for anything else
         sflag.put('user_setpoint', 0)
         
         zp_cent = float(str(self.centerZPFld.text()))
-        #mtrz = MAIN_OBJ.device(DNM_ZONEPLATE_Z)
-        mtrz = MAIN_OBJ.device(DNM_ZONEPLATE_Z_BASE)
-        mtrx = MAIN_OBJ.device(DNM_OSA_X)
-        mtry = MAIN_OBJ.device(DNM_OSA_Y)
-        oz = MAIN_OBJ.device(DNM_OSA_Z)
+        #mtrz = self.main_obj.device(DNM_ZONEPLATE_Z)
+        mtrz = self.main_obj.device(DNM_ZONEPLATE_Z_BASE)
+        mtrx = self.main_obj.device(DNM_OSA_X)
+        mtry = self.main_obj.device(DNM_OSA_Y)
+        oz = self.main_obj.device(DNM_OSA_Z)
         
         mtrz.move(zp_cent)
         mtrz.confirm_stopped()
         
-        fl = MAIN_OBJ.device('Focal_Length').get_position()
+        fl = self.main_obj.device('Focal_Length').get_position()
         mtrz.set_position(fl)
         mtrx.move(0.0)
         mtry.move(0.0)
@@ -245,7 +241,7 @@ class OsaFocusScanParam(ScanParamWidget):
         self.set_parm(self.startYFld, sy)
         
         #we want the ZP center to always be the current Zpz pozition
-        zpz_pos = MAIN_OBJ.device(DNM_ZONEPLATE_Z).get_position()
+        zpz_pos = self.main_obj.device(DNM_ZONEPLATE_Z).get_position()
         self.set_parm(self.centerZPFld, zpz_pos)
         
         if(ex != None):

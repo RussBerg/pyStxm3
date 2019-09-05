@@ -24,7 +24,7 @@ from cls.utils.log import get_module_logger
 
 _logger = get_module_logger(__name__)
 
-class OsaScanClass(BaseScan):
+class PtychographyScanClass(BaseScan):
     """ a scan for executing a detector point scan in X and Y, it takes an existing instance of an XYZScan class"""
     
     def __init__(self):
@@ -33,7 +33,7 @@ class OsaScanClass(BaseScan):
 
         :returns: None
         """
-        super(OsaScanClass, self).__init__('%sstxm' % MAIN_OBJ.get_sscan_prefix(), SPDB_XY, main_obj=MAIN_OBJ)
+        super(PtychographyScanClass, self).__init__('%sstxm' % MAIN_OBJ.get_sscan_prefix(), SPDB_XY, main_obj=MAIN_OBJ)
 
     def configure_devs(self, dets, gate):
         gate.set_dwell(self.dwell)
@@ -54,8 +54,8 @@ class OsaScanClass(BaseScan):
         @bpp.stage_decorator(dets)
         def do_scan():
 
-            mtr_x = self.main_obj.device(DNM_OSA_X)
-            mtr_y = self.main_obj.device(DNM_OSA_Y)
+            mtr_x = self.main_obj.get_sample_fine_positioner('X')
+            mtr_y = self.main_obj.get_sample_fine_positioner('Y')
             shutter = self.main_obj.device(DNM_SHUTTER)
 
             yield from bps.stage(gate)
@@ -70,7 +70,7 @@ class OsaScanClass(BaseScan):
             # yield from bps.wait(group='e712_wavgen')
             yield from bps.unstage(gate)
 
-            print('OsaScanClass: make_scan_plan Leaving')
+            print('PtychographyScanClass: make_scan_plan Leaving')
 
         return (yield from do_scan())
 
@@ -112,7 +112,7 @@ class OsaScanClass(BaseScan):
         # self.is_pxp = True
         # self.is_lxl = False
         # call the base class configure so that all member vars can be initialized
-        super(OsaScanClass, self).configure(wdg_com, sp_id=sp_id, line=line, z_enabled=z_enabled)
+        super(PtychographyScanClass, self).configure(wdg_com, sp_id=sp_id, line=line, z_enabled=z_enabled)
 
         self.is_pxp = True
 

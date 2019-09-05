@@ -27,6 +27,16 @@ def make_title(basename, count):
 APP_PATH = osp.dirname(__file__)
 add_image_module_path("guiqwt", "images")
 
+# some common defines
+unsel_handle_shape = 'XCross'
+sel_handle_shape = 'Rect'
+
+unsel_handle_size = 4
+sel_handle_size = 9
+
+unsel_pnt_handle_size = 6
+sel_pnt_handle_size = 12
+
 DEFAULTS = {
     'plot':
         {
@@ -230,8 +240,8 @@ DEFAULTS = {
             "shape/drag/fill/style": "SolidPattern",
             "shape/drag/fill/color": "white",
             "shape/drag/fill/alpha": 0.1,
-            "shape/drag/symbol/marker": 'Rect',
-            "shape/drag/symbol/size": 3,
+            "shape/drag/symbol/marker": unsel_handle_shape,
+            "shape/drag/symbol/size": unsel_handle_size,
             "shape/drag/symbol/edgecolor": "#ffff00",
             "shape/drag/symbol/facecolor": "#ffff00",
             "shape/drag/symbol/alpha": 1.,
@@ -241,8 +251,8 @@ DEFAULTS = {
             "shape/drag/sel_fill/style": "SolidPattern",
             "shape/drag/sel_fill/color": "white",
             "shape/drag/sel_fill/alpha": 0.1,
-            "shape/drag/sel_symbol/marker": 'Rect',
-            "shape/drag/sel_symbol/size": 9,
+            "shape/drag/sel_symbol/marker": sel_handle_shape,
+            "shape/drag/sel_symbol/size": sel_handle_size,
             "shape/drag/sel_symbol/edgecolor": "#00aa00",
             "shape/drag/sel_symbol/facecolor": "#00ff00",
             "shape/drag/sel_symbol/alpha": .7,
@@ -410,8 +420,8 @@ DEFAULTS = {
             "shape/average_cross_section/fill/style": "SolidPattern",
             "shape/average_cross_section/fill/color": "white",
             "shape/average_cross_section/fill/alpha": 0.1,
-            "shape/average_cross_section/symbol/marker": 'Rect',
-            "shape/average_cross_section/symbol/size": 3,
+            "shape/average_cross_section/symbol/marker": unsel_handle_shape,
+            "shape/average_cross_section/symbol/size": unsel_handle_size,
             "shape/average_cross_section/symbol/edgecolor": "#ffff00",
             "shape/average_cross_section/symbol/facecolor": "#ffff00",
             "shape/average_cross_section/symbol/alpha": .6,
@@ -421,8 +431,8 @@ DEFAULTS = {
             "shape/average_cross_section/sel_fill/style": "SolidPattern",
             "shape/average_cross_section/sel_fill/color": "white",
             "shape/average_cross_section/sel_fill/alpha": 0.1,
-            "shape/average_cross_section/sel_symbol/marker": 'Rect',
-            "shape/average_cross_section/sel_symbol/size": 9,
+            "shape/average_cross_section/sel_symbol/marker": sel_handle_shape,
+            "shape/average_cross_section/sel_symbol/size": sel_handle_size,
             "shape/average_cross_section/sel_symbol/edgecolor": "#00aa00",
             "shape/average_cross_section/sel_symbol/facecolor": "#00ff00",
             "shape/average_cross_section/sel_symbol/alpha": .7,
@@ -458,13 +468,13 @@ DEFAULTS = {
             "shape/point/sel_line/width": 1,
             "shape/point/fill/style": "NoBrush",
             "shape/point/sel_fill/style": "NoBrush",
-            "shape/point/symbol/marker": 'XCross',
-            "shape/point/symbol/size": 9,
+            "shape/point/symbol/marker": unsel_handle_shape,
+            "shape/point/symbol/size": unsel_pnt_handle_size,
             "shape/point/symbol/edgecolor": "#ffff00",
             "shape/point/symbol/facecolor": "#ffff00",
             "shape/point/symbol/alpha": 1.,
-            "shape/point/sel_symbol/marker": 'Rect',
-            "shape/point/sel_symbol/size": 12,
+            "shape/point/sel_symbol/marker": sel_handle_shape,
+            "shape/point/sel_symbol/size": sel_pnt_handle_size,
             "shape/point/sel_symbol/edgecolor": "#00aa00",
             "shape/point/sel_symbol/facecolor": "#00ff00",
             "shape/point/sel_symbol/alpha": .7,
@@ -477,13 +487,13 @@ DEFAULTS = {
             "shape/segment/sel_line/width": 1,
             "shape/segment/fill/style": "NoBrush",
             "shape/segment/sel_fill/style": "NoBrush",
-            "shape/segment/symbol/marker": 'XCross',
-            "shape/segment/symbol/size": 9,
+            "shape/segment/symbol/marker": unsel_handle_shape,
+            "shape/segment/symbol/size": unsel_pnt_handle_size,
             "shape/segment/symbol/edgecolor": "#ffff00",
             "shape/segment/symbol/facecolor": "#ffff00",
             "shape/segment/symbol/alpha": 1.,
-            "shape/segment/sel_symbol/marker": 'Rect',
-            "shape/segment/sel_symbol/size": 12,
+            "shape/segment/sel_symbol/marker": sel_handle_shape,
+            "shape/segment/sel_symbol/size": sel_pnt_handle_size,
             "shape/segment/sel_symbol/edgecolor": "#00aa00",
             "shape/segment/sel_symbol/facecolor": "#00ff00",
             "shape/segment/sel_symbol/alpha": .7,

@@ -39,9 +39,9 @@ class PointScanParam(ScanParamWidget):
     axis_strings = ['counts', 'eV', '', '']
     zp_focus_mode = zp_focus_modes.A0MOD
     #data_file_pfx = 'p'
-    data_file_pfx = MAIN_OBJ.get_datafile_prefix()
+    data_file_pfx = self.main_obj.get_datafile_prefix()
     plot_item_type = spatial_type_prefix.PNT
-    enable_multi_region = MAIN_OBJ.get_is_multi_region_enabled()
+    enable_multi_region = self.main_obj.get_is_multi_region_enabled()
     
     def __init__(self, parent=None):
         ScanParamWidget.__init__(self)
@@ -66,8 +66,8 @@ class PointScanParam(ScanParamWidget):
     def gen_max_scan_range_limit_def(self):
         """ to be overridden by inheriting class
         """    
-        mtr_sx = MAIN_OBJ.device('SampleX')
-        mtr_sy = MAIN_OBJ.device('SampleY')
+        mtr_sx = self.main_obj.device('SampleX')
+        mtr_sy = self.main_obj.device('SampleY')
         
         xllm = mtr_sx.get_low_limit()
         xhlm = mtr_sx.get_high_limit()

@@ -13,7 +13,8 @@ import os
 
 from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, DEFAULTS
 from cls.applications.pyStxm.scan_plugins import plugin_dir
-from cls.applications.pyStxm.scan_plugins.PatternGenWithE712WavegenScan import PatternGenWithE712WavegenScanClass
+#from cls.applications.pyStxm.scan_plugins.PatternGenWithE712WavegenScan import PatternGenWithE712WavegenScanClass
+from cls.applications.pyStxm.scan_plugins.PatternGenScan import PatternGenScanClass
 from cls.scanning.paramLineEdit import intLineEditParamObj, dblLineEditParamObj
 from bcm.devices.device_names import *
 
@@ -25,6 +26,7 @@ from cls.utils.roi_utils import get_base_roi, get_base_energy_roi, make_spatial_
 from cls.scanning.base import ScanParamWidget, zp_focus_modes
 from cls.types.stxmTypes import scan_types, scan_sub_types, scan_panel_order, spatial_type_prefix, sample_positioning_modes, sample_fine_positioning_modes
 
+#from cls.plotWidgets.shapes.pattern_gen import PAD_SIZE
 from cls.plotWidgets.shape_restrictions import ROILimitObj, ROILimitDef
 from cls.plotWidgets.color_def import get_normal_clr, get_warn_clr, get_alarm_clr, get_normal_fill_pattern, get_warn_fill_pattern, get_alarm_fill_pattern
 
@@ -50,27 +52,40 @@ class PatternGeneratorScanParam(ScanParamWidget):
 		uic.loadUi(os.path.join(plugin_dir, 'pattern_gen_scan.ui'), self)
 		self.scan_mod_path, self.scan_mod_name = self.derive_scan_mod_name(__file__)
 
-		if(not USE_E712_HDW_ACCEL):
-			self.name = "Pattern Generator Scan ---- [DISABLED, non hardware acclerated version is currently not supported] "
-			self.setEnabled(False)
-			self.setToolTip('PatternGeneratorScanParam: Scan plugin is disabled, non hardware acclerated version is currently not supported ')
-		else:
-			self.positioners = {'ZX': DNM_ZONEPLATE_X, 'ZY': DNM_ZONEPLATE_Y,
-								'OX': DNM_OSA_X, 'OY': DNM_OSA_Y, 'OZ': DNM_OSA_Z,
-								'GX': DNM_GONI_X, 'GY': DNM_GONI_Y, 'GZ': DNM_GONI_Z, 'GT': DNM_GONI_THETA,
-								'SX': DNM_SAMPLE_X, 'SY': DNM_SAMPLE_Y, 'SFX': DNM_SAMPLE_FINE_X,
-								'SFY': DNM_SAMPLE_FINE_Y,
-								'CX': DNM_COARSE_X, 'CY': DNM_COARSE_Y,
-								'POL': DNM_EPU_POLARIZATION, 'OFF': DNM_EPU_OFFSET, 'ANG': DNM_EPU_ANGLE}
-			self.scan_class = PatternGenWithE712WavegenScanClass(main_obj=self.main_obj)
-			self.sp_db = None
-			self.load_from_defaults()
-			self.init_sp_db()
-			self.connect_paramfield_signals()
-			self.on_single_spatial_npoints_changed()
-			self.showPatternBtn.clicked.connect(self.on_show_pattern_btn_clicked)
+		# if(not USE_E712_HDW_ACCEL):
+		# 	self.name = "Pattern Generator Scan ---- [DISABLED, non hardware acclerated version is currently not supported] "
+		# 	self.setEnabled(False)
+		# 	self.setToolTip('PatternGeneratorScanParam: Scan plugin is disabled, non hardware acclerated version is currently not supported ')
+		# else:
+		# 	self.positioners = {'ZX': DNM_ZONEPLATE_X, 'ZY': DNM_ZONEPLATE_Y,
+		# 						'OX': DNM_OSA_X, 'OY': DNM_OSA_Y, 'OZ': DNM_OSA_Z,
+		# 						'GX': DNM_GONI_X, 'GY': DNM_GONI_Y, 'GZ': DNM_GONI_Z, 'GT': DNM_GONI_THETA,
+		# 						'SX': DNM_SAMPLE_X, 'SY': DNM_SAMPLE_Y, 'SFX': DNM_SAMPLE_FINE_X,
+		# 						'SFY': DNM_SAMPLE_FINE_Y,
+		# 						'CX': DNM_COARSE_X, 'CY': DNM_COARSE_Y,
+		# 						'POL': DNM_EPU_POLARIZATION, 'OFF': DNM_EPU_OFFSET, 'ANG': DNM_EPU_ANGLE}
 
+		self.positioners = {'ZX': DNM_ZONEPLATE_X, 'ZY': DNM_ZONEPLATE_Y,
+							'OX': DNM_OSA_X, 'OY': DNM_OSA_Y, 'OZ': DNM_OSA_Z,
+							'GX': DNM_GONI_X, 'GY': DNM_GONI_Y, 'GZ': DNM_GONI_Z, 'GT': DNM_GONI_THETA,
+							'SX': DNM_SAMPLE_X, 'SY': DNM_SAMPLE_Y, 'SFX': DNM_SAMPLE_FINE_X,
+							'SFY': DNM_SAMPLE_FINE_Y,
+							'CX': DNM_COARSE_X, 'CY': DNM_COARSE_Y,
+							'POL': DNM_EPU_POLARIZATION, 'OFF': DNM_EPU_OFFSET, 'ANG': DNM_EPU_ANGLE}
+		#self.scan_class = PatternGenWithE712WavegenScanClass(main_obj=self.main_obj)
+		self.scan_class = PatternGenScanClass(main_obj=self.main_obj)
+		self.sp_db = None
+		self.load_from_defaults()
+		self.init_sp_db()
+		self.connect_paramfield_signals()
+		self.on_single_spatial_npoints_changed()
 
+		self.loadScanBtn.clicked.connect(self.load_scan)
+		self.showPatternBtn.clicked.connect(self.on_show_pattern_btn_clicked)
+		self.defaultBtn.clicked.connect(self.on_default_btn_clicked)
+
+		# self.init_test_module()
+		self.init_loadscan_menu()
 
 	def init_plugin(self):
 		'''
@@ -80,10 +95,10 @@ class PatternGeneratorScanParam(ScanParamWidget):
 		self.name = "Pattern Generator Scan"
 		self.idx = scan_panel_order.PATTERN_GEN_SCAN
 		self.type = scan_types.PATTERN_GEN_SCAN
-		self.section_id = 'PatternGen'
+		self.section_id = 'PATTERN_GEN'
 		self.axis_strings = ['Sample Y microns', 'Sample X microns', '', '']
 		self.zp_focus_mode = zp_focus_modes.FL
-		self.data_file_pfx = MAIN_OBJ.get_datafile_prefix()
+		self.data_file_pfx = self.main_obj.get_datafile_prefix()
 		self.plot_item_type = spatial_type_prefix.ROI
 		self._help_html_fpath = os.path.join('interface', 'window_system', 'scan_plugins', 'pattern_generator.html')
 		self._help_ttip = 'Pattern Generator documentation and instructions'
@@ -95,9 +110,11 @@ class PatternGeneratorScanParam(ScanParamWidget):
         '''
 		# make sure that the OSA vertical tracking is off if it is on
 		if (self.isEnabled()):
-			# ask the plotter to show the pattern
-
-			pass
+			# ask the plotter to show the pattern if show_pattern button is checked
+			if(self.showPatternBtn.isChecked()):
+				self.on_show_pattern_btn_clicked(True)
+			else:
+				self.on_show_pattern_btn_clicked(False)
 
 	def on_plugin_defocus(self):
 		'''
@@ -107,22 +124,32 @@ class PatternGeneratorScanParam(ScanParamWidget):
 		if (self.isEnabled()):
 			# # put the OSA vertical tracking back to its previous state
 			# self.main_obj.device(DNM_OSAY_TRACKING).put(self.osay_trcking_was)
-			pass
+			self.update_last_settings()
 
+		# if(USE_E712_HDW_ACCEL):
+		# 	#reset the wavetable rate
+		# 	self.scan_class.e712_wg.set_forced_rate(1)
 		# call the base class defocus
-		#reset the wavetable rate
-		self.scan_class.e712_wg.set_forced_rate(1)
 		super(PatternGeneratorScanParam, self).on_plugin_defocus()
 
 
 	def on_show_pattern_btn_clicked(self, chkd):
+		'''
+		here we emit a signal that allows us to call a function back in stxmMain that will draw the pattern,
+		only the main app knows about the polotter so that is why it was done this way
+		:param chkd:
+		:return:
+		'''
 		#emit a signal that stxmMain is listening for and call show_pattern_generator_pattern in stxmMain
-		self.call_main_func.emit('show_pattern_generator_pattern', chkd)
+		xc = float(self.centerXFld.text())
+		yc = float(self.centerYFld.text())
+		pad_size = float(self.padSizeFld.text())
+		self.call_main_func.emit('show_pattern_generator_pattern', (chkd, xc, yc, pad_size))
 
 	def connect_paramfield_signals(self):
 
-		mtr_x = MAIN_OBJ.device(DNM_SAMPLE_X)
-		mtr_y = MAIN_OBJ.device(DNM_SAMPLE_Y)
+		mtr_x = self.main_obj.device(DNM_SAMPLE_X)
+		mtr_y = self.main_obj.device(DNM_SAMPLE_Y)
 		
 		xllm = mtr_x.get_low_limit()
 		xhlm = mtr_x.get_high_limit()
@@ -138,10 +165,38 @@ class PatternGeneratorScanParam(ScanParamWidget):
 
 		#call standard function to check the fields of the scan param and assign limits
 		self.connect_param_flds_to_validator(lim_dct)
+		#set dwell time limits from 0 to 100,000 ms
+		self.padFld_1.dpo = dblLineEditParamObj('padFld_1', 0.0, 100000.0, 2, parent=self.padFld_1)
+		self.padFld_2.dpo = dblLineEditParamObj('padFld_2', 0.0, 100000.0, 2, parent=self.padFld_2)
+		self.padFld_3.dpo = dblLineEditParamObj('padFld_3', 0.0, 100000.0, 2, parent=self.padFld_3)
+
+		self.padFld_4.dpo = dblLineEditParamObj('padFld_4', 0.0, 100000.0, 2, parent=self.padFld_4)
+		self.padFld_5.dpo = dblLineEditParamObj('padFld_5', 0.0, 100000.0, 2, parent=self.padFld_5)
+		self.padFld_6.dpo = dblLineEditParamObj('padFld_6', 0.0, 100000.0, 2, parent=self.padFld_6)
+
+		self.padFld_7.dpo = dblLineEditParamObj('padFld_7', 0.0, 100000.0, 2, parent=self.padFld_7)
+		self.padFld_8.dpo = dblLineEditParamObj('padFld_8', 0.0, 100000.0, 2, parent=self.padFld_8)
+		self.padFld_9.dpo = dblLineEditParamObj('padFld_9', 0.0, 100000.0, 2, parent=self.padFld_9)
+
+		#set max range to the smallest of X or Y ranges (may not be the same)
+		# it is divided by 5 because each of the 3 pads is separated by same pad sized distance so...
+		#     1   2   3   4   5
+		#  [pad1]  [pad2]  [pad3]
+
+		if(MAX_SCAN_RANGE_FINEX > MAX_SCAN_RANGE_FINEY):
+			max_pad_size = float(MAX_SCAN_RANGE_FINEY)/ 5.0
+		else:
+			max_pad_size = float(MAX_SCAN_RANGE_FINEX)/ 5.0
+
+		self.padSizeFld.dpo = dblLineEditParamObj('padSizeFld', 0.5, max_pad_size, 2, parent=self.padSizeFld)
+		#when the pad size has changed make sure to recalc the roi (step etc)
+		self.padSizeFld.dpo.valid_returnPressed.connect(self.on_single_spatial_range_changed)
+		self.padSizeFld.setToolTip('The range allowed by the fine stage is min %.2f to a max of %.2f um' % (0.5, max_pad_size))
+
 
 	def update_min_max(self):
-		mtr_x = MAIN_OBJ.device(DNM_SAMPLE_X)
-		mtr_y = MAIN_OBJ.device(DNM_SAMPLE_Y)
+		mtr_x = self.main_obj.device(DNM_SAMPLE_X)
+		mtr_y = self.main_obj.device(DNM_SAMPLE_Y)
 		
 		xllm = mtr_x.get_low_limit()
 		xhlm = mtr_x.get_high_limit()
@@ -166,8 +221,8 @@ class PatternGeneratorScanParam(ScanParamWidget):
 	def gen_max_scan_range_limit_def(self):
 		""" to be overridden by inheriting class
 		"""
-		mtr_x = MAIN_OBJ.device(DNM_SAMPLE_X)
-		mtr_y = MAIN_OBJ.device(DNM_SAMPLE_Y)
+		mtr_x = self.main_obj.device(DNM_SAMPLE_X)
+		mtr_y = self.main_obj.device(DNM_SAMPLE_Y)
 		
 		xllm = mtr_x.get_low_limit()
 		xhlm = mtr_x.get_high_limit()
@@ -222,7 +277,7 @@ class PatternGeneratorScanParam(ScanParamWidget):
 		x_roi = get_base_roi(SPDB_X, DNM_SAMPLE_X, cx, rx, nx, sx, src=x_src)
 		y_roi = get_base_roi(SPDB_Y, DNM_SAMPLE_Y, cy, ry, ny, sy, src=y_src)
 
-		energy_pos = MAIN_OBJ.device(DNM_ENERGY).get_position()
+		energy_pos = self.main_obj.device(DNM_ENERGY).get_position()
 		e_roi = get_base_energy_roi(SPDB_EV, DNM_ENERGY, energy_pos, energy_pos, 0, 1, dwell, None, enable=False )
 
 		self.sp_db = make_spatial_db_dict(x_roi=x_roi, y_roi=y_roi, e_roi=e_roi)
@@ -238,44 +293,6 @@ class PatternGeneratorScanParam(ScanParamWidget):
 		ret = True
 		return(ret)
 	
-	# def on_set_center(self):
-	#
-	# 	mtr_x = MAIN_OBJ.device(DNM_SAMPLE_X)
-	# 	mtr_y = MAIN_OBJ.device(DNM_SAMPLE_Y)
-	#
-	# 	centX = float(str(self.centerXFld.text()))
-	# 	centY = float(str(self.centerYFld.text()))
-	#
-	# 	#DRBV + CENTX
-	# 	#pcalX = mtrx.get('calibPosn')
-	# 	#pcalY = mtry.get('calibPosn')
-	#
-	# 	#mtrx.set_calibrated_position(centX + pcalX)
-	# 	#mtry.set_calibrated_position(centY + pcalY)
-	#
-	# 	self.sp_db[SPDB_X][CENTER] = 0.0
-	# 	on_center_changed(self.sp_db[SPDB_X])
-	# 	self.sp_db[SPDB_Y][CENTER] = 0.0
-	# 	on_center_changed(self.sp_db[SPDB_Y])
-	#
-	# 	mtr_x.move(centX)
-	# 	mtr_y.move(centY)
-	#
-	# 	mtr_x.wait_for_stopped_and_zero()
-	# 	mtr_y.wait_for_stopped_and_zero()
-	#
-	# 	roi = {}
-	# 	roi[CENTER] = (0.0, 0.0, 0.0, 0.0)
-	# 	roi[RANGE] = (None, None, None, None)
-	# 	roi[NPOINTS] = (None, None, None, None)
-	# 	roi[STEP] = (None, None, None, None)
-	# 	self.set_roi(roi)
-	#
-	# 	DEFAULTS.set('PRESETS.DETECTOR.CALIBPOSN', (centX, centY))
-	# 	DEFAULTS.set('PRESETS.DETECTOR.CENTER', (0.0, 0.0))
-	# 	DEFAULTS.update()
-	#
-	# 	self.upd_timer.start(250)
 
 	def set_roi(self, roi):
 		"""
@@ -290,18 +307,15 @@ class PatternGeneratorScanParam(ScanParamWidget):
 		"""
 		#print 'det_scan: set_roi: ' , roi
 		(cx, cy, cz, c0) = roi[CENTER]
-		(rx, ry, rz, s0) = roi[RANGE]
+		#(rx, ry, rz, s0) = roi[RANGE]
 		(nx, ny, nz, n0) = roi[NPOINTS]
 		(sx, sy, sz, s0) = roi[STEP]
-		
+		pad_size = float(roi['PAD_SIZE'])
 
+
+		self.set_parm(self.padSizeFld, pad_size, type='float', floor=0.05)
 		self.set_parm(self.centerXFld, cx)
 		self.set_parm(self.centerYFld, cy)
-		
-		# if(rx != None):
-		# 	self.set_parm(self.rangeXFld, rx)
-		# if(ry != None):
-		# 	self.set_parm(self.rangeYFld, ry)
 
 		if(nx != None):
 			self.set_parm(self.npointsXFld, nx, type='int', floor=2)
@@ -345,35 +359,31 @@ class PatternGeneratorScanParam(ScanParamWidget):
 			if(sp_db[CMND] == widget_com_cmnd_types.SELECT_ROI):
 				#dct_put(self.sp_db, SPDB_SCAN_PLUGIN_ITEM_ID, dct_get(sp_db, SPDB_PLOT_ITEM_ID))
 				dct_put(self.sp_db, SPDB_ID_VAL, dct_get(sp_db, SPDB_PLOT_ITEM_ID))
-				 	
+
 			self.sp_db[SPDB_X][CENTER] = sp_db[SPDB_X][CENTER]
-
-			if(sp_db[SPDB_X][RANGE] != 0):
-				self.sp_db[SPDB_X][RANGE] = sp_db[SPDB_X][RANGE]
-
 			self.sp_db[SPDB_Y][CENTER] = sp_db[SPDB_Y][CENTER]
-
-			if(sp_db[SPDB_Y][RANGE] != 0):
-				self.sp_db[SPDB_Y][RANGE] = sp_db[SPDB_Y][RANGE]
 
 		x_roi = self.sp_db[SPDB_X]
 		y_roi = self.sp_db[SPDB_Y]
-		e_rois = self.sp_db[SPDB_EV_ROIS]
 
-		#if do_recalc then it is because mod_roi() has been called by a signal that the
-		#plotWidgetter has resized/moved the ROI, the recalc of x/y when the number of points
-		#is changed is handled above in the signal for the npointsFld
-		if(do_recalc):
-			on_range_changed(x_roi)
-			on_range_changed(y_roi)
+		#rng = float(self.padSizeFld.text())
 
-		self.set_parm(self.centerXFld, x_roi[CENTER])
-		self.set_parm(self.centerYFld, y_roi[CENTER])
-		
-		# if(x_roi[RANGE] != None):
-		# 	self.set_parm(self.rangeXFld, x_roi[RANGE])
-		# if(y_roi[RANGE] != None):
-		# 	self.set_parm(self.rangeYFld, y_roi[RANGE])
+		#x_roi[RANGE] = rng
+		#y_roi[RANGE] = rng
+		# e_rois = self.sp_db[SPDB_EV_ROIS]
+		#
+		# #if do_recalc then it is because mod_roi() has been called by a signal that the
+		# #plotWidgetter has resized/moved the ROI, the recalc of x/y when the number of points
+		# #is changed is handled above in the signal for the npointsFld
+		# if(do_recalc):
+		#make sure that the pad size has been factored into the step size calc
+		on_range_changed(x_roi)
+		on_range_changed(y_roi)
+
+		x_cntr, y_cntr = dct_get(self.sp_db, SPDB_SPATIAL_ROIS_CENTER)
+		#skip setting the center position because it most likely will not make sense to reload it
+		#self.set_parm(self.centerXFld, x_cntr)
+		#self.set_parm(self.centerYFld, y_cntr)
 
 		if(x_roi[NPOINTS] != None):
 			self.set_parm(self.npointsXFld, x_roi[NPOINTS], type='int', floor=2)
@@ -386,11 +396,48 @@ class PatternGeneratorScanParam(ScanParamWidget):
 		
 		if(y_roi[STEP] != None):
 			self.set_parm(self.stepYFld, y_roi[STEP], type='float', floor=0)
+
+		#use the range specified in the x_roi to set the pad size
+		#if (x_roi[RANGE] != None):
+		#	self.set_parm(self.padSizeFld, x_roi[RANGE], type='float', floor=0.5)
 		
 		# if(sp_db[CMND] == widget_com_cmnd_types.SELECT_ROI):
 		# 	self.update_last_settings()
 
+	def load_roi(self, wdg_com, append=False, ev_only=False, sp_only=False):
+		"""
+        Override the base level load_roi()
+        take a widget communications dict and load the plugin GUI with the spatial region, also
+        set the scan subtype selection pulldown for point by point or line
+        """
 
+		# wdg_com = dct_get(ado_obj, ADO_CFG_WDG_COM)
+
+		if (wdg_com[WDGCOM_CMND] == widget_com_cmnd_types.LOAD_SCAN):
+			#load the dwells for each pad
+			sp_rois = dct_get(wdg_com, WDGCOM_SPATIAL_ROIS)
+			i = 1
+			for sp_id in sp_rois.keys():
+				_sp_db = sp_rois[sp_id]
+				dwell = _sp_db[EV_ROIS][0][DWELL]
+				fld = getattr(self, 'padFld_%d' % i)
+				fld.setText(str('%.2f' % dwell))
+				if(i == 5):
+					sp_db = _sp_db
+				i += 1
+
+			if (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != self.type):
+				return
+
+			#make sure the LOAD_SCAN command is set
+			dct_put(sp_db, CMND, widget_com_cmnd_types.LOAD_SCAN)
+
+			self.mod_roi(sp_db, do_recalc=False, sp_only=sp_only)
+			# THIS CALL IS VERY IMPORTANT IN ORDER TO KEEP TEHPLOT AND TABLES IN SYNC
+			#add_to_unique_roi_id_list(sp_db[SPDB_ID_VAL])
+
+			# emit roi_changed so that the plotter can be signalled to create the ROI shap items
+			#self.roi_changed.emit(wdg_com)
 
 	def update_last_settings(self):
 		""" update the 'default' settings that will be reloaded when this scan pluggin is selected again
@@ -404,6 +451,21 @@ class PatternGeneratorScanParam(ScanParamWidget):
 		DEFAULTS.set('SCAN.PATTERN_GEN.NPOINTS', (x_roi[NPOINTS], y_roi[NPOINTS], 0, 0))
 		DEFAULTS.set('SCAN.PATTERN_GEN.STEP', (x_roi[STEP], y_roi[STEP], 0, 0))
 		DEFAULTS.set('SCAN.PATTERN_GEN.DWELL', e_rois[0][DWELL])
+
+		DEFAULTS.set('SCAN.PATTERN_GEN.PAD1', str(self.padFld_1.text()))
+		DEFAULTS.set('SCAN.PATTERN_GEN.PAD2', str(self.padFld_2.text()))
+		DEFAULTS.set('SCAN.PATTERN_GEN.PAD3', str(self.padFld_3.text()))
+
+		DEFAULTS.set('SCAN.PATTERN_GEN.PAD4', str(self.padFld_4.text()))
+		DEFAULTS.set('SCAN.PATTERN_GEN.PAD5', str(self.padFld_5.text()))
+		DEFAULTS.set('SCAN.PATTERN_GEN.PAD6', str(self.padFld_6.text()))
+
+		DEFAULTS.set('SCAN.PATTERN_GEN.PAD7', str(self.padFld_7.text()))
+		DEFAULTS.set('SCAN.PATTERN_GEN.PAD8', str(self.padFld_8.text()))
+		DEFAULTS.set('SCAN.PATTERN_GEN.PAD9', str(self.padFld_9.text()))
+
+		DEFAULTS.set('SCAN.PATTERN_GEN.PAD_SIZE', float(self.padSizeFld.text()))
+
 		DEFAULTS.update()
 
 	def gen_pad(self, xc, yc, pad_width, dwell):
@@ -425,27 +487,54 @@ class PatternGeneratorScanParam(ScanParamWidget):
 		pad = {'centers':(xc, yc), 'dwell': dwell, 'rect': rect}
 		return(pad)
 
+	def on_default_btn_clicked(self):
+		'''
+		handler for default button clicked, just load the standard dwell times for the 9 pads
+		pad layout
+			1	2	3
+			4	5	6
+			7	8	9
+		:return:
+		'''
+		self.padFld_1.setText(str(12.5))
+		self.padFld_2.setText(str(25.0))
+		self.padFld_3.setText(str(50.0))
+
+		self.padFld_4.setText(str(100.0))
+		self.padFld_5.setText(str(250.0))
+		self.padFld_6.setText(str(375.0))
+
+		self.padFld_7.setText(str(500.0))
+		self.padFld_8.setText(str(750.0))
+		self.padFld_9.setText(str(1000.0))
+
 
 	def get_pattern_pads(self, xc, yc, pad_width):
 		'''
 		convienience function that takes a center and creates 9 square pads centers,
+		Pad layout
+
+				1	2	3
+				4	5	6
+				7	8	9
+
 		:param xc:
 		:param yc:
 		:param pad_centers_width:
 		:return:
 		'''
 		pad_centers_width = pad_width + pad_width
-		pad1 = self.gen_pad(xc - pad_centers_width, yc + pad_centers_width, pad_width, 12.5)
-		pad2 = self.gen_pad(xc, yc + pad_centers_width, pad_width, 25.0)
-		pad3 = self.gen_pad(xc + pad_centers_width, yc + pad_centers_width, pad_width, 50.0)
+		pad1 = self.gen_pad(xc - pad_centers_width, yc + pad_centers_width, pad_width, float(self.padFld_1.text()))
+		pad2 = self.gen_pad(xc, yc + pad_centers_width, pad_width,  float(self.padFld_2.text()))
+		pad3 = self.gen_pad(xc + pad_centers_width, yc + pad_centers_width, pad_width,  float(self.padFld_3.text()))
 
-		pad4 = self.gen_pad(xc - pad_centers_width, yc, pad_width, 100.0)
-		pad5 = self.gen_pad(xc, yc, pad_centers_width, 250.0)
-		pad6 = self.gen_pad(xc + pad_centers_width, yc, pad_width, 375.0)
+		pad4 = self.gen_pad(xc - pad_centers_width, yc, pad_width,  float(self.padFld_4.text()))
+		pad5 = self.gen_pad(xc, yc, pad_centers_width,  float(self.padFld_5.text()))
+		pad6 = self.gen_pad(xc + pad_centers_width, yc, pad_width,  float(self.padFld_6.text()))
 
-		pad7 = self.gen_pad(xc - pad_centers_width, yc - pad_centers_width, pad_width, 500.0)
-		pad8 = self.gen_pad(xc, yc - pad_centers_width, pad_width, 750.0)
-		pad9 = self.gen_pad(xc + pad_centers_width, yc - pad_centers_width, pad_width, 1000.0)
+		pad7 = self.gen_pad(xc - pad_centers_width, yc - pad_centers_width, pad_width,  float(self.padFld_7.text()))
+		pad8 = self.gen_pad(xc, yc - pad_centers_width, pad_width,  float(self.padFld_8.text()))
+		pad9 = self.gen_pad(xc + pad_centers_width, yc - pad_centers_width, pad_width,  float(self.padFld_9.text()))
 
 		pads = [pad1, pad2, pad3, pad4, pad5, pad6, pad7, pad8, pad9]
 		return(pads)
@@ -460,8 +549,10 @@ class PatternGeneratorScanParam(ScanParamWidget):
 		:returns: None
 	 
 		"""
+		# self.update_last_settings()
 		#update local widget_com dict
-		rx = ry = 1.2  # 1.2 um pads
+		pad_size = float(self.padSizeFld.text())
+		rx = ry = pad_size  # pad_size um pads
 		pad_centers_width = rx + ry
 		wdg_com = self.update_single_spatial_wdg_com()
 		sp_id = list(wdg_com['SPATIAL_ROIS'].keys())[0]
@@ -495,25 +586,6 @@ class PatternGeneratorScanParam(ScanParamWidget):
 		else:
 			pads = self.get_pattern_pads(xc, yc, rx)
 
-
-
-		# # dwells in order from btm left to top right
-		# # dwells = [500, 750, 1000, 100, 250, 375, 12.5, 25, 50.0]
-		# # pads in order from top left to btm right, ((xc, yc), dwell)
-		# pad1 = ((xc - pad_centers_width, yc + pad_centers_width), 12.5)
-		# pad2 = ((xc, yc + pad_centers_width), 25.0)
-		# pad3 = ((xc + pad_centers_width, yc + pad_centers_width), 50.0)
-		#
-		# pad4 = ((xc - pad_centers_width, yc), 100.0)
-		# pad5 = ((xc, yc), 250.0)
-		# pad6 = ((xc + pad_centers_width, yc), 375.0)
-		#
-		# pad7 = ((xc - pad_centers_width, yc - pad_centers_width ), 500.0)
-		# pad8 = ((xc, yc - pad_centers_width), 750.0)
-		# pad9 = ((xc + pad_centers_width, yc - pad_centers_width), 1000.0)
-		#
-		# pads = [pad1, pad2, pad3, pad4, pad5, pad6, pad7, pad8, pad9]
-
 		sp_rois_dct = {}
 		id = 0
 		for pad_dct in pads:
@@ -522,17 +594,8 @@ class PatternGeneratorScanParam(ScanParamWidget):
 			rect = pad_dct['rect']
 			x_roi = get_base_roi(SPDB_X, DNM_SAMPLE_X, cx, rx, nx, src=x_src, max_scan_range=MAX_SCAN_RANGE_FINEX)
 			y_roi = get_base_roi(SPDB_Y, DNM_SAMPLE_Y, cy, ry, ny, src=y_src, max_scan_range=MAX_SCAN_RANGE_FINEY)
-			energy_pos = MAIN_OBJ.device(DNM_ENERGY).get_position()
+			energy_pos = self.main_obj.device(DNM_ENERGY).get_position()
 			e_roi = get_base_energy_roi(SPDB_EV, DNM_ENERGY, energy_pos, energy_pos, 0, 1, dwell, None, enable=False)
-			# if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
-			# 	zp_rois = {}
-			# 	dct_put(zp_rois, SPDB_ZX, x_roi)
-			# 	dct_put(zp_rois, SPDB_ZY, y_roi)
-			# 	_sp_db = make_spatial_db_dict(x_roi=x_roi, y_roi=y_roi, zp_rois=zp_rois, e_roi=e_roi, sp_id=id)
-			# 	#_sp_db = self.modify_sp_db_for_goni(_sp_db)
-			# else:
-			# 	_sp_db = make_spatial_db_dict(x_roi=x_roi, y_roi=y_roi, e_roi=e_roi, sp_id=id)
-			#
 			zp_rois = {}
 
 			#if this is a zoneplate scan then copy the x/y rois to the zoneplate rois
@@ -546,11 +609,15 @@ class PatternGeneratorScanParam(ScanParamWidget):
 			dct_put(_sp_db, SPDB_SCAN_PLUGIN_SUBTYPE, scan_sub_types.POINT_BY_POINT)
 			dct_put(_sp_db, SPDB_PLOT_SHAPE_TYPE, self.plot_item_type)
 			dct_put(_sp_db, SPDB_HDW_ACCEL_USE, False)
+			dct_put(_sp_db, SPDB_SPATIAL_ROIS_CENTER, (xc, yc))
+			dct_put(_sp_db, SPDB_SCAN_PLUGIN_SECTION_ID, self.section_id)
 
 			sp_rois_dct[id] = _sp_db
 			id += 1
 
 		#wdg_com[SPDB_SPATIAL_ROIS] = sp_rois
+
+		#replace the sp_dbs with the new ones that have been centered at the user specified location
 		del (wdg_com[SPDB_SPATIAL_ROIS][sp_id])
 		wdg_com[SPDB_SPATIAL_ROIS] = {}
 		dct_put(wdg_com, SPDB_SPATIAL_ROIS, sp_rois_dct)

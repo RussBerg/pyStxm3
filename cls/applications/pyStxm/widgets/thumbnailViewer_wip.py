@@ -61,10 +61,8 @@ from cls.utils.fileSystemMonitor import DirectoryMonitor
 from cachetools import cached, TTLCache  # 1 - let's import the "cached" decorator and the "TTLCache" object from cachetools
 cache = TTLCache(maxsize=100, ttl=300) # 2 - let's create the cache object.
 
-
 # appConfig = ConfigClass(abs_path_to_ini_file)
-# icoDir = appConfig.get_value('DEFAULT', 'icoDir')
-icoDir = os.path.join(os.getcwd(), '..', '..', '..', 'icons')
+icoDir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','..','icons')
 
 _logger = get_module_logger(__name__)
 
@@ -2645,6 +2643,7 @@ if __name__ == "__main__":
     # main = ContactSheet(r'S:\STXM-data\Cryo-STXM\2016\guest\test')
     # main = ContactSheet(dir, BioxasDataIo)
     main = ContactSheet(data_dir=dir, data_io=STXMDataIo)
+
     # main.set_data_dir(dir)
     main.show()
     main.resize(385, 700)

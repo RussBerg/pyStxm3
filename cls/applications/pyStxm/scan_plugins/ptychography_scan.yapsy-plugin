@@ -1,9 +1,9 @@
 [Core]
-Name = OSA scan params
-Module = osa_scan
+Name = Ptychography scan params
+Module = ptychography_scan
 
 [Documentation]
 Author = Russ Berg
 Version = 0.1
 Website = http://lateral.netmanagers.com.ar
-Description = Params for an Image by Image line scan 
+Description = Params for an Point by Point Ptychography scan

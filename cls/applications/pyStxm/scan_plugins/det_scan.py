@@ -58,7 +58,7 @@ class DetectorScanParam(ScanParamWidget):
 
 		self.scribblerBtn.setVisible(True)
 		self.scribblerBtn.setToolTip('Click the image and then hold down CTRL-C to move detector \nstage around looking for the beam')
-		self.detxy_snapshot_pv = MAIN_OBJ.device('DetCntr_Snapshot')
+		self.detxy_snapshot_pv = self.main_obj.device('DetCntr_Snapshot')
 		
 		self.scribbler_enabled = False
 		self.plotWidget = None
@@ -91,7 +91,7 @@ class DetectorScanParam(ScanParamWidget):
 		self.axis_strings = ['Det Y microns', 'Det X microns', '', '']
 		self.zp_focus_mode = zp_focus_modes.A0MOD
 		# data_file_pfx = 'd'
-		self.data_file_pfx = MAIN_OBJ.get_datafile_prefix()
+		self.data_file_pfx = self.main_obj.get_datafile_prefix()
 		self.plot_item_type = spatial_type_prefix.ROI
 		self._help_html_fpath = os.path.join('interface', 'window_system', 'scan_plugins', 'detector.html')
 		self._help_ttip = 'Detector Scan documentation and instructions'
@@ -122,8 +122,8 @@ class DetectorScanParam(ScanParamWidget):
 
 	def connect_paramfield_signals(self):
 
-		mtr_x = MAIN_OBJ.device(DNM_DETECTOR_X)
-		mtr_y = MAIN_OBJ.device(DNM_DETECTOR_Y)
+		mtr_x = self.main_obj.device(DNM_DETECTOR_X)
+		mtr_y = self.main_obj.device(DNM_DETECTOR_Y)
 		
 		xllm = mtr_x.get_low_limit()
 		xhlm = mtr_x.get_high_limit()
@@ -141,8 +141,8 @@ class DetectorScanParam(ScanParamWidget):
 		self.connect_param_flds_to_validator(lim_dct)
 
 	def update_min_max(self):
-		mtr_x = MAIN_OBJ.device(DNM_DETECTOR_X)
-		mtr_y = MAIN_OBJ.device(DNM_DETECTOR_Y)
+		mtr_x = self.main_obj.device(DNM_DETECTOR_X)
+		mtr_y = self.main_obj.device(DNM_DETECTOR_Y)
 		
 		xllm = mtr_x.get_low_limit()
 		xhlm = mtr_x.get_high_limit()
@@ -167,8 +167,8 @@ class DetectorScanParam(ScanParamWidget):
 	def gen_max_scan_range_limit_def(self):
 		""" to be overridden by inheriting class
 		"""
-		mtr_x = MAIN_OBJ.device(DNM_DETECTOR_X)
-		mtr_y = MAIN_OBJ.device(DNM_DETECTOR_Y)
+		mtr_x = self.main_obj.device(DNM_DETECTOR_X)
+		mtr_y = self.main_obj.device(DNM_DETECTOR_Y)
 		
 		xllm = mtr_x.get_low_limit()
 		xhlm = mtr_x.get_high_limit()
@@ -211,7 +211,7 @@ class DetectorScanParam(ScanParamWidget):
 		y_roi = get_base_roi(SPDB_Y, DNM_DETECTOR_Y, cy, ry, ny, sy, src=y_src)
 		z_roi = get_base_roi(SPDB_Z, DNM_DETECTOR_Z, 0, 0, 0, enable=False)
 
-		energy_pos = MAIN_OBJ.device(DNM_ENERGY).get_position()
+		energy_pos = self.main_obj.device(DNM_ENERGY).get_position()
 		e_roi = get_base_energy_roi(SPDB_EV, DNM_ENERGY, energy_pos, energy_pos, 0, 1, dwell, None, enable=False )
 
 		self.sp_db = make_spatial_db_dict(x_roi=x_roi, y_roi=y_roi, z_roi=z_roi, e_roi=e_roi)
@@ -228,8 +228,8 @@ class DetectorScanParam(ScanParamWidget):
 	
 	def on_set_center(self):
 
-		mtr_x = MAIN_OBJ.device(DNM_DETECTOR_X)
-		mtr_y = MAIN_OBJ.device(DNM_DETECTOR_Y)
+		mtr_x = self.main_obj.device(DNM_DETECTOR_X)
+		mtr_y = self.main_obj.device(DNM_DETECTOR_Y)
 
 		centX = float(str(self.centerXFld.text())) 
 		centY = float(str(self.centerYFld.text()))
@@ -267,7 +267,7 @@ class DetectorScanParam(ScanParamWidget):
 
 	
 	def on_osa_out(self, chkd):
-		osa_mtr = MAIN_OBJ.device(DNM_OSA_X)
+		osa_mtr = self.main_obj.device(DNM_OSA_X)
 		#use as the out position: current max High level Lim - 10um
 		if(chkd):
 			self.osaOutBtn.setText('Move OSA In')
@@ -283,14 +283,14 @@ class DetectorScanParam(ScanParamWidget):
 			sizex = 2000
 			sizey = 2000
 			self.scribbler_enabled = True
-			self.plotWidget = MAIN_OBJ.get('IMAGE_WIDGET')
+			self.plotWidget = self.main_obj.get('IMAGE_WIDGET')
 			self.plotWidget.initData(image_types.IMAGE, sizex*2.0 ,  sizey*2.0, {SPDB_RECT: (-1*sizex, -1*sizey, sizex, sizey)})
 			#self.plotWidget.set_autoscale(fill_plot_window=True)
-			#self.detxy_snapshot_pv = MAIN_OBJ.device('DetCntr_Snapshot').changed.connect(self.on_new_det_data)
+			#self.detxy_snapshot_pv = self.main_obj.device('DetCntr_Snapshot').changed.connect(self.on_new_det_data)
 		else:
 			#print 'osa_scan: scribbler disabled'
 			self.scribbler_enabled = False
-			#MAIN_OBJ.device('DetCntr_Snapshot').changed.disconnect(self.on_new_det_data)
+			#self.main_obj.device('DetCntr_Snapshot').changed.disconnect(self.on_new_det_data)
 			self.plotWidget.delImagePlotItems()
 	
 	def on_new_det_data(self, arr):
@@ -305,8 +305,8 @@ class DetectorScanParam(ScanParamWidget):
 			self.fbk_cntr += 1
 	
 	def move_detxy_mtrs(self, xpos, ypos):
-		mtr_x = MAIN_OBJ.device(DNM_DETECTOR_X)
-		mtr_y = MAIN_OBJ.device(DNM_DETECTOR_Y)
+		mtr_x = self.main_obj.device(DNM_DETECTOR_X)
+		mtr_y = self.main_obj.device(DNM_DETECTOR_Y)
 
 		mtr_x.move(xpos)
 		mtr_y.move(ypos)

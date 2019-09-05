@@ -5144,12 +5144,35 @@ class BaseScan(BaseObject):
     #
     #     return (yield from do_scan())
 
+    def motor_ready_check(self, mtr_lst):
+        '''
+        make sure that every motor in the list is ready to be scanned by calling the motors implementation of is_ready()
+        :param mtr_lst:
+        :return:
+        '''
+        ret = True
+        for mtr in mtr_lst:
+            if(not mtr.is_ready()):
+                _logger.error('The motor [%s] is NOT ready for scanning, check that it is calibrated and has no errors' % mtr.get_name())
+                ret = False
+        return(ret)
+
     def make_single_pxp_image_plan(self, dets, gate, md=None, bi_dir=False, do_baseline=True):
+        '''
+        self explanatory
+        :param dets:
+        :param gate:
+        :param md:
+        :param bi_dir:
+        :param do_baseline:
+        :return:
+        '''
         dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
         self._bi_dir = bi_dir
         if (md is None):
             md = {'metadata': dict_to_json(
                 self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+
 
         @conditional_decorator(bpp.baseline_decorator(dev_list), do_baseline)
         #@bpp.baseline_decorator(dev_list)

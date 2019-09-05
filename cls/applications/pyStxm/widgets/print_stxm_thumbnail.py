@@ -674,7 +674,10 @@ class PrintSTXMThumbnailWidget(QDialog):
         buffer = QBuffer(byteArray)
         buffer.open(QIODevice.WriteOnly)
         pmap.save(buffer, "PNG")
-        url = "<img src=\"data:image/png;base64," + byteArray.toBase64() + "\"/>"
+        sdata = str(byteArray.toBase64())
+        sdata = sdata.replace('b\'', '')
+        sdata = sdata.replace('\'', '')
+        url = "<img src=\"data:image/png;base64," + sdata + "\"/>"
         text += url
         text += "</html>"
         return(text)

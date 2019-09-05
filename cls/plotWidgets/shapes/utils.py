@@ -97,7 +97,7 @@ def create_rect_centerd_at(rect, xc, yc, title, plot=None):
     return(r, z)
 
 
-def create_rectangle(rect, title='None', plot=None, annotated=False, alpha=0.05, l_style='SolidLine', l_clr='#ffff00'):
+def create_rectangle(rect, title='None', plot=None, annotated=False, alpha=0.2, l_style='SolidLine', l_clr='#55ff7f'):
     '''
     self explanatory
     :param rect:
@@ -113,8 +113,11 @@ def create_rectangle(rect, title='None', plot=None, annotated=False, alpha=0.05,
 
     r.set_resizable(False)
     sh._title = title
-    sh.fill.alpha = alpha
+    #sh.fill.alpha = alpha
+    sh.fill.alpha = 0.2
+    sh.fill.color = l_clr
     sh.sel_fill.alpha = alpha
+    sh.sel_fill.color = l_clr
     sh.symbol.alpha = alpha
     sh.sel_symbol.alpha = alpha
     sh.line._style = l_style

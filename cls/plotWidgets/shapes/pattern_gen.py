@@ -45,7 +45,7 @@ def add_pattern_to_plot(parent, xc=0.0, yc=0.0, pad_size=1.0):
             y2 = float(y_roi['STOP'])
 
             rect = (x1, y1, x2, y2)
-            item, z = create_rectangle(rect, title=title+'_' + letter, plot=parent.plot, annotated=False)
+            item, z = create_rectangle(rect, title=title+'_' + letter, plot=parent.plot, annotated=False, alpha=1.0)
             item.selection_name = title+'_' + letter
             #qrect = QtCore.QRectF(QtCore.QPointF(rect[0], rect[2]), QtCore.QPointF(rect[3], rect[1]))
             qrect = QtCore.QRectF(QtCore.QPointF(rect[0], rect[1]), QtCore.QPointF(rect[2], rect[3]))
@@ -62,7 +62,9 @@ def add_pattern_to_plot(parent, xc=0.0, yc=0.0, pad_size=1.0):
     main_r = (main_rect.left(), main_rect.top(), main_rect.right(), main_rect.bottom())
     #because z =None in create_rectangle() that ensures that the lastly created rectaangle will be on th etop, so it will be selected before
     #others below it so that is why main_rect is created last
-    item, z = create_rectangle(main_r, title=title+'_MAIN', plot=parent.plot, annotated=True, alpha=0.01, l_style='DashLine', l_clr='#645d03')
+    #item, z = create_rectangle(main_r, title=title+'_MAIN', plot=parent.plot, annotated=True, alpha=0.01, l_style='DashLine', l_clr='#645d03')
+    item, z = create_rectangle(main_r, title=title + '_MAIN', plot=parent.plot, annotated=True, alpha=0.5,
+                               l_style='DashLine', l_clr='#55ff7f')
     item.unique_id = get_unique_roi_id()
     item.selection_name = 'pattern_MAIN'
     return(rois_dct)

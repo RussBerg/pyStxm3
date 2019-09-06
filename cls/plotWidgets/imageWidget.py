@@ -161,6 +161,7 @@ SAMPLE_GONI = 'SAMPLE_GONI'
 SAMPLE_STANDARD = 'SAMPLE_STANDARD'
 FILTER_STRING = "*.hdf5;*.png;*.jpg"
 
+MAX_IMAGE_Z = 1000
 # setup module logger with a default do-nothing handler
 _logger = get_module_logger(__name__)
 
@@ -5205,7 +5206,7 @@ class ImageWidget(ImageDialog):
         item.set_movable(True)
         item.set_resizable(True)
         item.set_rotatable(True)
-        plot.add_item(item, z=999)
+        plot.add_item(item, z=MAX_IMAGE_Z-1)
 
 
     def openfile_mod(self, fnames, addimages=True, counter='counter0', dropped=False):

@@ -11,6 +11,9 @@ import os
 from cls.utils.dict_utils import dct_put
 curDir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '/')
 
+MIN_SHAPE_Z = 1001
+
+shape_cntr = MIN_SHAPE_Z
 # def make_dflt_stxm_osa_smplholder_settings_dct(fpath):
 # 	dct = {}
 # 	dct_put(dct, "OSA.CENTER", (0,0))
@@ -48,6 +51,7 @@ def create_segment(rect, title='None', plot=None, annotated=False, alpha=0.05, l
     :param plot:
     :return:
     '''
+    global shape_cntr
     #def segment(self, x0, y0, x1, y1, title=None):
     if (annotated):
         # annotated_segment(self, x0, y0, x1, y1, title=None, subtitle=None
@@ -72,7 +76,9 @@ def create_segment(rect, title='None', plot=None, annotated=False, alpha=0.05, l
     r.set_item_parameters({"ShapeParam": sh})
 
     # self.plot.add_item(r, z=999999999)
-    z = 999999999
+    #z = 999999999
+    shape_cntr += 1
+    z = shape_cntr
     if (plot):
         plot.add_item(r, z)
     return (r, z)
@@ -86,6 +92,7 @@ def create_rect_centerd_at(rect, xc, yc, title, plot=None):
     :param title:
     :return:
     '''
+
     dx = (rect[2] - rect[0]) * 0.5
     dy = (rect[1] - rect[3]) * 0.5
     r, z = create_rectangle((xc - dx, yc + dy , xc + dx, yc - dy), title=title)
@@ -104,6 +111,7 @@ def create_rectangle(rect, title='None', plot=None, annotated=False, alpha=0.2, 
     :param title:
     :return:
     '''
+    global shape_cntr
     if(annotated):
         r = make.annotated_rectangle(rect[0], rect[1], rect[2], rect[3], title=title)
         sh = r.shape.shapeparam
@@ -127,7 +135,9 @@ def create_rectangle(rect, title='None', plot=None, annotated=False, alpha=0.2, 
     sh.sel_symbol.marker = 'NoSymbol'
 
     r.set_item_parameters({"ShapeParam": sh})
-    z = None
+    #z = None
+    shape_cntr += 1
+    z = shape_cntr
     if (plot):
         plot.add_item(r, z)
     return (r, z)
@@ -147,6 +157,7 @@ def create_simple_circle(xc, yc, rad, title='None', clr=None, fill_alpha=0.05, p
 
     :returns: None
     """
+    global shape_cntr
     from guiqwt.styles import ShapeParam
     #circ = make.annotated_circle(x0, y0, x1, y1, ratio, title, subtitle)
     #rad = val/2.0
@@ -217,7 +228,9 @@ def create_simple_circle(xc, yc, rad, title='None', clr=None, fill_alpha=0.05, p
     # print circ.curve_item.curveparam
     # circ.set_style(, option)
     circ.set_item_parameters({"ShapeParam": sh})
-    z = 999999999
+    #z = 999999999
+    shape_cntr += 1
+    z = shape_cntr
     if (plot):
         plot.add_item(circ, z)
 

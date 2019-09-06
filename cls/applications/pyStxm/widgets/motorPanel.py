@@ -14,6 +14,7 @@ from bcm.devices import BaseDevice
 from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, POS_TYPE_BL, POS_TYPE_ES
 from cls.app_data.defaults import master_colors, get_style
 from cls.utils.log import get_module_logger
+from cls.utils.sig_utils import disconnect_signal, reconnect_signal
 from cls.scanning.paramLineEdit import dblLineEditParamObj
 from cls.applications.pyStxm.widgets.spfbk_small import Ui_Form as spfbk_small
 from cls.applications.pyStxm.widgets.sp_small import Ui_Form as sp_small
@@ -22,7 +23,10 @@ from cls.applications.pyStxm.widgets.button_small_wbtn import Ui_Form as btn_sma
 #from cls.caWidgets.caPushBtn import caPushBtn, caPushBtnWithFbk
 from cls.devWidgets.ophydPushBtn import ophydPushBtn, ophydPushBtnWithFbk
 from cls.devWidgets.ophydLabelWidget import assign_aiLabelWidget
+from cls.scanning.paramLineEdit import intLineEditParamObj, dblLineEditParamObj
+
 iconsDir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','..','icons','small')
+mtrDetailDir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'ui')
 
 
 
@@ -60,15 +64,9 @@ class PositionersPanel(QtWidgets.QWidget):
 	'''
 	def __init__(self, positioner_set='ES', exclude_list=[], parent=None):
 		super(PositionersPanel, self).__init__(parent)
-		
-		
-		#self.exclude_list = ['_ZonePlateZ_base', 'SampleFineX', 'SampleFineY', 'CoarseX.X', 'CoarseY.Y', 'AUX1','AUX2','Cff','PeemM3Trans']
 		self.exclude_list = exclude_list
-		#self.bl_list = ['EPUPolarization', 'EPUGap', 'SlitY', 'SlitX', 'EPUOffset', 'EPUHarmonic', 'EPUFollowing', \
-		#			'Branch', 'Grating', 'Cff', 'AUX1', 'AUX2','MonoTrans', 'PeemM3Trans', 'M3STXMPitch']		
-		
 		self.enum_list = ['EPUPolarization', 'EPUHarmonic', 'Branch' ]
-		
+
 		self.fbk_enabled = False
 		self.positioner_set = positioner_set
 		self.mtr = None	
@@ -87,8 +85,7 @@ class PositionersPanel(QtWidgets.QWidget):
 		self.updateTimer = QtCore.QTimer()
 		self.updateTimer.timeout.connect(self.update_widgets)
 		
-		
-		self.setLayout(self.vbox)		
+		self.setLayout(self.vbox)
 		self.mtr_dict = {}
 
 		#self.qssheet = get_style('dark')
@@ -115,31 +112,107 @@ class PositionersPanel(QtWidgets.QWidget):
 					usethis = True
 			
 			if(usethis):
-				#if(dev in self.enum_list):
-				#	cbox = ca_mbbiComboBoxWidget(mtr.get_name(), hdrText='Mode')
-				#	self.vbox.addWidget(cbox)
-				#else:	
-				#_logger.debug('uic.loadUi [%s]' % dev)
-				#dev_ui = uic.loadUi(r'C:\controls\py2.7\Beamlines\sm\stxm_control\widgets\ui\spfbk_small.ui')
 				widg = QtWidgets.QWidget()
 				dev_ui = spfbk_small()
 				dev_ui.setupUi(widg)
 				dev_ui.stopBtn.setIcon(QtGui.QIcon(os.path.join(iconsDir, 'stop.png')))
 				dev_ui.detailsBtn.setIcon(QtGui.QIcon(os.path.join(iconsDir, 'details.png')))
-				
-				#dev_ui.setPosFld.installEventFilter(Filter())
-				#mtr = MAIN_OBJ.device(dev)
+				dev_ui.setPosFld.installEventFilter(self)
 				self.mtr_dict[mtr.get_name()] = ( dev, dev_ui, widg,  mtr)
+				dev_ui.setPosFld.mtr_info = ( dev, dev_ui, widg,  mtr)
+				self.update_setpoint_field_range(dev_ui.setPosFld, mtr)
 				self.connect_motor_widgets(dev, dev_ui, widg, mtr)
 				#_logger.debug('DONE uic.loadUi [%s]' % dev)
 				#print 'positioner: [%s] pvname [%s]' % (dev, mtr.get_name())
-		# self.updateTimer.start(FEEDBACK_DELAY)
-		#self.fbk_enabled = True
-		self.fbk_enabled = False
-		#self.loadMotorConfig(positioner)
-		atexit.register(self.on_exit)
 
+		self.fbk_enabled = False
+		atexit.register(self.on_exit)
 		self.enable_feedback()
+
+	def update_setpoint_field_range(self, fld, mtr):
+		llm = mtr.get_low_limit()
+		hlm = mtr.get_high_limit()
+
+		if ((hlm is not None) and (llm is not None)):
+			if (not hasattr(fld, 'dpo')):
+				fld.dpo = dblLineEditParamObj(fld.objectName(), llm, hlm, 2, parent=fld)
+			fld.dpo._min = llm
+			fld.dpo._max = hlm
+		else:
+			# this will need to be handled correctly in the future, for now leave myself a message
+			ma_str = 'pv wasnt connected yet'
+
+
+
+	def eventFilter(self, object, event):
+		'''
+		This event filter was primarily setup to dynamically set the min max range msgs in the ToolTips
+		:param object:
+		:param event:
+		:return:
+		'''
+		if event.type() == QtCore.QEvent.ToolTip:
+			(dev, dev_ui, widg, mtr) = object.mtr_info
+			llm = mtr.get_low_limit()
+			hlm = mtr.get_high_limit()
+			if ((hlm is not None) and (llm is not None)):
+				ma_str = 'move absolute between %.2f and %.2f' % (llm, hlm)
+				object.dpo._min = llm
+				object.dpo._max = hlm
+			else:
+				# this will need to be handled correctly in the future, for now leave myself a message
+				ma_str = 'pv wasnt connected yet'
+			object.setToolTip(ma_str)
+
+
+		# if event.type() == QtCore.QEvent.FocusOut:
+		# 	self.__showCursor(False)
+		# if event.type() == QtCore.QEvent.Paint:
+		# 	QtWidgets.QApplication.postEvent(self, QtCore.QEvent(QtCore.QEvent.User))
+		# elif event.type() == QtCore.QEvent.MouseButtonPress:
+		# 	self.__select(event.pos())
+		# 	return True
+		# elif event.type() == QtCore.QEvent.MouseMove:
+		# 	self.__move(event.pos())
+		# 	return True
+		# if event.type() == QtCore.QEvent.KeyPress:
+		# 	delta = 5
+		# 	key = event.key()
+		# 	if key == QtCore.Qt.Key_Up:
+		# 		self.__shiftCurveCursor(True)
+		# 		return True
+		# 	elif key == QtCore.Qt.Key_Down:
+		# 		self.__shiftCurveCursor(False)
+		# 		return True
+		# 	elif key == QtCore.Qt.Key_Right or key == QtCore.Qt.Key_Plus:
+		# 		if self.__selectedCurve:
+		# 			self.__shiftPointCursor(True)
+		# 		else:
+		# 			self.__shiftCurveCursor(True)
+		# 		return True
+		# 	elif key == QtCore.Qt.Key_Left or key == QtCore.Qt.Key_Minus:
+		# 		if self.__selectedCurve:
+		# 			self.__shiftPointCursor(False)
+		# 		else:
+		# 			self.__shiftCurveCursor(True)
+		# 		return True
+		# 	if key == QtCore.Qt.Key_1:
+		# 		self.__moveBy(-delta, delta)
+		# 	elif key == QtCore.Qt.Key_2:
+		# 		self.__moveBy(0, delta)
+		# 	elif key == QtCore.Qt.Key_3:
+		# 		self.__moveBy(delta, delta)
+		# 	elif key == QtCore.Qt.Key_4:
+		# 		self.__moveBy(-delta, 0)
+		# 	elif key == QtCore.Qt.Key_6:
+		# 		self.__moveBy(delta, 0)
+		# 	elif key == QtCore.Qt.Key_7:
+		# 		self.__moveBy(-delta, -delta)
+		# 	elif key == QtCore.Qt.Key_8:
+		# 		self.__moveBy(0, -delta)
+		# 	elif key == QtCore.Qt.Key_9:
+		# 		self.__moveBy(delta, -delta)
+		return QtWidgets.QWidget.eventFilter(self, object, event)
 
 	def enable_feedback(self):
 		self.updateTimer.start(FEEDBACK_DELAY)
@@ -158,30 +231,28 @@ class PositionersPanel(QtWidgets.QWidget):
 	def connect_motor_widgets(self, name, mtr_ui, widg, mtr):
 		_logger.debug('connect_motor_widgets[%s]' % name)
 		#connect btn handlers
-		hlm = llm = None
-		#hlm = mtr.get_high_limit()
-
-		#llm = mtr.get_low_limit()
-		#llm = mtr.get_low_limit()
-
-		#desc = mtr.get('description')
+		# hlm = llm = None
+		# hlm = mtr.get_high_limit()
+		# llm = mtr.get_low_limit()
+		#
+		# #desc = mtr.get('description')
 		desc = mtr.get_desc()
 		pv_name = mtr.get_name()
-		if((hlm is not None) and (llm is not None)):
-			ma_str = 'move absolute between %.2f and %.2f' % (llm, hlm)
-		else:
-			#this will need to be handled correctly in the future, for now leave myself a message
-			ma_str = 'pv wasnt connected yet'
+		# if((hlm is not None) and (llm is not None)):
+		# 	ma_str = 'move absolute between %.2f and %.2f' % (llm, hlm)
+		# else:
+		# 	#this will need to be handled correctly in the future, for now leave myself a message
+		# 	ma_str = 'pv wasnt connected yet'
 
 		mtr_ui.stopBtn.clicked.connect(self.stop)
 		mtr_ui.detailsBtn.clicked.connect(self.on_details)
 		mtr_ui.setPosFld.returnPressed.connect(self.on_return_pressed)	
 		#mtr_ui.setPosFld.editingFinished.connect(self.on_editing_finished)
 		
-		mtr_ui.setPosFld.setToolTip(ma_str)
+		#mtr_ui.setPosFld.setToolTip(ma_str)
 		
-		mtr_ui.setPosFld.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-		mtr_ui.setPosFld.customContextMenuRequested.connect(self.contextMenuEvent)
+		#mtr_ui.setPosFld.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+		#mtr_ui.setPosFld.customContextMenuRequested.connect(self.contextMenuEvent)
 
 		mtr_ui.mtrNameFld.setText(name)
 		mtr_ui.mtrNameFld.setToolTip(desc)
@@ -475,6 +546,8 @@ class PositionersPanel(QtWidgets.QWidget):
 		(dev, dev_ui, widg,  mtr) = self.mtr_dict[pvname]
 		#dev_ui = uic.loadUi(r'C:\controls\py2.7\Beamlines\sm\stxm_control\widgets\ui\spfbk_detail.ui')
 		detForm = PositionerDetail(dev, dev_ui, mtr)
+		ss = get_style('dark')
+		detForm.setStyleSheet(ss)
 		detForm.exec_()
 		
 		
@@ -485,7 +558,7 @@ class PositionerDetail(QtWidgets.QDialog):
 	'''
 	def __init__(self, positioner, dev_ui, mtr):
 		super(PositionerDetail, self).__init__()
-		uic.loadUi(r'C:\controls\py2.7\Beamlines\sm\stxm_control\widgets\ui\spfbk_detail.ui', self)
+		uic.loadUi(os.path.join(mtrDetailDir, 'spfbk_detail.ui'), self)
 		self.mtr = mtr
 		self.positioner = positioner
 		self.dev_ui = dev_ui	
@@ -505,17 +578,24 @@ class PositionerDetail(QtWidgets.QDialog):
 		self.setpointFld.returnPressed.connect(self.on_move_to_position)
 		self.setPosFld.returnPressed.connect(self.on_set_position)
 		self.velFld.returnPressed.connect(self.on_set_velo)
-		
+
+		self.loadMotorConfig(self.positioner)
 		
 				
 	def loadMotorConfig(self, positioner='AbsSampleX'):
 		positioner = str(positioner)
 		
 		if(self.mtr != None):
-			self.mtr.changed.disconnect()
-			self.mtr.status.disconnect()
-			del(self.mtr)
-			self.mtr = None
+			self.mtr.add_callback('user_readback', self.updateFbk)
+			# disconnect_signal(self.mtr, self.mtr.changed.changed)
+			# disconnect_signal(self.mtr, self.mtr.status)
+			# disconnect_signal(self.mtr, self.mtr.calib_changed)
+			# disconnect_signal(self.mtr, self.mtr.moving)
+			# disconnect_signal(self.mtr, self.mtr.log_msg)
+			#
+			# del(self.mtr)
+			# self.mtr = None
+
 		self.mtrNameFld.setText(positioner)
 		self.unitsLbl.setText(self.units)
 		self.mtr = self.devices[positioner]
@@ -528,13 +608,13 @@ class PositionerDetail(QtWidgets.QDialog):
 		self.mtr.moving.connect(self.on_moving)
 		self.mtr.log_msg.connect(self.on_log_msg)
 		
-		self.moveThread = QtCore.QThread()
-		self.scanObj = scanThread(self.mtr)
-		self.scanObj.moveToThread(self.moveThread)
-		self.scanObj.done.connect(self.on_scan_done)
-		self.moveThread.started.connect(self.scanObj.do_moves)
-		self.moveThread.terminated.connect(self.move_terminated)
-		self.q = QtCore.QEventLoop()
+		# self.moveThread = QtCore.QThread()
+		# self.scanObj = scanThread(self.mtr)
+		# self.scanObj.moveToThread(self.moveThread)
+		# self.scanObj.done.connect(self.on_scan_done)
+		# self.moveThread.started.connect(self.scanObj.do_moves)
+		# self.moveThread.terminated.connect(self.move_terminated)
+		# self.q = QtCore.QEventLoop()
 			
 
 

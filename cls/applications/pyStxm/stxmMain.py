@@ -327,7 +327,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         #     self.setup_info_dock()
         #     #pass
 
-
+        self.setup_info_dock()
         self.set_buttons_for_starting()
         #self.loadImageDataBtn.clicked.connect(self.load_simulated_image_data)
         # except:
@@ -797,7 +797,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             self.esPosPanel.append_toggle_btn_device('  Focal length mode  ',
                                                      'Toggle the focal length mode from Sample to OSA focused',
                                                      foc_mode_dev, off_val=1, on_val=0,
-                                                     off_str='Sample Focused', on_str='OSA Focused' )
+                                                     off_str='Sample Focused', on_str='OSA Focused',toggle=True )
             #add zonplate in/out
 
             zp_inout_dev = dev_obj.device(DNM_ZONEPLATE_INOUT)
@@ -2928,7 +2928,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         """
         # on_image_start can be called by singal passed from scan with the wdg_com as the arg
         #print 'on_image_start called'
-        _logger.debug('on_image_start called')
+        #_logger.debug('on_image_start called')
 
         if (wdg_com is None):
             # use current
@@ -2968,7 +2968,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             x_roi = sp_db['X']
             y_roi = sp_db['Y']
 
-            _logger.info('on_image_start: rect = (%.2f, %.2f, %.2f, %.2f)' % (rect[0], rect[1], rect[2], rect[3]))
+            #_logger.info('on_image_start: rect = (%.2f, %.2f, %.2f, %.2f)' % (rect[0], rect[1], rect[2], rect[3]))
             # _logger.info('on_image_start: rois (%.2f, %.2f, %.2f, %.2f)' % (x_roi[START], y_roi[START], x_roi[STOP], y_roi[STOP]))
             # _logger.debug('GUI: on_image_start')
             if (scan_type == scan_types.SAMPLE_FOCUS):
@@ -2990,8 +2990,6 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                 self.lineByLineImageDataWidget.set_autoscale(fill_plot_window=False)
 
             self.executingScan.image_started = True
-
-
 
     def on_spectra_start(self):
         """

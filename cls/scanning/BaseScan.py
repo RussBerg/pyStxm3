@@ -5198,7 +5198,7 @@ class BaseScan(BaseObject):
             shutter.close()
             # yield from bps.wait(group='e712_wavgen')
             yield from bps.unstage(gate)
-            print('BaseScan: make_pxp_scan_plan: Leaving')
+            #print('BaseScan: make_pxp_scan_plan: Leaving')
 
         return (yield from do_scan())
 

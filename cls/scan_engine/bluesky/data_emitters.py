@@ -109,8 +109,6 @@ class BaseQtImageDataEmitter(QtDataEmitter):
         self._epoch_offset = None  # used if x == 'time'
         self._epoch = epoch
 
-
-
     def start(self, doc):
         # print('BaseQtImageDataEmitter: start')
         self.x_data, self.y_data = [], []
@@ -252,7 +250,7 @@ class LineDataEmitter(BaseQtSpectraDataEmitter):
         # This outer try/except block is needed because multiple event
         # streams will be emitted by the RunEngine and not all event
         # streams will have the keys we want.
-        print('LineDataEmitter: event: ', doc)
+        #print('LineDataEmitter: event: ', doc)
         #
         # try:
         #     # This inner try/except block handles seq_num and time, which could
@@ -441,7 +439,7 @@ class ImageDataEmitter(BaseQtImageDataEmitter):
         self.det_data.append(det)
 
     def stop(self, doc):
-        print('ImageDataEmitter: stop')
+        #print('ImageDataEmitter: stop')
         self._stop_doc = doc
         self.emit_data()
         super().stop(doc)
@@ -452,7 +450,7 @@ class ImageDataEmitter(BaseQtImageDataEmitter):
         dct['y_data'] = self.y_data
         dct['det_data'] = self.det_data
         self.final_data.emit(dct)
-        print('emitting data')
+        #print('emitting data')
 
 
 

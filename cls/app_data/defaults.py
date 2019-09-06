@@ -145,6 +145,7 @@ dct_put(master_colors, "scan_sts_blue", "rgb(60, 115, 235);")
 dct_put(master_colors, "fbk_moving_ylw", "rgb(254, 233, 0);")
 dct_put(master_colors, "btn_pressed", "qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgb(94, 128, 220), stop:1 rgb(72, 99, 174));")
 
+
 #bg_clr = "#8a8a8a"
 #min_clr =  "#a2a2a2"
 #maj_clr = "#a2a2a2"

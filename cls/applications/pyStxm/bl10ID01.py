@@ -499,7 +499,7 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
 
     devcfg.msg_splash("connecting to: [%s]" % DNM_ZONEPLATE_SCAN_MODE)
     #dev_dct['PVS']['Zpz_scanModeFlag'] = Mbbo('BL1610-I10:ENERGY:%s:zp:scanselflag' % prfx) #used to control which value gets sent to Zpz, fl or fl - A0
-    dev_dct['PVS'][DNM_ZONEPLATE_SCAN_MODE] = Bo('BL1610-I10:ENERGY:%s:zp:scanselflag' % prfx, val_only=False, val_kw='value')  # used to control which value gets sent to Zpz, fl or fl - A0
+    dev_dct['PVS'][DNM_ZONEPLATE_SCAN_MODE] = Mbbo('BL1610-I10:ENERGY:%s:zp:scanselflag' % prfx, val_only=False, val_kw='value')  # used to control which value gets sent to Zpz, fl or fl - A0
     dev_dct['PVS'][DNM_ZONEPLATE_INOUT] = Bo('BL1610-I10:%s:zp_inout' % prfx, val_only=False, val_kw='value')  # used to convieniently move zp z in and out
     dev_dct['PVS'][DNM_ZONEPLATE_INOUT_FBK] = Mbbi('BL1610-I10:%s:zp_inout:fbk' % prfx)  # used to convieniently move zp z in and out
     #used to adjust the current focus value, the delta represents the relative microns for zpz to move to new focus position

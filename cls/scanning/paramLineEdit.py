@@ -7,7 +7,8 @@ Created on Jun 3, 2016
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-invalid_ss = 'QLineEdit{background: rgb(140, 177, 255);}'
+#invalid_ss = 'QLineEdit{background: rgb(140, 177, 255);}'
+invalid_ss = 'QLineEdit{background: rgb(195, 195, 195);}'
 valid_ss = 'QLineEdit{background: rgb(255, 255, 255);}'
 
 ############################################################
@@ -229,6 +230,9 @@ class dblLineEditParamObj(QtCore.QObject):
     
     def on_dbl_parent_rtrn_pressed(self):
         self.cur_val = float(str(self.parent.text()))
+        #make sure that the value is displayed with the specified prec
+        #even if the user didnt type it in with the prec
+        self.parent.setText(self.fmt % self.cur_val)
         #print 'saving [%.3f]' % self.cur_val
         v = self.parent.validator()
         v.lock_changes(True)

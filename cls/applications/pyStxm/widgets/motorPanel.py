@@ -151,7 +151,7 @@ class PositionersPanel(QtWidgets.QWidget):
 		:param event:
 		:return:
 		'''
-		if event.type() == QtCore.QEvent.ToolTip:
+		if event.type() == (QtCore.QEvent.ToolTip or QtCore.QEvent.FocusIn):
 			(dev, dev_ui, widg, mtr) = object.mtr_info
 			llm = mtr.get_low_limit()
 			hlm = mtr.get_high_limit()

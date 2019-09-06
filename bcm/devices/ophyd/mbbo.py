@@ -34,13 +34,21 @@ class Mbbo(BaseObject):
 	def get_position(self):
 		return (self.get())
 
-	def get(self, _attr):
+	def get(self, _attr=None):
 		if (_attr in self.devs.keys()):
 			return (self.devs[_attr].get())
+		else:
+			return (self.devs['VAL'].get())
 
-	def put(self, _attr, val):
+	def put(self, _attr=None, val=None):
 		if (_attr in self.devs.keys()):
 			return (self.devs[_attr].put(val))
+		elif(val is None):
+			#then this is just a put without the _attr set such as 'put(val)' so treat it as such
+			val = _attr
+			_attr = 'VAL'
+			self.devs[_attr].put(val)
+
 
 
 

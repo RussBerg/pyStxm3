@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 """
-Created on 2011-03-07
+Created on 2019-03-07
 
 @author: bergr
 """
@@ -11,7 +11,8 @@ from cls.utils.log import get_module_logger
 
 from bcm.devices import BaseDevice
 from bcm.devices import Mbbi
-from bcm.devices.ophyd.bo import Bo
+from bcm.devices.ophyd.bo import Bo as Bo
+from bcm.devices.ophyd.mbbo import Mbbo as Mbbo
 
 from cls.app_data.defaults import master_colors
 from cls.applications.pyStxm.widgets.button_small_wbtn import Ui_Form as btn_small_pass_a_btn
@@ -30,7 +31,7 @@ two_color = 'rgb(79, 255, 144);'
 
 def format_btn(title_color='black', bgcolor='transparent'):
 
-    s = 'color: %s; background-color: %s;' % (title_color, bgcolor)
+    s = 'QPushButton{ color: %s; background-color: %s;}' % (title_color, bgcolor)
     return s
 
 _logger = get_module_logger(__name__)
@@ -41,10 +42,10 @@ class ophydPushBtn(QtWidgets.QPushButton):
     connected = QtCore.pyqtSignal()
     disconnected = QtCore.pyqtSignal()
 
-    def __init__(self, device, off_val, on_val, off_str, on_str, cb=None, sig_change_kw='value', btn=None, fbk_dev=None):
+    def __init__(self, device, off_val, on_val, off_str, on_str, cb=None, sig_change_kw='value', btn=None, fbk_dev=None, toggle=False):
         super(ophydPushBtn, self).__init__(off_str)
-        if(type(device) != Bo):
-            _logger.error('ophydPushBtn: Invalid device type: requires device to be of type Bo')
+        if((not isinstance(device, Bo)) and (not isinstance(device, Mbbo))):
+            _logger.error('ophydPushBtn: Invalid device type: requires device to be of type Bo or Mbbo')
             return
 
         if(btn is not None):
@@ -65,8 +66,11 @@ class ophydPushBtn(QtWidgets.QPushButton):
         self.device = device
         self.update_counter = 0
         self.btn.setAutoFillBackground(True)
-        self.btn.setCheckable(True)
-        self.btn.setChecked(False)
+        if (toggle):
+            self.btn.setCheckable(True)
+            self.btn.setChecked(False)
+        else:
+            self.btn.setCheckable(False)
 
         self.btn.setToolTip(self.prefix)
 
@@ -76,12 +80,19 @@ class ophydPushBtn(QtWidgets.QPushButton):
         self.off_val = off_val
         self.on_str = on_str
         self.off_str = off_str
+        self.toggle = toggle
+
+        self.btn_state = False
 
         id = device.get_name() + '_btn'
         self.btn.setObjectName(id)
 
         if (cb is None):
-            self.btn.clicked.connect(self.on_btn_dev_push)
+            if (toggle):
+                self.btn.clicked.connect(self.on_btn_dev_push)
+            else:
+                self.btn.clicked.connect(self.on_btn_dev_push_no_toggle)
+            #self.btn.clicked.connect(self.on_btn_dev_push)
         else:
             self.btn.clicked.connect(cb)
 
@@ -175,7 +186,7 @@ class ophydPushBtn(QtWidgets.QPushButton):
         self.btn.setChecked(chkd)
         self.btn.blockSignals(False)
 
-    def _signal_change(self, val):
+    def _signal_change(self, dct):
         '''
         this is an epics callback, gets the cur value and emits a Qt signal so the widget can be updated
         :param kw:
@@ -184,7 +195,7 @@ class ophydPushBtn(QtWidgets.QPushButton):
         if(self.update_counter > 0):
             self.update_counter -= 1
             #print 'emiting changed[%d]' % kw[self.sig_change_kw]
-            self.changed.emit(val)
+            self.changed.emit(dct[self.sig_change_kw])
 
 class ophydPushBtnWithFbk(QtWidgets.QPushButton):
 
@@ -194,7 +205,7 @@ class ophydPushBtnWithFbk(QtWidgets.QPushButton):
 
     def __init__(self, device, off_val, on_val, off_str=None, on_str=None, cb=None, sig_change_kw='value', btn=None, fbk_dev=None, toggle=True):
         super(ophydPushBtnWithFbk, self).__init__(off_str)
-        if (type(device) != Bo):
+        if((not isinstance(device, Bo)) and (not isinstance(device, Mbbo))):
             _logger.error('ophydPushBtnWithFbk: Invalid device type: requires device to be of type Bo')
             return
         if(btn is not None):
@@ -238,36 +249,41 @@ class ophydPushBtnWithFbk(QtWidgets.QPushButton):
         else:
             self.btn.clicked.connect(cb)
 
+        self.btn.released.connect(self.on_released)
+
         if(self.fbk_dev):
             #self.fbk_dev.add_callback('setpoint',self._signal_change)
             self.fbk_dev.changed.connect(self._signal_change)
             val = self.fbk_dev.get('VAL')
+            val_str = self.get_fbk_valstr(val)
 
-            if((off_str is None) and (off_val == val)):
-                val_str = str(self.fbk_dev.get('ZNAM'))
-                self.off_str = val_str
-            else:
-                val_str = off_str
+            # if((off_str is None) or (off_val == val)):
+            #     val_str = str(self.fbk_dev.get('ZNAM'))
+            #     self.off_str = val_str
+            # elif ((on_str is None) or (on_val == val)):
+            #     val_str = str(self.fbk_dev.get('ONAM'))
+            #     self.on_str = val_str
+            # else:
+            #     val_str = off_str
 
-            if ((on_str is None) and (on_val == val)):
-                val_str = str(self.fbk_dev.get('ONAM'))
-                self.on_str = val_str
-            else:
-                val_str = on_str
+            # if ((on_str is None) or (on_val == val)):
+            #     val_str = str(self.fbk_dev.get('ONAM'))
+            #     self.on_str = val_str
+            # else:
+            #     val_str = on_str
 
-            self.btn.blockSignals(True)
+            #self.btn.blockSignals(True)
             if(val == self.on_val):
                 self.btn.setText(val_str)
-                self.make_checked(True)
+                self.btn.setChecked(True)
                 self.btn_state = True
             else:
                 self.btn.setText(val_str)
-                self.make_checked(False)
+                self.btn.setChecked(False)
                 self.btn_state = False
-            self.btn.blockSignals(False)
+            #self.btn.blockSignals(False)
         else:
             self.fdevice.changed.connect(self._signal_change)
-
 
         #self.pv.pv.connection_callbacks.append(self.on_connect)
 
@@ -284,6 +300,27 @@ class ophydPushBtnWithFbk(QtWidgets.QPushButton):
         #if(self.pv.pv.connected):
         #    self.init_fbk()
 
+    def get_fbk_valstr(self, val):
+        '''
+        function to determine what the fbk device type is and return the correct field value
+        :param val:
+        :return:
+        '''
+        if (isinstance(self.fbk_dev, Bo)):
+            if(val == 0):
+                val_str = str(self.fbk_dev.get('ZNAM'))
+            elif(val == 1):
+                val_str = str(self.fbk_dev.get('ONAM'))
+        elif (isinstance(self.fbk_dev, Mbbo)):
+            if(val == 0):
+                val_str = str(self.fbk_dev.get('ZSTR'))
+            elif(val == 1):
+                val_str = str(self.fbk_dev.get('OSTR'))
+        else:
+            val_str = self.off_str
+            _logger.error('Feedback device is of an unsupported type, setting to OFF_STR')
+
+        return(val_str)
 
     def make_checked(self, chkd):
         if(self.toggle):
@@ -386,15 +423,17 @@ class ophydPushBtnWithFbk(QtWidgets.QPushButton):
 
         if(val  == 0):
             #in=0
-            s = format_btn(title_color='white', bgcolor=master_colors['btn_pressed'])
+            s = format_btn(title_color='white', bgcolor=master_colors['app_medgray'])
         elif(val  == 1):
             # out =1
-            s = format_btn(title_color='black', bgcolor=master_colors['btn_pressed'])
+            s = format_btn(title_color='black', bgcolor=master_colors['app_ltblue'])
         else:
             #moving
             s = format_btn(title_color='black', bgcolor=master_colors['fbk_moving_ylw'])
         self.btn.setStyleSheet(s)
 
+    def on_released(self):
+        pass
 
     def _signal_change(self, kw):
         '''

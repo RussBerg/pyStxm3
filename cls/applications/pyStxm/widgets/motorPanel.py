@@ -286,7 +286,7 @@ class PositionersPanel(QtWidgets.QWidget):
 		if(fbk_dev):
 			pBtn = ophydPushBtnWithFbk(dev, sig_change_kw='value', off_val=off_val, on_val=on_val, off_str=off_str, on_str=on_str,fbk_dev=fbk_dev,toggle=toggle)
 		else:
-			pBtn = ophydPushBtn(dev, off_val=off_val, on_val=on_val, off_str=off_str, on_str=on_str)
+			pBtn = ophydPushBtn(dev, off_val=off_val, on_val=on_val, off_str=off_str, on_str=on_str,toggle=toggle)
 
 		pBtn.setStyleSheet(ss)
 		dev_ui.setupUi(widg, pBtn)

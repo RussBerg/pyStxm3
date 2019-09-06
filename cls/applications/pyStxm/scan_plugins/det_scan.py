@@ -272,10 +272,10 @@ class DetectorScanParam(ScanParamWidget):
 		if(chkd):
 			self.osaOutBtn.setText('Move OSA In')
 			hlm = osa_mtr.get_high_limit() - 10.0
-			osa_mtr.move(hlm)
+			osa_mtr.move(hlm, wait=False)
 		else:
 			self.osaOutBtn.setText('Move OSA Out')
-			osa_mtr.move(0.0)
+			osa_mtr.move(0.0, wait=False)
 	
 	def on_do_scribbler(self, checked):
 		if(checked):

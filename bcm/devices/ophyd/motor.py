@@ -75,7 +75,7 @@ class Motor_Qt(EpicsMotor):
     use_torque = Cpt(EpicsSignal, '.CNEN', kind='omitted')
     ctrlr_status = Cpt(EpicsSignal, '.MSTA', kind='omitted')
 
-    calib_done = Cpt(EpicsSignal, ':calibDone', kind='omitted')
+
 
     def __init__(self, *args, **kwargs):
 
@@ -140,6 +140,7 @@ class Motor_Qt(EpicsMotor):
             #     self.add_dev(devname, attr=key)
             self.disabled = EpicsSignal('%s_able.VAL' % self.signal_name, kind='omitted')
             self.calibPosn = EpicsSignal('%s:calibPosn' % self.signal_name, kind='omitted')
+            self.calib_done = EpicsSignal('%s:calibDone'% self.signal_name, kind='omitted')
 
         # for _attr in self.attrs:
         #     self.add_attr_dev(_attr)
@@ -149,6 +150,7 @@ class Motor_Qt(EpicsMotor):
 
 
         self.msta_dct = motor_msta(self.ctrlr_status.get())
+
     #def limits(self):
     #    return (self.get_low_limit(), self.get_high_limit())
 

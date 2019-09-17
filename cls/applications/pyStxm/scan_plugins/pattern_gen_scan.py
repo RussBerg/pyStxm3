@@ -92,7 +92,7 @@ class PatternGeneratorScanParam(ScanParamWidget):
 		set the plugin specific details to common attributes
 		:return:
 		'''
-		self.name = "Pattern Generator Scan"
+		self.name = "Pattern Generator"
 		self.idx = scan_panel_order.PATTERN_GEN_SCAN
 		self.type = scan_types.PATTERN_GEN_SCAN
 		self.section_id = 'PATTERN_GEN'

@@ -327,7 +327,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         #     self.setup_info_dock()
         #     #pass
 
-        self.setup_info_dock()
+        #self.setup_info_dock()
+
         self.set_buttons_for_starting()
         #self.loadImageDataBtn.clicked.connect(self.load_simulated_image_data)
         # except:

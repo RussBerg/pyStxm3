@@ -604,18 +604,18 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
 
     devcfg.msg_splash("connecting to SSCAN: [%s]" % ('%sstxm:det:' % prfx))
 
-    devcfg.msg_splash("connecting to SSCAN: [%s]" % ('%sstxm:' % prfx))
-    dev_dct['PVS_DONT_RECORD']['%sstxm:cmd_file' % prfx] = BaseDevice('%sstxm:cmd_file' % prfx)
-    dev_dct['SSCANS']['%sstxm:scan1' % prfx] = Scan('%sstxm:scan1' % prfx)
-    dev_dct['SSCANS']['%sstxm:scan2' % prfx] = Scan('%sstxm:scan2' % prfx)
-    dev_dct['SSCANS']['%sstxm:scan3' % prfx] = Scan('%sstxm:scan3' % prfx)
-    dev_dct['SSCANS']['%sstxm:scan4' % prfx] = Scan('%sstxm:scan4' % prfx)
-    dev_dct['SSCANS']['%sstxm:scan5' % prfx] = Scan('%sstxm:scan5' % prfx)
-    dev_dct['SSCANS']['%sstxm:scan6' % prfx] = Scan('%sstxm:scan6' % prfx)
-    dev_dct['SSCANS']['%sstxm:scan7' % prfx] = Scan('%sstxm:scan7' % prfx)
-    dev_dct['SSCANS']['%sstxm:scan8' % prfx] = Scan('%sstxm:scan8' % prfx)
-
-    dev_dct['PVS_DONT_RECORD']['%sstxm:scan1:sts' % prfx] = BaseDevice('%sstxm:scan1.SMSG' % prfx)
+    # devcfg.msg_splash("connecting to SSCAN: [%s]" % ('%sstxm:' % prfx))
+    # dev_dct['PVS_DONT_RECORD']['%sstxm:cmd_file' % prfx] = BaseDevice('%sstxm:cmd_file' % prfx)
+    # dev_dct['SSCANS']['%sstxm:scan1' % prfx] = Scan('%sstxm:scan1' % prfx)
+    # dev_dct['SSCANS']['%sstxm:scan2' % prfx] = Scan('%sstxm:scan2' % prfx)
+    # dev_dct['SSCANS']['%sstxm:scan3' % prfx] = Scan('%sstxm:scan3' % prfx)
+    # dev_dct['SSCANS']['%sstxm:scan4' % prfx] = Scan('%sstxm:scan4' % prfx)
+    # dev_dct['SSCANS']['%sstxm:scan5' % prfx] = Scan('%sstxm:scan5' % prfx)
+    # dev_dct['SSCANS']['%sstxm:scan6' % prfx] = Scan('%sstxm:scan6' % prfx)
+    # dev_dct['SSCANS']['%sstxm:scan7' % prfx] = Scan('%sstxm:scan7' % prfx)
+    # dev_dct['SSCANS']['%sstxm:scan8' % prfx] = Scan('%sstxm:scan8' % prfx)
+    #
+    # dev_dct['PVS_DONT_RECORD']['%sstxm:scan1:sts' % prfx] = BaseDevice('%sstxm:scan1.SMSG' % prfx)
 
     # ES = endstation temperatures
     devcfg.msg_splash("connecting to TEMPERATURES: [TM1610-3-I12-01]")

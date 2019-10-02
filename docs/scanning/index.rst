@@ -28,19 +28,19 @@ have no meaning for that particular scan.
 
 .. container:: tocdescr
 
-      .. container:: descr
+      .. figure:: /resources/images/image8.png
+		    :scale:	100 %
+		    :align: left
+		    
+		    here the scan allows all 
+		    options to be enabled
 
-         .. image:: /resources/images/image8.png
-            :align: center
-
-         Right click sub menu, here the scan allows all options to be enabled
-
-      .. container:: descr
-
-         .. image:: /resources/images/image9.png
-            :align: center
-
-         Here the scan does not allow for an energy specification so it is disabled
+      .. figure:: /resources/images/image9.png
+		    :scale:	100 %
+		    :align: right
+		    
+		    energy specification has been disabled
+      
 
 ..  note::
 

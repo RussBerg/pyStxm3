@@ -80,6 +80,71 @@ With an image visable in the plot window you can update the cross section plots 
 down while moving the mouse over the image. When you do this there will be a cross hair displayed on
 the plot and the cross sections will update to reflect where the cross hair is on the image.
 
+Contrast Adjustment
+-------------------
+
+.. figure:: /resources/images/data_vis/contrast/plotting_contrast_tool_base.png
+    :scale:	100 %
+    :align: center
+
+    Contrast tool below main pltting window
+
+
+With an image visable AND SELECTED in the plot window, you can update the contrast of the image with the
+contrast tool by grabbing one of the red handles at either end of the histogram and dragging it left or right.
+You can also slide the entire slected region left or right by clicking :kbd:`LMB` in the middle of the selcted area
+and dragging left or right.
+
+
+.. figure:: /resources/images/data_vis/contrast/plotting_contrast_tool_handles.png
+    :scale:	100 %
+    :align: center
+
+    Red handles to adjust the contrast
+    
+When the image is initially loaded the contrast handles will appear at the minnimum and maximum data values. 
+
+.. figure:: /resources/images/data_vis/contrast/plotting_contrast.png
+    :scale:	40 %
+    :align: left
+
+    Example when handles adjusted towards left
+
+.. figure:: /resources/images/data_vis/contrast/plotting_contrast_2.png
+    :scale:	40 %
+    :align: center
+
+    Example when handles adjusted towards right
+
+*Max/Min data range*
+
+.. figure:: /resources/images/data_vis/contrast/plotting_contrast_tool_maxrngscale.png
+    :scale:	100 %
+    :align: right
+    
+    Min/Max data button
+
+To set the values back to the min and max data values press the min/max button to the left of the contrast tool.
+
+.. raw:: html
+
+    <br><br><br><br>
+
+
+*Toggle Autoscaling*
+    
+.. figure:: /resources/images/data_vis/contrast/plotting_contrast_tool_autoscale.png
+    :scale:	100 %
+    :align: right
+    
+    Autoscale button shown as ENABLED
+
+To set the contrast tool to auto scale when new data is added, or to turn off auto scaling as data is added toggle the autoscale button on or off.
+If on a blue box will appear around the button, if no blue box then it is toggled off.
+
+.. raw:: html
+
+    <br><br><br>
 
 Drag and Drop file loading
 --------------------------
@@ -163,7 +228,7 @@ The purpose of the Calibration Camera tab is to quickly set the initial position
 
 .. figure:: /resources/images/data_vis/data_vis_calibcam_stages.png
     :scale:	100 %
-    :align: left
+    :align: center
 
 	Calibration camera tab
 
@@ -177,7 +242,7 @@ looking down into the STXM through a viewport.
 The video image is used along with a measurement tool to set the positions of each stage.
 
 .. figure:: /resources/images/data_vis/data_vis_calibcam_mtool.png
-    :scale:	60 %
+    :scale:	100 %
     :align: center
 
 

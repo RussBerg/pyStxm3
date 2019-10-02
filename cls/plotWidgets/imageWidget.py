@@ -5835,6 +5835,7 @@ class qobj_OBJ(QObject):
     new_beam_pos = pyqtSignal(float, float)
     def __init__(self):
         QObject.__init__(self)
+        from bcm.devices import Motor_Qt as apsMotor
         self.zx = apsMotor('IOC:m102', name='zoneplateX')
         self.zy = apsMotor('IOC:m103', name='zoneplateY')
         self.gx = apsMotor('IOC:m107', name='goniX')

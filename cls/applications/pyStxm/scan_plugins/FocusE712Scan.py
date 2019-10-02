@@ -195,6 +195,9 @@ class FocusE712ScanClass(BaseScan):
             shutter.open()
             for sp in self.zz_roi[SETPOINTS]:
                 yield from bps.mv(mtr_z, sp)
+                #let zoneplateZ damp a little
+                yield from bps.sleep(0.5)
+                
                 yield from bps.mv(e712_dev.run, 1)
             shutter.close()
             yield from bps.unstage(gate)

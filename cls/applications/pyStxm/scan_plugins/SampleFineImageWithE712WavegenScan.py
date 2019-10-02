@@ -161,7 +161,8 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
             return (self.make_stack_image_plan(dets, gate, md=md, bi_dir=bi_dir))
         elif(self.numImages is 1):
             self.scan_type = scan_types.SAMPLE_IMAGE
-            return (self.make_single_image_e712_plan(dets, gate, md=md, bi_dir=bi_dir))
+            #return (self.make_single_image_e712_plan(dets, gate, md=md, bi_dir=bi_dir))
+            return(self.make_stack_image_plan(dets, gate, md=md, bi_dir=bi_dir))
         else:
             self.scan_type = scan_types.SAMPLE_IMAGE_STACK
             return (self.make_stack_image_plan(dets, gate, md=md, bi_dir=bi_dir))
@@ -371,6 +372,25 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
                                 dets[0].configure()
                                 point_spec_devs_configd = True
 
+                            samplemtrx = self.main_obj.get_sample_positioner('X')
+                            samplemtry = self.main_obj.get_sample_positioner('Y')
+                            finemtrx = self.main_obj.get_sample_fine_positioner('X')
+                            finemtry = self.main_obj.get_sample_fine_positioner('Y')
+                            if (self.is_zp_scan):
+                                # moving them to the start gets rid of a goofy first line of the scan
+                                finemtrx.move(self.zx_roi[START])
+                                finemtry.move(self.zy_roi[START])
+                                samplemtrx.move(self.gx_roi[CENTER], wait=True)
+                                samplemtry.move(self.gy_roi[CENTER], wait=True)
+
+                            else:
+                                # !!! THIS NEEDS TESTING
+                                # moving them to the start gets rid of a goofy first line of the scan
+                                # finemtrx.move(self.x_roi[START])
+                                # finemtry.move(self.y_roi[START])
+                                samplemtrx.move(self.x_roi[START], wait=True)
+                                samplemtry.move(self.y_roi[START], wait=True)
+                                ############################
                             # take a single image that will be saved with its own run scan id
                             #img_dct = self.img_idx_map['%d' % idx]
                             img_dct = self.img_idx_map['%d' % self._current_img_idx]

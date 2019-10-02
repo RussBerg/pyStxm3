@@ -75,8 +75,6 @@ class Motor_Qt(EpicsMotor):
     use_torque = Cpt(EpicsSignal, '.CNEN', kind='omitted')
     ctrlr_status = Cpt(EpicsSignal, '.MSTA', kind='omitted')
 
-
-
     def __init__(self, *args, **kwargs):
 
         stripped_kwargs = copy.copy(kwargs)

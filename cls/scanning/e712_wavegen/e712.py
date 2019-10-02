@@ -3295,14 +3295,17 @@ class E712ControlWidget(QtWidgets.QWidget):
                 if (self.e712.ddl_db.key_exists(ddl_table_key)):
                     #self.e712.clear_DDLtable(X_WAVE_TABLE_ID)
                     self.e712.clear_DDLtable(x_tbl_id)
+                    time.sleep(0.5)
                     print('key already in database, using table from database')
                     ddl_data = self.e712.ddl_db.get_ddl_table(ddl_table_key)
                     tbl_check = self.is_ddl_table_valid(ddl_data)
                     #self.e712.put_ddl_table(X_WAVE_TABLE_ID, ddl_data)
                     if(tbl_check):
                         self.e712.put_ddl_table(x_tbl_id, ddl_data)
+                        time.sleep(0.5)
                         self.set_xddl_flags_for_using()
                         self.e712.calc_ddl_parameters()
+
                     else:
                         self.set_xddl_flags_for_learning()
 

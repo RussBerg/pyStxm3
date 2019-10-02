@@ -2083,7 +2083,7 @@ class ContactSheet(QtWidgets.QWidget):
         :param view:
         :return:
         '''
-        num_rows = grphcs_wdg.gridlayout.rowCount()
+        num_rows = grphcs_wdg.gridlayout.rowCount() + 1 #make sure there is always enough room at the bottom
         # qr = QtCore.QRectF(0.0, 0.0, 290.0, num_rows * 170.0)
         qr = QtCore.QRectF(0.0, 0.0, SCENE_WIDTH, num_rows * THUMB_HEIGHT)
         # print 'num_rows = %d, ht = %d' % (num_rows, num_rows * 170.0)

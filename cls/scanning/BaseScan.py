@@ -5264,12 +5264,29 @@ class BaseScan(BaseObject):
             e712_x_usetablenum.put(x_tbl_id)
             e712_y_usetablenum.put(y_tbl_id)
             # get the X motor reset position * /
+            # samplemtrx = self.main_obj.get_sample_positioner('X')
+            # samplemtry = self.main_obj.get_sample_positioner('Y')
+            # finemtrx = self.main_obj.get_sample_fine_positioner('X')
+            # finemtry = self.main_obj.get_sample_fine_positioner('Y')
             if(self.is_zp_scan):
                 e712_x_start_pos.put(self.zx_roi[START])
                 e712_y_start_pos.put(self.zy_roi[START])
+            #     #moving them to the start gets rid of a goofy first line of the scan
+            #     finemtrx.move(self.zx_roi[START])
+            #     finemtry.move(self.zy_roi[START])
+            #     samplemtrx.move(self.gx_roi[CENTER])
+            #     samplemtry.move(self.gy_roi[CENTER])
+            #
             else:
                 e712_x_start_pos.put(self.x_roi[START])
                 e712_y_start_pos.put(self.y_roi[START])
+            #     # !!! THIS NEEDS TESTING
+            #     # moving them to the start gets rid of a goofy first line of the scan
+            #     #finemtrx.move(self.x_roi[START])
+            #     #finemtry.move(self.y_roi[START])
+            #     samplemtrx.move(self.x_roi[START])
+            #     samplemtry.move(self.y_roi[START])
+            #     ############################
 
             e712_wdg.set_num_cycles(self.y_roi[NPOINTS])
 

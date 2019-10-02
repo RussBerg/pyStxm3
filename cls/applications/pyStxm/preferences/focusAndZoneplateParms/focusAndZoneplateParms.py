@@ -365,6 +365,7 @@ class FocusParams(BasePreference):
 		self.set_section('ZP_PARAMS', zps)
 
 	def get_cur_zp_def(self):
+		self.update_zp_data()
 		return(self._cur_sel_zp_def)
 
 

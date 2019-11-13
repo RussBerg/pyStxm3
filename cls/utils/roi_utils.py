@@ -168,10 +168,10 @@ def get_base_roi(name, positionerName, center, rng, npoints, stepSize=None, max_
 
 def determine_setpoints(roi_def, stepSize=None):
 	if(roi_def[NPOINTS] == 1):
-		roi_def[SETPOINTS] = np.linspace(roi_def[START] + roi_def[OFFSET], roi_def[STOP] + roi_def[OFFSET], roi_def[NPOINTS], endpoint=False, retstep=False)
+		roi_def[SETPOINTS] = np.linspace(roi_def[START] + roi_def[OFFSET], roi_def[STOP] + roi_def[OFFSET], roi_def[NPOINTS], endpoint=True, retstep=False)
 		roi_def[ROI_STEP] = 0.0
 	elif((roi_def[RANGE] == 0) and ( not roi_def[IS_POINT])):
-		roi_def[SETPOINTS] = np.linspace(roi_def[START] + roi_def[OFFSET], roi_def[STOP] + roi_def[OFFSET], roi_def[NPOINTS], endpoint=False, retstep=False)
+		roi_def[SETPOINTS] = np.linspace(roi_def[START] + roi_def[OFFSET], roi_def[STOP] + roi_def[OFFSET], roi_def[NPOINTS], endpoint=True, retstep=False)
 		
 	elif((roi_def[START] == None) or (roi_def[NPOINTS] == 0)):
 		roi_def[SETPOINTS] = []

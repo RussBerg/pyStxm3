@@ -1707,6 +1707,11 @@ class ContactSheet(QtWidgets.QWidget):
 
                 fstr = os.path.join(self.data_dir, fname)
                 sp_db, data = self.get_sp_db_and_data(fstr)
+                #we dont support stack or multi spatials yet so just load it as a single
+                if(type(sp_db) is list):
+                    sp_db = sp_db[0]
+                    data = data[0]
+
                 if (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) in spectra_type_scans):
                     graphics_wdg = self.spectra_graphics_wdg
                     graphics_view = self.spectra_view

@@ -761,7 +761,7 @@ def connect_e712(dev_dct, prfx='uhv', e712_prfx='IOCE712'):
 
 def connect_ES_devices(dev_dct, prfx='uhv'):
     if(prfx.find('uhv') > -1):
-        dev_dct['TEMPERATURES'][POS_TYPE_ES]['CCTL1610-I10:temp:fbk'] = BaseDevice('CCTL1610-I10:temp:fbk', desc='Gatan rod temp')
+        #dev_dct['TEMPERATURES'][POS_TYPE_ES]['CCTL1610-I10:temp:fbk'] = BaseDevice('CCTL1610-I10:temp:fbk', desc='Gatan rod temp')
         pass
     else:
         pass

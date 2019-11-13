@@ -66,7 +66,7 @@ from guiqwt.tools import *
 from bcm.devices.device_names import *
 
 from cls.plotWidgets import tools
-
+from cls.app_data.defaults import master_colors, get_style, rgb_as_hex
 from cls.utils.log import get_module_logger
 from cls.utils.json_threadsave import mime_to_dct
 #from cls.utils.fileUtils import loadDatToArray, readColumnStrs  
@@ -89,11 +89,16 @@ import copy
 color_list = {}
 clr_keys = list(COLORS.keys())
 #move red to the last color from being the first
-del(clr_keys[0])
-clr_keys.append("r")
+#del(clr_keys[0])
+#clr_keys.append("r")
+#in the order I want them
+clr_keys = ['b', 'y', 'g', 'c', 'm',  'k', 'w', 'G', 'r']
 for k in clr_keys:
     color_list[k] = {}
-    color_list[k]['clr'] = COLORS[k]
+    if(k is 'b'):
+        color_list[k]['clr'] = rgb_as_hex(master_colors['app_ltblue'])
+    else:
+        color_list[k]['clr'] = COLORS[k]
     color_list[k]['used'] = False
 #don't use black
 color_list['k']['used'] = True
@@ -266,7 +271,7 @@ def get_histogram_style(color):
     
     return(dct)
     
-def get_basic_line_style(color, marker='NoSymbol', width=1.0):
+def get_basic_line_style(color, marker='NoSymbol', width=2.0):
     dct = {}
     
 #   refer to CurveParam in guiqwt.styles
@@ -525,8 +530,9 @@ class CurveViewerWidget(CurveDialog):
                     text = " ".join([url.toString()
                                      for url in mimeData.urls()])
                 else:
-                    text = " ".join(["%02X" % ord(datum)
-                                     for datum in mimeData.data(format)])
+                    # text = " ".join(["%02X" % ord(datum)
+                    #                  for datum in mimeData.data(format)])
+                    text = " ".join(["%02X" % ord(datum) for datum in str(mimeData.data(format), encoding='cp1252')])
 
                 #row = self.formatsTable.rowCount()
                 # self.formatsTable.insertRow(row)
@@ -700,14 +706,14 @@ class CurveViewerWidget(CurveDialog):
     def update_curve(self):
         self.plot.replot()
     
-    def create_curve(self, curve_name, x=None, y=None, curve_style=None):
+    def create_curve(self, curve_name, x=None, y=None, curve_style=None, use_dflt=False):
         if(y is None):
             num_points = 0
         else:
             num_points = len(y)
         
         if(curve_style is None):
-            curve_style = get_basic_line_style(get_next_color(use_dflt=False))
+            curve_style = get_basic_line_style(get_next_color(use_dflt=use_dflt), marker='Star1', width=2.0)
                 
         self.curve_objs[curve_name] = curve_Obj(curve_name,x,y,num_points=num_points,curve_style=curve_style)
         self.curve_objs[curve_name].changed.connect(self.update_curve)
@@ -828,7 +834,7 @@ class CurveViewerWidget(CurveDialog):
         ydata = data_io.get_generic_scan_data_from_entry(entry_dct, counter=DNM_DEFAULT_COUNTER)[0]
 
         #if ((xdata.ndim is not 1) or (ydata.ndim is not 1)):
-        if (len(xdata) is len(ydata)):
+        if (len(xdata) is not len(ydata)):
             _logger.error(
                 'Data is of unequal lengths xdata=%d ydata=%d' % (len(xdata), len(ydata)))
             print('Data is of unequal lengths xdata=%d ydata=%d' % (len(xdata), len(ydata)))

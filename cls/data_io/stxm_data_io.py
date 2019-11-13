@@ -143,7 +143,8 @@ class STXMDataIo(DataIo):
         :param counter:
         :return:
         '''
-        datas = [entry_dct['data'][counter]['signal'][0][0]]
+        #datas = [entry_dct['data'][counter]['signal'][0][0]]
+        datas = [entry_dct['data'][counter]['signal']]
         return (datas)
 
     def get_point_spec_data_from_entry(self, entry_dct, counter=DNM_DEFAULT_COUNTER):

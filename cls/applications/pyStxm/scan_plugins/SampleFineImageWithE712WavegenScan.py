@@ -380,16 +380,18 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
                                 # moving them to the start gets rid of a goofy first line of the scan
                                 finemtrx.move(self.zx_roi[START])
                                 finemtry.move(self.zy_roi[START])
-                                samplemtrx.move(self.gx_roi[CENTER], wait=True)
-                                samplemtry.move(self.gy_roi[CENTER], wait=True)
+                                yield from bps.mv(samplemtrx, self.gx_roi[CENTER], samplemtry, self.gy_roi[CENTER])
+                                #samplemtrx.move(self.gx_roi[CENTER], wait=True)
+                                #samplemtry.move(self.gy_roi[CENTER], wait=True)
 
                             else:
                                 # !!! THIS NEEDS TESTING
                                 # moving them to the start gets rid of a goofy first line of the scan
                                 # finemtrx.move(self.x_roi[START])
                                 # finemtry.move(self.y_roi[START])
-                                samplemtrx.move(self.x_roi[START], wait=True)
-                                samplemtry.move(self.y_roi[START], wait=True)
+                                #samplemtrx.move(self.x_roi[START], wait=True)
+                                #samplemtry.move(self.y_roi[START], wait=True)
+                                yield from bps.mv(samplemtrx, self.x_roi[START], samplemtry, self.y_roi[START])
                                 ############################
                             # take a single image that will be saved with its own run scan id
                             #img_dct = self.img_idx_map['%d' % idx]

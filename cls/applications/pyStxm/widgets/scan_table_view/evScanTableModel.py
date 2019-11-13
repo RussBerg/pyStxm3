@@ -150,6 +150,7 @@ class EnergyScanTableModel(BaseScanTableModel):
             else:
                 #make sure that the start of this scan is equal to the stop of the previous
                 scan[START] = self.scanListData[idx-1][STOP] + EV_SCAN_EDGE_RANGE
+                #scan[START] = self.scanListData[idx - 1][STOP] # + self.scanListData[idx - 1][STEP]
                 on_start_changed(scan)
             idx += 1
             

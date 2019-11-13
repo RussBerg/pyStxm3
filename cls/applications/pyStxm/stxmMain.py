@@ -55,6 +55,9 @@ from cls.utils.prog_dict_utils import *
 from cls.utils.sig_utils import reconnect_signal, disconnect_signal
 
 from cls.plotWidgets.imageWidget import ImageWidget
+#from cls.plotWidgets.imageWidget_latest import BS_ImageWidget
+#from cls.plotWidgets.bs_imageplot import ImgPlotWindow
+from cls.plotWidgets.zmq_imageWidget import ZMQImageWidget as ImgPlotWindow
 from cls.plotWidgets.striptool.stripToolWidget import StripToolWidget
 from cls.plotWidgets.curveWidget import CurveViewerWidget, get_next_color, get_basic_line_style
 from cls.plotWidgets.utils import *
@@ -343,6 +346,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
         MAIN_OBJ.engine_widget.engine.exec_result.connect(self.on_execution_completed)
         MAIN_OBJ.engine_widget.engine.prog_changed.connect(self.on_run_engine_progress)
+        #MAIN_OBJ.engine_subscribe(self.bsImagePlotWidget.doc_callback)
         self.status_label = EngineLabel('Engine Status')
         self.status_label.changed.connect(self.on_status_changed)
         self.status_label.connect(MAIN_OBJ.engine_widget.engine)
@@ -1487,6 +1491,10 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
 
         self.lineByLineImageDataWidget = ImageWidget(parent=None, type='analyze', settings_fname='%s_settings.json' % MAIN_OBJ.get_endstation_prefix())
+        self.bsImagePlotWidget = ImgPlotWindow()
+        vb = QtWidgets.QVBoxLayout()
+        vb.addWidget(self.bsImagePlotWidget)
+        self.bsImagePlotFrame.setLayout(vb)
 
         self.lineByLineImageDataWidget.setObjectName("lineByLineImageDataWidget")
         self.lineByLineImageDataWidget.register_osa_and_samplehldr_tool(sample_pos_mode)
@@ -1933,7 +1941,10 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                 # self.image_started = False
                 self.executingScan.image_started = False
 
-            self.lineByLineImageDataWidget.addVerticalLine(col, line_data, True)
+            #self.lineByLineImageDataWidget.addVerticalLine(col, line_data, True)
+            #self.executingScan.linescan_dct
+            self.bsImagePlotWidget.addVerticalLine(self.executingScan.linescan_dct['map'][col], self.executingScan.linescan_dct['col_idxs'][col], line_data, True)
+            #self.bsImagePlotWidget.addV
             #print('add_line_to_plot: addVerticalLine: col[%d]' % col)
             #print('shape lineData', line_data.shape)
         else:
@@ -2982,8 +2993,38 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                 self.lineByLineImageDataWidget.set_autoscale(fill_plot_window=True)
 
             elif (scan_type == scan_types.SAMPLE_LINE_SPECTRA):
-                self.lineByLineImageDataWidget.initData(image_types.LINE_PLOT, numX, numE, {SPDB_RECT: rect})
-                self.lineByLineImageDataWidget.set_autoscale(fill_plot_window=True)
+                setpoints = []
+                for i in range(len(self.executingScan.e_rois)):
+                    num_e_rois = len(self.executingScan.e_rois)
+                    e_roi = self.executingScan.e_rois[i]
+                    xpnts = self.executingScan.x_roi[NPOINTS]
+                    ypnts = self.executingScan.y_roi[NPOINTS]
+                    enpts = e_roi[NPOINTS]
+                    stpts = e_roi[SETPOINTS]
+                    setpoints += list(stpts)
+                    #self.plot.initData(i, npts, shape[0])
+                    #stpts = self.image_dct['srtstop'][i]
+                    # img_idx, x1, y1, x2, y2
+                    # self.plot.set_image_parameters(i, stpts[0], 0, stpts[-1], num_line_pts)
+                    #self.lineByLineImageDataWidget.plot.set_image_parameters(i, 0, stpts[0], npts, stpts[-1])
+
+                    #                     for i in range(self.image_dct['num_images']):
+                    # npts = self.image_dct['img_to_idx_counts'][i][1]
+                    #     self.plot.initData(i, shape[0], npts)
+                    #     stpts = self.image_dct['srtstop'][i]
+                    #     self.plot.set_image_parameters(i, stpts[0], 0, stpts[-1], num_line_pts)
+
+                    #self.lineByLineImageDataWidget.initData(image_types.LINE_PLOT, numX, numE, {SPDB_RECT: rect})
+                    #self.bsImagePlotWidget.initData(image_types.LINE_PLOT, i, npts, numE, {SPDB_RECT: rect})
+                    self.bsImagePlotWidget.initData(i, xpnts, enpts)
+                    self.bsImagePlotWidget.set_image_parameters(i, stpts[0], 0, stpts[-1], xpnts)
+
+                #self.lineByLineImageDataWidget.set_autoscale(fill_plot_window=True)
+                self.bsImagePlotWidget.set_autoscale(fill_plot_window=True)
+
+                dct = self.bsImagePlotWidget.determine_num_images(num_e_rois, setpoints)
+                self.executingScan.linescan_dct = dct
+
 
             else:
                 #_logger.info('on_image_start: calling initData()')

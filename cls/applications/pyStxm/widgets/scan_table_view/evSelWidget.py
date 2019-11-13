@@ -344,10 +344,15 @@ class EnergySelWidget(BaseSelectionWidget):
                 else:
                     n_ev_pts = cur_scan[NPOINTS]
 
-                scan = get_base_energy_roi(EV, ENERGY, cur_scan[START], cur_scan[STOP],
-                                       cur_scan[RANGE] + EV_SCAN_EDGE_RANGE, n_ev_pts,
-                                       cur_scan[DWELL], None, stepSize=None, enable=True,
-                                       energy_scan_order=ev_order)
+                # scan = get_base_energy_roi(EV, ENERGY, cur_scan[START], cur_scan[STOP],
+                #                        cur_scan[RANGE] + EV_SCAN_EDGE_RANGE, n_ev_pts,
+                #                        cur_scan[DWELL], None, stepSize=None, enable=True,
+                #                        energy_scan_order=ev_order)
+                # get_base_energy_roi(name, positionerName, start, stop, rng, npoints, dwell, pol_rois=None, stepSize=None, enable=False, energy_scan_order=energy_scan_order_types.EV_THEN_POL)
+                scan = get_base_energy_roi(EV, ENERGY, cur_scan[STOP], cur_scan[STOP] + cur_scan[RANGE],
+                                           cur_scan[RANGE], n_ev_pts,
+                                           cur_scan[DWELL], None, stepSize=None, enable=True,
+                                           energy_scan_order=ev_order)
 
         # if(self.pol_sel_widget is not None):
         # if((add_epu_roi) and (self.pol_sel_widget is not None)):

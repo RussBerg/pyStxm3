@@ -16,7 +16,7 @@ _logger = get_module_logger(__name__)
 
 # this is the value that will be added to the start and end of each extra EV
 # region
-EV_SCAN_EDGE_RANGE = 0.2
+
 TABLE_FONT_SIZE = 8
 
 SPATIAL_CNTR = 1000

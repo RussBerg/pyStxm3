@@ -114,10 +114,18 @@ class EnergyScanTableModel(BaseScanTableModel):
                         on_npoints_changed(scan)
 
                     if(col in EV_STEP_CHANGED):
+                        #scan[START] = scan[START] + scan[STEP]
+                        #calc new start from base start and new step size
+                        # if(row > 0):
+                        #     prev_scan = self.scanListData[row - 1]
+                        #     scan[START] = prev_scan[STOP] + scan[STEP]
                         on_step_size_changed(scan)
 
                     #finally make sure all scans obey ascending eV rule
-                    self.recalc_params(row+1)
+                    self.recalc_params(row + 1)
+                    # num_rows = self.rowCount()
+                    # for i in list(range(row, num_rows)):
+                    #     self.recalc_params(i)
 
         if((role == QtCore.Qt.EditRole) or (role == QtCore.Qt.DisplayRole)):
             #must emit this as part of the framework support for an editable AbstractTableModel
@@ -149,8 +157,10 @@ class EnergyScanTableModel(BaseScanTableModel):
                 pass
             else:
                 #make sure that the start of this scan is equal to the stop of the previous
-                scan[START] = self.scanListData[idx-1][STOP] + EV_SCAN_EDGE_RANGE
-                #scan[START] = self.scanListData[idx - 1][STOP] # + self.scanListData[idx - 1][STEP]
+                #scan[START] = self.scanListData[idx-1][STOP] + EV_SCAN_EDGE_RANGE
+                scan[START] = self.scanListData[idx - 1][STOP]
+                #scan[START] = self.scanListData[idx - 1][STOP] + self.scanListData[idx][STEP]
+                #self.scanListData[idx - 1][STEP]
                 on_start_changed(scan)
             idx += 1
             

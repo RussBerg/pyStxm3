@@ -338,7 +338,8 @@ class ImageWidget(ImageDialog):
         self._data_dir = ""
         self.data_io = None
         self._auto_contrast = True
-        self.data = None
+        self.data = {}
+        self.item = {}
         self.image_type = None  # used to identify what type of image is currently being displayed
         self.dataHeight = 0
         self.dataWidth = 0
@@ -349,7 +350,6 @@ class ImageWidget(ImageDialog):
         # scalars for non-square data
         self.htSc = 1
         self.widthSc = 1
-        self.item = None
         self.dataAtMax = False
         self.image_is_new = True
         self.checkRegionEnabled = True
@@ -530,6 +530,10 @@ class ImageWidget(ImageDialog):
 
         self._shape_registry = {}
 
+    def replot(self):
+        plot = self.get_plot()
+        plot.replot()
+
     #def register_shape_info(self, shape_info_dct={'shape_title': None, 'on_selected': None}):
     def register_shape_info(self, shape_info_dct={}):
         self._shape_registry[shape_info_dct['shape_title']] = shape_info_dct
@@ -573,9 +577,9 @@ class ImageWidget(ImageDialog):
         self.param_cross_marker.setVisible(False)
         self.param_cross_marker.attach(self.plot)
 
-    def update_contrast(self):
-        if(self.item is not None):
-            self._select_this_item(self.item, False)
+    def update_contrast(self, img_idx=0):
+        if(self.item[img_idx] is not None):
+            self._select_this_item(self.item[img_idx], False)
 
     def set_enable_drop_events(self, en):
         self.drop_enabled = en
@@ -732,7 +736,7 @@ class ImageWidget(ImageDialog):
         """ return the selected data as a numpy array """
         pass
 
-    def get_data(self, flip=False):
+    def get_data(self, flip=False, img_idx=0):
         """
         get_data(): description
 
@@ -740,9 +744,9 @@ class ImageWidget(ImageDialog):
         """
         """ return all of the plotting data as a numpy array"""
         if(flip):
-            return(np.flipud(self.data))
+            return(np.flipud(self.data[img_idx]))
         else:
-            return(self.data)
+            return(self.data[img_idx])
 
     ############## End of INTERFACE ROUTINES ####################
     def register_tools(self):
@@ -1703,7 +1707,7 @@ class ImageWidget(ImageDialog):
         self._data_dir = ddir
         self.opentool.set_directory(self._data_dir)
 
-    def on_set_aspect_ratio(self, force):
+    def on_set_aspect_ratio(self, force, img_idx=0):
         """
         on_set_aspect_ratio(): description
 
@@ -1714,12 +1718,12 @@ class ImageWidget(ImageDialog):
         """
 
         if(hasattr(self, 'data')):
-            if(hasattr(self.data, 'shape')):
-                h, w = self.data.shape
-                if (not hasattr(self.item, 'imageparam')):
+            if(hasattr(self.data[img_idx], 'shape')):
+                h, w = self.data[img_idx].shape
+                if (not hasattr(self.item[img_idx], 'imageparam')):
                     return
-                h = (self.item.imageparam.ymax - self.item.imageparam.ymin)
-                w = (self.item.imageparam.xmax - self.item.imageparam.xmin)
+                h = (self.item[img_idx].imageparam.ymax - self.item[img_idx].imageparam.ymin)
+                w = (self.item[img_idx].imageparam.xmax - self.item[img_idx].imageparam.xmin)
 
                 if(force):
                     # if(h > w):
@@ -1779,7 +1783,8 @@ class ImageWidget(ImageDialog):
             widget.setChecked(on)
 
         if(on):
-            self.plot.set_active_item(self.item)
+            #self.plot.set_active_item(self.item)
+            self.plot.set_active_item(item)
 
         self.plot.replot()
 
@@ -2323,8 +2328,6 @@ class ImageWidget(ImageDialog):
     def select_osa(self):
         self.select_main_rect_of_shape('osa_')
 
-
-
     def select_main_rect_of_shape(self, _title='sh_'):
         #print('select_main_rect_of_shape: looking for shapes with the name [%s] in it' % _title)
         num_found = 0
@@ -2380,9 +2383,6 @@ class ImageWidget(ImageDialog):
     def selected_item_changed(self, plot):
         """
         selected_item_changed():
-
-
-
         Note for de-selections: this function is called AFTER the guiplot has deselected all
         of the shapes and items
 
@@ -2513,7 +2513,7 @@ class ImageWidget(ImageDialog):
 
         :returns: None
         """
-        items = plot.get_items()
+        #items = plot.get_items()
         # disable region select tool
         self.get_default_tool().activate()
 
@@ -3028,24 +3028,6 @@ class ImageWidget(ImageDialog):
             # disable all roi selection tools
             self.enable_tools_by_spatial_type(None)
 
-#     def _restrict_rect_to_positive(self, rect):
-#         """
-#         _restrict_rect_to_positive(): description
-#
-#         :param r: r description
-#         :type r: r type
-#
-#         :returns: None
-#         """
-#         (x1, y1, x2, y2) = rect
-#         #if they are negative restrict them so they aren't
-#         if(x2 <= x1):
-#             x2 = x1 + 1
-#         if(y2 >= y1):
-#             y2 = y1 + 1
-#
-#         qrect = QRectF(QPointF(rect[0],rect[1]),QPointF(x2,y2))
-#         return(qrect)
     def _restrict_rect_to_positive(self, rect):
         """
         _restrict_rect_to_positive(): description
@@ -3069,52 +3051,6 @@ class ImageWidget(ImageDialog):
             qrect = QRectF(QPointF(x1, y1), QPointF(x2, y2))
 
         return(qrect)
-
-#     def _limit_rect(self, r):
-#         """
-#         _limit_rect(): echks rect against max_shape_size
-#
-#         :param r: r description
-#         :type r: r type
-#
-#         :returns: None
-#         """
-#         x1 = r[0]
-#         y1 = r[1]
-#         x2 = r[2]
-#         y2 = r[3]
-#         wd = x2 - x1
-#         ht = y2 - y1
-#         #if they are negative restrict them so they aren't
-#         if(wd <= self.max_shape_size[0]):
-#             wd = self.max_shape_size[0]
-#         if(ht <= self.max_shape_size[1]):
-#             ht = self.max_shape_size[1]
-#
-#         rect = (x1, y1, x1+wd, y1+ht)
-#         return(rect)
-#
-#     def _limit_qrect(self, r):
-#         """
-#         _restrict_rect_to_positive(): echks rect against max_shape_size
-#
-#         :param r: r description
-#         :type r: r type
-#
-#         :returns: None
-#         """
-#         x1 = r[0]
-#         y1 = r[1]
-#         wd = r[2]
-#         ht = r[3]
-#         #if they are negative restrict them so they aren't
-#         if(wd >= self.max_shape_size[0]):
-#             wd = self.max_shape_size[0]
-#         if(ht >= self.max_shape_size[1]):
-#             ht = self.max_shape_size[1]
-#
-#         rect = QRectF(x1, y1, wd, ht)
-#         return(rect)
 
     def _check_valid_region(self, item):
         """
@@ -3631,7 +3567,7 @@ class ImageWidget(ImageDialog):
             else:
                 print('\t' * (indent + 1) + str(value))
 
-    def initData(self, image_type, rows, cols, parms={}):
+    def initData(self, img_idx, image_type, rows, cols, parms={}):
         """
         initData(): description
 
@@ -3650,7 +3586,7 @@ class ImageWidget(ImageDialog):
         :returns: None
         """
         # clear title
-        #print('ImageWidget: initData called, rows=%d, cols=%d' % (rows, cols))
+        # print('ImageWidget: initData called, rows=%d, cols=%d' % (rows, cols))
 
         plot = self.get_plot()
         plot.set_title('')
@@ -3659,13 +3595,13 @@ class ImageWidget(ImageDialog):
         # scalars for non-square data
         self.htSc = 1
         self.widthSc = 1
-        items = len(self.plot.get_items(item_type=ICSImageItemType))
         array = np.empty((int(rows), int(cols)))
         array[:] = np.NAN
         array[0][0] = 0
+        self.data[img_idx] = array
+        self.wPtr = 0
+        self.hPtr = 0
 
-
-        self.data = array
         self.image_type = image_type
 
         # if it is a focus image I dont want any of the tools screweing up the
@@ -3673,58 +3609,40 @@ class ImageWidget(ImageDialog):
         if(self.image_type in [types.image_types.FOCUS, types.image_types.OSAFOCUS]):
             self.enable_tools_by_spatial_type(None)
 
-        [self.dataHeight, self.dataWidth] = self.data.shape
-        self.wPtr = 0
-        self.hPtr = 0
-        if(self.item is None):
-            #self.item = make.image(self.data, interpolation='linear',colormap='gist_gray')
-            #self.item = make.image(self.data, title='', interpolation='linear')
-            self.item = make.image(self.data, title='', interpolation='nearest', colormap='gist_gray')
-            #self.item = make.image(self.data, interpolation='nearest', colormap='gist_gray')
-            if(self.image_type == types.image_types.LINE_PLOT):
-                plot.add_item(self.item, z=items+1, autoscale=False)
-            else:
-                plot.add_item(self.item, z=items+1)
-            #plot.set_plot_limits(0.0, 740.0, 0.0, 800.0)
-
-        if('selectable' in list(parms.keys())):
-            self.item.set_selectable(parms['selectable'])
-
-        #self.set_image_parameters(self.item, parms['xmin'], parms['xmax'], parms['ymin'], parms['ymax'])
-        (x1, y1, x2, y2) = parms['RECT']
-        self.set_image_parameters(self.item, x1, y1, x2, y2)
-#        self.set_center_at_XY(((x1 + x2) * 0.5, (y1 + y2) * 0.5), ((x2 - x1), (y1 - y2)))
-        #self.show_data(self.data, True)
-        # self.set_autoscale()
+        # self.item = make.image(self.data[img_idx], title='', interpolation='nearest', colormap='gist_gray')
+        # plot.add_item(self.item, z=1)
+        self.item[img_idx] = make.image(self.data[img_idx], title='', interpolation='nearest', colormap='gist_gray')
+        #plot.add_item(self.item[img_idx], z=1)
+        plot.add_item(self.item[img_idx])
+        # plot.set_plot_limits(0.0, 740.0, 0.0, 800.0)
         self.image_is_new = True
+        return (self.data[img_idx].shape)
 
-        return(self.data.shape)
 
-
-    def clear_data(self, image_type, rows, cols):
-        """
-        clear_data(): description
-
-        :param image_type: image_type description
-        :type image_type: image_type type
-
-        :param rows: rows description
-        :type rows: rows type
-
-        :param cols: cols description
-        :type cols: cols type
-
-        :returns: None
-        """
-        array = np.ones((rows, cols), dtype=np.int32)
-        self.data = self._makeSquareDataArray(array)
-        if(self.item is None):
-            #self.item = make.image(self.data, interpolation='linear',colormap='gist_gray')
-            self.item = make.image(
-                self.data,
-                interpolation='nearest',
-                colormap='gist_gray')
-        self.item.load_file_data(self.data)
+    # def clear_data(self, image_type, rows, cols):
+    #     """
+    #     clear_data(): description
+    #
+    #     :param image_type: image_type description
+    #     :type image_type: image_type type
+    #
+    #     :param rows: rows description
+    #     :type rows: rows type
+    #
+    #     :param cols: cols description
+    #     :type cols: cols type
+    #
+    #     :returns: None
+    #     """
+    #     array = np.ones((rows, cols), dtype=np.int32)
+    #     self.data = self._makeSquareDataArray(array)
+    #     if(self.item is None):
+    #         #self.item = make.image(self.data, interpolation='linear',colormap='gist_gray')
+    #         self.item = make.image(
+    #             self.data,
+    #             interpolation='nearest',
+    #             colormap='gist_gray')
+    #     self.item.load_file_data(self.data)
 
     def _makeSquareDataArray(self, array):
         """
@@ -3768,7 +3686,7 @@ class ImageWidget(ImageDialog):
         # print newArray.shape
         return newArray
 
-    def _convSampleToDisplay(self, x, y):
+    def _convSampleToDisplay(self, x, y, img_idx=0):
         """
         _convSampleToDisplay(): description
 
@@ -3783,7 +3701,7 @@ class ImageWidget(ImageDialog):
         """remember this is a 2d array array[row][column] so it is [array[y][x]
            so that it will display the data from bottom/up left to right
         """
-        h, w = self.data.shape
+        h, w = self.data[img_idx].shape
         xscaler = self.widthSc
         yscaler = self.htSc
 #         #convert
@@ -3794,15 +3712,15 @@ class ImageWidget(ImageDialog):
 
         return(colStart, colStop, rowStart, rowStop)
 
-    def showData(self):
+    def showData(self, img_idx=0):
         """
         showData(): description
 
         :returns: None
         """
-        self.show_data(self.data)
+        self.show_data(img_idx)
 
-    def addData(self, x, y, val, show=False):
+    def addData(self, img_idx, x, y, val, show=False):
         """
         addData(): description
 
@@ -3831,12 +3749,12 @@ class ImageWidget(ImageDialog):
             # print 'adding (%d,%d,%d,%d) = %d' % (colStart, colStop, rowStart, rowStop,val)
             # scal data
             #self.data[rowStop:rowStart, colStart:colStop] = copy.deepcopy(val)
-            self.data[rowStop:rowStart, colStart:colStop] = val
+            self.data[img_idx][rowStop:rowStart, colStart:colStop] = val
 
             if(show):
-                self.show_data(self.data)
+                self.show_data(img_idx)
 
-    def addPixel(self, x, y, val, pixel_size=50, show=False):
+    def addPixel(self, img_idx, x, y, val, pixel_size=50, show=False):
         """
         addPoint(): description
 
@@ -3857,15 +3775,15 @@ class ImageWidget(ImageDialog):
         ''' this function adds a new point to the 2d array
         '''
         # if(not self.dataAtMax):
-        if(self.data is not None):
-            rows, cols = self.data.shape
+        if(len(self.data) > 0):
+            rows, cols = self.data[img_idx].shape
             if(y < rows):
                 # remember this is a 2d array array[row][column] so it is [array[y][x]
                 # so that it will display the data from bottom/up left to right
                 #(colStart, colStop, rowStart, rowStop) = self._convSampleToDisplay( x, y)
                 #self.data[rowStop:rowStart , colStart:colStop] = copy.deepcopy(val)
                 #self.data[y , x] = copy.deepcopy(val)
-                h, w = self.data.shape
+                h, w = self.data[img_idx].shape
                 arr_cy = h / 2
                 arr_cx = w / 2
 
@@ -3877,12 +3795,12 @@ class ImageWidget(ImageDialog):
                 y1 = arr_y - (pixel_size * 0.5)
                 y2 = arr_y + (pixel_size * 0.5)
 
-                self.data[y1:y2, x1:x2] = val
+                self.data[img_idx][y1:y2, x1:x2] = val
 
             if(show):
-                self.show_data(self.data)
+                self.show_data(img_idx)
 
-    def addPoint(self, y, x, val, show=False):
+    def addPoint(self, img_idx, y, x, val, show=False):
         """
         addPoint(): description
 
@@ -3903,27 +3821,20 @@ class ImageWidget(ImageDialog):
         ''' this function adds a new point to the 2d array
         '''
         # if(not self.dataAtMax):
-        if(self.data is not None):
-            rows, cols = self.data.shape
+        #if(len(self.data) == 0):
+        if(len(self.data) > 0):
+            rows, cols = self.data[img_idx].shape
             if ((y < rows) and (x < cols)):
                 # remember this is a 2d array array[row][column] so it is [array[y][x]
                 # so that it will display the data from bottom/up left to right
-                #(colStart, colStop, rowStart, rowStop) = self._convSampleToDisplay( x, y)
-                # print 'adding (%d,%d,%d,%d) = %d' % (colStart, colStop, rowStart, rowStop,val)
-                # scal data
-                #self.data[rowStop:rowStart , colStart:colStop] = copy.deepcopy(val)
-                #self.data[y, x] = copy.deepcopy(val)
-                self.data[y, x] = val
+                self.data[img_idx][y, x] = val
 
             if(show):
-                self.show_data(self.data)
+                self.show_data(img_idx)
 
-    def addLine(self, startx, row, line, show=False):
+    def addLine(self, img_idx, row, line, show=False):
         """
         addLine(): description
-
-        :param startx: startx description
-        :type startx: startx type
 
         :param row: row description
         :type row: row type
@@ -3942,14 +3853,14 @@ class ImageWidget(ImageDialog):
         # print 'addLine: data length = %d vals' % len(line)
         if((self.image_is_new)):
             self.image_is_new = False
-            if(row != 0):
-                return
+            #if(row != 0):
+            #    return
         # this is a catch for a spurious previsou row being sent
         # at the start of a scan, fix this sometime
 
         # print 'row=%d' % row
-        if(self.data is not None):
-            rows, cols = self.data.shape
+        if(len(self.data) > 0):
+            rows, cols = self.data[img_idx].shape
             if(cols != len(line)):
                 line = np.resize(line, (cols,))
 
@@ -3957,13 +3868,14 @@ class ImageWidget(ImageDialog):
                 row = rows - 1
 
             #AUG16 self.data[row, :] = copy.deepcopy(line)
-            self.data[row, :] = line
+            self.data[img_idx][row, :] = line
             if(show):
-                self.show_data(self.data)
+                #self.show_data(img_idx, self.data)
+                self.replot()
         else:
             _logger.error('stxmImageWidget: addLine: self.data is None')
 
-    def addVerticalLine(self, col, line, show=False):
+    def addVerticalLine(self, img_idx, col, line, show=False):
         """
         addVerticalLine(): description
 
@@ -3990,8 +3902,8 @@ class ImageWidget(ImageDialog):
         # at the start of a scan, fix this sometime
 
         # print 'row=%d' % row
-        if(self.data is not None):
-            rows, cols = self.data.shape
+        if(len(self.data) > 0):
+            rows, cols = self.data[img_idx].shape
             # if(cols != len(line)):
             #    line = np.resize(line, (cols,))
 
@@ -3999,14 +3911,15 @@ class ImageWidget(ImageDialog):
                 col = cols - 1
 
             #self.data[:, col] = copy.deepcopy(line)
-            self.data[:, col] = line[0:rows]
+            self.data[img_idx][:, col] = line[0:rows]
             if(show):
-                self.show_data(self.data)
+            #     self.show_data(img_idx, self.data[img_idx])
+                self.replot()
         else:
             _logger.error(
-                'stxmImageWidget: addVerticalLine: self.data is None')
+                'stxmImageWidget: addVerticalLine: self.data[%d] is None' % img_idx)
 
-    def load_file_data(self, fileName, data):
+    def load_file_data(self, fileName, data, img_idx=0):
         """
         load_file_data(): description
 
@@ -4019,14 +3932,14 @@ class ImageWidget(ImageDialog):
         :returns: None
         """
         self.fileName = fileName
-        self.data = data
+        self.data[img_idx] = data
         # self.show_data(self.data)
         if(self.filtVal > 0):
             self.apply_filter(self.filtVal)
         else:
-            self.show_data(self.data)
+            self.show_data(img_idx)
 
-    def set_data(self, data):
+    def set_data(self, img_idx, data):
         """
         set_data(): description
 
@@ -4037,12 +3950,9 @@ class ImageWidget(ImageDialog):
         """
         if(data.size is 0):
             return
-        self.data = data
+        self.data[img_idx] = data
         # self.show_data(self.data)
-        if(self.filtVal > 0):
-            self.apply_filter(self.filtVal)
-        else:
-            self.show_data(self.data)
+        self.show_data(img_idx)
         self.set_autoscale()
 
     def set_autoscale(self, fill_plot_window=False):
@@ -4065,7 +3975,7 @@ class ImageWidget(ImageDialog):
             self.set_lock_aspect_ratio(True)
             plot.do_autoscale()
 
-    def show_data(self, data, init=False):
+    def show_data(self, img_idx, init=False, ):
         """
         show_data(): description
 
@@ -4077,33 +3987,30 @@ class ImageWidget(ImageDialog):
 
         :returns: None
         """
+        data = self.data[img_idx]
         if(data.size is 0):
             return
         plot = self.get_plot()
         items = len(self.plot.get_items(item_type=ICSImageItemType))
-        if(self.item is None):
-            #self.item = make.image(data, colormap="gist_gray")
-            #self.item = make.image(data)
-            #self.item = make.image(self.data, interpolation='linear', colormap='gist_gray')
-            self.item = make.image(
-                self.data,
+        #if(self.item[img_idx] is None):
+        if (len(self.item) == 0):
+            self.item[img_idx] = make.image(
+                data,
                 interpolation='nearest',
                 colormap='gist_gray')
-            # self.item.set_lut_range([1,3000])
-            plot.add_item(self.item, z=items+1)
+            plot.add_item(self.item[img_idx], z=items+1)
             #plot.set_plot_limits(0.0, 740.0, 0.0, 800.0)
         else:
-            # self.item.set_data(data)
-            # retain the current contrast tools values and pass them to
-            # set_data
             if(self._auto_contrast):
-                self.item.set_data(data)
+                #self.item[img_idx].set_data(data[img_idx])
+                #self.item[img_idx].set_data(data)
+                self.item[img_idx].set_data(data)
             else:
                 lut_range = self.item.get_lut_range()
-                self.item.set_data(data, lut_range)
+                self.item[img_idx].set_data(data, lut_range)
         plot.replot()
 
-    def apply_filter(self, val):
+    def apply_filter(self, val, img_idx=0):
         """
         apply_filter(): description
 
@@ -4114,12 +4021,13 @@ class ImageWidget(ImageDialog):
         """
         if(val):
             # apply filter
-            data = self.filterfunc(self.data, val)
+            self.data[img_idx] = self.filterfunc(self.data[img_idx], val)
         else:
             # no filter just display raw
-            data = self.data
+            #data = self.data[img_idx]
+            pass
         self.filtVal = val
-        self.show_data(data)
+        self.show_data(img_idx)
 
     def setCurFilter(self, filtName):
         """
@@ -4980,6 +4888,7 @@ class ImageWidget(ImageDialog):
 
         :returns: None
         """
+        i = 0
         items = self.plot.get_items(item_type=ICSImageItemType)
         for item in items:
             # Don't delete the base image
@@ -4987,7 +4896,10 @@ class ImageWidget(ImageDialog):
             # print 'deleting %s'  % item.title().text()
             self.plot.del_item(item)
             del item
-        self.item = None
+            self.item[i] = None
+            i += 1
+
+        # self.item = None
         self.plot.replot()
 
     def delShapePlotItems(self):
@@ -5024,7 +4936,7 @@ class ImageWidget(ImageDialog):
             if(hasattr(tool, 'deactivate')):
                 tool.deactivate()
 
-    def set_image_parameters(self, imgItem, x1, y1, x2, y2):
+    def set_image_parameters(self, img_idx, x1, y1, x2, y2):
         """
         set_image_parameters(): description
 
@@ -5073,8 +4985,10 @@ class ImageWidget(ImageDialog):
               y|max: -
 
         """
+        if(len(self.item) == 0):
+            return
         iparam = ImageParam()
-        iparam.colormap = imgItem.get_color_map_name()
+        iparam.colormap = self.item[img_idx].get_color_map_name()
         iparam.xmin = x1
         iparam.ymin = y1
         iparam.xmax = x2
@@ -5088,8 +5002,9 @@ class ImageWidget(ImageDialog):
         axparam.xmax = x2
         axparam.ymax = y2
 
-        imgItem.set_item_parameters({"ImageParam": iparam})
-        imgItem.set_item_parameters({"ImageAxesParam": axparam})
+        self.item[img_idx].set_item_parameters({"ImageParam": iparam})
+        self.item[img_idx].set_item_parameters({"ImageAxesParam": axparam})
+
 
     def set_lock_aspect_ratio(self, val):
         """
@@ -5329,7 +5244,8 @@ class ImageWidget(ImageDialog):
 
         :returns: None
         """
-
+        #default to img_idx = 0
+        img_idx = 0
         fname = str(fname)
         data_dir, fprefix, fsuffix = get_file_path_as_parts(fname)
         if(data_dir is None):
@@ -5343,15 +5259,15 @@ class ImageWidget(ImageDialog):
             # only display first energy [0]
             data = data.astype(np.float32)
             data[data==0.0] = np.nan
-            self.data = data
-            if(self.data.ndim == 3):
-                self.data = self.data[0]
+            self.data[img_idx] = data
+            if(self.data[img_idx].ndim == 3):
+                self.data[img_idx] = self.data[img_idx][0]
             if(flipud):
-                _data = np.flipud(self.data)
+                _data = np.flipud(self.data[img_idx])
             else:
-                _data = self.data
+                _data = self.data[img_idx]
 
-            self.data = _data
+            self.data[img_idx] = _data
             _logger.info('[%s] scan loaded' %
                              dct_get(sp_db, SPDB_SCAN_PLUGIN_SECTION_ID))
 
@@ -5377,37 +5293,39 @@ class ImageWidget(ImageDialog):
         self.htSc = 1
         self.widthSc = 1
 
-        if(self.data is not None):
-            shape = self.data.shape
+        if(len(self.data) > 0):
+            shape = self.data[img_idx].shape
             if(len(shape) == 3):
-                [e, self.dataHeight, self.dataWidth] = self.data.shape
-                self.data = self.data[0]
+                [e, self.dataHeight, self.dataWidth] = self.data[img_idx].shape
+                self.data[img_idx] = self.data[img_idx][0]
             elif(len(shape) == 2):
-                [self.dataHeight, self.dataWidth] = self.data.shape
+                [self.dataHeight, self.dataWidth] = self.data[img_idx].shape
             else:
                 _logger.error('Not sure what kind of shape this is')
                 return
 
             self.wPtr = 0
             self.hPtr = 0
-            if((not addimages) or (self.item is None)):
+            #if((not addimages) or (self.item[img_idx] is None)):
+            if ((not addimages) or (img_idx not in self.item.keys())):
                 self.delImagePlotItems()
-                self.item = make.image(self.data,interpolation='nearest',colormap='gist_gray', title=_title)
+                self.item[img_idx] = make.image(self.data[img_idx],interpolation='nearest',colormap='gist_gray', title=_title)
                 plot = self.get_plot()
-                plot.add_item(self.item, z=0)
+                plot.add_item(self.item[img_idx], z=0)
             else:
-                self.item = make.image(self.data,interpolation='nearest',colormap='gist_gray',title=_title)
+                self.item[img_idx] = make.image(self.data[img_idx],interpolation='nearest',colormap='gist_gray',title=_title)
                 items = self.plot.get_items(item_type=ICSImageItemType)
                 if(item_z is None):
-                    plot.add_item(self.item, z=len(items)+1)
+                    plot.add_item(self.item[img_idx], z=len(items)+1)
                 else:
-                    plot.add_item(self.item, z=item_z)
+                    plot.add_item(self.item[img_idx], z=item_z)
 
             (x1, y1, x2, y2) = dct_get(sp_db, SPDB_RECT)
-            self.set_image_parameters(self.item, x1, y1, x2, y2)
+            #self.set_image_parameters(img_idx, self.item, x1, y1, x2, y2)
+            self.set_image_parameters(img_idx, x1, y1, x2, y2)
 
             if(show):
-                self.show_data(self.data, True)
+                self.show_data(img_idx, True)
                 self.set_autoscale()
 
             dct_put(sp_db, SPDB_PLOT_KEY_PRESSED, self.inputState.keyisPressed)
@@ -5459,10 +5377,10 @@ class ImageWidget(ImageDialog):
         update_dataset(self.param_gbox.dataset, param)
         self.param_gbox.get()
 
-    def report_image_params(self, fprefix, sp_db):
+    def report_image_params(self, fprefix, sp_db, img_idx=0):
         #param = ImageParam()
         #param.title = fprefix
-        height, width = self.data.shape
+        height, width = self.data[img_idx].shape
         #s = '\nFile: %s loaded \n' %  fprefix
         # s += '  # Points: %d x %d \n' % (width, height)
         #s += '  Center: (%.2f, %.2f) um\n' % (sp_db['X'][CENTER], sp_db['Y'][CENTER])
@@ -5517,6 +5435,7 @@ class ImageWidget(ImageDialog):
         xRhalf = xRange / 2.0
         yRhalf = yRange / 2.0
         self.plot.set_plot_limits(-xRhalf, xRhalf, -yRhalf, yRhalf)
+
 
     def set_center_at_XY(self, center, rng, zoomout=0.35):
         """
@@ -5619,6 +5538,93 @@ class ImageWidget(ImageDialog):
         :returns: None
         """
         self.tstTimer.stop()
+
+    def determine_num_images(self, num_e_rois, setpoints):
+        '''
+        looking at the setpoints, determine how many images will be required dividing between the delta boundaries
+        between the setpoints.
+        ex: 3 images for the setpoints
+            [1,2,3,4,5,10,15,20,25,30,31,32,33]
+            [  first  |   second     |  third ]
+        :return:
+        '''
+        dct = {}
+        deltas = np.diff(np.array(setpoints))
+
+        #do any of the deltas == EV_SCAN_EDGE_RANGE for only 1 value? if so this is an ev region boundary and
+        # can be removed from the  deltas
+        deltas = deltas[deltas > 0.0]
+        #deltas = np.where(deltas == 0.2, 0.3, deltas)
+        #add an extra delta at the end so that the number of deltas is correct
+        l = list(deltas)
+        l.append(l[-1])
+        deltas = np.array(l)
+        #ok now move on
+        u, indices = np.unique(deltas.round(decimals=4), return_index=True)
+        u, counts = np.unique(deltas.round(decimals=4), return_counts=True)
+
+        #indices.sort()
+        num_images = num_e_rois
+        z = list(zip(indices, counts))
+
+        found_bndry = False
+        i = 0
+        for ind, cnt in z:
+            if(cnt == (num_e_rois - 1)):
+                #remove this pair because it belongs to the ev boundaries
+                found_bndry = True
+                break
+            i += 1
+        if(found_bndry):
+            del(z[i])
+
+        #fix total counts
+        #i = 0
+        l_z = []
+        for ind, cnt in z:
+            #z[i][1] += 1
+            #ind, cnt = z[i]
+            if(len(l_z) == (num_e_rois - 1)):
+                l_z.append((ind, cnt))
+            else:
+                l_z.append((ind, cnt + 1))
+            #i += 1
+
+        ind_cnts_sorted_lst = sorted(l_z, key=lambda t: t[0])
+
+        dct['img_to_idx_map'] = indices
+        dct['img_to_idx_counts'] = ind_cnts_sorted_lst
+        dct['num_images'] = num_images
+        dct['map'] = {}
+        dct['srtstop'] = {}
+        seq = np.array(list(range(0, len(setpoints) )))
+        img_idx = 0
+        l = []
+        indiv_col_idx = []
+        for strt, num in ind_cnts_sorted_lst:
+            #dct['map'].append((setpoints[strt], setpoints[num], np.linspace(setpoints[strt], setpoints[num], num)))
+            #arr = np.array(list(range(ind_cnts_sorted_lst[img_idx][0], ind_cnts_sorted_lst[img_idx][1])))
+            arr = np.ones(ind_cnts_sorted_lst[img_idx][1], dtype=int)
+            arr *= img_idx
+            l = l + list(arr)
+            if(strt > 0):
+                indiv_setpoints = setpoints[strt - 1: strt+num]
+
+            else:
+                indiv_setpoints = setpoints[strt: strt + num]
+
+            indiv_col_idx = indiv_col_idx + list(range(0, num))
+            dct['srtstop'][img_idx] = (indiv_setpoints[0], indiv_setpoints[-1])
+            img_idx += 1
+
+        #dct['col_idxs'] = list(zip(seq, indiv_col_idx))
+        dct['col_idxs'] = indiv_col_idx
+        map_tpl = list(zip(seq, l))
+        for i, img_idx in map_tpl:
+            dct['map'][i] = img_idx
+
+        print(dct)
+        return(dct)
 
 
 def get_percentage_of_qrect(qrect, p):

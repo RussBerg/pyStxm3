@@ -1491,10 +1491,11 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
 
         self.lineByLineImageDataWidget = ImageWidget(parent=None, type='analyze', settings_fname='%s_settings.json' % MAIN_OBJ.get_endstation_prefix())
-        self.bsImagePlotWidget = ImgPlotWindow()
-        vb = QtWidgets.QVBoxLayout()
-        vb.addWidget(self.bsImagePlotWidget)
-        self.bsImagePlotFrame.setLayout(vb)
+        self.lineByLineImageDataWidget.set_lock_aspect_ratio(False)
+        #self.bsImagePlotWidget = ImgPlotWindow()
+        #vb = QtWidgets.QVBoxLayout()
+        #vb.addWidget(self.bsImagePlotWidget)
+        #self.bsImagePlotFrame.setLayout(vb)
 
         self.lineByLineImageDataWidget.setObjectName("lineByLineImageDataWidget")
         self.lineByLineImageDataWidget.register_osa_and_samplehldr_tool(sample_pos_mode)
@@ -1943,7 +1944,9 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
             #self.lineByLineImageDataWidget.addVerticalLine(col, line_data, True)
             #self.executingScan.linescan_dct
-            self.bsImagePlotWidget.addVerticalLine(self.executingScan.linescan_dct['map'][col], self.executingScan.linescan_dct['col_idxs'][col], line_data, True)
+            #self.bsImagePlotWidget.addVerticalLine(self.executingScan.linescan_dct['map'][col], self.executingScan.linescan_dct['col_idxs'][col], line_data, True)
+            self.lineByLineImageDataWidget.addVerticalLine(self.executingScan.linescan_dct['map'][col],
+                                                   self.executingScan.linescan_dct['col_idxs'][col], line_data, True)
             #self.bsImagePlotWidget.addV
             #print('add_line_to_plot: addVerticalLine: col[%d]' % col)
             #print('shape lineData', line_data.shape)
@@ -2023,7 +2026,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                 self.on_image_start(sp_id=sp_id)
 
             #print('add_point_to_plot: row=%d, point=%d, val=%d' % (row, point, val))
-            self.lineByLineImageDataWidget.addPoint(row, point, val, True)
+            img_idx = 0
+            self.lineByLineImageDataWidget.addPoint(img_idx, row, point, val, True)
 
 
         # def add_point_to_spectra(self, row, tpl):
@@ -2787,70 +2791,42 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
         _logger.debug('GUI: connect_executingScan_signals')
         if (self.is_add_line_to_plot_type(scan_type, scan_sub_type, use_hdw_accel)):
-            #self.executingScan.sigs.changed.connect(self.add_line_to_plot)
             reconnect_signal(self.executingScan.sigs, self.executingScan.sigs.changed, self.add_line_to_plot)
-            #self.executingScan.sigs.changed.connect(self.add_line_to_plot)
             reconnect_signal(self.line_det.sigs, self.line_det.sigs.changed, self.add_line_to_plot)
 
             if (not (scan_type == scan_types.SAMPLE_LINE_SPECTRA)):
                 # dont connect this for line_spec scans because the data level is energy which would cause a
                 # new image for each energy line which is not what we want
                 if(not use_hdw_accel):
-                    #self.executingScan.data_start.connect(self.on_image_start)
                     reconnect_signal(self.executingScan, self.executingScan.data_start,
                                           self.on_image_start)
                 #just skip this signal if using hdw_accel because the on_image_start() will be called when the plotter updates
 
-        #elif (((scan_type == scan_types.SAMPLE_IMAGE) and (scan_sub_type == scan_sub_types.POINT_BY_POINT)) or \
-        #                  (scan_type == scan_types.SAMPLE_IMAGE_STACK) and ( scan_sub_type == scan_sub_types.POINT_BY_POINT) or \
         elif(self.is_add_point_to_plot_type(scan_type, scan_sub_type, use_hdw_accel)):
-            #self.executingScan.sigs.changed.connect(self.add_point_to_plot)
             reconnect_signal(self.executingScan.sigs, self.executingScan.sigs.changed, self.add_point_to_plot)
 
             if (not (scan_type == scan_types.SAMPLE_LINE_SPECTRA)):
                 # dont connect this for line_spec scans because the data level is energy which would cause a
                 # new image for each energy line which is not what we want
-                #self.executingScan.data_start.connect(self.on_image_start)
                 reconnect_signal(self.executingScan, self.executingScan.data_start, self.on_image_start)
 
 
         elif (self.is_add_point_to_spectra_type(scan_type, scan_sub_type, use_hdw_accel)):
-            #self.executingScan.sigs.changed.connect(self.add_point_to_spectra)
             reconnect_signal(self.executingScan.sigs, self.executingScan.sigs.changed, self.add_point_to_spectra)
-            # self.executingScan.new_spatial_start.connect(self.init_point_spectra)
-
         else:
             _logger.error('connect_executingScan_signals: executingScan type [%d] not supported', scan_type)
 
-        #self.executingScan.sigs.status.connect(self.on_scan_status)
         reconnect_signal(self.executingScan.sigs, self.executingScan.sigs.status, self.on_scan_status)
-
-        # self.executingScan.sigs.progress.connect(self.on_scan_progress)
-        #self.executingScan.top_level_progress.connect(self.on_total_scan_progress)
-        #reconnect_signal(self.executingScan, self.executingScan.top_level_progress, self.on_total_scan_progress)
-
-
         reconnect_signal(self.scan_progress_table, self.scan_progress_table.total_prog, self.on_total_scan_progress)
-
-
-
-        #self.executingScan.low_level_progress.connect(self.on_scan_progress)
         reconnect_signal(self.executingScan, self.executingScan.low_level_progress, self.on_scan_progress)
-
-        #self.executingScan.sigs_disconnected.connect(self.on_executing_scan_sigs_discon)
         reconnect_signal(self.executingScan, self.executingScan.sigs_disconnected, self.on_executing_scan_sigs_discon)
-
-        #self.executingScan.sigs.aborted.connect(self.on_scan_done)
         reconnect_signal(self.executingScan.sigs, self.executingScan.sigs.aborted, self.on_scan_done)
-
-        #self.executingScan.all_done.connect(self.on_scan_done)
         reconnect_signal(self.executingScan, self.executingScan.all_done, self.on_scan_done)
 
         if (testing):
             _logger.debug('connecting self.call_do_post_test to self.executingScan.all_done')
             reconnect_signal(self.executingScan, self.executingScan.all_done, self.call_do_post_test)
 
-        #self.executingScan.saving_data.connect(self.on_saving_data)
         reconnect_signal(self.executingScan, self.executingScan.saving_data, self.on_saving_data)
 
         # _logger.debug('executingScan signals connected')
@@ -2867,67 +2843,39 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         use_hdw_accel = dct_get(sp_db, SPDB_HDW_ACCEL_USE)
         _logger.debug('disconnect_executingScan_signals: TOP')
         if (self.is_add_line_to_plot_type(scan_type, scan_sub_type, use_hdw_accel)):
-            #self.executingScan.sigs.changed.disconnect(self.add_line_to_plot)
             disconnect_signal(self.executingScan.sigs, self.executingScan.sigs.changed)
 
             if (not (scan_type == scan_types.SAMPLE_LINE_SPECTRA)):
                 if(not use_hdw_accel):
-                    #self.executingScan.data_start.disconnect(self.on_image_start)
                     disconnect_signal(self.executingScan, self.executingScan.data_start)
 
         elif (self.is_add_point_to_plot_type(scan_type, scan_sub_type, use_hdw_accel)):
-            #self.executingScan.sigs.changed.disconnect(self.add_point_to_plot)
             disconnect_signal(self.executingScan.sigs, self.executingScan.sigs.changed)
 
             if (not (scan_type == scan_types.SAMPLE_LINE_SPECTRA)):
-                #self.executingScan.data_start.disconnect(self.on_image_start)
                 disconnect_signal(self.executingScan, self.executingScan.data_start)
 
         elif (self.is_add_point_to_spectra_type(scan_type, scan_sub_type, use_hdw_accel)):
-            #self.executingScan.sigs.changed.disconnect(self.add_point_to_spectra)
             disconnect_signal(self.executingScan.sigs, self.executingScan.sigs.changed)
 
         else:
             _logger.error('disconnect_executingScan_signals: executingScan type [%d] not supported', scan_type)
 
-        #self.executingScan.sigs.status.disconnect(self.on_scan_status)
         disconnect_signal(self.executingScan.sigs, self.executingScan.sigs.progress)
-        # self.executingScan.sigs.progress.disconnect(self.on_scan_progress)
-
-        #self.executingScan.top_level_progress.disconnect(self.on_total_scan_progress)
         disconnect_signal(self.executingScan, self.executingScan.top_level_progress)
-
-
-        #self.executingScan.low_level_progress.disconnect(self.on_scan_progress)
         disconnect_signal(self.executingScan, self.executingScan.low_level_progress)
-
-
-        #self.executingScan.sigs_disconnected.disconnect(self.on_executing_scan_sigs_discon)
         disconnect_signal(self.executingScan, self.executingScan.sigs_disconnected)
-
-
-
-        #self.executingScan.sigs.aborted.disconnect(self.on_scan_done)
         disconnect_signal(self.executingScan.sigs, self.executingScan.sigs.aborted)
-
-
-        #self.executingScan.all_done.disconnect(self.on_scan_done)
         disconnect_signal(self.executingScan, self.executingScan.all_done)
-
-        #self.executingScan.saving_data.disconnect(self.on_saving_data)
         disconnect_signal(self.executingScan, self.executingScan.saving_data)
-
         disconnect_signal(self.executingScan, self.executingScan.all_done)
-
 
         self._set_scan_btns.emit('SET_FOR_STARTING')
         self.on_scan_status('idle')
 
-
     def on_saving_data(self, msg):
         self.scanActionLbl.setText(msg)
         #_logger.info('%s' % msg)
-
 
     def on_image_start(self, wdg_com=None, sp_id=None):
         """
@@ -2941,11 +2889,11 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         # on_image_start can be called by singal passed from scan with the wdg_com as the arg
         #print 'on_image_start called'
         #_logger.debug('on_image_start called')
-
+        #default img_idx is 0
+        img_idx = 0
         if (wdg_com is None):
             # use current
             wdg_com = self.cur_wdg_com
-
 
         if(sp_id is None):
             #print 'on_image_start: sp_id is NONE'
@@ -2958,7 +2906,6 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             wdg_com = self.executingScan.wdg_com
             if(wdg_com is not None):
                 sp_id = self.executingScan.get_spatial_id()
-
 
         sp_db = wdg_com[WDGCOM_SPATIAL_ROIS][sp_id]
         scan_type = dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE)
@@ -2976,20 +2923,18 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             # img_parms = dct_get(wdg_com, 'CURRENT.SCAN.IMAGE_PARMS')
             rect = dct_get(sp_db, SPDB_RECT)
             numE = dct_get(sp_db, SPDB_EV_NPOINTS)
-
             x_roi = sp_db['X']
             y_roi = sp_db['Y']
 
-            #_logger.info('on_image_start: rect = (%.2f, %.2f, %.2f, %.2f)' % (rect[0], rect[1], rect[2], rect[3]))
             # _logger.info('on_image_start: rois (%.2f, %.2f, %.2f, %.2f)' % (x_roi[START], y_roi[START], x_roi[STOP], y_roi[STOP]))
             # _logger.debug('GUI: on_image_start')
             if (scan_type == scan_types.SAMPLE_FOCUS):
-                self.lineByLineImageDataWidget.initData(image_types.FOCUS, numZ, numX, {SPDB_RECT: rect})
+                self.lineByLineImageDataWidget.initData(img_idx, image_types.FOCUS, numZ, numX, {SPDB_RECT: rect})
                 self.lineByLineImageDataWidget.set_autoscale(fill_plot_window=True)
 
             elif (scan_type == scan_types.OSA_FOCUS):
                 # osa focus scan only sits at a single Y position and so will be a square (equal to num x points)
-                self.lineByLineImageDataWidget.initData(image_types.OSAFOCUS, numZ, numX, {SPDB_RECT: rect})
+                self.lineByLineImageDataWidget.initData(img_idx, image_types.OSAFOCUS, numZ, numX, {SPDB_RECT: rect})
                 self.lineByLineImageDataWidget.set_autoscale(fill_plot_window=True)
 
             elif (scan_type == scan_types.SAMPLE_LINE_SPECTRA):
@@ -3002,33 +2947,17 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                     enpts = e_roi[NPOINTS]
                     stpts = e_roi[SETPOINTS]
                     setpoints += list(stpts)
-                    #self.plot.initData(i, npts, shape[0])
-                    #stpts = self.image_dct['srtstop'][i]
-                    # img_idx, x1, y1, x2, y2
-                    # self.plot.set_image_parameters(i, stpts[0], 0, stpts[-1], num_line_pts)
-                    #self.lineByLineImageDataWidget.plot.set_image_parameters(i, 0, stpts[0], npts, stpts[-1])
+                    self.lineByLineImageDataWidget.initData(i, image_types.LINE_PLOT, xpnts, enpts)
+                    self.lineByLineImageDataWidget.set_image_parameters(i, stpts[0], 0, stpts[-1], xpnts)
 
-                    #                     for i in range(self.image_dct['num_images']):
-                    # npts = self.image_dct['img_to_idx_counts'][i][1]
-                    #     self.plot.initData(i, shape[0], npts)
-                    #     stpts = self.image_dct['srtstop'][i]
-                    #     self.plot.set_image_parameters(i, stpts[0], 0, stpts[-1], num_line_pts)
-
-                    #self.lineByLineImageDataWidget.initData(image_types.LINE_PLOT, numX, numE, {SPDB_RECT: rect})
-                    #self.bsImagePlotWidget.initData(image_types.LINE_PLOT, i, npts, numE, {SPDB_RECT: rect})
-                    self.bsImagePlotWidget.initData(i, xpnts, enpts)
-                    self.bsImagePlotWidget.set_image_parameters(i, stpts[0], 0, stpts[-1], xpnts)
-
-                #self.lineByLineImageDataWidget.set_autoscale(fill_plot_window=True)
-                self.bsImagePlotWidget.set_autoscale(fill_plot_window=True)
-
-                dct = self.bsImagePlotWidget.determine_num_images(num_e_rois, setpoints)
+                self.lineByLineImageDataWidget.set_autoscale(fill_plot_window=True)
+                dct = self.lineByLineImageDataWidget.determine_num_images(num_e_rois, setpoints)
                 self.executingScan.linescan_dct = dct
-
 
             else:
                 #_logger.info('on_image_start: calling initData()')
-                self.lineByLineImageDataWidget.initData(image_types.IMAGE, numY, numX, {SPDB_RECT: rect})
+
+                self.lineByLineImageDataWidget.initData(img_idx, image_types.IMAGE, numY, numX, {SPDB_RECT: rect})
                 self.lineByLineImageDataWidget.set_autoscale(fill_plot_window=False)
 
             self.executingScan.image_started = True
@@ -3055,8 +2984,6 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.set_buttons_for_starting()
         # self.scan_progress_table.set_pixmap(self.cur_image_idx, scan_status_types.DONE)
 
-
-
     def on_executing_scan_sigs_discon(self):
         """
         on_executing_scan_sigs_discon(): description
@@ -3073,7 +3000,6 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.lineByLineImageDataWidget.set_lock_aspect_ratio(True)
         if (self.executingScan is not None):
             self.disconnect_executingScan_signals()
-
 
     def secondsToStr(self, t):
         """
@@ -3154,44 +3080,6 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         return (self._scan_sub_type)
 
 
-    # def on_scan_progress(self, percent):
-    #     """
-    #     on_scan_progress(): a signal handler that fires when the progress pv's have been updated, here clip the top of the scan
-    #     percentage at >= 90.0, if >= 90.0 just set it to %100
-    #
-    #     :param percent: percent description
-    #     :type percent: percent type
-    #
-    #     :returns: None
-    #     """
-    #     idx = self.executingScan.get_consecutive_scan_idx()
-    #     sp_id = self.executingScan.get_spatial_id()
-    #
-    #     if (self.get_cur_scan_type() is not scan_types.SAMPLE_IMAGE_STACK):
-    #         set_pixmap = self.scan_progress_table.set_pixmap_by_spid
-    #         set_progress = self.scan_progress_table.set_progress_by_spid
-    #         id = sp_id
-    #     else:
-    #         # its a stack
-    #         set_pixmap = self.scan_progress_table.set_pixmap
-    #         set_progress = self.scan_progress_table.set_progress
-    #         id = idx
-    #
-    #     if (percent >= 99.0):
-    #         percent = 100.0
-    #     # print 'on_scan_progress: sp_id [%d] at %.2f  done' % (idx, percent)
-    #
-    #     set_progress(id, percent)
-    #
-    #     if (percent >= 100.0):
-    #         set_pixmap(id, scan_status_types.DONE)
-    #     elif (percent < 100.0):
-    #         set_pixmap(id, scan_status_types.RUNNING)
-    #     else:
-    #         set_pixmap(id, scan_status_types.STOPPED)
-    #     # self.curImgProgBar.setValue(percent)
-    #     self.check_time(percent)
-
     def on_scan_progress(self, prog_dct):
         """
         on_scan_progress(): a signal handler that fires when the progress pv's have been updated, here clip the top of the scan
@@ -3202,17 +3090,10 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
         :returns: None
         """
-
-
-
-        # idx = self.executingScan.get_consecutive_scan_idx()
-        # sp_id = self.executingScan.get_spatial_id()
-
         sp_id = int(dct_get(prog_dct, PROG_DCT_SPID))
         percent = dct_get(prog_dct, PROG_DCT_PERCENT)
         cur_img_idx = int(dct_get(prog_dct, PROG_CUR_IMG_IDX))
         prog_state = dct_get(prog_dct, PROG_DCT_STATE)
-
 
         if (self.get_cur_scan_type() is not scan_types.SAMPLE_IMAGE_STACK):
             # set_pixmap = self.scan_progress_table.set_pixmap_by_spid
@@ -3287,8 +3168,6 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                 if (hasattr(self, 'scan_progress_table')):
                     self.scan_progress_table.set_pixmap(idx, scan_status_types.RUNNING)
 
-
-
     def on_stop(self):
         """
         on_stop(): description
@@ -3310,9 +3189,6 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             # stop
             #MAIN_OBJ.engine_widget.control.state_widgets['stop'].clicked.emit()
             MAIN_OBJ.engine_widget.control.on_stop_clicked()
-
-
-
 
     def on_exit(self):
         """

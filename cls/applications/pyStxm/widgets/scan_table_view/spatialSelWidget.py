@@ -461,7 +461,7 @@ class SpatialSelWidget(BaseSelectionWidget):
                 self.single_ev_model_id = scan[SPDB_EV_ID]
                 self.ev_sel_widget.on_new_region()    
             #self.ev_sel_widget.on_new_region()
-        print('spatial: on_new_region: self.table_view.add_scan(scan, %d)' % self.scan_id)
+        #print('spatial: on_new_region: self.table_view.add_scan(scan, %d)' % self.scan_id)
         self.table_view.add_scan(scan, self.scan_id)
         self.check_if_table_empty()
         self.roi_added.emit(scan)

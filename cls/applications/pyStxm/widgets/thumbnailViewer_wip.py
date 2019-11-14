@@ -2596,14 +2596,15 @@ class ContactSheet(QtWidgets.QWidget):
             data = dct['data']
             sp_db = dct['sp_db']
             title = dct['title']
-
+            img_idx = 0
             data_dir, fprefix, fsuffix = get_file_path_as_parts(fname)
-            self.image_win.set_data(data)
+            self.image_win.set_data(img_idx, data)
             rect = dct_get(sp_db, SPDB_RECT)
             (x1, y1, x2, y2) = rect
-            self.image_win.set_image_parameters(self.image_win.item, x1, y1, x2, y2)
-            self.image_win.on_set_aspect_ratio(True)
-            self.image_win.update_contrast()
+            #self.image_win.set_image_parameters(self.image_win.item, x1, y1, x2, y2)
+            self.image_win.set_image_parameters(img_idx, x1, y1, x2, y2)
+            self.image_win.on_set_aspect_ratio(True, img_idx)
+            self.image_win.update_contrast(img_idx)
             self.image_win.show()
             self.image_win.raise_()
 

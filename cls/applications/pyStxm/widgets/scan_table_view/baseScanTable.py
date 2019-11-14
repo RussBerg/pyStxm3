@@ -641,11 +641,11 @@ class BaseScanTableModel(QtCore.QAbstractTableModel):
             if (type(v) is np.float32):
                 val = '%.3f' % v
                 return (val)
-            if (type(v) is float):
+            if (type(v) is np.float64):
                 val = '%.3f' % v
                 return (val)
-            if (type(v) is int):
-                val = '%d' % v
+            if (type(v) is float):
+                val = '%.3f' % v
                 return (val)
             if (type(v) is int):
                 val = '%d' % v
@@ -655,6 +655,8 @@ class BaseScanTableModel(QtCore.QAbstractTableModel):
                     return ('True')
                 else:
                     return ('False')
+
+            _logger.debug('basescanTable.data: QtCore.Qt.DisplayRole: OOPS, this fell through (%d, %s)' % (col, v))
 
         elif role == QtCore.Qt.BackgroundRole:
             if (col == 0):

@@ -39,6 +39,7 @@ BASE_ROI = 'BASE_ROI'
 BASE_START_STOP_ROI = 'BASE_START_STOP_ROI'
 EV_ROI = 'EV_ROI'
 EPU_POL = 'EPU_POL'
+EV_BOUNDARY_ROI_START = 'EV_BOUNDARY_ROI_START'
 
 POL_POSITIONER = 'POL_POSITIONER'
 OFF_POSITIONER = 'OFF_POSITIONER'
@@ -296,5 +297,5 @@ ADO_CFG_IMG_IDX_MAP = 'CFG.IMG_IDX_MAP'
 ADO_CFG_DATA_STATUS = 'CFG.DATA_STATUS' 
 
 #needed a common location to keep this constant which relates to the ev scan boundary between succcssesive ev regions
-EV_SCAN_EDGE_RANGE = 0.2
+EV_SCAN_EDGE_RANGE = 0.01
 

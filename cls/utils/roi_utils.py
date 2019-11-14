@@ -245,6 +245,18 @@ def on_start_changed(roi):
 	recalc_center(roi)
 	recalc_setpoints(roi)
 
+def on_stepsize_changed_with_fixed_step(roi, step):
+	roi[START] = roi[START] + step
+	recalc_npoints(roi)
+	check_if_single_point(roi, True)
+	recalc_range(roi)
+	#recalc_step_size(roi)
+	recalc_center(roi)
+	recalc_setpoints(roi)
+
+
+
+
 def on_stop_changed(roi):
 	check_if_single_point(roi, False)
 	recalc_range(roi)
@@ -464,6 +476,8 @@ def get_base_energy_roi(name, positionerName, start, stop, rng, npoints, dwell, 
 	#roi_def['EV_IDX'] = None
 # 	roi_def[SCAN_RES] =  None
 	#roi_def[NPOINTS] =  npoints
+	#keep a copy of original start to be used when computing the start of an adjacent ev roi for a multi ev scan
+	roi_def[EV_BOUNDARY_ROI_START] = roi_def[START]
 	if(pol_rois == None):
 		pol_rois = [get_epu_pol_dct(-1, 0.0, angle=0.0)]
 	#roi_def[POL_ID] = pol_rois

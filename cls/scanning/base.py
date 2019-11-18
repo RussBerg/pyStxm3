@@ -19,7 +19,7 @@ from cls.scanning.paramLineEdit import intLineEditParamObj, dblLineEditParamObj
 from cls.appWidgets.dialogs import getOpenFileName, getSaveFileName
 
 from cls.scanning.dataRecorder import NumpyAwareJSONEncoder
-from cls.utils.roi_utils import make_active_data_dict
+from cls.utils.roi_utils import make_active_data_dict, make_base_wdg_com
 from cls.data_io.utils import test_eq, check_roi_for_match, get_first_entry_key, get_first_sp_db_from_entry, get_axis_setpoints_from_sp_db
 from cls.utils.file_system_tools import master_get_seq_names
 
@@ -1180,7 +1180,7 @@ class ScanParamWidget(QtWidgets.QFrame):
 
     def on_spatial_row_deleted(self, sp_db):
         """ the table has been changed by keying in new values"""
-        wdg_com = {}
+        wdg_com = make_base_wdg_com()
         sp_rois_dct = {}
         sp_rois_dct[sp_db[SPDB_ID_VAL]] = sp_db
         dct_put(wdg_com, WDGCOM_CMND, widget_com_cmnd_types.DEL_ROI)
@@ -1214,7 +1214,7 @@ class ScanParamWidget(QtWidgets.QFrame):
             dct_put(sp_db, SPDB_SCAN_PLUGIN_EST_SCAN_TIME_SEC, t_str)
 
         # now set the wdg_com
-        wdg_com = {}
+        wdg_com = make_base_wdg_com()
         dct_put(wdg_com, WDGCOM_CMND, widget_com_cmnd_types.ROI_CHANGED)
         dct_put(wdg_com, SPDB_SPATIAL_ROIS, sp_rois_dct)
 
@@ -1228,7 +1228,7 @@ class ScanParamWidget(QtWidgets.QFrame):
         :returns: None
 
         """
-        wdg_com = {}
+        wdg_com = make_base_wdg_com()
         sp_rois_dct = {}
         sp_rois_dct[sp_db[SPDB_ID_VAL]] = sp_db
         dct_put(wdg_com, WDGCOM_CMND, widget_com_cmnd_types.SELECT_ROI)
@@ -1528,7 +1528,7 @@ class ScanParamWidget(QtWidgets.QFrame):
         dct_put(self.sp_db, SPDB_SCAN_PLUGIN_PANEL_IDX, self.idx)
         dct_put(self.sp_db, SPDB_SCAN_PLUGIN_TYPE, self.type)
 
-        wdg_com = {}
+        wdg_com = make_base_wdg_com()
         wdg_com[WDGCOM_CMND] = widget_com_cmnd_types.ROI_CHANGED
         wdg_com[WDGCOM_SPATIAL_ROIS] = {sp_id: self.sp_db}
 
@@ -1592,7 +1592,7 @@ class ScanParamWidget(QtWidgets.QFrame):
                 dct_put(sp_db, SPDB_HDW_ACCEL_REINIT_DDL, self.reinitDDLRadBtn.isChecked())
 
         # now set the wdg_com
-        wdg_com = {}
+        wdg_com = make_base_wdg_com()
         dct_put(wdg_com, WDGCOM_CMND, widget_com_cmnd_types.ROI_CHANGED)
         dct_put(wdg_com, SPDB_SPATIAL_ROIS, sp_rois_dct)
 
@@ -1606,7 +1606,6 @@ class ScanParamWidget(QtWidgets.QFrame):
                 del (ev_setpoints[i])
             i += 1
         dct_put(wdg_com, SPDB_SINGLE_LST_EV_ROIS, ev_setpoints)
-
 
         return (wdg_com)
 

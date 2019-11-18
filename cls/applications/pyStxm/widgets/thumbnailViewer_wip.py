@@ -44,6 +44,7 @@ from cls.utils.fileUtils import get_file_path_as_parts
 from cls.utils.log import get_module_logger, log_to_qt
 from cls.utils.cfgparser import ConfigClass
 from cls.utils.dict_utils import dct_get, dct_put
+from cls.utils.roi_utils import make_base_wdg_com, widget_com_cmnd_types
 from cls.utils.pixmap_utils import get_pixmap
 from cls.plotWidgets.lineplot_thumbnail import OneD_MPLCanvas
 from cls.plotWidgets.curveWidget import get_next_color, get_basic_line_style, make_spectra_viewer_window, \
@@ -2588,25 +2589,64 @@ class ContactSheet(QtWidgets.QWidget):
             self.spec_win.set_autoscale()
             self.spec_win.raise_()
 
+    # def get_image_data(self, dct):
+    #     if(dct['scan_type'] is scan_types.SAMPLE_LINE_SPECTRA):
+    #         ev_rois = dct['sp_db']['EV_ROIS']
+    #     else:
+    #         data = dct['data']
+    #     return(data)
+
     def launch_image_viewer(self, dct):
         import traceback
         # fname, data, title=None):
         try:
+            # fname = dct['path']
+            # data = dct['data']
+            # sp_db = dct['sp_db']
+            # title = dct['title']
+            # img_idx = 0
+            # data_dir, fprefix, fsuffix = get_file_path_as_parts(fname)
+            # self.image_win.set_data(img_idx, data)
+            # rect = dct_get(sp_db, SPDB_RECT)
+            # (x1, y1, x2, y2) = rect
+            # #self.image_win.set_image_parameters(self.image_win.item, x1, y1, x2, y2)
+            # self.image_win.set_image_parameters(img_idx, x1, y1, x2, y2)
+            # self.image_win.on_set_aspect_ratio(True, img_idx)
+            # self.image_win.update_contrast(img_idx)
+            # self.image_win.show()
+            # self.image_win.raise_()
+            #
+            # if (title is not None):
+            #     self.image_win.plot.set_title('%s' % title)
+            # else:
+            #     self.image_win.plot.set_title('%s%s' % (fprefix, fsuffix))
+
             fname = dct['path']
             data = dct['data']
             sp_db = dct['sp_db']
             title = dct['title']
-            img_idx = 0
-            data_dir, fprefix, fsuffix = get_file_path_as_parts(fname)
-            self.image_win.set_data(img_idx, data)
-            rect = dct_get(sp_db, SPDB_RECT)
-            (x1, y1, x2, y2) = rect
-            #self.image_win.set_image_parameters(self.image_win.item, x1, y1, x2, y2)
-            self.image_win.set_image_parameters(img_idx, x1, y1, x2, y2)
-            self.image_win.on_set_aspect_ratio(True, img_idx)
-            self.image_win.update_contrast(img_idx)
-            self.image_win.show()
-            self.image_win.raise_()
+            if(dct['scan_type'] is scan_types.SAMPLE_LINE_SPECTRA):
+                #sample line spec data may have different ev region resolutions so its special
+                wdg_com = make_base_wdg_com()
+                dct_put(wdg_com, WDGCOM_CMND, widget_com_cmnd_types.LOAD_SCAN)
+                dct_put(wdg_com, SPDB_SPATIAL_ROIS, {sp_db[ID_VAL]: sp_db})
+                self.image_win.do_load_linespec_file(fname, wdg_com, data, dropped=False)
+                self.image_win.show()
+                self.image_win.set_autoscale(fill_plot_window=True)
+                self.image_win.raise_()
+
+            else:
+                img_idx = 0
+                data_dir, fprefix, fsuffix = get_file_path_as_parts(fname)
+                self.image_win.set_data(img_idx, data)
+                rect = dct_get(sp_db, SPDB_RECT)
+                (x1, y1, x2, y2) = rect
+                # self.image_win.set_image_parameters(self.image_win.item, x1, y1, x2, y2)
+                self.image_win.set_image_parameters(img_idx, x1, y1, x2, y2)
+                self.image_win.on_set_aspect_ratio(True, img_idx)
+                self.image_win.update_contrast(img_idx)
+                self.image_win.show()
+                self.image_win.raise_()
 
             if (title is not None):
                 self.image_win.plot.set_title('%s' % title)
@@ -2644,7 +2684,7 @@ if __name__ == "__main__":
     dir = r'S:\STXM-data\Cryo-STXM\2018\guest\1214'
     dir = r'S:\STXM-data\Cryo-STXM\2019\guest\test\0215'
     dir = r'C:\controls\stxm-data\guest\0515'
-    dir = r'C:\controls\stxm-data\guest\0724'
+    dir = r'C:\controls\stxm-data\guest\1115'
     # dir = r'/home/bergr/git/testing/py27_qt5/py2.7/cls/data/guest'
     # main = ContactSheet(r'S:\STXM-data\Cryo-STXM\2016\guest\test')
     # main = ContactSheet(dir, BioxasDataIo)

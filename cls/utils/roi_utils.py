@@ -254,9 +254,6 @@ def on_stepsize_changed_with_fixed_step(roi, step):
 	recalc_center(roi)
 	recalc_setpoints(roi)
 
-
-
-
 def on_stop_changed(roi):
 	check_if_single_point(roi, False)
 	recalc_range(roi)
@@ -395,7 +392,8 @@ def recalc_setpoints(roi):
 			roi[SETPOINTS] = np.linspace(roi[START], roi[STOP], roi[NPOINTS], endpoint=True, retstep=False)
 	else:	
 		#roi[SETPOINTS], roi[ROI_STEP] = np.linspace(roi[START], roi[STOP], roi[NPOINTS], endpoint=True, retstep=True)
-		roi[SETPOINTS], STEP = np.linspace(roi[START], roi[STOP], roi[NPOINTS], endpoint=True, retstep=True)
+		#roi[SETPOINTS], STEP = np.linspace(roi[START], roi[STOP], roi[NPOINTS], endpoint=True, retstep=True)
+		roi[SETPOINTS], roi[ROI_STEP] = np.linspace(roi[START], roi[STOP], roi[NPOINTS], endpoint=True, retstep=True)
 	roi['RECT'] = (roi[START], roi[STOP] - roi[RANGE], roi[STOP], roi[START] + roi[RANGE])
 	
 def on_center_changed(roi):
@@ -798,7 +796,6 @@ def get_first_sp_id_from_wdg_com(wdg_com):
 	(sp_roi_dct, sp_ids, sp_id, sp_db) = wdg_to_sp(wdg_com)
 	return(sp_id)
 
-
 def get_sp_ids_from_wdg_com(wdg_com):
 	(sp_roi_dct, sp_ids, sp_id, sp_db) = wdg_to_sp(wdg_com)
 	return(sp_ids)
@@ -825,6 +822,15 @@ def wdg_to_sp(wdg_com, sp_id=None):
 	else:
 		return(({}, [], None, {}))
 
+def make_base_wdg_com():
+	wdg_com = {}
+	dct_put(wdg_com, WDGCOM_CMND, None)
+	dct_put(wdg_com, WDGCOM_SPATIAL_ROIS,  {})
+	dct_put(wdg_com, SPDB_SINGLE_LST_SP_ROIS, [])
+	dct_put(wdg_com, SPDB_SINGLE_LST_POL_ROIS, [])
+	dct_put(wdg_com, SPDB_SINGLE_LST_DWELLS, [])
+	dct_put(wdg_com, SPDB_SINGLE_LST_EV_ROIS, [])
+	return(wdg_com)
 """ 
 Define the standard dicts that will be used in the three main group of activities:
 

@@ -356,6 +356,7 @@ class ImageWidget(ImageDialog):
         self.multi_region_enabled = True
         self.show_image_params = False
         self.drop_enabled = True
+        self.fill_plot_window = False
 
         self.progbar = None
 
@@ -502,7 +503,7 @@ class ImageWidget(ImageDialog):
         self.plot.SIG_PLOT_AXIS_CHANGED.connect(self.on_sig_plot_axis_changed)
         self.plot.SIG_AXES_CHANGED.connect(self.on_sig_axes_changed)
         #
-        self.dropped.connect(self.updateFormatsTable)
+        self.dropped.connect(self.on_drop)
         # force the plot axis to make vertical 0 at the bottom instead of the
         # default of top
         self.plot.set_axis_direction('left', False)
@@ -529,6 +530,14 @@ class ImageWidget(ImageDialog):
         self.init_param_cross_marker()
 
         self._shape_registry = {}
+
+    def set_fill_plot_window(self, val):
+        '''
+        when the user clicks auto scale, it will check this flag to see if they want the plot to be filled or not
+        :param val:
+        :return:
+        '''
+        self.fill_plot_window = val
 
     def replot(self):
         plot = self.get_plot()
@@ -632,7 +641,7 @@ class ImageWidget(ImageDialog):
         if(self.drop_enabled):
             event.accept()
 
-    def updateFormatsTable(self, mimeData=None):
+    def on_drop(self, mimeData=None):
         # self.formatsTable.setRowCount(0)
         if(self.drop_enabled):
             if mimeData is None:
@@ -655,14 +664,6 @@ class ImageWidget(ImageDialog):
                     #text = " ".join(["%02X" % ord(datum)
                     #                 for datum in mimeData.data(format)])
                     text = " ".join(["%02X" % ord(datum) for datum in str(mimeData.data(format), encoding='cp1252')])
-
-                #row = self.formatsTable.rowCount()
-                # self.formatsTable.insertRow(row)
-                #self.formatsTable.setItem(row, 0, QtWidgets.QTableWidgetItem(format))
-                #self.formatsTable.setItem(row, 1, QtWidgets.QTableWidgetItem(text))
-                # print text
-
-            # self.formatsTable.resizeColumnToContents(0)
 
 
     def on_sig_axes_changed(self, obj):
@@ -3965,7 +3966,7 @@ class ImageWidget(ImageDialog):
         :returns: None
         """
         plot = self.get_plot()
-        if(fill_plot_window):
+        if(fill_plot_window or self.fill_plot_window):
             # unlock so that an autoscale will work
             self.set_lock_aspect_ratio(False)
             plot.do_autoscale()
@@ -5210,9 +5211,10 @@ class ImageWidget(ImageDialog):
             else:
 
                 wdg_com = data_io.get_wdg_com_from_entry(entry_dct, ekey)
-                self.load_image_data(fname, wdg_com, data, addimages, flipud=False, name_lbl=False, item_z=item_z, show=False, dropped=dropped)
-                #self.on_set_aspect_ratio(True)
-                #self.update_contrast()
+                if(scan_type is not types.scan_types.SAMPLE_LINE_SPECTRA):
+                    self.load_image_data(fname, wdg_com, data, addimages, flipud=False, name_lbl=False, item_z=item_z, show=False, dropped=dropped)
+                else:
+                    self.do_load_linespec_file(fname, wdg_com, data, dropped=True)
 
         #if(len(fnames) > 1):
         #    items
@@ -5220,6 +5222,37 @@ class ImageWidget(ImageDialog):
         progbar.hide()
         self.on_set_aspect_ratio(True)
         self.update_contrast()
+
+
+    def do_load_linespec_file(self, fname, wdg_com, data, dropped=False):
+        '''
+        this call can come from a drop onto the plotter or called from the outside in response to a drop on the scan plugin
+        :param fname:
+        :param wdg_com:
+        :param data:
+        :param dropped:
+        :return:
+        '''
+        self.set_autoscale(fill_plot_window=True)
+        self.set_fill_plot_window(True)
+        #data_tp = np.transpose(data)
+        # pull out the ev_rois and pass the start/stop for each to the loader
+        spid_ev_rois = {}
+        self.delImagePlotItems()
+        for sp_id in wdg_com[SPDB_SPATIAL_ROIS]:
+            strt_stp = []
+            spid_ev_rois = wdg_com[SPDB_SPATIAL_ROIS][sp_id][SPDB_EV_ROIS]
+            img_idx = 0
+            data_idx = 0
+            for eroi in spid_ev_rois:
+                self.load_linespec_data(fname, wdg_com, data[:, data_idx:data_idx + eroi[NPOINTS]],
+                                        item_z=img_idx, dropped=dropped, img_idx=img_idx,
+                                        estart=eroi[START], estop=eroi[STOP], enpts=eroi[NPOINTS], show=True)
+                img_idx += 1
+                data_idx += eroi[NPOINTS]
+        self.on_set_aspect_ratio(False)
+        _logger.info('[%s] scan loaded' %
+                     dct_get(wdg_com[SPDB_SPATIAL_ROIS][sp_id], SPDB_SCAN_PLUGIN_SECTION_ID))
 
     def sort_items_z(self, items):
         for item in items:
@@ -5344,6 +5377,110 @@ class ImageWidget(ImageDialog):
                 self.display_image_params(fprefix, sp_db)
             else:
                 self.report_image_params(fprefix, sp_db)
+
+    def load_linespec_data(self, fname, wdg_com, data, addimages=True, flipud=False, name_lbl=False, item_z=None, show=False, dropped=False, img_idx=0, estart=None, estop=None, enpts=None):
+        """
+        openfile(): This function loads a nxstxm hdf5 file, if it is a multi ev scan only the first image is
+        used
+
+        :param fname: fname description
+        :type fname: fname type
+
+        :param addimages=False: addimages=False description
+        :type addimages=False: addimages=False type
+
+        :returns: None
+        """
+
+        fname = str(fname)
+        data_dir, fprefix, fsuffix = get_file_path_as_parts(fname)
+        if(data_dir is None):
+            _logger.error('Problem with file [%s]' % fname)
+            return
+
+        plot = self.get_plot()
+        plot.setFocus()
+        if(wdg_com is not None):
+            sp_db = get_first_sp_db_from_wdg_com(wdg_com)
+            # only display first energy [0]
+            data = data.astype(np.float32)
+            #data[data==0.0] = np.nan
+            self.data[img_idx] = data
+            if(self.data[img_idx].ndim == 3):
+                self.data[img_idx] = self.data[img_idx][0]
+            if(flipud):
+                _data = np.flipud(self.data[img_idx])
+            else:
+                _data = self.data[img_idx]
+
+            self.data[img_idx] = _data
+
+
+        self.image_type = dct_get(sp_db, SPDB_PLOT_IMAGE_TYPE)
+        # if it is a focus image I dont want any of the tools screweing up the
+        # scan params so disable them
+        #if the image was dropped do NOT do anything with the tools
+        if(not dropped):
+            self.enable_tools_by_spatial_type(dct_get(sp_db, SPDB_PLOT_SHAPE_TYPE))
+        dct_put(sp_db, SPDB_PLOT_IMAGE_TYPE, self.image_type)
+
+        if(name_lbl):
+            _title = str(fname)
+            self.setWindowTitle(_title)
+            plot.set_title('%s%s' % (fprefix, fsuffix))
+        else:
+            _title = None
+        self.htSc = 1
+        self.widthSc = 1
+
+        if(len(self.data) > 0):
+            shape = self.data[img_idx].shape
+            if(len(shape) == 3):
+                #[e, self.dataHeight, self.dataWidth] = self.data[img_idx].shape
+                [e, self.dataHeight, self.dataWidth] = self.data[img_idx].shape
+                self.data[img_idx] = self.data[img_idx][0]
+            elif(len(shape) == 2):
+                [self.dataHeight, self.dataWidth] = self.data[img_idx].shape
+            else:
+                _logger.error('Not sure what kind of shape this is')
+                return
+
+            self.wPtr = 0
+            self.hPtr = 0
+            #if((not addimages) or (self.item[img_idx] is None)):
+            if ((not addimages) or (img_idx not in self.item.keys())):
+                #self.delImagePlotItems()
+                self.item[img_idx] = make.image(self.data[img_idx],interpolation='nearest',colormap='gist_gray', title=_title)
+                plot = self.get_plot()
+                plot.add_item(self.item[img_idx], z=item_z)
+            else:
+                self.item[img_idx] = make.image(self.data[img_idx],interpolation='nearest',colormap='gist_gray',title=_title)
+                items = self.plot.get_items(item_type=ICSImageItemType)
+                if(item_z is None):
+                    plot.add_item(self.item[img_idx], z=len(items)+1)
+                else:
+                    plot.add_item(self.item[img_idx], z=item_z)
+
+            #(x1, y1, x2, y2) = dct_get(sp_db, SPDB_RECT)
+            #self.set_image_parameters(img_idx, self.item, x1, y1, x2, y2)
+            self.set_image_parameters(img_idx, estart, 0, estop, self.dataHeight)
+
+            if(show):
+                self.show_data(img_idx, True)
+                self.set_autoscale()
+
+            dct_put(sp_db, SPDB_PLOT_KEY_PRESSED, self.inputState.keyisPressed)
+
+            #wdg_com = dct_get(sp_db, ADO_CFG_WDG_COM)
+            wdg_com[WDGCOM_CMND] = widget_com_cmnd_types.LOAD_SCAN
+            sp_db[WDGCOM_CMND] = widget_com_cmnd_types.LOAD_SCAN
+
+            # self.scan_loaded.emit(wdg_com)
+            #
+            # if(self.show_image_params):
+            #     self.display_image_params(fprefix, sp_db)
+            # else:
+            #     self.report_image_params(fprefix, sp_db)
 
 
     def display_image_params(self, fprefix, sp_db, name_lbl=True):
@@ -5539,7 +5676,7 @@ class ImageWidget(ImageDialog):
         """
         self.tstTimer.stop()
 
-    def determine_num_images(self, num_e_rois, setpoints):
+    def determine_num_images(self, ev_npts_stpts_lst):
         '''
         looking at the setpoints, determine how many images will be required dividing between the delta boundaries
         between the setpoints.
@@ -5549,81 +5686,30 @@ class ImageWidget(ImageDialog):
         :return:
         '''
         dct = {}
-        deltas = np.diff(np.array(setpoints))
-
-        #do any of the deltas == EV_SCAN_EDGE_RANGE for only 1 value? if so this is an ev region boundary and
-        # can be removed from the  deltas
-        deltas = deltas[deltas > 0.0]
-        #deltas = np.where(deltas == 0.2, 0.3, deltas)
-        #add an extra delta at the end so that the number of deltas is correct
-        l = list(deltas)
-        l.append(l[-1])
-        deltas = np.array(l)
-        #ok now move on
-        u, indices = np.unique(deltas.round(decimals=4), return_index=True)
-        u, counts = np.unique(deltas.round(decimals=4), return_counts=True)
-
-        #indices.sort()
-        num_images = num_e_rois
-        z = list(zip(indices, counts))
-
-        found_bndry = False
-        i = 0
-        for ind, cnt in z:
-            if(cnt == (num_e_rois - 1)):
-                #remove this pair because it belongs to the ev boundaries
-                found_bndry = True
-                break
-            i += 1
-        if(found_bndry):
-            del(z[i])
-
-        #fix total counts
-        #i = 0
-        l_z = []
-        for ind, cnt in z:
-            #z[i][1] += 1
-            #ind, cnt = z[i]
-            if(len(l_z) == (num_e_rois - 1)):
-                l_z.append((ind, cnt))
-            else:
-                l_z.append((ind, cnt + 1))
-            #i += 1
-
-        ind_cnts_sorted_lst = sorted(l_z, key=lambda t: t[0])
-
-        dct['img_to_idx_map'] = indices
-        dct['img_to_idx_counts'] = ind_cnts_sorted_lst
-        dct['num_images'] = num_images
-        dct['map'] = {}
-        dct['srtstop'] = {}
-        seq = np.array(list(range(0, len(setpoints) )))
+        num_images = len(ev_npts_stpts_lst)
         img_idx = 0
         l = []
         indiv_col_idx = []
-        for strt, num in ind_cnts_sorted_lst:
-            #dct['map'].append((setpoints[strt], setpoints[num], np.linspace(setpoints[strt], setpoints[num], num)))
-            #arr = np.array(list(range(ind_cnts_sorted_lst[img_idx][0], ind_cnts_sorted_lst[img_idx][1])))
-            arr = np.ones(ind_cnts_sorted_lst[img_idx][1], dtype=int)
+        dct['num_images'] = num_images
+        dct['map'] = {}
+        dct['srtstop'] = {}
+        ttl_npts = 0
+        for npts, strt, stp in ev_npts_stpts_lst:
+            ttl_npts += npts
+            arr = np.ones(npts, dtype=int)
             arr *= img_idx
             l = l + list(arr)
-            if(strt > 0):
-                indiv_setpoints = setpoints[strt - 1: strt+num]
-
-            else:
-                indiv_setpoints = setpoints[strt: strt + num]
-
-            indiv_col_idx = indiv_col_idx + list(range(0, num))
-            dct['srtstop'][img_idx] = (indiv_setpoints[0], indiv_setpoints[-1])
+            indiv_col_idx = indiv_col_idx + list(range(0, npts))
+            dct['srtstop'][img_idx] = (strt, stp)
             img_idx += 1
 
-        #dct['col_idxs'] = list(zip(seq, indiv_col_idx))
+        seq = np.array(list(range(0, ttl_npts)))
         dct['col_idxs'] = indiv_col_idx
         map_tpl = list(zip(seq, l))
         for i, img_idx in map_tpl:
             dct['map'][i] = img_idx
 
-        print(dct)
+        #print(dct)
         return(dct)
 
 

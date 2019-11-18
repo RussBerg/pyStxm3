@@ -1434,7 +1434,11 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         #                 plot_item_type = int(dct_get(sp_db, SPDB_PLOT_SHAPE_TYPE))
         #                 self.lineByLineImageDataWidget.addShapePlotItem(int(sp_id), rect, item_type=plot_item_type)
         #
-        if (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in [scan_types.SAMPLE_POINT_SPECTRA, scan_types.GENERIC_SCAN]):
+        if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) is scan_types.SAMPLE_LINE_SPECTRA):
+            self.lineByLineImageDataWidget.do_load_linespec_file(fname, wdg_com, data, dropped=False)
+            self.lineByLineImageDataWidget.on_set_aspect_ratio(force=True)
+
+        elif (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in [scan_types.SAMPLE_POINT_SPECTRA, scan_types.GENERIC_SCAN]):
             self.lineByLineImageDataWidget.blockSignals(True)
             self.lineByLineImageDataWidget.delShapePlotItems()
             self.lineByLineImageDataWidget.load_image_data(fname, wdg_com, data)
@@ -1491,7 +1495,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
 
         self.lineByLineImageDataWidget = ImageWidget(parent=None, type='analyze', settings_fname='%s_settings.json' % MAIN_OBJ.get_endstation_prefix())
-        self.lineByLineImageDataWidget.set_lock_aspect_ratio(False)
+        self.lineByLineImageDataWidget.set_lock_aspect_ratio(True)
         #self.bsImagePlotWidget = ImgPlotWindow()
         #vb = QtWidgets.QVBoxLayout()
         #vb.addWidget(self.bsImagePlotWidget)
@@ -1942,17 +1946,10 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                 # self.image_started = False
                 self.executingScan.image_started = False
 
-            #self.lineByLineImageDataWidget.addVerticalLine(col, line_data, True)
-            #self.executingScan.linescan_dct
-            #self.bsImagePlotWidget.addVerticalLine(self.executingScan.linescan_dct['map'][col], self.executingScan.linescan_dct['col_idxs'][col], line_data, True)
+            #print('add_line_to_plot: col=%d' % self.executingScan.linescan_dct['col_idxs'][col])
             self.lineByLineImageDataWidget.addVerticalLine(self.executingScan.linescan_dct['map'][col],
                                                    self.executingScan.linescan_dct['col_idxs'][col], line_data, True)
-            #self.bsImagePlotWidget.addV
-            #print('add_line_to_plot: addVerticalLine: col[%d]' % col)
-            #print('shape lineData', line_data.shape)
         else:
-            # if(not self.image_started and (row == 0)):
-            # if(not self.executingScan.image_started and (row == 0)):
             if (is_point):
                 if (not self.executingScan.image_started and (col == 0) and (row == 0)):
                     #print 'calling on_image_start: not self.executingScan.image_started and (col == 0) and (row == 0)'
@@ -2233,6 +2230,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.executingScan = None
         # make sure the data dir is up to date in case the 24 hour time has rolled over
         self.active_user.create_data_dir()
+        #default to locked aspect ratio
 
         # keep the scan plugin from firing any signals that would cause other widgets to respond
         self.scan_tbox_widgets[self.scan_panel_idx].blockSignals(True)
@@ -2394,6 +2392,9 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                 scan_class.init_subscriptions(MAIN_OBJ.engine_widget, self.add_point_to_spectra)
             else:
                 scan_class.init_subscriptions(MAIN_OBJ.engine_widget, self.add_point_to_plot)
+
+            if(scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+                self.lineByLineImageDataWidget.set_lock_aspect_ratio(False)
 
         elif (scan_type == scan_types.SAMPLE_IMAGE_STACK or scan_type == scan_types.TOMOGRAPHY_SCAN or scan_type == scan_types.PATTERN_GEN_SCAN):
             # use first sp_DB to determine if point by point or line unidir
@@ -2889,7 +2890,10 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         # on_image_start can be called by singal passed from scan with the wdg_com as the arg
         #print 'on_image_start called'
         #_logger.debug('on_image_start called')
-        #default img_idx is 0
+        #set these as defaults
+        self.lineByLineImageDataWidget.set_lock_aspect_ratio(True)
+        self.lineByLineImageDataWidget.set_fill_plot_window(False)
+        # default img_idx is 0
         img_idx = 0
         if (wdg_com is None):
             # use current
@@ -2939,19 +2943,23 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
             elif (scan_type == scan_types.SAMPLE_LINE_SPECTRA):
                 setpoints = []
+                ev_npts_stpts_lst = []
                 for i in range(len(self.executingScan.e_rois)):
                     num_e_rois = len(self.executingScan.e_rois)
                     e_roi = self.executingScan.e_rois[i]
                     xpnts = self.executingScan.x_roi[NPOINTS]
                     ypnts = self.executingScan.y_roi[NPOINTS]
-                    enpts = e_roi[NPOINTS]
+                    enpts = int(e_roi[NPOINTS])
                     stpts = e_roi[SETPOINTS]
+                    #create a list entry of (npts, start, stop)
+                    ev_npts_stpts_lst.append((enpts,stpts[0], stpts[-1]))
                     setpoints += list(stpts)
                     self.lineByLineImageDataWidget.initData(i, image_types.LINE_PLOT, xpnts, enpts)
                     self.lineByLineImageDataWidget.set_image_parameters(i, stpts[0], 0, stpts[-1], xpnts)
 
                 self.lineByLineImageDataWidget.set_autoscale(fill_plot_window=True)
-                dct = self.lineByLineImageDataWidget.determine_num_images(num_e_rois, setpoints)
+                self.lineByLineImageDataWidget.set_fill_plot_window(True)
+                dct = self.lineByLineImageDataWidget.determine_num_images(ev_npts_stpts_lst)
                 self.executingScan.linescan_dct = dct
 
             else:

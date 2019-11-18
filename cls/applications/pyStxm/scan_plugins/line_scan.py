@@ -86,7 +86,7 @@ class LineScansParam(ScanParamWidget):
         
         self.wdg_com = None
         self.load_from_defaults()
-        self.on_plugin_focus()
+        #self.on_plugin_focus()
         self.init_loadscan_menu()
 
     def init_plugin(self):
@@ -106,6 +106,7 @@ class LineScansParam(ScanParamWidget):
         #self.enable_multi_region = self.main_obj.get_is_multi_region_enabled()
         self.enable_multi_region = False
         self.multi_ev = True
+        self.sp_db = None
 
     def on_plugin_focus(self):
         '''
@@ -116,6 +117,16 @@ class LineScansParam(ScanParamWidget):
         if (self.isEnabled()):
             # call the standard init_base_values function for scan param widgets that contain a multiRegionWidget
             self.on_multiregion_widget_focus_init_base_values()
+        super(LineScansParam, self).on_plugin_focus()
+
+    def on_plugin_defocus(self):
+        '''
+            this is called when this scan param loses focus on the GUI
+
+        :return:
+        '''
+        super(LineScansParam, self).on_plugin_defocus()
+
 
     def clear_params(self):
         """ meant to clear all params from table """
@@ -155,12 +166,28 @@ class LineScansParam(ScanParamWidget):
             self.sub_type = scan_sub_types.POINT_BY_POINT
             
     def set_roi(self, roi):
-        (cx, cy, cz, c0) = roi[CENTER]
+        (sx, sy, sz, s0) = roi[START]
+        (stpx, stpy, stpz, stp0) = roi[STOP]
         (rx, ry, rz, s0) = roi[RANGE]
         (nx, ny, nz, n0) = roi[NPOINTS]
-        (sx, sy, sz, s0) = roi[STEP]
+        (stepx, stepy, stepz, step0) = roi[STEP]
         
         dwell = roi[DWELL]
+
+        scan = self.multi_region_widget.get_spatial_row_data(0)
+
+        dct_put(scan, SPDB_XSTART, sx)
+        dct_put(scan, SPDB_XSTOP, stpx)
+        dct_put(scan, SPDB_XRANGE, rx)
+        dct_put(scan, SPDB_XNPOINTS, nx)
+        dct_put(scan, SPDB_XSTEP, stepx)
+
+        dct_put(scan, SPDB_YSTART, sy)
+        dct_put(scan, SPDB_YSTOP, stpy)
+        dct_put(scan, SPDB_YRANGE, ry)
+        dct_put(scan, SPDB_YNPOINTS, ny)
+        dct_put(scan, SPDB_YSTEP, stepy)
+
         
     def mod_roi(self, sp_db, do_recalc=True, ev_only=False, sp_only=False):
         """
@@ -303,7 +330,10 @@ class LineScansParam(ScanParamWidget):
             #     if(self.sub_type_override == scan_sub_types.POINT_BY_POINT):
             #         self.sub_type = scan_sub_types.POINT_BY_POINT
         
-        dct_put(sp_db, SPDB_SCAN_PLUGIN_SUBTYPE, self.sub_type)    
+        dct_put(sp_db, SPDB_SCAN_PLUGIN_SUBTYPE, self.sub_type)
+        self.sp_db = sp_db
+        self.update_last_settings()
+
         self.roi_changed.emit(self.wdg_com)
         return(self.wdg_com)
     
@@ -614,4 +644,22 @@ class LineScansParam(ScanParamWidget):
             dct_put(sp_db, SPDB_SUB_SPATIAL_ROIS, sub_spatials[sp_id])
         self.roi_changed.emit(wdg_com)
         return(wdg_com)    
-        
+
+    def update_last_settings(self):
+        '''
+        these only update the spatial region values not the energy or EPU
+        example:
+            update the 'default' settings that will be reloaded when this scan pluggin is selected again
+        :return:
+        '''
+        sp_db = get_first_sp_db_from_wdg_com(self.wdg_com)
+        x_roi = sp_db[SPDB_X]
+        y_roi = sp_db[SPDB_Y]
+
+        DEFAULTS.set('SCAN.LINE.START', (x_roi[START], y_roi[START], 0, 0))
+        DEFAULTS.set('SCAN.LINE.STOP', (x_roi[STOP], y_roi[STOP], 0, 0))
+        DEFAULTS.set('SCAN.LINE.CENTER', (x_roi[CENTER], y_roi[CENTER], 0, 0))
+        DEFAULTS.set('SCAN.LINE.RANGE', (x_roi[RANGE], y_roi[RANGE], 0, 0))
+        DEFAULTS.set('SCAN.LINE.NPOINTS', (x_roi[NPOINTS], y_roi[NPOINTS], 0, 0))
+        DEFAULTS.set('SCAN.LINE.STEP', (x_roi[STEP], y_roi[STEP], 0, 0))
+        DEFAULTS.update()

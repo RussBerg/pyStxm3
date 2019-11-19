@@ -4,14 +4,16 @@ Created on 2012-05-16
 @author: bergr
 '''
 import os
-from PyQt5 import QtCore, QtGui
-import PyQt5.QtWidgets as QtWidgets
+import sys
+from time import time, sleep
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QSplashScreen
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 
 _splash_screen = None
-splashPath = os.path.join(os.getcwd(), '..','applications','pyStxm', 'splash.png')
+splashPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','applications','pyStxm', 'pyStxmSplash.png')
+#splashPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'splash_v2.png')
 #
 #
 class CSplashScreen(QtWidgets.QFrame):
@@ -121,23 +123,25 @@ def del_splash():
 
 
 def simple_test():
-    img_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pyStxmSplash.png')
-    pixmap = QPixmap(img_path)
+    app = QtWidgets.QApplication(sys.argv)
+    pixmap = QPixmap(splashPath)
     splash = QSplashScreen(pixmap)
     splash.show()
-
-if __name__ == '__main__':
-
-    import sys
-    path = splashPath
-    app = QtWidgets.QApplication(sys.argv)
-
-    # splash = get_splash()
-    # splash.showMessage("Loading Syntax", Qt.AlignRight | Qt.AlignTop, Qt.black)
-
-    simple_test()
-
     app.exec_()
-    #app.quit()
 
- 
+def main():
+    app = QtWidgets.QApplication(sys.argv)
+    start = time()
+    splash = QSplashScreen(QPixmap(splashPath))
+    splash.show()
+    while time() - start < 5:
+        sleep(0.001)
+        app.processEvents()
+    win = QtWidgets.QMainWindow()
+    splash.finish(win)
+    win.show()
+    app.exec_()
+
+if __name__ == "__main__":
+    #main()
+    simple_test()

@@ -689,15 +689,15 @@ class dev_config_base(QtCore.QObject):
                 if (ophyd_dev is not None):
                     dlst.append(ophyd_dev)
 
-        # for t in self.devices['PRESSURES'].keys():
-        #    for k, dev in self.devices['PRESSURES'][t].items():
-        #        #print('devs_as_list: [%s]' % k)
-        #        if (k in skip_lst):
-        #            # skip it
-        #            continue
-        #        ophyd_dev = dev.get_ophyd_device()
-        #        if (ophyd_dev is not None):
-        #            dlst.append(ophyd_dev)
+        for t in self.devices['PRESSURES'].keys():
+           for k, dev in self.devices['PRESSURES'][t].items():
+               #print('devs_as_list: [%s]' % k)
+               if (k in skip_lst):
+                   # skip it
+                   continue
+               ophyd_dev = dev.get_ophyd_device()
+               if (ophyd_dev is not None):
+                   dlst.append(ophyd_dev)
 
         for k, ophyd_dev in self.devices['POSITIONERS'].items():
             #print('devs_as_list: [%s]' % k)

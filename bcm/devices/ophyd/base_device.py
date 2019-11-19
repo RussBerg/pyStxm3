@@ -157,7 +157,10 @@ class BaseDevice(QtCore.QObject):
         return dct
 
     def get_desc(self):
-        return(self.get_name())
+        if(hasattr(self, '_desc')):
+            return(self._desc)
+        else:
+            return(self.get_name())
 
     def get_egu(self):
         return(self.egu)

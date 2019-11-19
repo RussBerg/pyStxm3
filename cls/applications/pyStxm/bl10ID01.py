@@ -446,14 +446,16 @@ def connect_standard_beamline_positioners(dev_dct, prfx='uhv', devcfg=None):
     dev_dct['POSITIONERS'][DNM_SLIT_Y] = Motor_Qt('BL1610-I10:slitY', name='BL1610-I10:slitY', abstract_mtr=True, pos_set=POS_TYPE_BL)
     devcfg.msg_splash("connecting to: [%s]" % DNM_M3_PITCH)
     dev_dct['POSITIONERS'][DNM_M3_PITCH] = Motor_Qt('BL1610-I10:m3STXMPitch', name='BL1610-I10:m3STXMPitch', abstract_mtr=True, pos_set=POS_TYPE_BL)
+
+    #EPU devices
+    # devcfg.msg_splash("connecting to: [%s]" % DNM_EPU_POLARIZATION)
+    # dev_dct['POSITIONERS'][DNM_EPU_POLARIZATION] = Motor_Qt('BL1610-I10:epuPolarization', name='BL1610-I10:epuPolarization', abstract_mtr=True, pos_set=POS_TYPE_BL)
     devcfg.msg_splash("connecting to: [%s]" % DNM_EPU_GAP)
     dev_dct['POSITIONERS'][DNM_EPU_GAP] = Motor_Qt('BL1610-I10:epuGap', name='BL1610-I10:epuGap', abstract_mtr=True, pos_set=POS_TYPE_BL)
     devcfg.msg_splash("connecting to: [%s]" % DNM_EPU_OFFSET)
     dev_dct['POSITIONERS'][DNM_EPU_OFFSET] = Motor_Qt('BL1610-I10:epuOffset', name='BL1610-I10:epuOffset', abstract_mtr=True, pos_set=POS_TYPE_BL)
     devcfg.msg_splash("connecting to: [%s]" % DNM_EPU_HARMONIC)
     dev_dct['POSITIONERS'][DNM_EPU_HARMONIC] = Motor_Qt('BL1610-I10:epuHarmonic', name='BL1610-I10:epuHarmonic', abstract_mtr=True, pos_set=POS_TYPE_BL)
-    devcfg.msg_splash("connecting to: [%s]" % DNM_EPU_POLARIZATION)
-    dev_dct['POSITIONERS'][DNM_EPU_POLARIZATION] = Motor_Qt('BL1610-I10:epuPolarization', name='BL1610-I10:epuPolarization', abstract_mtr=True, pos_set=POS_TYPE_BL)
     devcfg.msg_splash("connecting to: [%s]" % DNM_EPU_ANGLE)
     dev_dct['POSITIONERS'][DNM_EPU_ANGLE] = Motor_Qt('BL1610-I10:epuAngle', name='BL1610-I10:epuAngle', abstract_mtr=True, pos_set=POS_TYPE_BL)
 
@@ -600,22 +602,6 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
 
     dev_dct['PVS'][DNM_AX1_INTERFER_VOLTS] = BaseDevice('%sAi:ai:ai0_RBV' % prfx)
     dev_dct['PVS'][DNM_AX2_INTERFER_VOLTS] = BaseDevice('%sAi:ai:ai1_RBV' % prfx)
-
-
-    devcfg.msg_splash("connecting to SSCAN: [%s]" % ('%sstxm:det:' % prfx))
-
-    # devcfg.msg_splash("connecting to SSCAN: [%s]" % ('%sstxm:' % prfx))
-    # dev_dct['PVS_DONT_RECORD']['%sstxm:cmd_file' % prfx] = BaseDevice('%sstxm:cmd_file' % prfx)
-    # dev_dct['SSCANS']['%sstxm:scan1' % prfx] = Scan('%sstxm:scan1' % prfx)
-    # dev_dct['SSCANS']['%sstxm:scan2' % prfx] = Scan('%sstxm:scan2' % prfx)
-    # dev_dct['SSCANS']['%sstxm:scan3' % prfx] = Scan('%sstxm:scan3' % prfx)
-    # dev_dct['SSCANS']['%sstxm:scan4' % prfx] = Scan('%sstxm:scan4' % prfx)
-    # dev_dct['SSCANS']['%sstxm:scan5' % prfx] = Scan('%sstxm:scan5' % prfx)
-    # dev_dct['SSCANS']['%sstxm:scan6' % prfx] = Scan('%sstxm:scan6' % prfx)
-    # dev_dct['SSCANS']['%sstxm:scan7' % prfx] = Scan('%sstxm:scan7' % prfx)
-    # dev_dct['SSCANS']['%sstxm:scan8' % prfx] = Scan('%sstxm:scan8' % prfx)
-    #
-    # dev_dct['PVS_DONT_RECORD']['%sstxm:scan1:sts' % prfx] = BaseDevice('%sstxm:scan1.SMSG' % prfx)
 
     # ES = endstation temperatures
     devcfg.msg_splash("connecting to TEMPERATURES: [TM1610-3-I12-01]")
@@ -770,19 +756,19 @@ def connect_BL_devices(dev_dct, prfx='uhv'):
     if(prfx.find('uhv') > -1):
         dev_dct['DIO']['InterferShutter'] = PvShutter('%sDIO-2:shutter:ctl' % prfx)
 
-        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1410-01:vac:p'] = BaseDevice('CCG1410-01:vac:p', desc='Sec. 1', units='torr')
-        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1410-I00-01:vac:p'] = BaseDevice('CCG1410-I00-01:vac:p', desc='Sec. 2', units='torr')
-        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1410-I00-02:vac:p'] = BaseDevice('CCG1410-I00-02:vac:p', desc='Sec. 4', units='torr')
-        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-1-I00-02:vac:p'] = BaseDevice('CCG1610-1-I00-02:vac:p', desc='Sec. 6', units='torr')
-        dev_dct['PRESSURES'][POS_TYPE_BL]['HCG1610-1-I00-01:vac:p'] = BaseDevice('HCG1610-1-I00-01:vac:p', desc='Sec. 7', units='torr')
-        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-1-I00-03:vac:p'] = BaseDevice('CCG1610-1-I00-03:vac:p', desc='Sec. 8', units='torr')
-        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-I10-01:vac:p'] = BaseDevice('CCG1610-I10-01:vac:p', desc='Sec. 10', units='torr')
-        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-I10-02:vac:p'] = BaseDevice('CCG1610-I10-02:vac:p', desc='Sec. 11', units='torr')
-        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-I10-03:vac:p'] = BaseDevice('CCG1610-I10-03:vac:p', desc='Sec. 12', units='torr')
-        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-I10-04:vac:p'] = BaseDevice('CCG1610-I10-04:vac:p', desc='Sec. 13', units='torr')
-        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-I12-01:vac:p'] = BaseDevice('CCG1610-I12-01:vac:p',desc='Sec. 14', units='torr')
-        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-I12-02:vac:p'] = BaseDevice('CCG1610-I12-02:vac:p', desc='Sec. 15', units='torr')
-        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-3-I12-01:vac:p'] = BaseDevice('CCG1610-3-I12-01:vac:p', desc='Sec. 16', units='torr')
+        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1410-01:vac:p'] = BaseDevice('CCG1410-01:vac:p', desc='Sec. 1', units='torr', rd_only=True)
+        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1410-I00-01:vac:p'] = BaseDevice('CCG1410-I00-01:vac:p', desc='Sec. 2', units='torr', rd_only=True)
+        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1410-I00-02:vac:p'] = BaseDevice('CCG1410-I00-02:vac:p', desc='Sec. 4', units='torr', rd_only=True)
+        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-1-I00-02:vac:p'] = BaseDevice('CCG1610-1-I00-02:vac:p', desc='Sec. 6', units='torr', rd_only=True)
+        dev_dct['PRESSURES'][POS_TYPE_BL]['HCG1610-1-I00-01:vac:p'] = BaseDevice('HCG1610-1-I00-01:vac:p', desc='Sec. 7', units='torr', rd_only=True)
+        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-1-I00-03:vac:p'] = BaseDevice('CCG1610-1-I00-03:vac:p', desc='Sec. 8', units='torr', rd_only=True)
+        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-I10-01:vac:p'] = BaseDevice('CCG1610-I10-01:vac:p', desc='Sec. 10', units='torr', rd_only=True)
+        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-I10-02:vac:p'] = BaseDevice('CCG1610-I10-02:vac:p', desc='Sec. 11', units='torr', rd_only=True)
+        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-I10-03:vac:p'] = BaseDevice('CCG1610-I10-03:vac:p', desc='Sec. 12', units='torr', rd_only=True)
+        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-I10-04:vac:p'] = BaseDevice('CCG1610-I10-04:vac:p', desc='Sec. 13', units='torr', rd_only=True)
+        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-I12-01:vac:p'] = BaseDevice('CCG1610-I12-01:vac:p',desc='Sec. 14', units='torr', rd_only=True)
+        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-I12-02:vac:p'] = BaseDevice('CCG1610-I12-02:vac:p', desc='Sec. 15', units='torr', rd_only=True)
+        dev_dct['PRESSURES'][POS_TYPE_BL]['CCG1610-3-I12-01:vac:p'] = BaseDevice('CCG1610-3-I12-01:vac:p', desc='Sec. 16', units='torr', rd_only=True)
 
     else:
         pass

@@ -51,19 +51,15 @@ class TomographyScanParam(ScanParamWidget):
     def __init__(self, parent=None):
         ScanParamWidget.__init__(self, main_obj=MAIN_OBJ, data_io=STXMDataIo, dflts=DEFAULTS)
         self._parent = parent
+        self.epu_supported = False
+        self.goni_supported = False
 
         if (self.sample_positioning_mode != sample_positioning_modes.GONIOMETER):
             self.name = "Tomography Scan ---- [DISABLED by scanning mode] "
             self.setEnabled(False)
             self.setToolTip('TomographyScansParam: Scan plugin is disabled while in Goniometer sample positioning mode')
         else:
-
-            self.positioners = {'ZX':DNM_ZONEPLATE_X, 'ZY':DNM_ZONEPLATE_Y, 'OX':DNM_OSA_X, 'OY':DNM_OSA_Y, 'OZ':DNM_OSA_Z, 'GX':DNM_GONI_X, 'GY':DNM_GONI_Y, 'GZ':DNM_GONI_Z, 'GT':DNM_GONI_THETA}
-
-            # more
-            self.positioners['POL'] = DNM_EPU_POLARIZATION
-            self.positioners['OFF'] = DNM_EPU_OFFSET
-            self.positioners['ANG'] = DNM_EPU_ANGLE
+            self.goni_supported = True
 
             uic.loadUi( os.path.join(plugin_dir, 'tomography_scan.ui'), self)
             self.tomo_zpz_adjust_wdg = uic.loadUi(os.path.join(plugin_dir, 'tomo_zpz_adjust.ui'))
@@ -73,7 +69,19 @@ class TomographyScanParam(ScanParamWidget):
             y_cntr = self.main_obj.device(DNM_GONI_Y).get_position()
 
             self.multi_region_widget = MultiRegionWidget(enable_multi_spatial=False, max_range=MAX_SCAN_RANGE_FINEX,
-                                                         min_sp_rois=1, x_cntr=x_cntr, y_cntr=y_cntr)
+                                                         min_sp_rois=1, x_cntr=x_cntr, y_cntr=y_cntr, main_obj=self.main_obj)
+
+            if (not self.main_obj.is_device_supported(DNM_EPU_POLARIZATION)):
+
+                self.multi_region_widget.deslect_all_polarizations()
+                self.multi_region_widget.disable_polarization_table(True)
+                self.multi_region_widget.set_polarization_table_visible(False)
+            else:
+                self.epu_supported = True
+                self.multi_region_widget.deslect_all_polarizations()
+                self.multi_region_widget.disable_polarization_table(False)
+                self.multi_region_widget.set_polarization_table_visible(True)
+
             self.multi_region_widget.spatial_row_selected.connect(self.on_spatial_row_selected)
             self.multi_region_widget.spatial_row_changed.connect(self.on_spatial_row_changed)
             self.multi_region_widget.spatial_row_deleted.connect(self.on_spatial_row_deleted)
@@ -310,10 +318,10 @@ class TomographyScanParam(ScanParamWidget):
         if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
             self.gen_GONI_SCAN_max_scan_range_limit_def()
         else:
-            mtr_sx = self.main_obj.device(self.positioners['SX'])
-            mtr_sy = self.main_obj.device(self.positioners['SY'])
-            mtr_sfx = self.main_obj.device(self.positioners['SFX'])
-            mtr_sfy = self.main_obj.device(self.positioners['SFY'])
+            mtr_sx = self.main_obj.device(DNM_SAMPLE_X)
+            mtr_sy = self.main_obj.device(DNM_SAMPLE_Y)
+            mtr_sfx = self.main_obj.device(DNM_SAMPLE_FINE_X)
+            mtr_sfy = self.main_obj.device(DNM_SAMPLE_FINE_Y)
             center_x = mtr_sx.get_position()
             center_y = mtr_sy.get_position()
 
@@ -695,12 +703,12 @@ class TomographyScanParam(ScanParamWidget):
     def gen_GONI_SCAN_max_scan_range_limit_def(self):
         """ to be overridden by inheriting class
         """    
-        mtr_zpx = self.main_obj.device(self.positioners['ZX'])
-        mtr_zpy = self.main_obj.device(self.positioners['ZY'])
+        mtr_zpx = self.main_obj.device(DNM_ZONEPLATE_X)
+        mtr_zpy = self.main_obj.device(DNM_ZONEPLATE_Y)
         #mtr_osax = self.main_obj.device('OSAX.X')
         #mtr_osay = self.main_obj.device('OSAY.Y')
-        mtr_gx = self.main_obj.device(self.positioners['GX'])
-        mtr_gy = self.main_obj.device(self.positioners['GY'])
+        mtr_gx = self.main_obj.device(DNM_GONI_X)
+        mtr_gy = self.main_obj.device(DNM_GONI_Y)
         
         gx_pos = mtr_gx.get_position()
         gy_pos = mtr_gy.get_position()
@@ -738,14 +746,16 @@ class TomographyScanParam(ScanParamWidget):
         this call is typical used by the main gui when the user selects the zp image scan so that the plot can
         display coordinates around the current goni center
         '''
-        if('SX' in list(self.positioners.keys())):
-            mtr_x = self.main_obj.device(self.positioners['SX'])
-            mtr_y = self.main_obj.device(self.positioners['SY'])
-        elif('GX' in list(self.positioners.keys())):    
-            mtr_x = self.main_obj.device(self.positioners['GX'])
-            mtr_y = self.main_obj.device(self.positioners['GY'])
+        if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
+            mtr_x = self.main_obj.device(DNM_GONI_X)
+            mtr_y = self.main_obj.device(DNM_GONI_Y)
+        #elif('SX' in list(self.positioners.keys())):
         else:
-            return((0.0, 0.0))    
+            mtr_x = self.main_obj.device(DNM_SAMPLE_X)
+            mtr_y = self.main_obj.device(DNM_SAMPLE_Y)
+
+        #else:
+        #    return((0.0, 0.0))
         return((mtr_x.get_position(), mtr_y.get_position()))
     
     def get_theta_fld_vals(self):

@@ -9,7 +9,7 @@ from cls.utils.roi_dict_defs import *
 from cls.applications.pyStxm.widgets.scan_table_view.evScanTableView import EnergyScanTableView
 from cls.applications.pyStxm.widgets.scan_table_view.polarizationSelWidget import PolarizationSelWidget
 from cls.types.stxmTypes import energy_scan_order_types
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+#from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
 from cls.utils.roi_utils import get_base_energy_roi
 from cls.utils.roi_utils import BASE_EV
 
@@ -20,7 +20,7 @@ class EnergySelWidget(BaseSelectionWidget):
     A QWidget that contains an EnergyScanTableView
     """
 
-    def __init__(self, pol_sel_widget=None, enable_polarity_order=False, single_pol_model=True):
+    def __init__(self, pol_sel_widget=None, enable_polarity_order=False, single_pol_model=True, main_obj=None):
         """
         __init__(): description
 
@@ -39,6 +39,7 @@ class EnergySelWidget(BaseSelectionWidget):
         self.single_ev_model = False
         self.single_pol_model = single_pol_model
         self.single_pol_model_id = None
+        self.main_obj = main_obj
         # self.pol_sel_widget.changed.connect(self.on_pol_table_changed)
 
 
@@ -318,8 +319,10 @@ class EnergySelWidget(BaseSelectionWidget):
         if (self.pol_sel_widget):
             self.pol_sel_widget.enable_add_region_menu(True)
 
-        init_ev = MAIN_OBJ.device(DNM_ENERGY).get_position()
-        #init_ev = BASE_EV
+        if(self.main_obj):
+            init_ev = self.main_obj.device(DNM_ENERGY).get_position()
+        else:
+            init_ev = BASE_EV
         # scan = get_base_energy_roi('EV', DNM_ENERGY, 370, 395, 25.0, 10, 2.5, self.pol_roi, self.off_roi, stepSize=None, enable=True)
         if (scan is None):
             # use previous scans vals for new range

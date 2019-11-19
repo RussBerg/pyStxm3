@@ -491,13 +491,12 @@ class ScanParamWidget(QtWidgets.QFrame):
         - basically get the current EPU values and assign them to the multiregion widget
         :return:
         '''
-
         # set the polarization selection widgets default values
-        pol = self.main_obj.device(self.positioners['POL']).get_position()
-        offset = self.main_obj.device(self.positioners['OFF']).get_position()
-        angle = self.main_obj.device(self.positioners['ANG']).get_position()
-
-        self.multi_region_widget.init_polarization_values(pol, offset, angle)
+        if (self.main_obj.is_device_supported(DNM_EPU_POLARIZATION)):
+            pol = self.main_obj.device(DNM_EPU_POLARIZATION).get_position()
+            offset = self.main_obj.device(DNM_EPU_OFFSET).get_position()
+            angle = self.main_obj.device(DNM_EPU_ANGLE).get_position()
+            self.multi_region_widget.init_polarization_values(pol, offset, angle)
 
     def calc_new_scan_time_estemate(self, is_pxp, x_roi, y_roi, dwell):
         '''
@@ -2271,11 +2270,11 @@ class ScanParamWidget(QtWidgets.QFrame):
         MAX_SCAN_RANGE_X = self.main_obj.get_preset_as_float('MAX_SCAN_RANGE_X')
         MAX_SCAN_RANGE_Y = self.main_obj.get_preset_as_float('MAX_SCAN_RANGE_Y')
 
-        mtr_gx = self.main_obj.device(self.positioners['GX'])
-        mtr_gy = self.main_obj.device(self.positioners['GY'])
-        mtr_gz = self.main_obj.device(self.positioners['GZ'])
-        mtr_gt = self.main_obj.device(self.positioners['GT'])
-        mtr_oz = self.main_obj.device(self.positioners['OZ'])
+        mtr_gx = self.main_obj.device(DNM_GONI_X)
+        mtr_gy = self.main_obj.device(DNM_GONI_Y)
+        mtr_gz = self.main_obj.device(DNM_GONI_Z)
+        mtr_gt = self.main_obj.device(DNM_GONI_THETA)
+        mtr_oz = self.main_obj.device(DNM_OSA_Z)
 
         # here we need to turn the absolute scan region (goni XY) that the user selected
         # into one that is centered around 0 as our ZP XY is
@@ -2343,44 +2342,44 @@ class ScanParamWidget(QtWidgets.QFrame):
             gonix_center = mtr_gx.get_position()
             goniy_center = mtr_gy.get_position()
 
-        x_roi = get_base_roi(SPDB_GX, self.positioners['GX'], dct_get(sp_db, SPDB_XCENTER), dct_get(sp_db, SPDB_XRANGE),
+        x_roi = get_base_roi(SPDB_GX, DNM_GONI_X, dct_get(sp_db, SPDB_XCENTER), dct_get(sp_db, SPDB_XRANGE),
                              dct_get(sp_db, SPDB_XNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
-        y_roi = get_base_roi(SPDB_GY, self.positioners['GY'], dct_get(sp_db, SPDB_YCENTER), dct_get(sp_db, SPDB_YRANGE),
+        y_roi = get_base_roi(SPDB_GY, DNM_GONI_Y, dct_get(sp_db, SPDB_YCENTER), dct_get(sp_db, SPDB_YRANGE),
                              dct_get(sp_db, SPDB_YNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
 
 
 
-        #gt_roi = get_base_start_stop_roi(SPDB_GT, self.positioners['GT'], mtr_gt.get_position(), mtr_gt.get_position(), 1, enable=True)
+        #gt_roi = get_base_start_stop_roi(SPDB_GT, DNM_GONI_THETA, mtr_gt.get_position(), mtr_gt.get_position(), 1, enable=True)
         if(hasattr(self,'sp_db')):
             gt_start = dct_get(self.sp_db, SPDB_GTSTART)
             gt_stop = dct_get(self.sp_db, SPDB_GTSTOP)
             gt_npoints = dct_get(self.sp_db, SPDB_GTNPOINTS)
-            gt_roi = get_base_start_stop_roi(SPDB_GT, self.positioners['GT'], gt_start, gt_stop, gt_npoints,
+            gt_roi = get_base_start_stop_roi(SPDB_GT, DNM_GONI_THETA, gt_start, gt_stop, gt_npoints,
                                              enable=True)
             zpz_adjust_roi = dct_get(self.sp_db, SPDB_G_ZPZ_ADJUST)
         else:
-            gt_roi = get_base_start_stop_roi(SPDB_GT, self.positioners['GT'], mtr_gt.get_position(),
+            gt_roi = get_base_start_stop_roi(SPDB_GT, DNM_GONI_THETA, mtr_gt.get_position(),
                                              mtr_gt.get_position(), 1, enable=True)
             zpz_adjust_roi = get_base_roi(SPDB_G_ZPZ_ADJUST, 'NONE', 0.0, 0.0, 1, stepSize=None,
                                           max_scan_range=None,
                                           enable=False)
 
-        gx_roi = get_base_roi(SPDB_GX, self.positioners['GX'], gonix_center, dct_get(sp_db, SPDB_XRANGE),
+        gx_roi = get_base_roi(SPDB_GX, DNM_GONI_X, gonix_center, dct_get(sp_db, SPDB_XRANGE),
                               dct_get(sp_db, SPDB_XNPOINTS), stepSize=None, max_scan_range=None, enable=True,
                               is_point=False)
-        gy_roi = get_base_roi(SPDB_GY, self.positioners['GY'], goniy_center, dct_get(sp_db, SPDB_YRANGE),
+        gy_roi = get_base_roi(SPDB_GY, DNM_GONI_Y, goniy_center, dct_get(sp_db, SPDB_YRANGE),
                               dct_get(sp_db, SPDB_YNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
-        gz_roi = get_base_roi(SPDB_GZ, self.positioners['GZ'], mtr_gz.get_position(), 0, 1, stepSize=None, max_scan_range=None, enable=True, is_point=True)
+        gz_roi = get_base_roi(SPDB_GZ, DNM_GONI_Z, mtr_gz.get_position(), 0, 1, stepSize=None, max_scan_range=None, enable=True, is_point=True)
 
         self.apply_correction_model(gx_roi, gy_roi, gz_roi, gt_roi)
 
         # here use only a single OSA XY, when subdividing then this will need to be a set of setpoints = #subdivisions * # Y points
-        ox_roi = get_base_roi(SPDB_OX, self.positioners['OX'], osax_center, 0, 1, stepSize=None, max_scan_range=None,
+        ox_roi = get_base_roi(SPDB_OX, DNM_OSA_X, osax_center, 0, 1, stepSize=None, max_scan_range=None,
                               enable=True, is_point=False)
-        oy_roi = get_base_roi(SPDB_OY, self.positioners['OY'], osay_center, 0, 1, stepSize=None, max_scan_range=None,
+        oy_roi = get_base_roi(SPDB_OY, DNM_OSA_Y, osay_center, 0, 1, stepSize=None, max_scan_range=None,
                               enable=True, is_point=False)
         # Z disabled for now
-        oz_roi = get_base_roi(SPDB_OZ, self.positioners['OZ'], mtr_oz.get_position(), 0, 1, stepSize=None,
+        oz_roi = get_base_roi(SPDB_OZ, DNM_OSA_Z, mtr_oz.get_position(), 0, 1, stepSize=None,
                               max_scan_range=None, enable=False, is_point=False)
 
         # this needs to be handled properly for multi subspatial
@@ -2390,11 +2389,11 @@ class ScanParamWidget(QtWidgets.QFrame):
 
         # now set X and Y to new start/stop/ values, note using X and Y NPOINTS though
         zxnpts = dct_get(sp_db, SPDB_XNPOINTS)
-        zx_roi = get_base_start_stop_roi(SPDB_X, self.positioners['ZX'], scan_rect.left(), scan_rect.right(), zxnpts,
+        zx_roi = get_base_start_stop_roi(SPDB_X, DNM_ZONEPLATE_X, scan_rect.left(), scan_rect.right(), zxnpts,
                                          enable=True)
 
         zynpts = dct_get(sp_db, SPDB_YNPOINTS)
-        zy_roi = get_base_start_stop_roi(SPDB_Y, self.positioners['ZY'], scan_rect.bottom(), scan_rect.top(), zynpts,
+        zy_roi = get_base_start_stop_roi(SPDB_Y, DNM_ZONEPLATE_Y, scan_rect.bottom(), scan_rect.top(), zynpts,
                                          enable=True)
 
         #because this is strictly for modiifications FOR THE GONIOMETER that means that x_roi and y_roi contain the scan

@@ -58,7 +58,7 @@ class DetectorScanParam(ScanParamWidget):
 
 		self.scribblerBtn.setVisible(True)
 		self.scribblerBtn.setToolTip('Click the image and then hold down CTRL-C to move detector \nstage around looking for the beam')
-		self.detxy_snapshot_pv = self.main_obj.device('DetCntr_Snapshot')
+		#self.detxy_snapshot_pv = self.main_obj.device('DetCntr_Snapshot')
 		
 		self.scribbler_enabled = False
 		self.plotWidget = None
@@ -310,8 +310,8 @@ class DetectorScanParam(ScanParamWidget):
 
 		mtr_x.move(xpos)
 		mtr_y.move(ypos)
-		arr = self.detxy_snapshot_pv.get_position()
-		self.on_new_det_data(arr)
+		#arr = self.detxy_snapshot_pv.get_position()
+		#self.on_new_det_data(arr)
 	
 	def set_dwell(self, dwell):
 		self.set_parm(self.dwellFld, dwell)

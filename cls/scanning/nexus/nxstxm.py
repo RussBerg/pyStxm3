@@ -4174,8 +4174,14 @@ def get_NXstxm_entry(entry_grp):
             
         wdg_dct = json.loads(js_str)
 
+        #a place to keep the indiv ev_rois for each spatial ID
+        #spid_ev_rois = {}
         for sp_id in wdg_dct['SPATIAL_ROIS']:
             fix_start_time_and_other_fields(entry_grp, wdg_dct['SPATIAL_ROIS'][sp_id])
+            # erois = []
+            # spid_ev_rois = wdg_dct['SPATIAL_ROIS'][sp_id]['EV_ROIS']
+            # for eroi in  spid_ev_rois:
+            #     erois.append(eroi)
 
         dct_put(dct, 'WDG_COM', wdg_dct)
         

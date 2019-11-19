@@ -57,21 +57,7 @@ class PatternGeneratorScanParam(ScanParamWidget):
 		# 	self.setEnabled(False)
 		# 	self.setToolTip('PatternGeneratorScanParam: Scan plugin is disabled, non hardware acclerated version is currently not supported ')
 		# else:
-		# 	self.positioners = {'ZX': DNM_ZONEPLATE_X, 'ZY': DNM_ZONEPLATE_Y,
-		# 						'OX': DNM_OSA_X, 'OY': DNM_OSA_Y, 'OZ': DNM_OSA_Z,
-		# 						'GX': DNM_GONI_X, 'GY': DNM_GONI_Y, 'GZ': DNM_GONI_Z, 'GT': DNM_GONI_THETA,
-		# 						'SX': DNM_SAMPLE_X, 'SY': DNM_SAMPLE_Y, 'SFX': DNM_SAMPLE_FINE_X,
-		# 						'SFY': DNM_SAMPLE_FINE_Y,
-		# 						'CX': DNM_COARSE_X, 'CY': DNM_COARSE_Y,
-		# 						'POL': DNM_EPU_POLARIZATION, 'OFF': DNM_EPU_OFFSET, 'ANG': DNM_EPU_ANGLE}
 
-		self.positioners = {'ZX': DNM_ZONEPLATE_X, 'ZY': DNM_ZONEPLATE_Y,
-							'OX': DNM_OSA_X, 'OY': DNM_OSA_Y, 'OZ': DNM_OSA_Z,
-							'GX': DNM_GONI_X, 'GY': DNM_GONI_Y, 'GZ': DNM_GONI_Z, 'GT': DNM_GONI_THETA,
-							'SX': DNM_SAMPLE_X, 'SY': DNM_SAMPLE_Y, 'SFX': DNM_SAMPLE_FINE_X,
-							'SFY': DNM_SAMPLE_FINE_Y,
-							'CX': DNM_COARSE_X, 'CY': DNM_COARSE_Y,
-							'POL': DNM_EPU_POLARIZATION, 'OFF': DNM_EPU_OFFSET, 'ANG': DNM_EPU_ANGLE}
 		#self.scan_class = PatternGenWithE712WavegenScanClass(main_obj=self.main_obj)
 		self.scan_class = PatternGenScanClass(main_obj=self.main_obj)
 		self.sp_db = None

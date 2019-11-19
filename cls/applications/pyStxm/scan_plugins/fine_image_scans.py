@@ -47,33 +47,13 @@ class FineImageScansParam(ScanParamWidget):
     def __init__(self, parent=None):
         ScanParamWidget.__init__(self, main_obj=MAIN_OBJ, data_io=STXMDataIo, dflts=DEFAULTS)
         self._parent = parent
-
-        self.positioners = {'ZX': DNM_ZONEPLATE_X, 'ZY': DNM_ZONEPLATE_Y,
-                            'OX': DNM_OSA_X, 'OY': DNM_OSA_Y, 'OZ': DNM_OSA_Z,
-                            'GX': DNM_GONI_X, 'GY': DNM_GONI_Y, 'GZ': DNM_GONI_Z, 'GT': DNM_GONI_THETA,
-                            'SX': DNM_SAMPLE_X, 'SY': DNM_SAMPLE_Y, 'SFX': DNM_SAMPLE_FINE_X, 'SFY': DNM_SAMPLE_FINE_Y,
-                            'CX': DNM_COARSE_X, 'CY': DNM_COARSE_Y,
-                            'POL': DNM_EPU_POLARIZATION, 'OFF': DNM_EPU_OFFSET, 'ANG': DNM_EPU_ANGLE}
-
-        # if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
-        #     #goniometer_zoneplate mode
-        #     self.positioners = {'ZX':DNM_ZONEPLATE_X, 'ZY':DNM_ZONEPLATE_Y, 'OX':DNM_OSA_X, 'OY':DNM_OSA_Y, 'OZ':DNM_OSA_Z, 'GX':DNM_GONI_X, 'GY':DNM_GONI_Y, 'GZ':DNM_GONI_Z, 'GT':DNM_GONI_THETA}
-        # else:
-        #     #coarse
-        #     if (self.sample_fine_positioning_mode == sample_fine_positioning_modes.SAMPLEFINE):
-        #         #coarse_samplefine
-        #         self.positioners = {'SX':DNM_SAMPLE_X, 'SY':DNM_SAMPLE_Y,'SFX': DNM_SAMPLE_FINE_X, 'SFY': DNM_SAMPLE_FINE_Y}
-        #     else:
-        #         #coarse_zoneplate
-        #         self.positioners = {'CX': DNM_COARSE_X, 'CY': DNM_COARSE_Y, 'SX': DNM_SAMPLE_X, 'SY': DNM_SAMPLE_Y, 'SFX': DNM_ZONEPLATE_X,'SFY': DNM_ZONEPLATE_Y}
-        #     #self.positioners = {'SX': DNM_SAMPLE_FINE_X, 'SY': DNM_SAMPLE_FINE_Y}
-        #
-        # # more
-        # self.positioners['POL'] = DNM_EPU_POLARIZATION
-        # self.positioners['OFF'] = DNM_EPU_OFFSET
-        # self.positioners['ANG'] = DNM_EPU_ANGLE
-
         uic.loadUi( os.path.join(plugin_dir, 'fine_image_scans.ui'), self)
+
+        self.epu_supported = False
+        self.goni_supported = False
+
+        if(self.main_obj.is_device_supported(DNM_GONI_X)):
+            self.goni_supported = True
 
         if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
             x_cntr = self.main_obj.device(DNM_GONI_X).get_position()
@@ -84,7 +64,18 @@ class FineImageScansParam(ScanParamWidget):
 
         self.multi_region_widget = MultiRegionWidget(enable_multi_spatial=self.enable_multi_region,
                                                       single_ev_model=True, max_range=MAX_SCAN_RANGE_FINEX, min_sp_rois=1,
-                                                     x_cntr=x_cntr, y_cntr=y_cntr)
+                                                     x_cntr=x_cntr, y_cntr=y_cntr, main_obj=self.main_obj)
+
+        if (not self.main_obj.is_device_supported(DNM_EPU_POLARIZATION)):
+            self.multi_region_widget.deslect_all_polarizations()
+            self.multi_region_widget.disable_polarization_table(True)
+            self.multi_region_widget.set_polarization_table_visible(False)
+        else:
+            # more
+            self.epu_supported = True
+            self.multi_region_widget.deslect_all_polarizations()
+            self.multi_region_widget.disable_polarization_table(False)
+            self.multi_region_widget.set_polarization_table_visible(True)
 
         #self.multi_region_widget = MultiRegionWidget(enable_multi_spatial=self.enable_multi_region, max_range=MAX_SCAN_RANGE_FINEX)
         self.multi_region_widget.spatial_row_selected.connect(self.on_spatial_row_selected)
@@ -199,10 +190,10 @@ class FineImageScansParam(ScanParamWidget):
         if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
             self.gen_GONI_SCAN_max_scan_range_limit_def()
         else:
-            mtr_sx = self.main_obj.device(self.positioners['SX'])
-            mtr_sy = self.main_obj.device(self.positioners['SY'])
-            mtr_sfx = self.main_obj.device(self.positioners['SFX'])
-            mtr_sfy = self.main_obj.device(self.positioners['SFY'])
+            mtr_sx = self.main_obj.device(DNM_SAMPLE_X)
+            mtr_sy = self.main_obj.device(DNM_SAMPLE_Y)
+            mtr_sfx = self.main_obj.device(DNM_SAMPLE_FINE_X)
+            mtr_sfy = self.main_obj.device(DNM_SAMPLE_FINE_Y)
             center_x = mtr_sx.get_position()
             center_y = mtr_sy.get_position()
 
@@ -263,12 +254,19 @@ class FineImageScansParam(ScanParamWidget):
 
     
     def set_roi(self, roi):
-        (cx, cy, cz, c0) = roi[CENTER]
-        (rx, ry, rz, s0) = roi[RANGE]
-        (nx, ny, nz, n0) = roi[NPOINTS]
-        (sx, sy, sz, s0) = roi[STEP]
-        
-        dwell = roi[DWELL]
+        '''
+        This standard function is typically used to set QtLineEdit fields but because this plugin uses the multispatialwidget
+        there are no fields so it is basically unused
+        :param roi:
+        :return:
+        '''
+        # (cx, cy, cz, c0) = roi[CENTER]
+        # (rx, ry, rz, s0) = roi[RANGE]
+        # (nx, ny, nz, n0) = roi[NPOINTS]
+        # (sx, sy, sz, s0) = roi[STEP]
+        #
+        # dwell = roi[DWELL]
+        pass
         
 
 
@@ -515,12 +513,12 @@ class FineImageScansParam(ScanParamWidget):
     def gen_GONI_SCAN_max_scan_range_limit_def(self):
         """ to be overridden by inheriting class
         """    
-        mtr_zpx = self.main_obj.device(self.positioners['ZX'])
-        mtr_zpy = self.main_obj.device(self.positioners['ZY'])
+        mtr_zpx = self.main_obj.device(DNM_ZONEPLATE_X)
+        mtr_zpy = self.main_obj.device(DNM_ZONEPLATE_Y)
         #mtr_osax = self.main_obj.device('OSAX.X')
         #mtr_osay = self.main_obj.device('OSAY.Y')
-        mtr_gx = self.main_obj.device(self.positioners['GX'])
-        mtr_gy = self.main_obj.device(self.positioners['GY'])
+        mtr_gx = self.main_obj.device(DNM_GONI_X)
+        mtr_gy = self.main_obj.device(DNM_GONI_Y)
         
         gx_pos = mtr_gx.get_position()
         gy_pos = mtr_gy.get_position()
@@ -559,17 +557,12 @@ class FineImageScansParam(ScanParamWidget):
         display coordinates around the current goni center
         '''
         if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
-            mtr_x = self.main_obj.device(self.positioners['GX'])
-            mtr_y = self.main_obj.device(self.positioners['GY'])
+            mtr_x = self.main_obj.device(DNM_GONI_X)
+            mtr_y = self.main_obj.device(DNM_GONI_Y)
         else:
-            #if('SX' in list(self.positioners.keys())):
-            mtr_x = self.main_obj.device(self.positioners['SX'])
-            mtr_y = self.main_obj.device(self.positioners['SY'])
-        # elif('GX' in list(self.positioners.keys())):
-        #     mtr_x = self.main_obj.device(self.positioners['GX'])
-        #     mtr_y = self.main_obj.device(self.positioners['GY'])
-        # else:
-        #     return((0.0, 0.0))
+            mtr_x = self.main_obj.device(DNM_SAMPLE_X)
+            mtr_y = self.main_obj.device(DNM_SAMPLE_Y)
+
         return((mtr_x.get_position(), mtr_y.get_position()))
     
     def get_theta_fld_vals(self):

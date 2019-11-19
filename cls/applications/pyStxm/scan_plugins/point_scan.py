@@ -47,19 +47,26 @@ class PointScanParam(ScanParamWidget):
         ScanParamWidget.__init__(self, main_obj=MAIN_OBJ, data_io=STXMDataIo, dflts=DEFAULTS)
         self._parent = parent
         uic.loadUi( os.path.join(plugin_dir, 'point_scan.ui'), self)
+        self.epu_supported = False
+        self.goni_supported = False
 
         if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
-            self.positioners = {'ZX':DNM_ZONEPLATE_X, 'ZY':DNM_ZONEPLATE_Y, 'OX':DNM_OSA_X, 'OY':DNM_OSA_Y, 'OZ':DNM_OSA_Z, 'GX':DNM_GONI_X, 'GY':DNM_GONI_Y, 'GZ':DNM_GONI_Z, 'GT':DNM_GONI_THETA}
-        else:
-            self.positioners = {'SX':DNM_SAMPLE_X, 'SY':DNM_SAMPLE_X}
-
-        # more
-        self.positioners['POL'] = DNM_EPU_POLARIZATION
-        self.positioners['OFF'] = DNM_EPU_OFFSET
-        self.positioners['ANG'] = DNM_EPU_ANGLE
+            self.goni_supported = True
 
         #instead of using centerx etc use startX
-        self.multi_region_widget = MultiRegionWidget(use_center=False, is_point=True, enable_multi_spatial=self.enable_multi_region,  single_ev_model=True, max_range=MAX_SCAN_RANGE_FINEX)
+        self.multi_region_widget = MultiRegionWidget(use_center=False, is_point=True, enable_multi_spatial=self.enable_multi_region,  single_ev_model=True, max_range=MAX_SCAN_RANGE_FINEX, main_obj=self.main_obj)
+
+        if (not self.main_obj.is_device_supported(DNM_EPU_POLARIZATION)):
+
+            self.multi_region_widget.deslect_all_polarizations()
+            self.multi_region_widget.disable_polarization_table(True)
+            self.multi_region_widget.set_polarization_table_visible(False)
+        else:
+            self.epu_supported = True
+            self.multi_region_widget.deslect_all_polarizations()
+            self.multi_region_widget.disable_polarization_table(False)
+            self.multi_region_widget.set_polarization_table_visible(True)
+
         self.multi_region_widget.spatial_row_selected.connect(self.on_spatial_row_selected)
         self.multi_region_widget.spatial_row_changed.connect(self.on_spatial_row_changed)
         self.multi_region_widget.spatial_row_deleted.connect(self.on_spatial_row_deleted)

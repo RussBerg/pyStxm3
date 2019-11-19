@@ -54,7 +54,7 @@ class PolarizationSelWidget(BaseSelectionWidget):
         
         self.table_view.scan_changed.connect(self.changed)
         
-        #self.table_view.model().scan_changed.connect(self.on_pol_scan_changed)
+        #self.table_view.model().scan_changed.connect(self.on_pol_scan_changed
 
     def set_default_values(self, polarization, offset, angle):
         '''

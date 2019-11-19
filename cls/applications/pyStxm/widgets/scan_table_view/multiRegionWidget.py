@@ -33,7 +33,7 @@ class MultiRegionWidget(BaseSelectionWidget):
     spatial_row_deleted = QtCore.pyqtSignal(object)
 
     def __init__(self,use_center=True, is_point=False, is_arb_line=False, enable_multi_spatial=False, single_ev_model=True, max_range=100, use_hdw_accel=True,
-                 min_sp_rois=0, x_cntr=None, y_cntr=None, *args):
+                 min_sp_rois=0, x_cntr=None, y_cntr=None, main_obj=None, *args):
         """
         __init__(): description
 
@@ -48,6 +48,7 @@ class MultiRegionWidget(BaseSelectionWidget):
         self.use_center = use_center
         self.enable_multi_spatial = enable_multi_spatial
         self.min_sp_rois = min_sp_rois
+        self.main_obj = main_obj
         self.ev_polarity_scan_order = energy_scan_order_types.EV_THEN_POL
         
         self.loadScanBtn = QtWidgets.QPushButton('Load Scan')
@@ -68,7 +69,7 @@ class MultiRegionWidget(BaseSelectionWidget):
         self.getAllPolBtn.clicked.connect(self.get_just_pol_regions)
         
         self.pol_widg = PolarizationSelWidget()
-        self.ev_widg = EnergySelWidget(self.pol_widg)
+        self.ev_widg = EnergySelWidget(self.pol_widg, main_obj=self.main_obj)
 
         if(self.enable_multi_spatial):
             single_sp = False
@@ -124,7 +125,18 @@ class MultiRegionWidget(BaseSelectionWidget):
             self.ev_widg.setMinimumHeight(100)
             self.pol_widg.setMinimumHeight(60)
 
+        #default is enabled
+        self.disable_polarization_table(False)
         self.setLayout(v_layout)
+
+    def disable_polarization_table(self, val):
+        if(val):
+            self.pol_widg.setEnabled(False)
+            #shrink how much vertial space it occupies
+            self.pol_widg.setMaximumHeight(50)
+        else:
+            self.pol_widg.setEnabled(True)
+            self.pol_widg.setMaximumHeight(16777215)
 
     def init_polarization_values(self, polarization, offset, angle):
         '''
@@ -311,6 +323,17 @@ class MultiRegionWidget(BaseSelectionWidget):
     def deselect_all(self):
         #_logger.debug('deselect_all: called')
         self.sp_widg.table_view.clearSelection()
+
+    def deslect_all_energies(self):
+        # _logger.debug('deselect_all: called')
+        self.ev_widg.table_view.clearSelection()
+
+    def deslect_all_polarizations(self):
+        # _logger.debug('deselect_all: called')
+        self.pol_widg.table_view.clearSelection()
+
+    def set_polarization_table_visible(self, val):
+        self.pol_widg.setVisible(val)
         
     def select_spatial_row(self, scan_id):
         self.sp_widg.blockSignals(True)
@@ -806,6 +829,7 @@ if __name__ == '__main__':
     # multi = MultiRegionWidget(use_center=True, enable_multi_spatial=True, is_point=False, single_ev_model=False)
     multi = MultiRegionWidget(use_center=True, enable_multi_spatial=True, is_point=False, single_ev_model=False,
                               min_sp_rois=1)
+    multi.disable_polarization_table(True)
     #multi.enable_add_spatial_region_menu(True)
     multi.show_load_btn()
     multi.show_getdata_btn()
@@ -815,9 +839,9 @@ if __name__ == '__main__':
     #pythonshell = ShellWidget(parent=None, namespace=ns,commands=[], multithreaded=True)
     #multi.layout().addWidget(pythonshell)
 
-    splash = get_splash()
-    didit = splash.close()
-    del_splash()
+    #splash = get_splash()
+    #didit = splash.close()
+    #del_splash()
 
     multi.show()
     

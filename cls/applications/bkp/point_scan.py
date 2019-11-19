@@ -53,9 +53,9 @@ class PointScanParam(ScanParamWidget):
             self.positioners = {'SX':DNM_SAMPLE_X, 'SY':DNM_SAMPLE_X}
 
         # more
-        self.positioners['POL'] = DNM_EPU_POLARIZATION
-        self.positioners['OFF'] = DNM_EPU_OFFSET
-        self.positioners['ANG'] = DNM_EPU_ANGLE
+        DNM_EPU_POLARIZATION = DNM_EPU_POLARIZATION
+        DNM_EPU_OFFSET = DNM_EPU_OFFSET
+        DNM_EPU_ANGLE = DNM_EPU_ANGLE
 
         #instead of using centerx etc use startX
         self.multi_region_widget = MultiRegionWidget(use_center=False, is_point=True, enable_multi_spatial=self.enable_multi_region,  single_ev_model=True, max_range=MAX_SCAN_RANGE_FINEX)

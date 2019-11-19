@@ -110,13 +110,13 @@ class FocusScanParam(ScanParamWidget):
     def connect_paramfield_signals(self):
         
         if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
-            mtr_x = self.main_obj.device(self.positioners['GX'])
-            mtr_y = self.main_obj.device(self.positioners['GY'])
+            mtr_x = self.main_obj.device(DNM_GONI_X)
+            mtr_y = self.main_obj.device(DNM_GONI_Y)
         else:
-            mtr_x = self.main_obj.device(self.positioners['SX'])
-            mtr_y = self.main_obj.device(self.positioners['SY'])
+            mtr_x = self.main_obj.device(DNM_SAMPLE_X)
+            mtr_y = self.main_obj.device(DNM_SAMPLE_Y)
         
-        mtr_z = self.main_obj.device(self.positioners['ZZ'])
+        mtr_z = self.main_obj.device(DNM_ZONEPLATE_Z)
         
         xllm = mtr_x.get_low_limit()
         xhlm = mtr_x.get_high_limit()
@@ -150,8 +150,8 @@ class FocusScanParam(ScanParamWidget):
         if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
             self.gen_GONI_SCAN_max_scan_range_limit_def()
         else:
-            mtr_sx = self.main_obj.device(self.positioners['SX'])
-            mtr_sy = self.main_obj.device(self.positioners['SY'])
+            mtr_sx = self.main_obj.device(DNM_SAMPLE_X)
+            mtr_sy = self.main_obj.device(DNM_SAMPLE_Y)
         
             xllm = mtr_sx.get_low_limit()
             xhlm = mtr_sx.get_high_limit()
@@ -218,11 +218,11 @@ class FocusScanParam(ScanParamWidget):
         nz = int(str(self.npointsZPFld.text())) 
         
         #now create the model that this pluggin will use to record its params
-        x_roi = get_base_start_stop_roi(SPDB_X, self.positioners['SX'], sx, ex, nx)
-        y_roi = get_base_start_stop_roi(SPDB_Y, self.positioners['SY'], sy, ey, ny)
-        zz_roi = get_base_roi(SPDB_ZZ, self.positioners['ZZ'], cz, rz, nz, enable=False)
+        x_roi = get_base_start_stop_roi(SPDB_X, DNM_SAMPLE_X, sx, ex, nx)
+        y_roi = get_base_start_stop_roi(SPDB_Y, DNM_SAMPLE_Y, sy, ey, ny)
+        zz_roi = get_base_roi(SPDB_ZZ, DNM_ZONEPLATE_Z, cz, rz, nz, enable=False)
 
-        #zz_roi = get_base_roi(SPDB_ZZ, self.positioners['ZZ'], cz, rz, nz, enable=False)
+        #zz_roi = get_base_roi(SPDB_ZZ, DNM_ZONEPLATE_Z, cz, rz, nz, enable=False)
         #zp_rois = {SPDB_ZZ: zz_roi}
         zp_rois = {}
         dct_put(zp_rois, SPDB_ZZ, zz_roi)
@@ -263,14 +263,14 @@ class FocusScanParam(ScanParamWidget):
         scan_rect.moveCenter(QtCore.QPointF(0.0, 0.0))
             
         #now set X and Y to new start/stop/ values, note using X and Y NPOINTS though
-        zx_roi = get_base_start_stop_roi(SPDB_ZX, self.positioners['ZX'], scan_rect.left(), scan_rect.right(), nx, enable=True)
-        zy_roi = get_base_start_stop_roi(SPDB_ZY, self.positioners['ZY'], scan_rect.bottom(), scan_rect.top(), nx, enable=True)
+        zx_roi = get_base_start_stop_roi(SPDB_ZX, DNM_ZONEPLATE_X, scan_rect.left(), scan_rect.right(), nx, enable=True)
+        zy_roi = get_base_start_stop_roi(SPDB_ZY, DNM_ZONEPLATE_Y, scan_rect.bottom(), scan_rect.top(), nx, enable=True)
         
         #now create the model that this pluggin will use to record its params
-        gx_roi = get_base_start_stop_roi(SPDB_GX, self.positioners['GX'], sx, ex, nx)
-        gy_roi = get_base_start_stop_roi(SPDB_GY, self.positioners['GY'], sy, ey, ny)
+        gx_roi = get_base_start_stop_roi(SPDB_GX, DNM_GONI_X, sx, ex, nx)
+        gy_roi = get_base_start_stop_roi(SPDB_GY, DNM_GONI_Y, sy, ey, ny)
         
-        zz_roi = get_base_roi(SPDB_ZZ, self.positioners['ZZ'], cz, rz, nz, enable=False)
+        zz_roi = get_base_roi(SPDB_ZZ, DNM_ZONEPLATE_Z, cz, rz, nz, enable=False)
         
         energy_pos = self.main_obj.device(DNM_ENERGY).get_position()
         e_roi = get_base_energy_roi('EV', DNM_ENERGY, energy_pos, energy_pos, 0, 1, dwell, None, enable=False )
@@ -329,8 +329,8 @@ class FocusScanParam(ScanParamWidget):
         if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
         
         '''
-        retxy = self.check_start_stop_xy_scan_limits(self.positioners['SX'], self.positioners['SY'])
-        retz = self.check_center_range_z_scan_limits(self.positioners['ZZ'])
+        retxy = self.check_start_stop_xy_scan_limits(DNM_SAMPLE_X, DNM_SAMPLE_Y)
+        retz = self.check_center_range_z_scan_limits(DNM_ZONEPLATE_Z)
         
         if(retxy and retz):
             return(True)
@@ -344,8 +344,8 @@ class FocusScanParam(ScanParamWidget):
         if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
         
         '''
-        retxy = self.check_start_stop_xy_scan_limits(self.positioners['GX'], self.positioners['GY'])
-        retz = self.check_center_range_z_scan_limits(self.positioners['ZZ'])
+        retxy = self.check_start_stop_xy_scan_limits(DNM_GONI_X, DNM_GONI_Y)
+        retz = self.check_center_range_z_scan_limits(DNM_ZONEPLATE_Z)
         
         if(retxy and retz):
             return(True)
@@ -616,11 +616,11 @@ class FocusScanParam(ScanParamWidget):
     
     
     def add_goni_rois(self, wdg_com):
-        mtr_gx = self.main_obj.device(self.positioners['GX'])
-        mtr_gy = self.main_obj.device(self.positioners['GY'])
-        mtr_gz = self.main_obj.device(self.positioners['GZ'])
-        mtr_gt = self.main_obj.device(self.positioners['GT'])
-        mtr_oz = self.main_obj.device(self.positioners['OZ'])
+        mtr_gx = self.main_obj.device(DNM_GONI_X)
+        mtr_gy = self.main_obj.device(DNM_GONI_Y)
+        mtr_gz = self.main_obj.device(DNM_GONI_Z)
+        mtr_gt = self.main_obj.device(DNM_GONI_THETA)
+        mtr_oz = self.main_obj.device(DNM_OSA_Z)
         
         self.sp_db = get_first_sp_db_from_wdg_com(wdg_com)
         gx_roi = dct_get(self.sp_db, SPDB_X)
@@ -652,28 +652,28 @@ class FocusScanParam(ScanParamWidget):
             gonix_center = mtr_gx.get_position()
             goniy_center = mtr_gy.get_position()
         
-        x_roi = get_base_roi(SPDB_GX, self.positioners['GX'], dct_get(self.sp_db, SPDB_XCENTER), dct_get(self.sp_db, SPDB_XRANGE), dct_get(self.sp_db, SPDB_XNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
-        y_roi = get_base_roi(SPDB_GY, self.positioners['GY'], dct_get(self.sp_db, SPDB_YCENTER), dct_get(self.sp_db, SPDB_YRANGE), dct_get(self.sp_db, SPDB_YNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
+        x_roi = get_base_roi(SPDB_GX, DNM_GONI_X, dct_get(self.sp_db, SPDB_XCENTER), dct_get(self.sp_db, SPDB_XRANGE), dct_get(self.sp_db, SPDB_XNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
+        y_roi = get_base_roi(SPDB_GY, DNM_GONI_Y, dct_get(self.sp_db, SPDB_YCENTER), dct_get(self.sp_db, SPDB_YRANGE), dct_get(self.sp_db, SPDB_YNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
         
         #now set X and Y to new start/stop/ values, note using X and Y NPOINTS though
-        zx_roi = get_base_start_stop_roi(SPDB_ZX, self.positioners['ZX'], scan_rect.left(), scan_rect.right(), nx, enable=True)
-        zy_roi = get_base_start_stop_roi(SPDB_ZY, self.positioners['ZY'], scan_rect.bottom(), scan_rect.top(), nx, enable=True)
+        zx_roi = get_base_start_stop_roi(SPDB_ZX, DNM_ZONEPLATE_X, scan_rect.left(), scan_rect.right(), nx, enable=True)
+        zy_roi = get_base_start_stop_roi(SPDB_ZY, DNM_ZONEPLATE_Y, scan_rect.bottom(), scan_rect.top(), nx, enable=True)
         
         #now create the model that this pluggin will use to record its params
-        gx_roi = get_base_roi(SPDB_GX, self.positioners['GX'], gonix_center, dct_get(self.sp_db, SPDB_XRANGE), dct_get(self.sp_db, SPDB_XNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
-        gy_roi = get_base_roi(SPDB_GY, self.positioners['GY'], goniy_center, dct_get(self.sp_db, SPDB_YRANGE), dct_get(self.sp_db, SPDB_YNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
+        gx_roi = get_base_roi(SPDB_GX, DNM_GONI_X, gonix_center, dct_get(self.sp_db, SPDB_XRANGE), dct_get(self.sp_db, SPDB_XNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
+        gy_roi = get_base_roi(SPDB_GY, DNM_GONI_Y, goniy_center, dct_get(self.sp_db, SPDB_YRANGE), dct_get(self.sp_db, SPDB_YNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
         
-        gt_roi = get_base_start_stop_roi(SPDB_GT, self.positioners['GT'], mtr_gt.get_position(), mtr_gt.get_position(), 1, enable=True)
-        gx_roi = get_base_roi(SPDB_GX, self.positioners['GX'], gonix_center, dct_get(self.sp_db, SPDB_XRANGE), dct_get(self.sp_db, SPDB_XNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
-        gy_roi = get_base_roi(SPDB_GY, self.positioners['GY'], goniy_center, dct_get(self.sp_db, SPDB_YRANGE), dct_get(self.sp_db, SPDB_YNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
-        gz_roi = get_base_roi(SPDB_GZ, self.positioners['GZ'], mtr_gz.get_position(), 0, 1, stepSize=None, max_scan_range=None, enable=True, is_point=True)
+        gt_roi = get_base_start_stop_roi(SPDB_GT, DNM_GONI_THETA, mtr_gt.get_position(), mtr_gt.get_position(), 1, enable=True)
+        gx_roi = get_base_roi(SPDB_GX, DNM_GONI_X, gonix_center, dct_get(self.sp_db, SPDB_XRANGE), dct_get(self.sp_db, SPDB_XNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
+        gy_roi = get_base_roi(SPDB_GY, DNM_GONI_Y, goniy_center, dct_get(self.sp_db, SPDB_YRANGE), dct_get(self.sp_db, SPDB_YNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
+        gz_roi = get_base_roi(SPDB_GZ, DNM_GONI_Z, mtr_gz.get_position(), 0, 1, stepSize=None, max_scan_range=None, enable=True, is_point=True)
         
         self.apply_correction_model(gx_roi, gy_roi, gz_roi, gt_roi)
         
-        ox_roi = get_base_roi(SPDB_OX, self.positioners['OX'], osax_center, 0, 1, stepSize=None, max_scan_range=None, enable=True, is_point=False)
-        oy_roi = get_base_roi(SPDB_OY, self.positioners['OY'], osay_center, 0, 1, stepSize=None, max_scan_range=None, enable=True, is_point=False)
+        ox_roi = get_base_roi(SPDB_OX, DNM_OSA_X, osax_center, 0, 1, stepSize=None, max_scan_range=None, enable=True, is_point=False)
+        oy_roi = get_base_roi(SPDB_OY, DNM_OSA_Y, osay_center, 0, 1, stepSize=None, max_scan_range=None, enable=True, is_point=False)
         #Z disabled for now
-        oz_roi = get_base_roi(SPDB_OZ, self.positioners['OZ'], mtr_oz.get_position(), 0, 1, stepSize=None, max_scan_range=None, enable=False, is_point=False)
+        oz_roi = get_base_roi(SPDB_OZ, DNM_OSA_Z, mtr_oz.get_position(), 0, 1, stepSize=None, max_scan_range=None, enable=False, is_point=False)
         
         #this needs to be handled properly for multi subspatial
         ox_roi[SETPOINTS] = [ox_roi[CENTER]]
@@ -695,8 +695,8 @@ class FocusScanParam(ScanParamWidget):
         dct_put(self.sp_db, SPDB_OY, oy_roi)
         dct_put(self.sp_db, SPDB_OZ, oz_roi)
         
-#         mtr_gx = self.main_obj.device(self.positioners['GX'])
-#         mtr_gy = self.main_obj.device(self.positioners['GY'])
+#         mtr_gx = self.main_obj.device(DNM_GONI_X)
+#         mtr_gy = self.main_obj.device(DNM_GONI_Y)
 #          
 #         self.sp_db = get_first_sp_db_from_wdg_com(wdg_com)
 #         gx_roi = dct_get(self.sp_db, SPDB_X)
@@ -715,12 +715,12 @@ class FocusScanParam(ScanParamWidget):
 #             scan_rect.moveCenter(QtCore.QPointF(dx, dy))
 #              
 #         #now set X and Y to new start/stop/ values, note using X and Y NPOINTS though
-#         zx_roi = get_base_start_stop_roi(SPDB_ZX, self.positioners['ZX'], scan_rect.left(), scan_rect.right(), nx, enable=True)
-#         zy_roi = get_base_start_stop_roi(SPDB_ZY, self.positioners['ZY'], scan_rect.bottom(), scan_rect.top(), nx, enable=True)
+#         zx_roi = get_base_start_stop_roi(SPDB_ZX, DNM_ZONEPLATE_X, scan_rect.left(), scan_rect.right(), nx, enable=True)
+#         zy_roi = get_base_start_stop_roi(SPDB_ZY, DNM_ZONEPLATE_Y, scan_rect.bottom(), scan_rect.top(), nx, enable=True)
 #          
 #         #now create the model that this pluggin will use to record its params
-#         gx_roi = get_base_start_stop_roi(SPDB_GX, self.positioners['GX'], gx_roi[START], gx_roi[STOP], nx)
-#         gy_roi = get_base_start_stop_roi(SPDB_GY, self.positioners['GY'], gy_roi[START], gy_roi[STOP], nx)
+#         gx_roi = get_base_start_stop_roi(SPDB_GX, DNM_GONI_X, gx_roi[START], gx_roi[STOP], nx)
+#         gy_roi = get_base_start_stop_roi(SPDB_GY, DNM_GONI_Y, gy_roi[START], gy_roi[STOP], nx)
 #          
 #         #x_roi and y_roi have to be the absolute coordinates because they are used later on to setup the image plot boundaries
 #         dct_put(self.sp_db, SPDB_X, gx_roi)
@@ -767,12 +767,12 @@ class FocusScanParam(ScanParamWidget):
     def gen_GONI_SCAN_max_scan_range_limit_def(self):
         """ to be overridden by inheriting class
         """    
-        mtr_zpx = self.main_obj.device(self.positioners['ZX'])
-        mtr_zpy = self.main_obj.device(self.positioners['ZY'])
+        mtr_zpx = self.main_obj.device(DNM_ZONEPLATE_X)
+        mtr_zpy = self.main_obj.device(DNM_ZONEPLATE_Y)
         #mtr_osax = self.main_obj.device('OSAX.X')
         #mtr_osay = self.main_obj.device('OSAY.Y')
-        mtr_gx = self.main_obj.device(self.positioners['GX'])
-        mtr_gy = self.main_obj.device(self.positioners['GY'])
+        mtr_gx = self.main_obj.device(DNM_GONI_X)
+        mtr_gy = self.main_obj.device(DNM_GONI_Y)
         
         gx_pos = mtr_gx.get_position()
         gy_pos = mtr_gy.get_position()

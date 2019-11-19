@@ -72,9 +72,9 @@ class ImageScansParam(ScanParamWidget):
             #self.positioners = {'SX': DNM_SAMPLE_FINE_X, 'SY': DNM_SAMPLE_FINE_Y}
 
         # more
-        self.positioners['POL'] = DNM_EPU_POLARIZATION
-        self.positioners['OFF'] = DNM_EPU_OFFSET
-        self.positioners['ANG'] = DNM_EPU_ANGLE
+        DNM_EPU_POLARIZATION = DNM_EPU_POLARIZATION
+        DNM_EPU_OFFSET = DNM_EPU_OFFSET
+        DNM_EPU_ANGLE = DNM_EPU_ANGLE
 
         uic.loadUi( os.path.join(plugin_dir, 'image_scans.ui'), self)
         self.multi_region_widget = MultiRegionWidget(enable_multi_spatial=self.enable_multi_region)
@@ -178,10 +178,10 @@ class ImageScansParam(ScanParamWidget):
         if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
             self.gen_GONI_SCAN_max_scan_range_limit_def()
         else:
-            mtr_sx = MAIN_OBJ.device(self.positioners['SX'])
-            mtr_sy = MAIN_OBJ.device(self.positioners['SY'])
-            mtr_sfx = MAIN_OBJ.device(self.positioners['SFX'])
-            mtr_sfy = MAIN_OBJ.device(self.positioners['SFY'])
+            mtr_sx = MAIN_OBJ.device(DNM_SAMPLE_X)
+            mtr_sy = MAIN_OBJ.device(DNM_SAMPLE_Y)
+            mtr_sfx = MAIN_OBJ.device(DNM_SAMPLE_FINE_X)
+            mtr_sfy = MAIN_OBJ.device(DNM_SAMPLE_FINE_Y)
             center_x = mtr_sx.get_position()
             center_y = mtr_sy.get_position()
 
@@ -496,12 +496,12 @@ class ImageScansParam(ScanParamWidget):
     def gen_GONI_SCAN_max_scan_range_limit_def(self):
         """ to be overridden by inheriting class
         """    
-        mtr_zpx = MAIN_OBJ.device(self.positioners['ZX'])
-        mtr_zpy = MAIN_OBJ.device(self.positioners['ZY'])
+        mtr_zpx = MAIN_OBJ.device(DNM_ZONEPLATE_X)
+        mtr_zpy = MAIN_OBJ.device(DNM_ZONEPLATE_Y)
         #mtr_osax = MAIN_OBJ.device('OSAX.X')
         #mtr_osay = MAIN_OBJ.device('OSAY.Y')
-        mtr_gx = MAIN_OBJ.device(self.positioners['GX'])
-        mtr_gy = MAIN_OBJ.device(self.positioners['GY'])
+        mtr_gx = MAIN_OBJ.device(DNM_GONI_X)
+        mtr_gy = MAIN_OBJ.device(DNM_GONI_Y)
         
         gx_pos = mtr_gx.get_position()
         gy_pos = mtr_gy.get_position()
@@ -540,11 +540,11 @@ class ImageScansParam(ScanParamWidget):
         display coordinates around the current goni center
         '''
         if('SX' in list(self.positioners.keys())):
-            mtr_x = MAIN_OBJ.device(self.positioners['SX'])
-            mtr_y = MAIN_OBJ.device(self.positioners['SY'])
+            mtr_x = MAIN_OBJ.device(DNM_SAMPLE_X)
+            mtr_y = MAIN_OBJ.device(DNM_SAMPLE_Y)
         elif('GX' in list(self.positioners.keys())):    
-            mtr_x = MAIN_OBJ.device(self.positioners['GX'])
-            mtr_y = MAIN_OBJ.device(self.positioners['GY'])
+            mtr_x = MAIN_OBJ.device(DNM_GONI_X)
+            mtr_y = MAIN_OBJ.device(DNM_GONI_Y)
         else:
             return((0.0, 0.0))    
         return((mtr_x.get_position(), mtr_y.get_position()))

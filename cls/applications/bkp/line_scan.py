@@ -51,9 +51,9 @@ class LineScansParam(ScanParamWidget):
             self.positioners = {'SX':DNM_SAMPLE_X, 'SY':DNM_SAMPLE_X, 'ZZ':DNM_ZONEPLATE_Z}
 
         # more
-        self.positioners['POL'] = DNM_EPU_POLARIZATION
-        self.positioners['OFF'] = DNM_EPU_OFFSET
-        self.positioners['ANG'] = DNM_EPU_ANGLE
+        DNM_EPU_POLARIZATION = DNM_EPU_POLARIZATION
+        DNM_EPU_OFFSET = DNM_EPU_OFFSET
+        DNM_EPU_ANGLE = DNM_EPU_ANGLE
 
         self.multi_region_widget = MultiRegionWidget(use_center=False, is_arb_line=True, enable_multi_spatial=self.enable_multi_region, \
                                                      max_range=MAX_SCAN_RANGE_FINEX, use_hdw_accel=False) #instead of using centerx etc use startX
@@ -121,8 +121,8 @@ class LineScansParam(ScanParamWidget):
         if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
             self.gen_GONI_SCAN_max_scan_range_limit_def()
         else:
-            mtr_sx = MAIN_OBJ.device(self.positioners['SX'])
-            mtr_sy = MAIN_OBJ.device(self.positioners['SY'])
+            mtr_sx = MAIN_OBJ.device(DNM_SAMPLE_X)
+            mtr_sy = MAIN_OBJ.device(DNM_SAMPLE_Y)
         
             xllm = mtr_sx.get_low_limit()
             xhlm = mtr_sx.get_high_limit()
@@ -308,8 +308,8 @@ class LineScansParam(ScanParamWidget):
     
     def add_goni_rois(self, wdg_com):
         
-        mtr_gx = MAIN_OBJ.device(self.positioners['GX'])
-        mtr_gy = MAIN_OBJ.device(self.positioners['GY'])
+        mtr_gx = MAIN_OBJ.device(DNM_GONI_X)
+        mtr_gy = MAIN_OBJ.device(DNM_GONI_Y)
         
         self.sp_db = get_first_sp_db_from_wdg_com(wdg_com)
         gx_roi = dct_get(self.sp_db, SPDB_X)
@@ -328,12 +328,12 @@ class LineScansParam(ScanParamWidget):
             scan_rect.moveCenter(QtCore.QPointF(dx, dy))
             
         #now set X and Y to new start/stop/ values, note using X and Y NPOINTS though
-        zx_roi = get_base_start_stop_roi(SPDB_ZX, self.positioners['ZX'], scan_rect.left(), scan_rect.right(), nx, enable=True)
-        zy_roi = get_base_start_stop_roi(SPDB_ZY, self.positioners['ZY'], scan_rect.bottom(), scan_rect.top(), nx, enable=True)
+        zx_roi = get_base_start_stop_roi(SPDB_ZX, DNM_ZONEPLATE_X, scan_rect.left(), scan_rect.right(), nx, enable=True)
+        zy_roi = get_base_start_stop_roi(SPDB_ZY, DNM_ZONEPLATE_Y, scan_rect.bottom(), scan_rect.top(), nx, enable=True)
         
         #now create the model that this pluggin will use to record its params
-        gx_roi = get_base_start_stop_roi(SPDB_GX, self.positioners['GX'], gx_roi[START], gx_roi[STOP], nx)
-        gy_roi = get_base_start_stop_roi(SPDB_GY, self.positioners['GY'], gy_roi[START], gy_roi[STOP], nx)
+        gx_roi = get_base_start_stop_roi(SPDB_GX, DNM_GONI_X, gx_roi[START], gx_roi[STOP], nx)
+        gy_roi = get_base_start_stop_roi(SPDB_GY, DNM_GONI_Y, gy_roi[START], gy_roi[STOP], nx)
         
         #x_roi and y_roi have to be the absolute coordinates because they are used later on to setup the image plot boundaries
         dct_put(self.sp_db, SPDB_X, gx_roi)
@@ -377,12 +377,12 @@ class LineScansParam(ScanParamWidget):
     # def gen_GONI_SCAN_max_scan_range_limit_def(self):
     #     """ to be overridden by inheriting class
     #     """
-    #     mtr_zpx = MAIN_OBJ.device(self.positioners['ZX'])
-    #     mtr_zpy = MAIN_OBJ.device(self.positioners['ZY'])
+    #     mtr_zpx = MAIN_OBJ.device(DNM_ZONEPLATE_X)
+    #     mtr_zpy = MAIN_OBJ.device(DNM_ZONEPLATE_Y)
     #     #mtr_osax = MAIN_OBJ.device('OSAX.X')
     #     #mtr_osay = MAIN_OBJ.device('OSAY.Y')
-    #     mtr_gx = MAIN_OBJ.device(self.positioners['GX'])
-    #     mtr_gy = MAIN_OBJ.device(self.positioners['GY'])
+    #     mtr_gx = MAIN_OBJ.device(DNM_GONI_X)
+    #     mtr_gy = MAIN_OBJ.device(DNM_GONI_Y)
     #
     #     gx_pos = mtr_gx.get_position()
     #     gy_pos = mtr_gy.get_position()
@@ -422,12 +422,12 @@ class LineScansParam(ScanParamWidget):
         '''
         """ to be overridden by inheriting class
                 """
-        mtr_zpx = MAIN_OBJ.device(self.positioners['ZX'])
-        mtr_zpy = MAIN_OBJ.device(self.positioners['ZY'])
+        mtr_zpx = MAIN_OBJ.device(DNM_ZONEPLATE_X)
+        mtr_zpy = MAIN_OBJ.device(DNM_ZONEPLATE_Y)
         # mtr_osax = MAIN_OBJ.device('OSAX.X')
         # mtr_osay = MAIN_OBJ.device('OSAY.Y')
-        mtr_gx = MAIN_OBJ.device(self.positioners['GX'])
-        mtr_gy = MAIN_OBJ.device(self.positioners['GY'])
+        mtr_gx = MAIN_OBJ.device(DNM_GONI_X)
+        mtr_gy = MAIN_OBJ.device(DNM_GONI_Y)
 
         gx_pos = mtr_gx.get_position()
         gy_pos = mtr_gy.get_position()
@@ -460,12 +460,12 @@ class LineScansParam(ScanParamWidget):
 
         self.roi_limit_def = ROILimitDef(bounding, normal, warn, alarm)
         #
-        # mtr_zpx = MAIN_OBJ.device(self.positioners['ZX'])
-        # mtr_zpy = MAIN_OBJ.device(self.positioners['ZY'])
+        # mtr_zpx = MAIN_OBJ.device(DNM_ZONEPLATE_X)
+        # mtr_zpy = MAIN_OBJ.device(DNM_ZONEPLATE_Y)
         # # mtr_osax = MAIN_OBJ.device('OSAX.X')
         # # mtr_osay = MAIN_OBJ.device('OSAY.Y')
-        # mtr_gx = MAIN_OBJ.device(self.positioners['GX'])
-        # mtr_gy = MAIN_OBJ.device(self.positioners['GY'])
+        # mtr_gx = MAIN_OBJ.device(DNM_GONI_X)
+        # mtr_gy = MAIN_OBJ.device(DNM_GONI_Y)
         #
         # gx_pos = mtr_gx.get_position()
         # gy_pos = mtr_gy.get_position()
@@ -519,28 +519,28 @@ class LineScansParam(ScanParamWidget):
         sub_spatials = {}
         sp_dbs = dct_get(wdg_com, WDGCOM_SPATIAL_ROIS)
         
-        mtr_gx = MAIN_OBJ.device(self.positioners['GX'])
-        mtr_gy = MAIN_OBJ.device(self.positioners['GY'])
-        mtr_gz = MAIN_OBJ.device(self.positioners['GZ'])
-        mtr_gt = MAIN_OBJ.device(self.positioners['GT'])
-        mtr_oz = MAIN_OBJ.device(self.positioners['OZ'])
+        mtr_gx = MAIN_OBJ.device(DNM_GONI_X)
+        mtr_gy = MAIN_OBJ.device(DNM_GONI_Y)
+        mtr_gz = MAIN_OBJ.device(DNM_GONI_Z)
+        mtr_gt = MAIN_OBJ.device(DNM_GONI_THETA)
+        mtr_oz = MAIN_OBJ.device(DNM_OSA_Z)
         
         for sp_id in sp_dbs:
             sp_db = sp_dbs[sp_id]
-            gt_roi = get_base_start_stop_roi(SPDB_GT, self.positioners['GT'], mtr_gt.get_position(), mtr_gt.get_position(), 1, enable=True)
-            gx_roi = get_base_roi(SPDB_GX, self.positioners['GX'], dct_get(sp_db, SPDB_XCENTER), dct_get(sp_db, SPDB_XRANGE), dct_get(sp_db, SPDB_XNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
-            gy_roi = get_base_roi(SPDB_GY, self.positioners['GY'], dct_get(sp_db, SPDB_YCENTER), dct_get(sp_db, SPDB_YRANGE), dct_get(sp_db, SPDB_YNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
-            gz_roi = get_base_roi(SPDB_GZ, self.positioners['GZ'], mtr_gz.get_position(), 0, 1, stepSize=None, max_scan_range=None, enable=True, is_point=True)
+            gt_roi = get_base_start_stop_roi(SPDB_GT, DNM_GONI_THETA, mtr_gt.get_position(), mtr_gt.get_position(), 1, enable=True)
+            gx_roi = get_base_roi(SPDB_GX, DNM_GONI_X, dct_get(sp_db, SPDB_XCENTER), dct_get(sp_db, SPDB_XRANGE), dct_get(sp_db, SPDB_XNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
+            gy_roi = get_base_roi(SPDB_GY, DNM_GONI_Y, dct_get(sp_db, SPDB_YCENTER), dct_get(sp_db, SPDB_YRANGE), dct_get(sp_db, SPDB_YNPOINTS), stepSize=None, max_scan_range=None, enable=True, is_point=False)
+            gz_roi = get_base_roi(SPDB_GZ, DNM_GONI_Z, mtr_gz.get_position(), 0, 1, stepSize=None, max_scan_range=None, enable=True, is_point=True)
             
             self.apply_correction_model(gx_roi, gy_roi, gz_roi, gt_roi)
             
             #here use only a single OSA XY, when subdividing then this will need to be a set of setpoints = #subdivisions * # Y points
             osax_center = 0
             osay_center = 0
-            ox_roi = get_base_roi(SPDB_GX, self.positioners['OX'], osax_center, 0, 1, stepSize=None, max_scan_range=None, enable=True, is_point=False)
-            oy_roi = get_base_roi(SPDB_GY, self.positioners['OY'], osay_center, 0, 1, stepSize=None, max_scan_range=None, enable=True, is_point=False)
+            ox_roi = get_base_roi(SPDB_GX, DNM_OSA_X, osax_center, 0, 1, stepSize=None, max_scan_range=None, enable=True, is_point=False)
+            oy_roi = get_base_roi(SPDB_GY, DNM_OSA_Y, osay_center, 0, 1, stepSize=None, max_scan_range=None, enable=True, is_point=False)
             #Xdisabled for now
-            oz_roi = get_base_roi(SPDB_GZ, self.positioners['OZ'], mtr_oz.get_position(), 0, 1, stepSize=None, max_scan_range=None, enable=False, is_point=False)
+            oz_roi = get_base_roi(SPDB_GZ, DNM_OSA_Z, mtr_oz.get_position(), 0, 1, stepSize=None, max_scan_range=None, enable=False, is_point=False)
             
             #this needs to be handled properly for multi subspatial
             ox_roi[SETPOINTS] = [ox_roi[START]]
@@ -565,10 +565,10 @@ class LineScansParam(ScanParamWidget):
             
             #now set X and Y to new start/stop/ values, note using X and Y NPOINTS though
             zxnpts = dct_get(sp_db, SPDB_XNPOINTS)
-            zx_roi = get_base_start_stop_roi(SPDB_X, self.positioners['ZX'], scan_rect.left(), scan_rect.right(), zxnpts, enable=True)
+            zx_roi = get_base_start_stop_roi(SPDB_X, DNM_ZONEPLATE_X, scan_rect.left(), scan_rect.right(), zxnpts, enable=True)
             
             zynpts = dct_get(sp_db, SPDB_YNPOINTS)
-            zy_roi = get_base_start_stop_roi(SPDB_Y, self.positioners['ZY'], scan_rect.bottom(), scan_rect.top(), zynpts, enable=True)
+            zy_roi = get_base_start_stop_roi(SPDB_Y, DNM_ZONEPLATE_Y, scan_rect.bottom(), scan_rect.top(), zynpts, enable=True)
             
             dct_put(sp_db, SPDB_ZX, zx_roi)
             dct_put(sp_db, SPDB_ZY, zy_roi)

@@ -126,6 +126,15 @@ class main_object_base(QtCore.QObject):
 
         self.engine_widget = EngineWidget()
 
+    def is_device_supported(self, devname):
+        '''
+        check through all of the configured devices and return True if device exists and False if it doesnt
+        :param devname:
+        :return:
+        '''
+        ret = self.device(devname, do_warn=False)
+        return(ret)
+
     def get_sample_positioner(self, axis='X'):
         '''
         return based on the sample positioning mode which sample positioner
@@ -319,12 +328,12 @@ class main_object_base(QtCore.QObject):
         self.main_obj['DEVICES'] = dev_cls
         self.changed.emit()
     
-    def device(self, name):
+    def device(self, name, do_warn=True):
         """ call the device method from the devices class """
-        dev = self.main_obj['DEVICES'].device(name)
+        dev = self.main_obj['DEVICES'].device(name, do_warn=do_warn)
         if(dev is None):
-            _logger.error('Error: dev [%s] does not exist in master object' % name)
-
+            if(do_warn):
+                _logger.error('Error: dev [%s] does not exist in master object' % name)
         return(dev)
     
     def get_device_obj(self):
@@ -355,7 +364,7 @@ class main_object_base(QtCore.QObject):
         if(name in list(devices['PRESETS'].keys())):
             return(devices['PRESETS'][name])
         else:
-            _logger.error('PRESET [%s] not found in device configuration' % name)
+            _logger.warn('PRESET [%s] not found in device configuration' % name)
             return(None)    
     
     def get_preset_as_float(self, name):
@@ -680,15 +689,15 @@ class dev_config_base(QtCore.QObject):
                 if (ophyd_dev is not None):
                     dlst.append(ophyd_dev)
 
-        for t in self.devices['PRESSURES'].keys():
-           for k, dev in self.devices['PRESSURES'][t].items():
-               #print('devs_as_list: [%s]' % k)
-               if (k in skip_lst):
-                   # skip it
-                   continue
-               ophyd_dev = dev.get_ophyd_device()
-               if (ophyd_dev is not None):
-                   dlst.append(ophyd_dev)
+        # for t in self.devices['PRESSURES'].keys():
+        #    for k, dev in self.devices['PRESSURES'][t].items():
+        #        #print('devs_as_list: [%s]' % k)
+        #        if (k in skip_lst):
+        #            # skip it
+        #            continue
+        #        ophyd_dev = dev.get_ophyd_device()
+        #        if (ophyd_dev is not None):
+        #            dlst.append(ophyd_dev)
 
         for k, ophyd_dev in self.devices['POSITIONERS'].items():
             #print('devs_as_list: [%s]' % k)
@@ -726,16 +735,15 @@ class dev_config_base(QtCore.QObject):
 
     def on_timer(self):
         QtWidgets.QApplication.processEvents()
-    
+
     def msg_splash(self, msg):
         print(msg)
-        #return
-        # if(self.splash):
-        #     #self.splash.showMessage(self.splash.tr(msg), QtCore.Qt.AlignBottom,QtCore.Qt.white)
-        #     self.splash.show_msg(self.splash.tr(msg))
-        #     #QtWidgets.QApplication.processEvents()
-        #     #QtWidgets.QApplication.processEvents(QtCore.QEventLoop.AllEvents, 50)
-        #     #time.sleep(0.05)
+        # return
+        if (self.splash):
+            # self.splash.showMessage(self.splash.tr(msg), QtCore.Qt.AlignBottom,QtCore.Qt.white)
+            self.splash.show_msg(self.splash.tr(msg))
+            # QtWidgets.QApplication.processEvents(QtCore.QEventLoop.AllEvents, 50)
+            # time.sleep(0.05)
 
     def set_exclude_positioners_list(self, excl_lst):
         self.exclude_list = excl_lst
@@ -802,7 +810,7 @@ class dev_config_base(QtCore.QObject):
             return(None)
 
 
-    def device(self, name):
+    def device(self, name, do_warn=True):
         if(name in list(self.devices['POSITIONERS'].keys())):
             return(self.devices['POSITIONERS'][name])
         elif(name in list(self.devices['DETECTORS'].keys())):
@@ -822,7 +830,8 @@ class dev_config_base(QtCore.QObject):
         elif (name in list(self.devices['WIDGETS'].keys())):
             return (self.devices['WIDGETS'][name])
         else:
-            _logger.warning('Device [%s] not found in device configuration' % name)
+            if(do_warn):
+                _logger.warning('Device [%s] not found in device configuration' % name)
             return(None)
 
 
@@ -895,3 +904,4 @@ class dev_config_base(QtCore.QObject):
             scans.append(Scan(scan_prefix + ':scan%d' % (i)))
         
         return(scans)
+

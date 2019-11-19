@@ -5245,11 +5245,11 @@ class ImageWidget(ImageDialog):
             img_idx = 0
             data_idx = 0
             for eroi in spid_ev_rois:
-                self.load_linespec_data(fname, wdg_com, data[:, data_idx:data_idx + eroi[NPOINTS]],
+                self.load_linespec_data(fname, wdg_com, data[:, data_idx:data_idx + int(eroi[NPOINTS])],
                                         item_z=img_idx, dropped=dropped, img_idx=img_idx,
                                         estart=eroi[START], estop=eroi[STOP], enpts=eroi[NPOINTS], show=True)
                 img_idx += 1
-                data_idx += eroi[NPOINTS]
+                data_idx += int(eroi[NPOINTS])
         self.on_set_aspect_ratio(False)
         _logger.info('[%s] scan loaded' %
                      dct_get(wdg_com[SPDB_SPATIAL_ROIS][sp_id], SPDB_SCAN_PLUGIN_SECTION_ID))

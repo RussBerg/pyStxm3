@@ -155,7 +155,8 @@ class CameraRuler(QtWidgets.QWidget):
         image = self.camera_client.get_single_frame()
         #print 'image_data[10', image[0:10]
         if (image is not None):
-            self.plot.set_data(image)
+            img_idx = 0
+            self.plot.set_data(img_idx, image)
             self.apply_scaling(image)
             #self.plot.plot.replot()
 
@@ -164,13 +165,14 @@ class CameraRuler(QtWidgets.QWidget):
         #push the acquire pv so that the server will aquire a frame and write it to teh waveform pv
         image = self.camera_client.get_single_frame()
         if(image is not None):
-            self.plot.set_data(image)
+            img_idx = 0
+            self.plot.set_data(img_idx, image)
             self.apply_scaling(image)
             self.plot.plot.replot()
 
 
 
-    def apply_scaling(self, image):
+    def apply_scaling(self, image, image_idx=0):
         #ht, wd, clrs = image.shape
         ht, wd = image.shape
         #scale = float(1000.0/float(wd))
@@ -188,7 +190,7 @@ class CameraRuler(QtWidgets.QWidget):
         x2 = cx + ((0.5*wd)*scale)
         y2 = 0 + ((0.5*ht)*scale)
 
-        self.plot.set_image_parameters(self.plot.item, x1, y1, x2, y2)
+        self.plot.set_image_parameters(image_idx, x1, y1, x2, y2)
 
     def load_cur_positions(self):
         zpz = self.zpz.get_position()

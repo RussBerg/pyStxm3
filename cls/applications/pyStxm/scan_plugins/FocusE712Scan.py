@@ -123,6 +123,9 @@ class FocusE712ScanClass(BaseScan):
         dev_list = self.main_obj.main_obj[DEVICES].devs_as_list(skip_lst)
         self._bi_dir = bi_dir
         #zp_def = self.get_zoneplate_info_dct()
+        sample_positioning_mode = self.main_obj.get_sample_positioning_mode()
+        fine_sample_positioning_mode = self.main_obj.get_fine_sample_positioning_mode()
+
         if (md is None):
             md = {'metadata': dict_to_json(
                 self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
@@ -131,16 +134,42 @@ class FocusE712ScanClass(BaseScan):
         def do_scan():
             #need to decide here which x and y motor we will be using for focus
             shutter = self.main_obj.device(DNM_SHUTTER)
-            if (self.is_fine_scan):
-                mtr_x = self.main_obj.device(mtr_dct['fx_name'])
-                mtr_y = self.main_obj.device(mtr_dct['fy_name'])
-            else:
-                mtr_x = self.main_obj.device(mtr_dct['cx_name'])
-                mtr_y = self.main_obj.device(mtr_dct['cy_name'])
+            samplemtrx = self.main_obj.get_sample_positioner('X')
+            samplemtry = self.main_obj.get_sample_positioner('Y')
+            finemtrx = self.main_obj.get_sample_fine_positioner('X')
+            finemtry = self.main_obj.get_sample_fine_positioner('Y')
+            # if (self.is_fine_scan):
+            #     mtr_x = self.main_obj.device(mtr_dct['fx_name'])
+            #     mtr_y = self.main_obj.device(mtr_dct['fy_name'])
+            # else:
+            #     mtr_x = self.main_obj.device(mtr_dct['cx_name'])
+            #     mtr_y = self.main_obj.device(mtr_dct['cy_name'])
             mtr_z = self.main_obj.device(DNM_ZONEPLATE_Z_BASE)
 
-            x_traj = cycler(mtr_x, self.x_roi[SETPOINTS])
-            y_traj = cycler(mtr_y, self.y_roi[SETPOINTS])
+            if (self.is_zp_scan):
+                # moving them to the start gets rid of a goofy first line of the scan
+                #mtr_x.move(self.zx_roi[START])
+                #mtr_y.move(self.zy_roi[START])
+                #yield from bps.mv(mtr_x, self.zx_roi[CENTER], mtr_y, self.zx_roi[CENTER])
+                x_traj = cycler(finemtrx, self.zx_roi[SETPOINTS])
+                y_traj = cycler(finemtry, self.zy_roi[SETPOINTS])
+                yield from bps.mv(finemtrx, self.zx_roi[CENTER], finemtry, self.zy_roi[CENTER])
+
+            else:
+                # !!! THIS NEEDS TESTING
+                # moving them to the start gets rid of a goofy first line of the scan
+                # finemtrx.move(self.x_roi[START])
+                # finemtry.move(self.y_roi[START])
+                # samplemtrx.move(self.x_roi[START], wait=True)
+                # samplemtry.move(self.y_roi[START], wait=True)
+                #yield from bps.mv(mtr_x, self.x_roi[START], mtr_y, self.y_roi[START])
+                x_traj = cycler(finemtrx, self.x_roi[SETPOINTS])
+                y_traj = cycler(finemtry, self.y_roi[SETPOINTS])
+                yield from bps.mv(finemtrx, self.x_roi[CENTER], finemtry, self.y_roi[CENTER])
+                ############################
+
+            # x_traj = cycler(mtr_x, self.x_roi[SETPOINTS])
+            # y_traj = cycler(mtr_y, self.y_roi[SETPOINTS])
             zz_traj = cycler(mtr_z, self.zz_roi[SETPOINTS])
 
             yield from bps.stage(gate)
@@ -158,6 +187,59 @@ class FocusE712ScanClass(BaseScan):
 
         return (yield from do_scan())
 
+    # def make_lxl_scan_plan(self, dets, gate, md=None, bi_dir=False):
+    #     '''
+    #     :param dets:
+    #     :param gate:
+    #     :param bi_dir:
+    #     :return:
+    #     '''
+    #     #config detector and gate for num points etc
+    #     flyer_det = dets[0]
+    #     #gate.set_num_points(self.x_roi[NPOINTS])
+    #     #gate.set_mode(1) #line
+    #     #gate.set_trig_src(trig_src_types.E712)
+    #     flyer_det.configure(self.x_roi[NPOINTS], self.scan_type)
+    #     e712_dev = self.main_obj.device(DNM_E712_OPHYD_DEV)
+    #     dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
+    #     self._bi_dir = bi_dir
+    #
+    #     if (md is None):
+    #         md = {'metadata': dict_to_json(
+    #             self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+    #     @bpp.baseline_decorator(dev_list)
+    #     @bpp.stage_decorator(dets)
+    #     @bpp.run_decorator(md=md)
+    #     def do_scan():
+    #
+    #         mtr_z = self.main_obj.device(DNM_ZONEPLATE_Z_BASE)
+    #         shutter = self.main_obj.device(DNM_SHUTTER)
+    #
+    #         #yield from bps.open_run(md)
+    #         yield from bps.kickoff(flyer_det)
+    #         yield from bps.stage(gate)
+    #
+    #         yield from bps.sleep(0.5)
+    #
+    #         shutter.open()
+    #         for sp in self.zz_roi[SETPOINTS]:
+    #             yield from bps.mv(mtr_z, sp)
+    #             #let zoneplateZ damp a little
+    #             yield from bps.sleep(0.5)
+    #
+    #             yield from bps.mv(e712_dev.run, 1)
+    #         shutter.close()
+    #         yield from bps.unstage(gate)
+    #
+    #         yield from bps.complete(flyer_det)  # stop minting events everytime the line_det publishes new data!
+    #         # the collect method on e712_flyer may just return as empty list as a formality, but future proofing!
+    #         yield from bps.collect(flyer_det)
+    #
+    #         #yield from bps.close_run()
+    #
+    #         print('FocusE712ScanClass: LXL make_scan_plan Leaving')
+    #
+    #     return (yield from do_scan())
     def make_lxl_scan_plan(self, dets, gate, md=None, bi_dir=False):
         '''
         :param dets:
@@ -165,11 +247,11 @@ class FocusE712ScanClass(BaseScan):
         :param bi_dir:
         :return:
         '''
-        #config detector and gate for num points etc
+        # config detector and gate for num points etc
         flyer_det = dets[0]
-        #gate.set_num_points(self.x_roi[NPOINTS])
-        #gate.set_mode(1) #line
-        #gate.set_trig_src(trig_src_types.E712)
+        # gate.set_num_points(self.x_roi[NPOINTS])
+        # gate.set_mode(1) #line
+        # gate.set_trig_src(trig_src_types.E712)
         flyer_det.configure(self.x_roi[NPOINTS], self.scan_type)
         e712_dev = self.main_obj.device(DNM_E712_OPHYD_DEV)
         dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
@@ -178,15 +260,27 @@ class FocusE712ScanClass(BaseScan):
         if (md is None):
             md = {'metadata': dict_to_json(
                 self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)
         @bpp.run_decorator(md=md)
         def do_scan():
-
+            finemtrx = self.main_obj.get_sample_fine_positioner('X')
+            finemtry = self.main_obj.get_sample_fine_positioner('Y')
             mtr_z = self.main_obj.device(DNM_ZONEPLATE_Z_BASE)
             shutter = self.main_obj.device(DNM_SHUTTER)
+            if (self.is_zp_scan):
+                # moving them to the start gets rid of a goofy first line of the scan
+                yield from bps.mv(finemtrx, self.zx_roi[START], finemtry, self.zy_roi[START])
 
-            #yield from bps.open_run(md)
+            else:
+                # !!! THIS NEEDS TESTING
+                # moving them to the start gets rid of a goofy first line of the scan
+                yield from bps.mv(finemtrx, self.x_roi[START], finemtry, self.y_roi[START])
+                ############################
+
+
+            # yield from bps.open_run(md)
             yield from bps.kickoff(flyer_det)
             yield from bps.stage(gate)
 
@@ -195,9 +289,9 @@ class FocusE712ScanClass(BaseScan):
             shutter.open()
             for sp in self.zz_roi[SETPOINTS]:
                 yield from bps.mv(mtr_z, sp)
-                #let zoneplateZ damp a little
+                # let zoneplateZ damp a little
                 yield from bps.sleep(0.5)
-                
+
                 yield from bps.mv(e712_dev.run, 1)
             shutter.close()
             yield from bps.unstage(gate)
@@ -206,7 +300,7 @@ class FocusE712ScanClass(BaseScan):
             # the collect method on e712_flyer may just return as empty list as a formality, but future proofing!
             yield from bps.collect(flyer_det)
 
-            #yield from bps.close_run()
+            # yield from bps.close_run()
 
             print('FocusE712ScanClass: LXL make_scan_plan Leaving')
 

@@ -77,7 +77,7 @@ from cls.devWidgets.ophydLabelWidget import ophyd_aiLabelWidget, ophyd_mbbiLabel
 from cls.devWidgets.ophydPushBtn import ophydPushBtn
 from cls.appWidgets.user_account.login import loginWidget
 #from cls.applications.pyStxm.widgets.thumbnailViewer_wip import ContactSheet
-from cls.applications.pyStxm.widgets.thumbnailViewer_wip import ContactSheet
+from cls.applications.pyStxm.widgets.thumbnailViewer import ContactSheet
 from cls.appWidgets.dialogs import excepthook
 from cls.appWidgets.spyder_console import ShellWidget#, ShellDock
 from cls.appWidgets.thread_worker import Worker
@@ -2272,6 +2272,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         # get an instance of the actual scan class that is used to configure and connect to the sscan records
         #sscan = self.scan_tbox_widgets[self.scan_panel_idx].get_sscan_instance()
         #scan_plan = self.scan_tbox_widgets[self.scan_panel_idx].get_scan_plan(detectors=[MAIN_OBJ.device('POINT_DET')])
+        self.scan_tbox_widgets[self.scan_panel_idx].on_plugin_scan_start()
         scan_class = self.scan_tbox_widgets[self.scan_panel_idx].get_scan_class()
         scan_class.set_active_user(self.active_user)
         scan_class.scan_type = scan_type
@@ -2283,17 +2284,12 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             _logger.error('User requested TESTING but the scan plugin does not have a test_sp_db configured, so turning testing off')
             return
 
-        # set main gui widgets up for running a scan
-        self.set_buttons_for_scanning()
-
-        # if (self.useE712WaveGenRadBtn.isChecked()):
-        #     sscan.set_use_e712_wave_gen(True)
-        # else:
-        #     sscan.set_use_e712_wave_gen(False)
-
         self.apply_user_settings_to_scan(scan_class)
         self.executingScan = scan_class
         self.executingScan.disconnect_signals()
+
+        # set main gui widgets up for running a scan
+        self.set_buttons_for_scanning()
 
         # make sure that all data required by scan metadata is loaded into scan
         fprms_pnl = self.get_pref_panel('FocusParams')

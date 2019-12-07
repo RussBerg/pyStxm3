@@ -3262,7 +3262,7 @@ class E712ControlWidget(QtWidgets.QWidget):
         # x_tbl_id = tbl_ids[self.base_zero(X_WAVE_TABLE_ID)]
         # y_tbl_id = tbl_ids[self.base_zero(Y_WAVE_TABLE_ID)]
         x_tbl_id, y_tbl_id = self.get_wg_table_ids(sp_id)
-        print('x_tbl_id=%d, y_tbl_id=%d' % (x_tbl_id, y_tbl_id))
+        print('send_wave: x_tbl_id=%d, y_tbl_id=%d' % (x_tbl_id, y_tbl_id))
 
         self.e712.reset_run_scan_config()
 

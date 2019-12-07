@@ -449,7 +449,7 @@ def connect_standard_beamline_positioners(dev_dct, prfx='uhv', devcfg=None):
 
     #EPU devices
     # devcfg.msg_splash("connecting to: [%s]" % DNM_EPU_POLARIZATION)
-    # dev_dct['POSITIONERS'][DNM_EPU_POLARIZATION] = Motor_Qt('BL1610-I10:epuPolarization', name='BL1610-I10:epuPolarization', abstract_mtr=True, pos_set=POS_TYPE_BL)
+    dev_dct['POSITIONERS'][DNM_EPU_POLARIZATION] = Motor_Qt('BL1610-I10:epuPolarization', name='BL1610-I10:epuPolarization', abstract_mtr=True, pos_set=POS_TYPE_BL)
     devcfg.msg_splash("connecting to: [%s]" % DNM_EPU_GAP)
     dev_dct['POSITIONERS'][DNM_EPU_GAP] = Motor_Qt('BL1610-I10:epuGap', name='BL1610-I10:epuGap', abstract_mtr=True, pos_set=POS_TYPE_BL)
     devcfg.msg_splash("connecting to: [%s]" % DNM_EPU_OFFSET)

@@ -32,6 +32,7 @@ from guiqwt.cross_section import XCrossSectionItem, YCrossSectionItem
  
 #from guiqwt.config import _
 from cls.plotWidgets.guiqwt_config import _
+from cls.plotWidgets.guiqwt_changes.image import _nanmax, _nanmin
 from guiqwt.label import LabelItem
 from guiqwt.image import ImageItem
 from guiqwt.builder import PlotItemBuilder
@@ -3617,6 +3618,9 @@ class ImageWidget(ImageDialog):
         plot.add_item(self.item[img_idx])
         # plot.set_plot_limits(0.0, 740.0, 0.0, 800.0)
         self.image_is_new = True
+        if('RECT' in list(parms.keys())):
+            rect = parms['RECT']
+            self.set_image_parameters(img_idx, rect[0], rect[1], rect[2], rect[3])
         return (self.data[img_idx].shape)
 
 
@@ -3872,6 +3876,8 @@ class ImageWidget(ImageDialog):
             self.data[img_idx][row, :] = line
             if(show):
                 #self.show_data(img_idx, self.data)
+                if(self._auto_contrast):
+                    self.apply_auto_contrast(img_idx)
                 self.replot()
         else:
             _logger.error('stxmImageWidget: addLine: self.data is None')
@@ -3913,8 +3919,12 @@ class ImageWidget(ImageDialog):
 
             #self.data[:, col] = copy.deepcopy(line)
             self.data[img_idx][:, col] = line[0:rows]
-            if(show):
+
             #     self.show_data(img_idx, self.data[img_idx])
+            if (show):
+                # self.show_data(img_idx, self.data)
+                if (self._auto_contrast):
+                    self.apply_auto_contrast(img_idx)
                 self.replot()
         else:
             _logger.error(
@@ -3988,15 +3998,17 @@ class ImageWidget(ImageDialog):
 
         :returns: None
         """
-        data = self.data[img_idx]
-        if(data.size is 0):
+        if(img_idx not in list(self.data.keys())):
+            return
+
+        if(self.data[img_idx].size is 0):
             return
         plot = self.get_plot()
         items = len(self.plot.get_items(item_type=ICSImageItemType))
         #if(self.item[img_idx] is None):
         if (len(self.item) == 0):
             self.item[img_idx] = make.image(
-                data,
+                self.data[img_idx],
                 interpolation='nearest',
                 colormap='gist_gray')
             plot.add_item(self.item[img_idx], z=items+1)
@@ -4005,11 +4017,31 @@ class ImageWidget(ImageDialog):
             if(self._auto_contrast):
                 #self.item[img_idx].set_data(data[img_idx])
                 #self.item[img_idx].set_data(data)
-                self.item[img_idx].set_data(data)
+                self.item[img_idx].set_data(self.data[img_idx])
             else:
                 lut_range = self.item.get_lut_range()
-                self.item[img_idx].set_data(data, lut_range)
+                self.item[img_idx].set_data(self.data[img_idx], lut_range)
         plot.replot()
+
+    def apply_auto_contrast(self, img_idx, lut_range=None):
+        """
+        Set Image item data
+
+            * data: 2D NumPy array
+            * lut_range: LUT range -- tuple (levelmin, levelmax)
+        """
+        if (img_idx not in list(self.data.keys())):
+            return
+        if lut_range is not None:
+            _min, _max = lut_range
+        else:
+            _min, _max = _nanmin(self.data[img_idx]), _nanmax(self.data[img_idx])
+
+        #self.data = self.data[img_idx]
+        self.item[img_idx].histogram_cache = None
+        self.item[img_idx].update_bounds()
+        self.item[img_idx].update_border()
+        self.item[img_idx].set_lut_range([_min, _max])
 
     def apply_filter(self, val, img_idx=0):
         """

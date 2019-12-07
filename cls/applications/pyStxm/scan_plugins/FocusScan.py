@@ -88,10 +88,14 @@ class FocusScanClass(BaseScan):
         # @bpp.run_decorator(md={'entry_name': 'entry0', 'scan_type': scan_types.DETECTOR_IMAGE})
         def do_scan():
 
-            #mtr_x = self.main_obj.device(DNM_SAMPLE_X)
-            #mtr_y = self.main_obj.device(DNM_SAMPLE_Y)
-            mtr_x = self.main_obj.device(mtr_dct['cx_name'])
-            mtr_y = self.main_obj.device(mtr_dct['cy_name'])
+            #mtr_x = self.main_obj.device(mtr_dct['cx_name'])
+            #mtr_y = self.main_obj.device(mtr_dct['cy_name'])
+            if (self.is_fine_scan):
+                mtr_x = self.main_obj.device(mtr_dct['fx_name'])
+                mtr_y = self.main_obj.device(mtr_dct['fy_name'])
+            else:
+                mtr_x = self.main_obj.device(mtr_dct['cx_name'])
+                mtr_y = self.main_obj.device(mtr_dct['cy_name'])
             mtr_z = self.main_obj.device(DNM_ZONEPLATE_Z_BASE)
             shutter = self.main_obj.device(DNM_SHUTTER)
 

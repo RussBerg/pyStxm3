@@ -152,8 +152,8 @@ class OsaScanParam(ScanParamWidget):
     def gen_max_scan_range_limit_def(self):
         """ to be overridden by inheriting class
         """
-        mtr_x = self.main_obj.device(DNM_SAMPLE_X)
-        mtr_y = self.main_obj.device(DNM_SAMPLE_Y)
+        mtr_x = self.main_obj.device(DNM_OSA_X)
+        mtr_y = self.main_obj.device(DNM_OSA_Y)
 
         xllm = mtr_x.get_low_limit()
         xhlm = mtr_x.get_high_limit()

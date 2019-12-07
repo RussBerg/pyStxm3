@@ -273,6 +273,15 @@ class ScanParamWidget(QtWidgets.QFrame):
         '''
         return(False)
 
+    def on_plugin_scan_start(self):
+        '''
+        This is a function that is called when the scan starts from the main GUI
+        to be implemented by inheriting class
+        :param self:
+        :return:
+        '''
+        pass
+
     def on_plugin_focus(self):
         '''
         This is a function that is called when the plugin first receives focus from the main GUI

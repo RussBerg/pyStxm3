@@ -298,6 +298,7 @@ class dev_config_uhv(dev_config_base):
         maxFX = appConfig.get_value('SCAN_RANGES', 'fine_x')
         maxFY = appConfig.get_value('SCAN_RANGES', 'fine_y')
         use_laser = appConfig.get_value('DEFAULT', 'use_laser')
+        ptycho_enabled = appConfig.get_value('DEFAULT', 'ptychography_enabled')
         self.devices['PRESETS']['USE_E712_HDW_ACCEL'] = True
 
 
@@ -324,6 +325,7 @@ class dev_config_uhv(dev_config_base):
 
         #self.devices['PVS']['Energy_enable'].put(0)
         self.devices['PRESETS']['USE_LASER'] = use_laser
+        self.devices['PRESETS']['PTYCHOGRAPHY_ENABLED'] = ptycho_enabled
 
 
     def init_devices(self):

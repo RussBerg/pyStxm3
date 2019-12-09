@@ -127,6 +127,7 @@ class FocusScanParam(ScanParamWidget):
         # data_file_pfx = 'f'
         self.data_file_pfx = self.main_obj.get_datafile_prefix()
         self.plot_item_type = spatial_type_prefix.SEG
+        self._help_ttip = 'Sample Focus scan documentation and instructions'
 
     def connect_paramfield_signals(self):
         

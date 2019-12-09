@@ -125,6 +125,7 @@ class TomographyScanParam(ScanParamWidget):
         self.plot_item_type = spatial_type_prefix.ROI
         self.enable_multi_region = False
         self.multi_ev = True
+        self._help_ttip = 'Tomography documentation and instructions'
 
 
     def init_sp_db(self):

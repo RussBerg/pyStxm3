@@ -83,6 +83,7 @@ class CoarseImageScanParam(ScanParamWidget):
         # data_file_pfx = 'd'
         self.data_file_pfx = self.main_obj.get_datafile_prefix()
         self.plot_item_type = spatial_type_prefix.ROI
+        self._help_ttip = 'Coarse Image scan documentation and instructions'
 
     def on_plugin_focus(self):
         '''

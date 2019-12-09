@@ -38,6 +38,7 @@ MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
 MAX_SCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_X')
 MAX_SCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_Y')
 USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_int('USE_E712_HDW_ACCEL')
+PTYCHOGRAPHY_ENABLED = MAIN_OBJ.get_preset_as_bool('PTYCHOGRAPHY_ENABLED')
 
 _logger = get_module_logger(__name__)
     
@@ -49,8 +50,11 @@ class PtychographyScanParam(ScanParamWidget):
         self._parent = parent
         uic.loadUi( os.path.join(plugin_dir, 'ptychography_scan.ui'), self)
 
-        if (self.sample_fine_positioning_mode != sample_fine_positioning_modes.ZONEPLATE):
-            self.name = "Ptychography Scan ---- [DISABLED by scanning mode] "
+        if ((self.sample_fine_positioning_mode != sample_fine_positioning_modes.ZONEPLATE) or (PTYCHOGRAPHY_ENABLED == False)):
+            if(not PTYCHOGRAPHY_ENABLED):
+                self.name = "Ptychography Scan ---- [DISABLED in app.ini] "
+            else:
+                self.name = "Ptychography Scan ---- [DISABLED by scanning mode] "
             self.setEnabled(False)
             self.setToolTip(
                 'PtychographyScanParam: Scan plugin is disabled while in none Zoneplate sample fine positioning mode')
@@ -85,6 +89,7 @@ class PtychographyScanParam(ScanParamWidget):
         self.zp_focus_mode = zp_focus_modes.DO_NOTHING
         self.data_file_pfx = self.main_obj.get_datafile_prefix()
         self.plot_item_type = spatial_type_prefix.ROI
+        self._help_ttip = 'Ptychography documentation and instructions'
 
     def on_plugin_focus(self):
         '''

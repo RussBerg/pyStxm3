@@ -83,7 +83,7 @@ class PatternGeneratorScanParam(ScanParamWidget):
         self.type = scan_types.PATTERN_GEN_SCAN
         self.section_id = 'PATTERN_GEN'
         self.axis_strings = ['Sample Y microns', 'Sample X microns', '', '']
-        self.zp_focus_mode = zp_focus_modes.FL
+        self.zp_focus_mode = zp_focus_modes.A0MOD
         self.data_file_pfx = self.main_obj.get_datafile_prefix()
         self.plot_item_type = spatial_type_prefix.ROI
         self._help_html_fpath = os.path.join('interface', 'window_system', 'scan_plugins', 'pattern_generator.html')
@@ -94,7 +94,6 @@ class PatternGeneratorScanParam(ScanParamWidget):
         This is a function that is called when the plugin first receives focus from the main GUI
         :return:
         '''
-        # make sure that the OSA vertical tracking is off if it is on
         if (self.isEnabled()):
             # ask the plotter to show the pattern if show_pattern button is checked
             if (self.showPatternBtn.isChecked()):
@@ -116,8 +115,6 @@ class PatternGeneratorScanParam(ScanParamWidget):
         :return:
         '''
         if (self.isEnabled()):
-            # # put the OSA vertical tracking back to its previous state
-            # self.main_obj.device(DNM_OSAY_TRACKING).put(self.osay_trcking_was)
             self.update_last_settings()
 
         # if(USE_E712_HDW_ACCEL):
@@ -136,6 +133,12 @@ class PatternGeneratorScanParam(ScanParamWidget):
         # emit a signal that stxmMain is listening for and call show_pattern_generator_pattern in stxmMain
         xc = float(self.centerXFld.text())
         yc = float(self.centerYFld.text())
+        # mtr_x = self.main_obj.get_sample_positioner('X')
+        # mtr_y = self.main_obj.get_sample_positioner('Y')
+        # xc = mtr_x.get_position()
+        # yc = mtr_y.get_position()
+        # self.set_parm(self.centerXFld, xc)
+        # self.set_parm(self.centerYFld, yc)
         pad_size = float(self.padSizeFld.text())
         self.call_main_func.emit('show_pattern_generator_pattern', (chkd, xc, yc, pad_size))
 

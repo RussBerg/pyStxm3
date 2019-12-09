@@ -113,6 +113,7 @@ class LineScansParam(ScanParamWidget):
         self.enable_multi_region = False
         self.multi_ev = True
         self.sp_db = None
+        self._help_ttip = 'Line Spectra scan documentation and instructions'
 
     def on_plugin_focus(self):
         '''

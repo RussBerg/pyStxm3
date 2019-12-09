@@ -154,7 +154,7 @@ def make_detail_detector_form(name, det):
         ddf = EPICS_DetailDialog(name, det)
 
     else:
-        _logger.info('DEtector [%s] has no supported detail form' % name)
+        _logger.info('Detector [%s] has no supported detail form' % name)
         ddf = None
 
     return (ddf)

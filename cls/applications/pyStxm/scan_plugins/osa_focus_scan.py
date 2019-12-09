@@ -70,6 +70,7 @@ class OsaFocusScanParam(ScanParamWidget):
         self.axis_strings = ['ZP Z microns', 'OSA X microns', '', '']
         self.zp_focus_mode = zp_focus_modes.FL
         self.plot_item_type = spatial_type_prefix.SEG
+        self._help_ttip = 'OSA Focus scan documentation and instructions'
 
     def on_plugin_focus(self):
         '''

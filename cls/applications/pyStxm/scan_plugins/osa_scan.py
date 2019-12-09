@@ -81,6 +81,7 @@ class OsaScanParam(ScanParamWidget):
         self.zp_focus_mode = zp_focus_modes.DO_NOTHING
         self.data_file_pfx = self.main_obj.get_datafile_prefix()
         self.plot_item_type = spatial_type_prefix.ROI
+        self._help_ttip = 'OSA scan documentation and instructions'
 
     def on_plugin_focus(self):
         '''

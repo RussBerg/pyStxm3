@@ -122,6 +122,7 @@ class FineImageScansParam(ScanParamWidget):
         self.plot_item_type = spatial_type_prefix.ROI
         self.enable_multi_region = self.main_obj.get_is_multi_region_enabled()
         self.multi_ev = True
+        self._help_ttip = 'Sample Fine scan documentation and instructions'
 
     def on_plugin_focus(self):
         '''

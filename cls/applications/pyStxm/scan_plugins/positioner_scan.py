@@ -65,6 +65,7 @@ class PositionerScanParam(ScanParamWidget):
         self.zp_focus_mode = zp_focus_modes.A0MOD
         self.data_file_pfx = self.main_obj.get_datafile_prefix()
         self.plot_item_type = spatial_type_prefix.SEG
+        self._help_ttip = 'Positioner scan documentation and instructions'
 
     def on_plugin_focus(self):
         '''

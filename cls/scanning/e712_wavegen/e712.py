@@ -1612,7 +1612,8 @@ class PI_E712(QtCore.QObject):
 
 
     def do_line_by_line(self, dwell, x_roi, y_roi, x_tbl_id, y_tbl_id):
-
+        #reset wave table rate
+        self.set_wave_table_rate(1)
         #check line return time to make sure it is adequate
         self.validate_line_return_time()
 

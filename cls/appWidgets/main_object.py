@@ -380,6 +380,16 @@ class main_object_base(QtCore.QObject):
             return(int(val))
         else:
             return(None)
+
+    def get_preset_as_bool(self, name):
+        val = self.get_preset(name)
+        if(val is not None):
+            if(val.find('true') > -1):
+                return(True)
+            else:
+                return(False)
+        else:
+            return(None)
     
     def init_zmq_socket(self):
         import zmq

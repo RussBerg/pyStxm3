@@ -74,6 +74,7 @@ class BaseCounterInputDevice(ophyd.Device):
         self.sigs = BaseDeviceSignals()
         self.p_num_points = 1
         self._scan_type = None
+        self._pnts_per_row = None
         self.mode = 0
         if ('scan_type' in kwargs.keys()):
             self._scan_type = kwargs['scan_type']
@@ -88,6 +89,10 @@ class BaseCounterInputDevice(ophyd.Device):
 
     def set_dwell(self, dwell):
         self.point_dwell.put(dwell)
+
+    def set_points_per_row(self, val):
+        self._pnts_per_row = val
+        self.points_per_row.put(val)
 
     def set_mode(self, val):
         self.mode = val
@@ -146,7 +151,8 @@ class PointDetectorDevice(BaseCounterInputDevice):
         print('name = %s, type = %s' % (str(self.__class__), self.name))
 
     def configure(self):
-        self.do_point_config(scan_types.SAMPLE_POINT_SPECTRA, 2.0, 1, 1)
+        #self.do_point_config(scan_types.SAMPLE_POINT_SPECTRA, 2.0, 1, 1)
+        self.do_point_config(self._scan_type, 2.0, 1, 1, self._pnts_per_row)
 
     def stage(self):
         # if (self.mode is 0):
@@ -181,7 +187,7 @@ class PointDetectorDevice(BaseCounterInputDevice):
         self.sigs.changed.emit(kwargs)
         #print(kwargs)
 
-    def do_point_config(self, scan_type, dwell, numE, numX):
+    def do_point_config(self, scan_type, dwell, numE, numX, points_per_row=None):
         trig_src_pfi = 4
         self.trig_src_select.put(trig_src_pfi)  # /PFI 4  this will need to be part of a configuration at some point
         self.signal_src_clock_select.put(12)  # /PFI 12
@@ -195,7 +201,11 @@ class PointDetectorDevice(BaseCounterInputDevice):
         if (scan_type == scan_types.SAMPLE_POINT_SPECTRA):
             self.points_per_row.put(numE)  # EV point spectra
         else:
-            self.points_per_row.put(numX)  # X points
+            if(points_per_row):
+                self.points_per_row.put(points_per_row)
+            else:
+                self.points_per_row.put(numX)  # X points
+
 
 
     # def describe(self):

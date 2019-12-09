@@ -642,7 +642,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
     def enable_energy_change(self, en):
         devices = MAIN_OBJ.get_devices()
-        ev_en = devices['PVS']['Energy_enable']
+        #ev_en = devices['PVS']['Energy_enable']
+        ev_en = MAIN_OBJ.device(DNM_ENERGY_ENABLE)
         zpz = MAIN_OBJ.device(DNM_ZONEPLATE_Z_BASE)
 
         if(en):

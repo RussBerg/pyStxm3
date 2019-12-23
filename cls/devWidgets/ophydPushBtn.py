@@ -152,6 +152,15 @@ class ophydPushBtn(QtWidgets.QPushButton):
         self.device.put(val)
 
 
+    def on_btn_dev_push_no_toggle(self):
+        '''
+        for a no toggle btn just send the on value specified
+        :return:
+        '''
+        val = self.on_val
+        self.update_counter = 1
+        self.device.put(val)
+
     def on_connect(self,  pvname=None, conn=None, pv=None):
         '''
         a connection callback
@@ -174,11 +183,11 @@ class ophydPushBtn(QtWidgets.QPushButton):
 
         self.btn.blockSignals(True)
         if(val == self.on_val):
-            self.on_btn_dev_push(True)
+            #self.on_btn_dev_push(True)
             txt_str = self.on_str
             chkd = True
         else:
-            self.on_btn_dev_push(False)
+            #self.on_btn_dev_push(False)
             txt_str = self.off_str
             chkd = False
 

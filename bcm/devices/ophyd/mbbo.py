@@ -48,6 +48,12 @@ class Mbbo(BaseObject):
 			val = _attr
 			_attr = 'VAL'
 			self.devs[_attr].put(val)
+		elif(_attr is None):
+			# then they specified val= but no attr so assume VAL
+			_attr = 'VAL'
+			self.devs[_attr].put(val)
+		else:
+			print('Mbbo: put: something is not right here, cannot PUT')
 
 
 

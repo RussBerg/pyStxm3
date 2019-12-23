@@ -1226,8 +1226,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             x_pos = newx
             y_pos = newy
 
-        x_mtr.move(x_pos)
-        y_mtr.move(y_pos)
+        x_mtr.move(x_pos, wait=False)
+        y_mtr.move(y_pos, wait=False)
 
 
 
@@ -1522,6 +1522,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
         self.lineByLineImageDataWidget.new_roi_center.connect(self.on_plotitem_roi_changed)
         self.lineByLineImageDataWidget.scan_loaded.connect(self.on_scan_loaded)
+        self.lineByLineImageDataWidget.install_beam_fbk_devs(MAIN_OBJ)
         self.lineByLineImageDataWidget.new_beam_position.connect(self.on_new_directed_beam_pos)
 
         vbox = QtWidgets.QVBoxLayout()
@@ -2025,7 +2026,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
             #print('add_point_to_plot: row=%d, point=%d, val=%d' % (row, point, val))
             img_idx = 0
-            self.lineByLineImageDataWidget.addPoint(img_idx, row, point, val, True)
+            self.lineByLineImageDataWidget.addPoint(img_idx, row, col, val, True)
 
 
         # def add_point_to_spectra(self, row, tpl):

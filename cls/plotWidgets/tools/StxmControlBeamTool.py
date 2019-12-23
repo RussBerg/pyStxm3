@@ -20,6 +20,7 @@ class StxmControlBeamTool(SelectPointTool):
     MARKER_STYLE_SECT = "plot"
     MARKER_STYLE_KEY = "marker/curve"
     CURSOR = Qt.PointingHandCursor
+    CHECKABLE = True
 
     def __init__(self, manager, icon=os.path.join(_dir, 'directBeam.png'), toolbar_id=DefaultToolbarID):
         # def __init__(self, manager, mode="reuse", on_active_item=False,
@@ -28,11 +29,13 @@ class StxmControlBeamTool(SelectPointTool):
         #              switch_to_default_tool=None):
 
         super(StxmControlBeamTool, self).__init__(manager, tip=_("Drag beam to new location"),
-                                          icon=icon,
-                                          toolbar_id=toolbar_id)
+                                          icon=icon, mode="reuse",
+                                          toolbar_id=toolbar_id, switch_to_default_tool=True)
+
         #assert icon in ("reuse", "create")
         self.action.setCheckable(True)
         self.action.setChecked(False)
+        self._my_checked_state = False
         #self.SIG_TOOL_JOB_FINISHED.connect(self.on_job_finished)
         #self.SIG_VALIDATE_TOOL.connect(self.on_validate_tool)
 
@@ -44,8 +47,22 @@ class StxmControlBeamTool(SelectPointTool):
         #self.changed.emit(checked)
         pass
 
+    def interactive_triggered(self, action):
+        ''' override this function otherwise
+        the activate() gets called twice per click'''
+        # if action is self.action:
+        #     self.activate()
+        # else:
+        #     self.deactivate()
+        pass
+
     def activate(self):
         """Activate tool"""
+        #if(self.action.isChecked()):
+        if(self._my_checked_state):
+            self.deactivate()
+            return
+
         for baseplot, start_state in list(self.start_state.items()):
             baseplot.filter.set_state(start_state, None)
 
@@ -53,6 +70,7 @@ class StxmControlBeamTool(SelectPointTool):
         self.manager.set_active_tool(self)
         if (self.marker is not None):
             self.marker.setVisible(True)
+        self._my_checked_state = True
 
     def deactivate(self):
         """Deactivate tool"""
@@ -60,6 +78,9 @@ class StxmControlBeamTool(SelectPointTool):
         #self.show_title.emit(False, self)
         if(self.marker is not None):
             self.marker.setVisible(False)
+        #let the parent know that we are
+        self.manager.activate_default_tool()
+        self._my_checked_state = False
 
     def move(self, filter, event):
         if self.marker is None:

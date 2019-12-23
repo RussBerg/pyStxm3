@@ -358,7 +358,7 @@ class ImageWidget(ImageDialog):
         self.show_image_params = False
         self.drop_enabled = True
         self.fill_plot_window = False
-
+        self.bmspot_fbk_obj = None
         self.progbar = None
 
         self._cur_shape_uid = -1
@@ -1128,8 +1128,16 @@ class ImageWidget(ImageDialog):
     def enable_beam_spot(self, chkd):
         if(chkd):
             self.show_beam_spot = True
+            # it may not be initialized yet
+            if (self.bmspot_fbk_obj):
+                self.bmspot_fbk_obj.enable_fbk_timer()
         else:
             self.show_beam_spot = False
+
+            #it may not be initialized yet
+            if(self.bmspot_fbk_obj):
+                self.bmspot_fbk_obj.disable_fbk_timer()
+
             self.blockSignals(True)
             shapes = self.plot.get_items(item_type=IShapeItemType)
             for shape in shapes:
@@ -3805,6 +3813,7 @@ class ImageWidget(ImageDialog):
             if(show):
                 self.show_data(img_idx)
 
+
     def addPoint(self, img_idx, y, x, val, show=False):
         """
         addPoint(): description
@@ -3836,6 +3845,9 @@ class ImageWidget(ImageDialog):
 
             if(show):
                 self.show_data(img_idx)
+
+            if (self._auto_contrast):
+                self.apply_auto_contrast(img_idx)
 
     def addLine(self, img_idx, row, line, show=False):
         """
@@ -4019,7 +4031,7 @@ class ImageWidget(ImageDialog):
                 #self.item[img_idx].set_data(data)
                 self.item[img_idx].set_data(self.data[img_idx])
             else:
-                lut_range = self.item.get_lut_range()
+                lut_range = self.item[img_idx].get_lut_range()
                 self.item[img_idx].set_data(self.data[img_idx], lut_range)
         plot.replot()
 
@@ -5744,6 +5756,11 @@ class ImageWidget(ImageDialog):
         #print(dct)
         return(dct)
 
+    def install_beam_fbk_devs(self, main_obj):
+        from cls.applications.pyStxm.widgets.beam_spot_fbk import BeamSpotFeedbackObj
+        self.bmspot_fbk_obj = BeamSpotFeedbackObj(main_obj)
+        self.bmspot_fbk_obj.new_beam_pos.connect(self.move_beam_spot)
+
 
 def get_percentage_of_qrect(qrect, p):
     '''
@@ -5778,6 +5795,11 @@ def make_default_stand_alone_stxm_imagewidget(parent=None, data_io=None, _type=N
     #     global win
     #     print 'on_new_beamspot_fbk: (%.2f, %.2f)' % (cx, cy)
     #     win.move_beam_spot(cx, cy)
+    from cls.utils.cfgparser import ConfigClass
+    from cls.applications.pyStxm import abs_path_to_ini_file
+    appConfig = ConfigClass(abs_path_to_ini_file)
+    scan_mode = appConfig.get_value('DEFAULT', 'scanning_mode')
+    sample_pos_mode = types.scanning_mode.get_value_by_name(scan_mode)
 
     if(data_io is None):
         from cls.data_io.stxm_data_io import STXMDataIo
@@ -5852,8 +5874,8 @@ def make_default_stand_alone_stxm_imagewidget(parent=None, data_io=None, _type=N
     win.enable_tool_by_name('tools.clsSquareAspectRatioTool', True)
 
     win.addTool('DummySeparatorTool')
-    #win.register_samplehldr_tool(sample_pos_mode=sample_positioning_mode)
-    win.register_samplehldr_tool()
+    win.register_samplehldr_tool(sample_pos_mode=sample_pos_mode)
+    #win.register_samplehldr_tool()
     win.addTool('DummySeparatorTool')
     # win.addTool('ItemCenterTool')
     win.resize(600, 700)

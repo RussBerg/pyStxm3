@@ -11,6 +11,7 @@ from cls.types.stxmTypes import sample_positioning_modes, sample_fine_positionin
 from bcm.devices import Motor_Qt as apsMotor
 from bcm.devices import sample_motor
 
+FBK_DELAY = 100 # ms
 
 class BeamSpotFeedbackObj(QObject):
     '''
@@ -46,9 +47,14 @@ class BeamSpotFeedbackObj(QObject):
 
         #self.fx.add_callback('RBV', self.on_mtr_fbk_changed)
 
-        self.fbkTimer.start(10)
+        #self.fbkTimer.start(50)
 
     #def on_mtr_fbk_changed(self, **kwargs):
+    def enable_fbk_timer(self):
+        self.fbkTimer.start(FBK_DELAY)
+
+    def disable_fbk_timer(self):
+        self.fbkTimer.stop()
 
     def on_fbk_timer(self):
         sample_positioning_mode = self.main_obj.get_sample_positioning_mode()

@@ -4525,13 +4525,13 @@ class BaseScan(BaseObject):
         
         #setup X positioner
         self.sample_mtrx.put('Mode', MODE_SCAN_START)
-        self.main_obj.device( dct['sx_name'] ).put('user_setpoint', dct['xstart'])
+        self.main_obj.device( dct['sx_name'] ).put('user_setpoint', dct['xstart'], wait=0.0)
         _logger.info('Waiting for SampleX to move to start')
         self.confirm_stopped([self.sample_mtrx])
         
         #setup Y positioner
         self.sample_mtry.put('Mode', MODE_SCAN_START)
-        self.main_obj.device( dct['sy_name'] ).put('user_setpoint', dct['ystart'])
+        self.main_obj.device( dct['sy_name'] ).put('user_setpoint', dct['ystart'], wait=0.0)
         _logger.info('Waiting for SampleY to move to start')
         self.confirm_stopped([self.sample_mtry])
         
@@ -5333,7 +5333,7 @@ class BaseScan(BaseObject):
             pass
         else:
             # Gx is moving to scan center nd zx is centered around 0, so move Gx to scan center
-            self.main_obj.device(dct['cx_name']).put('user_setpoint', self.gx_roi[CENTER])
+            self.main_obj.device(dct['cx_name']).put('user_setpoint', self.gx_roi[CENTER], wait=0.0)
 
         # if(self.is_within_dband( gy_mtr.get_position(), self.gy_roi[CENTER], 15.0)):
         if (self.zy_roi[CENTER] != 0.0):
@@ -5341,7 +5341,7 @@ class BaseScan(BaseObject):
             pass
         else:
             # Gy is moving to scan center nd zy is centered around 0, so move Gy to scan center
-            self.main_obj.device(dct['cy_name']).put('user_setpoint', self.gy_roi[CENTER])
+            self.main_obj.device(dct['cy_name']).put('user_setpoint', self.gy_roi[CENTER], wait=0.0)
         #
         self.num_points = self.numY
 

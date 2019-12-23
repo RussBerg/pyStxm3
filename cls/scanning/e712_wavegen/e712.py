@@ -699,6 +699,9 @@ class PI_E712(QtCore.QObject):
         elif (tblid == 4):
             self.wg4.ddltbl.put(data)
 
+        #give the driver some time to send the waveform
+        time.sleep(0.5)
+
     def get_all_wav_table(self, cb=None):
         e712com_dct = make_base_e712_com_dict(e712_cmds.GET_ALL_WAV_DATA, None, None, cb=cb)
         self.e712_cmnd_queue.put_nowait(e712com_dct)

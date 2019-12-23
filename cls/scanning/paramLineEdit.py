@@ -7,8 +7,9 @@ Created on Jun 3, 2016
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-#invalid_ss = 'QLineEdit{background: rgb(140, 177, 255);}'
-invalid_ss = 'QLineEdit{background: rgb(195, 195, 195);}'
+# a light blue for the background to show the value is being changed
+invalid_ss = 'QLineEdit{background: rgb(157, 213, 255);}'
+#white for normal/accepted
 valid_ss = 'QLineEdit{background: rgb(255, 255, 255);}'
 
 ############################################################
@@ -170,7 +171,7 @@ class dblLineEditParamObj(QtCore.QObject):
         self.prec = prec
         self._min = _min
         self._max = _max
-        
+
         self.parent.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.parent.customContextMenuRequested.connect(self.contextMenuEvent)
         

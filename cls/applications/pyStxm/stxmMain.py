@@ -81,7 +81,7 @@ from cls.applications.pyStxm.widgets.thumbnailViewer import ContactSheet
 from cls.appWidgets.dialogs import excepthook
 from cls.appWidgets.spyder_console import ShellWidget#, ShellDock
 from cls.appWidgets.thread_worker import Worker
-from cls.app_data.defaults import master_colors, get_style, rgb_as_hex
+from cls.app_data.defaults import master_colors, get_style, rgb_as_hex, master_q_colors
 
 #from cls.applications.pyStxm.widgets.sampleSelector import SampleSelectorWidget
 from cls.applications.pyStxm.widgets.motorPanel import PositionersPanel
@@ -150,19 +150,18 @@ class EngineLabel(QtWidgets.QLabel):
     """
     changed = QtCore.pyqtSignal(object, str)
 
-    color_map = {'running': 'yellow',
-                 'paused': 'rgb(255, 157, 44);',
-                 'idle': 'rgb(114, 148, 240);'}
+    # color_map = {name: (font color, background color)
+    color_map = {'running': (master_colors['white'], master_colors['scan_sts_blue']),
+                 'paused': (master_colors['black'], master_colors['app_yellow']),
+                 'idle': (master_colors['white'], master_colors['app_drkgray'])}
 
     @QtCore.pyqtSlot('QString', 'QString')
     def on_state_change(self, state, old_state):
-        """Update the display Engine"""
         # Update the label
         self.setText(state.capitalize())
-        # Update the background color
+        # Update the font and background color
         color = self.color_map[state]
-        ss = 'QLabel {color: black; background-color: %s}' % color
-        #self.setStyleSheet('QLabel {background-color: %s}' % color)
+        ss = 'QLabel {color: %s; background-color: %s}' % (color[0], color[1])
         self.changed.emit(state.capitalize(), ss)
 
     def connect(self, engine):
@@ -593,6 +592,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.startBtn.setEnabled(True)
         # self.stopBtn.setEnabled(False)
         self.pauseBtn.setEnabled(False)
+        self.pauseBtn.setChecked(False)
         self.scansFrame.setEnabled(True)
         # self.scan_tbox_widgets[self.scan_panel_idx].set_editable()
         if (hasattr(self, 'contact_sheet')):
@@ -2524,7 +2524,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
     def on_execution_completed(self, run_uids):
         print('on_execution_completed: ', run_uids)
-        self.on_state_changed('Idle', run_uids)
+        self.on_state_changed(MAIN_OBJ.engine_widget.engine.state, run_uids)
 
     def on_status_changed(self, state_str, style_sheet):
         self.scanActionLbl.setText(state_str)
@@ -2537,7 +2537,9 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         :return:
         '''
         print('on_state_changed: [%s]' % state_str)
-        if(state_str.find('Idle') > -1):
+        if (state_str.find('Paused') > -1):
+            pass
+        elif(state_str.find('Idle') > -1):
             self.executingScan.on_scan_done()
             self.executingScan.clear_subscriptions(MAIN_OBJ.engine_widget)
             self.disconnect_executingScan_signals()
@@ -3170,9 +3172,9 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             else:
                 #self.executingScan.resume()
                 # request a pause
-                MAIN_OBJ.engine_widget.control.state_widgets['resume'].clicked.emit()
                 if (hasattr(self, 'scan_progress_table')):
                     self.scan_progress_table.set_pixmap(idx, scan_status_types.RUNNING)
+                MAIN_OBJ.engine_widget.control.state_widgets['resume'].clicked.emit()
 
     def on_stop(self):
         """

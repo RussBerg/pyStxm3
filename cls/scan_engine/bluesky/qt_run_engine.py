@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import QVBoxLayout, QLabel, QComboBox, QGroupBox
 from PyQt5.QtWidgets import QStackedWidget, QPushButton
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
+
 from cls.utils.log import get_module_logger
 
 _logger = get_module_logger(__name__)
@@ -44,7 +45,7 @@ class QRunEngine(QObject, RunEngine):
         self.state_hook = self.on_state_change
         self._execution_result = None
         #self.msg_hook = self.on_msg_hook
-        self.subscribe(self.update_progess)
+        self.subscribe(self.update_progress)
         #self.subscribe(self.print_msg)
         #self.waiting_hook = self.check_progress
         #self.waiting_hook = MyProgressBar
@@ -84,9 +85,9 @@ class QRunEngine(QObject, RunEngine):
         _logger.info('PRINT_MSG: name=%s' % name)
         print(doc)
 
-    def update_progess(self, name, doc):
+    def update_progress(self, name, doc):
         '''
-        update_progress subscribes to the msgs from the runengine and pulls out th eparts needed to determine the
+        update_progress subscribes to the msgs from the runengine and pulls out the parts needed to determine the
         progress of the current scan
         :param name:
         :param doc:
@@ -202,7 +203,7 @@ class QRunEngine(QObject, RunEngine):
         state: str
         old_state: str
         """
-        _logger.info('on_state_change: %s, %s'% (state, old_state))
+        #_logger.info('on_state_change: %s, %s'% (state, old_state))
         self.state_changed.emit(state, old_state)
 
     def on_msg_hook(self, msg):
@@ -333,6 +334,9 @@ class EngineControl(QStackedWidget):
         super().__init__(parent=parent)
         # Create our widgets
         self.engine = engine
+        #turn off raising exceptions that would be sent to teh console
+        self.engine.set_console_mode(False)
+
         self.startBtn = QPushButton('Start')
         self.pauseBtn = QPushButton('Pause')
         self.resumeBtn = QPushButton('Resume')
@@ -380,21 +384,34 @@ class EngineControl(QStackedWidget):
         self.on_state_change(engine.state, None)
 
     def on_start_clicked(self):
-        self.engine.start()
+        if (self.engine.state.find('idle') > -1):
+            self.engine.start()
+        else:
+            print('cant start: current state is %s' % self.engine.state)
+            self.on_stop_clicked()
+
 
     def on_pause_clicked(self):
-        self.engine.pause()
+        if (self.engine.state.find('running') > -1):
+            self.engine.pause()
+        else:
+            print('cant pause: current state is %s' % self.engine.state)
 
     def on_resume_clicked(self):
-        self.engine.resume()
+        if (self.engine.state.find('paused') > -1):
+            self.engine.resume()
+        else:
+            print('cant resume: current state is %s' % self.engine.state)
 
     def on_halt_clicked(self):
         self.engine.halt()
 
     def on_stop_clicked(self):
-        #if(not self._cur_state[0].find('idle')):
-        print('on_stop_clicked: ', self._cur_state)
-        uids = self.engine.stop()
+        if(self.engine.state.find('idle') == -1):
+        #if(self.engine.state.find('running') > -1):
+            print('on_stop_clicked: ', self._cur_state)
+            uids = self.engine.stop()
+
         #self.engine.exec_result.emit(uids)
 
 
@@ -448,6 +465,8 @@ class EngineWidget(QGroupBox):
         if plan_creator:
             self.engine.plan_creator = plan_creator
 
+        self.engine.exec_result.connect(self.on_exec_result)
+
     # def ensure_sample_number(self, md):
     #     '''
     #     a scan metadata validator function to make sure required info is in the md dict
@@ -456,6 +475,10 @@ class EngineWidget(QGroupBox):
     #     '''
     #     if 'sample_number' not in md:
     #         raise ValueError("You forgot the sample number.")
+
+    def on_exec_result(self, uids):
+        print('on_exec_result: state is [%s]'% self.engine.state)
+        print('on_exec_result: uids are ',  uids)
 
     @property
     def engine(self):

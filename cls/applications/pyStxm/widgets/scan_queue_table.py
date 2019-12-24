@@ -711,6 +711,8 @@ class ScanQueueTableWidget(QtWidgets.QWidget):
         if(val > len(choices)):
             val = len(choices)
         #self.table_view.set_pixmap(0, val)
+        if(val == 2):
+            print()
         scan_q_model_class.set_data(row, self.pmap_col, val)
         # always change focus off of widget
         #self.dirLabel.setFocus()

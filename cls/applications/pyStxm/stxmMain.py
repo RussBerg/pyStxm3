@@ -151,18 +151,62 @@ class EngineLabel(QtWidgets.QLabel):
     changed = QtCore.pyqtSignal(object, str)
 
     # color_map = {name: (font color, background color)
-    color_map = {'running': (master_colors['white'], master_colors['scan_sts_blue']),
-                 'paused': (master_colors['black'], master_colors['app_yellow']),
-                 'idle': (master_colors['white'], master_colors['app_drkgray'])}
+    # color_map = {'running': (master_colors['white'], master_colors['scan_sts_blue'], master_colors['app_ltblue'], master_colors['app_drkblue']),
+    #              'paused': (master_colors['black'], master_colors['app_yellow'], master_colors['app_ltblue'], master_colors['app_blue']),
+    #              'idle': (master_colors['white'], master_colors['app_drkgray'], master_colors['app_ltblue'], master_colors['app_blue'])}
+    color_map = {'running': (master_colors['black'], master_colors['app_ltblue'], master_colors['fbk_moving_ylw'], master_colors['app_red']),
+                 'paused': (master_colors['black'], master_colors['app_yellow'], master_colors['app_ltblue'],
+                            master_colors['app_blue']),
+                 'idle': (master_colors['white'], master_colors['app_drkgray'], master_colors['app_ltblue'],
+                          master_colors['app_blue'])}
+
+    def __init__(self, txt):
+        super(EngineLabel, self).__init__(txt)
+        self._blink_timer = QtCore.QTimer()
+        self._blink_timer.timeout.connect(self.on_timeout)
+        self._tmr_en = False
+        self._blink_timer.start(500)
+        self._cur_color = None
+        self._state_str = None
+
+    def on_timeout(self):
+        if(self._tmr_en):
+            if(self.isEnabled()):
+                self.setEnabled(False)
+            else:
+                self.setEnabled(True)
+        else:
+            if(not self.isEnabled()):
+                self.setEnabled(True)
+        self._set_colors()
 
     @QtCore.pyqtSlot('QString', 'QString')
     def on_state_change(self, state, old_state):
+        self._state_str = state.capitalize()
         # Update the label
-        self.setText(state.capitalize())
+        if(state.find('running') > -1):
+            self._tmr_en = True
+        else:
+            self._tmr_en = False
+
+        self.setText(self._state_str)
         # Update the font and background color
-        color = self.color_map[state]
-        ss = 'QLabel {color: %s; background-color: %s}' % (color[0], color[1])
-        self.changed.emit(state.capitalize(), ss)
+        self._cur_color = self.color_map[state]
+        # ss = 'QLabel {color: %s; background-color: %s}' % (self._cur_color[0], self._cur_color[1])
+        # self.changed.emit(state.capitalize(), ss)
+        #self._set_colors()
+
+    def _set_colors(self):
+        if(self._tmr_en):
+            if (self.isEnabled()):
+                clr1, clr2, clr3, cl4 = self._cur_color
+            else:
+                clr1, clr3, clr2, clr4 = self._cur_color
+        else:
+            clr1, clr2, clr3, cl4 = self._cur_color
+
+        ss = 'QLabel {color: %s; background-color: %s}' % (clr1, clr2)
+        self.changed.emit(self._state_str, ss)
 
     def connect(self, engine):
         """Connect an existing QRunEngine"""

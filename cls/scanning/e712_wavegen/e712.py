@@ -349,8 +349,10 @@ class PI_E712_wave_generator(QtCore.QObject):
         # self.get_wavtbl = BaseDevice('%sGetWavTbl%d' % (self.prefix, self.wg_num))
         # self.wavtbl_rbv = BaseDevice('%sWaveTbl%d_RBV' % (self.prefix, self.wg_num))
 
+
         self.clr_ddltbl = BaseDevice('%sClearDDLTbl%d' % (self.prefix, self.wg_num))
         self.ddltbl = BaseDevice('%sDDLTbl%d' % (self.prefix, self.wg_num))
+
         # self.get_ddltbl = BaseDevice('%sGetDDLTbl%d' % (self.prefix, self.wg_num))
         # self.ddltbl_rbv = BaseDevice('%sDDLTbl%d_RBV' % (self.prefix, self.wg_num))
 
@@ -444,6 +446,7 @@ class PI_E712(QtCore.QObject):
         self.run_scan_config = BaseDevice('%srun_scan_config' % self.prefix)
 
         self.calc_ddl_params = BaseDevice('%sCalcDDLParms' % self.prefix)
+        self.ddltbl_nord = BaseDevice('%sDDLTbl_NORD' % (self.prefix))
 
         self.wg_clr_trig_table = BaseDevice('%sClearTrigTbl' % self.prefix)
         #self.wg_get_trig_table = BaseDevice('%sGetTrigTbl' % self.prefix)
@@ -681,6 +684,9 @@ class PI_E712(QtCore.QObject):
             self.ddl_db.save_ddl_table(key, data, dct=dct)
 
     def put_ddl_table(self, tblid, data):
+        #must set the NORD first else the driver wont load DDL properly
+        self.ddltbl_nord.put(len(data))
+
         if (tblid == 1):
             self.wg1.clr_ddltbl.put(1)
         elif (tblid == 2):

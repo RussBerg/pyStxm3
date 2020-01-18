@@ -22,7 +22,7 @@ from cls.scanning.dataRecorder import NumpyAwareJSONEncoder
 from cls.utils.roi_utils import make_active_data_dict, make_base_wdg_com
 from cls.data_io.utils import test_eq, check_roi_for_match, get_first_entry_key, get_first_sp_db_from_entry, get_axis_setpoints_from_sp_db
 from cls.utils.file_system_tools import master_get_seq_names
-
+from cls.utils.excepthook import exception
 from cls.types.beamline import BEAMLINE_IDS
 
 from cls.utils.json_threadsave import ThreadJsonSave, loadJson
@@ -317,6 +317,50 @@ class ScanParamWidget(QtWidgets.QFrame):
     #     # do custom stuff
     #     #super(ScanParamWidget, self).focusOutEvent(event)
 
+    def gen_GONI_SCAN_max_scan_range_limit_def(self):
+        """ to be overridden by inheriting class
+        """
+        MAX_SCAN_RANGE_FINEX = self.main_obj.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
+        MAX_SCAN_RANGE_FINEY = self.main_obj.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
+        MAX_SCAN_RANGE_X = self.main_obj.get_preset_as_float('MAX_SCAN_RANGE_X')
+        MAX_SCAN_RANGE_Y = self.main_obj.get_preset_as_float('MAX_SCAN_RANGE_Y')
+        mtr_zpx = self.main_obj.device(DNM_ZONEPLATE_X)
+        mtr_zpy = self.main_obj.device(DNM_ZONEPLATE_Y)
+        # mtr_osax = self.main_obj.device('OSAX.X')
+        # mtr_osay = self.main_obj.device('OSAY.Y')
+        mtr_gx = self.main_obj.device(DNM_GONI_X)
+        mtr_gy = self.main_obj.device(DNM_GONI_Y)
+
+        gx_pos = mtr_gx.get_position()
+        gy_pos = mtr_gy.get_position()
+
+        # these are all added because the sign is in the LLIM
+        xllm = gx_pos - (MAX_SCAN_RANGE_FINEX * 0.5)
+        xhlm = gx_pos + (MAX_SCAN_RANGE_FINEY * 0.5)
+        yllm = gy_pos - (MAX_SCAN_RANGE_FINEX * 0.5)
+        yhlm = gy_pos + (MAX_SCAN_RANGE_FINEY * 0.5)
+
+        gxllm = mtr_gx.get_low_limit()
+        gxhlm = mtr_gx.get_high_limit()
+        gyllm = mtr_gy.get_low_limit()
+        gyhlm = mtr_gy.get_high_limit()
+
+        bounding_qrect = QtCore.QRectF(QtCore.QPointF(gxllm, gyhlm), QtCore.QPointF(gxhlm, gyllm))
+        # warn_qrect = self.get_percentage_of_qrect(bounding, 0.90) #%80 of max
+        # alarm_qrect = self.get_percentage_of_qrect(bounding, 0.95) #%95 of max
+        normal_qrect = QtCore.QRectF(QtCore.QPointF(xllm, yhlm), QtCore.QPointF(xhlm, yllm))
+        warn_qrect = self.get_percentage_of_qrect(normal_qrect, 1.01)  # %95 of max
+        alarm_qrect = self.get_percentage_of_qrect(normal_qrect, 1.0)  # %95 of max
+
+        bounding = ROILimitObj(bounding_qrect, get_alarm_clr(255), 'Range is beyond Goniometer Capabilities',
+                               get_alarm_fill_pattern())
+        normal = ROILimitObj(normal_qrect, get_normal_clr(45), 'Fine ZP Scan', get_normal_fill_pattern())
+        warn = ROILimitObj(warn_qrect, get_warn_clr(150), 'Goniometer will be required to move',
+                           get_warn_fill_pattern())
+        alarm = ROILimitObj(alarm_qrect, get_alarm_clr(255), 'Range is beyond ZP Capabilities',
+                            get_alarm_fill_pattern())
+
+        self.roi_limit_def = ROILimitDef(bounding, normal, warn, alarm)
 
     def update_last_settings(self):
         '''
@@ -678,6 +722,7 @@ class ScanParamWidget(QtWidgets.QFrame):
     def dragMoveEvent(self, event):
         event.acceptProposedAction()
 
+    @exception
     def dropEvent(self, event):
         mimeData = event.mimeData()
         if mimeData.hasImage():
@@ -1085,6 +1130,7 @@ class ScanParamWidget(QtWidgets.QFrame):
             sp_rois[u_id] = copy.deepcopy(sp_db)
         dct_put(wdg_com, SPDB_SPATIAL_ROIS, sp_rois)
 
+    @exception
     def openfile(self, fname, ev_only=False, sp_only=False, counter_name='counter0'):
         """
         check_for_cur_scan_tab: this call was originally used by the load_scan buttons on each scan pluggin
@@ -2110,12 +2156,15 @@ class ScanParamWidget(QtWidgets.QFrame):
         ''' to be implemented by inheriting class'''
         return(0.0)
 
-    def focus_scan_update_data(self):
+    def focus_scan_update_data(self, force_pxp=False):
         """
         This is a standard function that all scan pluggins have that is called to
         get the data from the pluggins UI widgets and write them into a dict returned by
         get_base_scanparam_roi(), this dict is emitted by all scan pluggins to be used by
         the scan classes configure() functions
+
+        :param force_pxp: the caller can force a pxp sub type (like for OSA focus scans)
+        :type wdg_com: bool.
 
         :returns: None
 
@@ -2158,16 +2207,13 @@ class ScanParamWidget(QtWidgets.QFrame):
         zz_roi[RANGE] = zp_rngY
         zz_roi[NPOINTS] = zp_npointsY
 
-        if (y_roi[START] == y_roi[STOP]):
-            self.sub_type = scan_sub_types.LINE_UNIDIR
-        else:
+        if(force_pxp):
             self.sub_type = scan_sub_types.POINT_BY_POINT
-
-        # xrange = x_roi[RANGE]
-        # if (xrange > self.get_max_fine_scan_range()):
-        #     x_roi[SCAN_RES] = COARSE
-        # else:
-        #     x_roi[SCAN_RES] = FINE
+        else:
+            if (y_roi[START] == y_roi[STOP]):
+                self.sub_type = scan_sub_types.LINE_UNIDIR
+            else:
+                self.sub_type = scan_sub_types.POINT_BY_POINT
 
         on_center_changed(zz_roi)
         on_range_changed(zz_roi)

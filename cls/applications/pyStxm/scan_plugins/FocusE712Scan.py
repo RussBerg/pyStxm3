@@ -103,6 +103,8 @@ class FocusE712ScanClass(BaseScan):
             gate.set_num_points(self.x_roi[NPOINTS])
             gate.set_trig_src(trig_src_types.E712)
 
+        gate.set_dwell(self.dwell)
+        gate.configure()
 
     def make_pxp_scan_plan(self, dets, gate, md=None, bi_dir=False):
         '''
@@ -268,6 +270,9 @@ class FocusE712ScanClass(BaseScan):
             finemtrx = self.main_obj.get_sample_fine_positioner('X')
             finemtry = self.main_obj.get_sample_fine_positioner('Y')
             mtr_z = self.main_obj.device(DNM_ZONEPLATE_Z_BASE)
+            #make sure the servo for zpz is on
+            mtr_z.put('ServoPower', 1)
+
             shutter = self.main_obj.device(DNM_SHUTTER)
             if (self.is_zp_scan):
                 # moving them to the start gets rid of a goofy first line of the scan
@@ -279,18 +284,20 @@ class FocusE712ScanClass(BaseScan):
                 yield from bps.mv(finemtrx, self.x_roi[START], finemtry, self.y_roi[START])
                 ############################
 
+            #this get rid of crappy first 2 lines of scan?
+            for i in range(2):
+                yield from bps.mv(e712_dev.run, 1)
+                #yield from bps.sleep(0.5)
 
             # yield from bps.open_run(md)
             yield from bps.kickoff(flyer_det)
             yield from bps.stage(gate)
 
-            yield from bps.sleep(0.5)
-
             shutter.open()
             for sp in self.zz_roi[SETPOINTS]:
                 yield from bps.mv(mtr_z, sp)
                 # let zoneplateZ damp a little
-                yield from bps.sleep(0.5)
+                #yield from bps.sleep(0.5)
 
                 yield from bps.mv(e712_dev.run, 1)
             shutter.close()
@@ -363,7 +370,7 @@ class FocusE712ScanClass(BaseScan):
         #     self.is_lxl = False
         #     # self.pdlys = {}
 
-        #self.update_roi_member_vars(self.sp_db)
+        self.update_roi_member_vars(self.sp_db)
 
         # self.ensure_left_to_right(self.x_roi)
         # self.ensure_left_to_right(self.y_roi)

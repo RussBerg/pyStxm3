@@ -22,8 +22,6 @@ import scipy.ndimage
 #import copy
 
 import numpy as np
-
-
 #from guiqwt.builder import make
 from guiqwt.plot import ImageDialog
 from guiqwt.tools import *
@@ -36,6 +34,7 @@ from cls.plotWidgets.guiqwt_changes.image import _nanmax, _nanmin
 from guiqwt.label import LabelItem
 from guiqwt.image import ImageItem
 from guiqwt.builder import PlotItemBuilder
+
 
 
 from guiqwt.interfaces import (
@@ -70,6 +69,7 @@ from guidata.utils import update_dataset
 from cls.plotWidgets.tools.annotatedHorizontalSegment import AnnotatedHorizontalSegment
 
 from cls.plotWidgets.stxm_osa_dflt_settings import make_dflt_stxm_osa_smplholder_settings_dct
+from cls.utils.excepthook import exception
 from cls.utils.nextFactor import nextFactor
 from cls.utils.angles import calcRectPoints
 from cls.utils.fileUtils import get_file_path_as_parts
@@ -603,6 +603,7 @@ class ImageWidget(ImageDialog):
         if(self.drop_enabled):
             event.acceptProposedAction()
 
+    #@exception
     def dropEvent(self, event):
         if(self.drop_enabled):
             #import simplejson as json
@@ -642,8 +643,10 @@ class ImageWidget(ImageDialog):
         if(self.drop_enabled):
             event.accept()
 
+    @exception
     def on_drop(self, mimeData=None):
         # self.formatsTable.setRowCount(0)
+
         if(self.drop_enabled):
             if mimeData is None:
                 return
@@ -664,6 +667,11 @@ class ImageWidget(ImageDialog):
                 else:
                     #text = " ".join(["%02X" % ord(datum)
                     #                 for datum in mimeData.data(format)])
+                    #text = " ".join(["%02X" % ord(datum) for datum in str(mimeData.data(format))])
+                    # if(str(mimeData.data(format)).find('8f') > -1):
+                    #     text = " ".join(["%02X" % ord(datum) for datum in str(mimeData.data(format))])
+                    # else:
+                    #     text = " ".join(["%02X" % ord(datum) for datum in str(mimeData.data(format), encoding='cp1252')])
                     text = " ".join(["%02X" % ord(datum) for datum in str(mimeData.data(format), encoding='cp1252')])
 
 
@@ -4018,7 +4026,7 @@ class ImageWidget(ImageDialog):
         plot = self.get_plot()
         items = len(self.plot.get_items(item_type=ICSImageItemType))
         #if(self.item[img_idx] is None):
-        if (len(self.item) == 0):
+        if ((len(self.item) == 0) or (self.item[img_idx] is None)):
             self.item[img_idx] = make.image(
                 self.data[img_idx],
                 interpolation='nearest',
@@ -4944,7 +4952,7 @@ class ImageWidget(ImageDialog):
             self.item[i] = None
             i += 1
 
-        # self.item = None
+        self.item = {}
         self.plot.replot()
 
     def delShapePlotItems(self):
@@ -5088,7 +5096,7 @@ class ImageWidget(ImageDialog):
         progbar.setStyleSheet(ss)
         return(progbar)
 
-
+    @exception
     def openfile(self, fnames, addimages=True, counter='counter0', dropped=False):
         if(self.show_image_params):
             self.openfile_mod(fnames, addimages=True, counter='counter0', dropped=dropped)

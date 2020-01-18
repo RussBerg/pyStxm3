@@ -75,6 +75,10 @@ class Motor_Qt(EpicsMotor):
     use_torque = Cpt(EpicsSignal, '.CNEN', kind='omitted')
     ctrlr_status = Cpt(EpicsSignal, '.MSTA', kind='omitted')
 
+    #todo: this needs to be standardized so that all attrs are lower case
+    #the following is here for compatability with e712_sample_motor
+    ServoPower = Cpt(EpicsSignal, '.CNEN', kind='omitted')
+
     def __init__(self, *args, **kwargs):
 
         stripped_kwargs = copy.copy(kwargs)

@@ -376,6 +376,10 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
                             samplemtry = self.main_obj.get_sample_positioner('Y')
                             finemtrx = self.main_obj.get_sample_fine_positioner('X')
                             finemtry = self.main_obj.get_sample_fine_positioner('Y')
+                            # make sure servo power is on
+                            finemtrx.ServoPower.put(1)
+                            finemtry.ServoPower.put(1)
+
                             if (self.is_zp_scan):
                                 # moving them to the start gets rid of a goofy first line of the scan
                                 finemtrx.move(self.zx_roi[START])

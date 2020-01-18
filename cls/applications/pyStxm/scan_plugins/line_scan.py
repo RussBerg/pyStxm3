@@ -215,7 +215,9 @@ class LineScansParam(ScanParamWidget):
         :returns: None
       
         """
-        item_id = dct_get(sp_db, SPDB_ID_VAL)
+        #item_id = dct_get(sp_db, SPDB_ID_VAL)
+        #force ID to be 0 in case the user has deleted the original line with ID 0
+        item_id = 0
         dct_put(sp_db, SPDB_PLOT_SHAPE_TYPE, self.plot_item_type)
 
         if(sp_db[CMND] == widget_com_cmnd_types.SELECT_ROI):
@@ -267,7 +269,7 @@ class LineScansParam(ScanParamWidget):
             
         else:
              
-            _logger.error('image_scan: mod_roi: unsupported widget_com CMND [%d]' % sp_db[CMND])
+            _logger.error('line_spec_scan: mod_roi: unsupported widget_com CMND [%d]' % sp_db[CMND])
             return    
     
     def load_roi(self, wdg_com, append=False, ev_only=False, sp_only=False):
@@ -327,6 +329,10 @@ class LineScansParam(ScanParamWidget):
         y_roi = dct_get(sp_db, SPDB_Y)
         if(y_roi):
             #self.sub_type_override = self.scanTypeSelComboBox.currentIndex()
+            if(abs(y_roi[STOP] - y_roi[START]) < 0.05):
+                #make it a horizontal line
+                y_roi[STOP] = y_roi[START]
+
             if(y_roi[START] == y_roi[STOP]):
                 self.sub_type = scan_sub_types.LINE_UNIDIR
             else:
@@ -455,97 +461,53 @@ class LineScansParam(ScanParamWidget):
     #
     #     self.roi_limit_def = ROILimitDef(bounding, normal, warn, alarm)
 
-    def gen_GONI_SCAN_max_scan_range_limit_def(self):
-        '''
-        this function creates the boundaries for the plotter to use when selecting new scan areas based on :
-         - the line scan is only allowed within the range of the current zoneplate position and zoneplate range, no
-          lines requiring a move by the goniometer are allowed as the repeatability of hte poistioning is not good enough
-         so: find the current center and range and setup boundaries
-        :return:
-        '''
-        """ to be overridden by inheriting class
-                """
-        mtr_zpx = self.main_obj.device(DNM_ZONEPLATE_X)
-        mtr_zpy = self.main_obj.device(DNM_ZONEPLATE_Y)
-        # mtr_osax = self.main_obj.device('OSAX.X')
-        # mtr_osay = self.main_obj.device('OSAY.Y')
-        mtr_gx = self.main_obj.device(DNM_GONI_X)
-        mtr_gy = self.main_obj.device(DNM_GONI_Y)
-
-        gx_pos = mtr_gx.get_position()
-        gy_pos = mtr_gy.get_position()
-
-        # these are all added because the sign is in the LLIM
-        xllm = gx_pos - (MAX_SCAN_RANGE_FINEX * 0.5)
-        xhlm = gx_pos + (MAX_SCAN_RANGE_FINEX * 0.5)
-        yllm = gy_pos - (MAX_SCAN_RANGE_FINEY * 0.5)
-        yhlm = gy_pos + (MAX_SCAN_RANGE_FINEY * 0.5)
-
-        gxllm = mtr_gx.get_low_limit()
-        gxhlm = mtr_gx.get_high_limit()
-        gyllm = mtr_gy.get_low_limit()
-        gyhlm = mtr_gy.get_high_limit()
-
-        bounding_qrect = QtCore.QRectF(QtCore.QPointF(gxllm, gyhlm), QtCore.QPointF(gxhlm, gyllm))
-        # warn_qrect = self.get_percentage_of_qrect(bounding, 0.90) #%80 of max
-        # alarm_qrect = self.get_percentage_of_qrect(bounding, 0.95) #%95 of max
-        normal_qrect = QtCore.QRectF(QtCore.QPointF(xllm, yhlm), QtCore.QPointF(xhlm, yllm))
-        warn_qrect = self.get_percentage_of_qrect(normal_qrect, 1.01)  # %95 of max
-        alarm_qrect = self.get_percentage_of_qrect(normal_qrect, 1.0)  # %95 of max
-
-        bounding = ROILimitObj(bounding_qrect, get_alarm_clr(255), 'Range is beyond Goniometer Capabilities',
-                               get_alarm_fill_pattern())
-        normal = ROILimitObj(normal_qrect, get_normal_clr(45), 'Fine ZP Scan', get_normal_fill_pattern())
-        warn = ROILimitObj(warn_qrect, get_warn_clr(150), 'Goniometer will be required to move',
-                           get_warn_fill_pattern())
-        alarm = ROILimitObj(alarm_qrect, get_alarm_clr(255), 'Range is beyond ZP Capabilities',
-                            get_alarm_fill_pattern())
-
-        self.roi_limit_def = ROILimitDef(bounding, normal, warn, alarm)
-        #
-        # mtr_zpx = self.main_obj.device(DNM_ZONEPLATE_X)
-        # mtr_zpy = self.main_obj.device(DNM_ZONEPLATE_Y)
-        # # mtr_osax = self.main_obj.device('OSAX.X')
-        # # mtr_osay = self.main_obj.device('OSAY.Y')
-        # mtr_gx = self.main_obj.device(DNM_GONI_X)
-        # mtr_gy = self.main_obj.device(DNM_GONI_Y)
-        #
-        # gx_pos = mtr_gx.get_position()
-        # gy_pos = mtr_gy.get_position()
-        #
-        # # these are all added because the sign is in the LLIM
-        # xllm = gx_pos - (MAX_SCAN_RANGE_FINEX * 0.5)
-        # xhlm = gx_pos + (MAX_SCAN_RANGE_FINEX * 0.5)
-        # yllm = gy_pos - (MAX_SCAN_RANGE_FINEY * 0.5)
-        # yhlm = gy_pos + (MAX_SCAN_RANGE_FINEY * 0.5)
-        #
-        # # gxllm = mtr_gx.get_low_limit()
-        # # gxhlm = mtr_gx.get_high_limit()
-        # # gyllm = mtr_gy.get_low_limit()
-        # # gyhlm = mtr_gy.get_high_limit()
-        # #
-        # # zxllm = mtr_zpx.get_low_limit()
-        # # zxhlm = mtr_zpx.get_high_limit()
-        # # zyllm = mtr_zpy.get_low_limit()
-        # # zyhlm = mtr_zpy.get_high_limit()
-        #
-        #
-        # bounding_qrect = QtCore.QRectF(QtCore.QPointF(xllm, yhlm), QtCore.QPointF(xhlm, yllm))
-        # # warn_qrect = self.get_percentage_of_qrect(bounding, 0.90) #%80 of max
-        # # alarm_qrect = self.get_percentage_of_qrect(bounding, 0.95) #%95 of max
-        # normal_qrect = QtCore.QRectF(QtCore.QPointF(xllm, yhlm), QtCore.QPointF(xhlm, yllm))
-        # warn_qrect = self.get_percentage_of_qrect(normal_qrect, 1.01)  # %95 of max
-        # alarm_qrect = self.get_percentage_of_qrect(normal_qrect, 1.0)  # %95 of max
-        #
-        # bounding = ROILimitObj(bounding_qrect, get_alarm_clr(255), 'Range is beyond Goniometer Capabilities',
-        #                        get_alarm_fill_pattern())
-        # normal = ROILimitObj(normal_qrect, get_normal_clr(45), 'SEG', get_normal_fill_pattern())
-        # warn = ROILimitObj(warn_qrect, get_warn_clr(150), 'Goniometer will be required to move',
-        #                    get_warn_fill_pattern())
-        # alarm = ROILimitObj(alarm_qrect, get_alarm_clr(255), 'Range is beyond ZP Capabilities',
-        #                     get_alarm_fill_pattern())
-        #
-        # self.roi_limit_def = ROILimitDef(bounding, normal, warn, alarm)
+    # def gen_GONI_SCAN_max_scan_range_limit_def(self):
+    #     '''
+    #     this function creates the boundaries for the plotter to use when selecting new scan areas based on :
+    #      - the line scan is only allowed within the range of the current zoneplate position and zoneplate range, no
+    #       lines requiring a move by the goniometer are allowed as the repeatability of hte poistioning is not good enough
+    #      so: find the current center and range and setup boundaries
+    #     :return:
+    #     '''
+    #     """ to be overridden by inheriting class
+    #             """
+    #     mtr_zpx = self.main_obj.device(DNM_ZONEPLATE_X)
+    #     mtr_zpy = self.main_obj.device(DNM_ZONEPLATE_Y)
+    #     # mtr_osax = self.main_obj.device('OSAX.X')
+    #     # mtr_osay = self.main_obj.device('OSAY.Y')
+    #     mtr_gx = self.main_obj.device(DNM_GONI_X)
+    #     mtr_gy = self.main_obj.device(DNM_GONI_Y)
+    #
+    #     gx_pos = mtr_gx.get_position()
+    #     gy_pos = mtr_gy.get_position()
+    #
+    #     # these are all added because the sign is in the LLIM
+    #     xllm = gx_pos - (MAX_SCAN_RANGE_FINEX * 0.5)
+    #     xhlm = gx_pos + (MAX_SCAN_RANGE_FINEX * 0.5)
+    #     yllm = gy_pos - (MAX_SCAN_RANGE_FINEY * 0.5)
+    #     yhlm = gy_pos + (MAX_SCAN_RANGE_FINEY * 0.5)
+    #
+    #     gxllm = mtr_gx.get_low_limit()
+    #     gxhlm = mtr_gx.get_high_limit()
+    #     gyllm = mtr_gy.get_low_limit()
+    #     gyhlm = mtr_gy.get_high_limit()
+    #
+    #     bounding_qrect = QtCore.QRectF(QtCore.QPointF(gxllm, gyhlm), QtCore.QPointF(gxhlm, gyllm))
+    #     # warn_qrect = self.get_percentage_of_qrect(bounding, 0.90) #%80 of max
+    #     # alarm_qrect = self.get_percentage_of_qrect(bounding, 0.95) #%95 of max
+    #     normal_qrect = QtCore.QRectF(QtCore.QPointF(xllm, yhlm), QtCore.QPointF(xhlm, yllm))
+    #     warn_qrect = self.get_percentage_of_qrect(normal_qrect, 1.01)  # %95 of max
+    #     alarm_qrect = self.get_percentage_of_qrect(normal_qrect, 1.0)  # %95 of max
+    #
+    #     bounding = ROILimitObj(bounding_qrect, get_alarm_clr(255), 'Range is beyond Goniometer Capabilities',
+    #                            get_alarm_fill_pattern())
+    #     normal = ROILimitObj(normal_qrect, get_normal_clr(45), 'Fine ZP Scan', get_normal_fill_pattern())
+    #     warn = ROILimitObj(warn_qrect, get_warn_clr(150), 'Goniometer will be required to move',
+    #                        get_warn_fill_pattern())
+    #     alarm = ROILimitObj(alarm_qrect, get_alarm_clr(255), 'Range is beyond ZP Capabilities',
+    #                         get_alarm_fill_pattern())
+    #
+    #     self.roi_limit_def = ROILimitDef(bounding, normal, warn, alarm)
 
     def create_sub_spatial_dbs(self, wdg_com):
         """

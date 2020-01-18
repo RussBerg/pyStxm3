@@ -5081,7 +5081,7 @@ def load_NXstxm_file(filename, only_roi_and_data=False):
     except:
         if(nf is not None):
             nf.close()
-        _logger.info('load_single_entry_from_NXstxm_file: opening file failed [%s]' % filename)  
+        _logger.info('load_NXstxm_file: opening file failed [%s]' % filename)
         return(None)  
 
 def find_NXdata_groups(nf):
@@ -5199,7 +5199,7 @@ def load_all_entries_from_NXstxm_file(filename, only_roi_and_data=False):
     except:
         if(nf is not None):
             nf.close()
-        _logger.info('load_single_entry_from_NXstxm_file: opening file failed [%s]' % filename)  
+        _logger.info('load_all_entries_from_NXstxm_file: opening file failed [%s]' % filename)
         return(None)     
 
 

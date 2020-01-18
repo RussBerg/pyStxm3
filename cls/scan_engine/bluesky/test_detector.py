@@ -62,7 +62,7 @@ class BaseCounterInputDevice(ophyd.Device):
     point_num_rbv = Cpt(EpicsSignalRO, 'PointNum_RBV', kind='omitted')
     read_counts = Cpt(EpicsSignal, 'ReadCounts', kind='omitted')
     point_dwell = Cpt(EpicsSignal, 'PointDwell', kind='config')
-    #single_value_rbv = Cpt(EpicsSignalRO, 'SingleValue_RBV', kind='hinted')
+    single_value_rbv = Cpt(EpicsSignalRO, 'SingleValue_RBV', kind='hinted')
     run_rbv = Cpt(EpicsSignalRO, 'Run_RBV', kind='omitted')
     #waveform_rbv = Cpt(EpicsSignalRO, 'Waveform_RBV', kind='hinted')
 

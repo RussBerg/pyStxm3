@@ -319,7 +319,7 @@ class LineSpecScanWithE712WavegenClass(BaseScan):
 
         @bpp.baseline_decorator(dev_list)
         #@bpp.stage_decorator(dets)
-        @bpp.stage_decorator(stagers)
+        #@bpp.stage_decorator(dets)
         @bpp.run_decorator(md=md)
         def do_scan():
 
@@ -328,7 +328,14 @@ class LineSpecScanWithE712WavegenClass(BaseScan):
             e712_x_usetablenum.put(x_tbl_id)
             e712_y_usetablenum.put(y_tbl_id)
 
+            if (self.use_hdw_accel):
+                # this get rid of crappy first 2 lines of scan?
+                for i in range(2):
+                    yield from bps.mv(e712_dev.run, 1)
+                yield from bps.sleep(0.5)
+
             yield from bps.kickoff(dets[0])
+            yield from bps.stage(gate)
             shutter.open()
             #bps.open_run(md=md)
 
@@ -350,7 +357,7 @@ class LineSpecScanWithE712WavegenClass(BaseScan):
             shutter.close()
             # yield from bps.wait(group='e712_wavgen')
             #bps.close_run()
-            #yield from bps.unstage(gate)
+            yield from bps.unstage(gate)
             yield from bps.complete(dets[0])  # stop minting events everytime the line_det publishes new data!
             # yield from bps.unmonitor(det)
             # the collect method on e712_flyer may just return as empty list as a formality, but future proofing!

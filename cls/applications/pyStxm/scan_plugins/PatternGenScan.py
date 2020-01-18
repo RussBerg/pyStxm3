@@ -140,7 +140,13 @@ class PatternGenScanClass(BaseScan):
                 md = {'metadata': dict_to_json(
                     self.make_standard_metadata(entry_name=img_dct['entry'], scan_type=self.scan_type))}
 
-                yield from self.make_single_pxp_image_plan(dets, gate, md=md, do_baseline=False)
+                #take the bnaseline on the middle (5th) pad so that its params are used for the data
+                if (self._current_img_idx is 4):
+                    do_baseline = True
+                else:
+                    do_baseline = False
+
+                yield from self.make_single_pxp_image_plan(dets, gate, md=md, do_baseline=do_baseline)
                 self._current_img_idx += 1
                 entrys_lst.append(img_dct['entry'])
 

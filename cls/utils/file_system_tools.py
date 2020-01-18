@@ -121,8 +121,11 @@ def get_next_file_num_in_seq(path, prefix_char='C',extension='hdf5'):
         #seq_num = int(seq_num_str) + 1
         seq_num = int(seq_num_str) + 1
 
-        if(check_if_tmp_or_final_exist(path, seq_num, prefix_char=prefix_char, extension=extension)):
-            #skip over the tmp/final file sequence number
+        # if(check_if_tmp_or_final_exist(path, seq_num, prefix_char=prefix_char, extension=extension)):
+        #     #skip over the tmp/final file sequence number
+        #     seq_num = seq_num + 1
+        while(check_if_tmp_or_final_exist(path, seq_num, prefix_char=prefix_char, extension=extension)):
+            # skip over the tmp/final file sequence number
             seq_num = seq_num + 1
 
         return(seq_num)
@@ -219,11 +222,15 @@ def get_next_seq_num(path, prefix_char='C', extension='hdf5'):
         return(dir_num)   
 
 def check_if_tmp_or_final_exist(path, file_num, prefix_char='C', extension='hdf5'):
-    tmp_fname = '%s/%c%d.%s.tmp' % (path, prefix_char, file_num, extension)
-    final_fname = '%s/%c%d.%s.final' % (path, prefix_char, file_num, extension)
+    #check also for a subdir with prefix name here
+    _dir = os.path.join(path, '%c%d' % (prefix_char, file_num))
+    tmp_fname = os.path.join(path, '%c%d.%s.tmp' % (prefix_char, file_num, extension))
+    final_fname = os.path.join(path, '%c%d.%s.final' % (prefix_char, file_num, extension))
     if(os.path.exists(tmp_fname)):
         return(True)
-    if (os.path.exists(final_fname)):
+    if(os.path.exists(final_fname)):
+        return (True)
+    if(os.path.exists(_dir)):
         return (True)
     return(False)
 
@@ -463,19 +470,20 @@ if __name__ == '__main__':
 #     print d
 #     print
     
-    path = r'S:\STXM-data\Cryo-STXM\2019\guest\0530'
+    #path = r'S:\STXM-data\Cryo-STXM\2019\guest\0530'
+
     #path = r'W:\sm-user\STXM-data\Cryo-STXM\2016\guest\0908\C160908020'
     #print ' I want a new Stack dir in this directory [%s]' % path
     #new_stack_dirname = get_next_dir_in_seq(path)
     #print ' and that directory shall be called %s' % new_stack_dirname
     #print ' what about %s' % path + '\\' + new_stack_dirname
     #os.mkdir(path + '\\' + new_stack_dirname)
-    d = master_get_seq_names(path , prefix_char='C', thumb_ext='jpg', dat_ext='hdf5', stack_dir=False, num_desired_datafiles=5, new_stack_dir=False)
-    if(d is None):
-        print('the directory %s does not exist yet' % (path))
-    else:
-        for k in list(d.keys()):
-            print(d[k])
-    
-    
-    
+
+    # d = master_get_seq_names(path , prefix_char='C', thumb_ext='jpg', dat_ext='hdf5', stack_dir=False, num_desired_datafiles=5, new_stack_dir=False)
+    # if(d is None):
+    #     print('the directory %s does not exist yet' % (path))
+    # else:
+    #     for k in list(d.keys()):
+    #         print(d[k])
+    path = r'C:\controls\stxm-data\guest\0110'
+    check_if_tmp_or_final_exist(path, 200110041, prefix_char='C', extension='hdf5')

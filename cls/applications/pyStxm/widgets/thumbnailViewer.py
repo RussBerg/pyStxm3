@@ -3,16 +3,6 @@ Created on 2016-10-11
 
 @author: bergr
 
-The basic operation of this widget is to connect to a DirectoryMonitor class that will detect when a file(s) are added/removed to/from a directory.
-
-This class will pass a queue to the DirectoryMonitor() that will be used to send information back from the DIretoryMonitor() class.
-
-When a change to the directory has occurred the DIrectoryMonitor() will collect the changes in two categories, added and removed, these will be added
-to a dictionary that contains these categories as key words, contained in each is a list of the filenames that have been either added or removed. This
-dictionary will then be written to the queue and then the DirectoryMonitor() class will emit its changed signal. The changed signal is monitored by
-the ContactSheet() at which point it will read out of the queue all of the added/removed dictionaries passing that information off to the graphics widget
-functions that handle creating the graphics for each data file.
-
 '''
 import sys
 import os
@@ -59,11 +49,13 @@ from cls.plotWidgets.imageWidget import make_default_stand_alone_stxm_imagewidge
 from cls.utils.roi_dict_defs import *
 from cls.utils.fileSystemMonitor import DirectoryMonitor
 
-from cachetools import cached, TTLCache  # 1 - let's import the "cached" decorator and the "TTLCache" object from cachetools
-cache = TTLCache(maxsize=100, ttl=300) # 2 - let's create the cache object.
+from cachetools import cached, \
+    TTLCache  # 1 - let's import the "cached" decorator and the "TTLCache" object from cachetools
+
+cache = TTLCache(maxsize=100, ttl=300)  # 2 - let's create the cache object.
 
 # appConfig = ConfigClass(abs_path_to_ini_file)
-icoDir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','..','icons')
+icoDir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', 'icons')
 
 _logger = get_module_logger(__name__)
 
@@ -102,19 +94,19 @@ def make_thumb_widg_dct(data_dir, fname, entry_dct, counter=DNM_DEFAULT_COUNTER)
 
 
 def get_first_entry_key(entries_dct):
-    #return (entries_dct['entries'].keys()[0])
+    # return (entries_dct['entries'].keys()[0])
     return (list(entries_dct['entries'])[0])
 
 
 def get_first_sp_db_from_entry(entry_dct):
-    #sp_id = entry_dct['WDG_COM']['SPATIAL_ROIS'].keys()[0]
+    # sp_id = entry_dct['WDG_COM']['SPATIAL_ROIS'].keys()[0]
     sp_id = list(entry_dct['WDG_COM']['SPATIAL_ROIS'])[0]
     sp_db = entry_dct['WDG_COM']['SPATIAL_ROIS'][sp_id]
     return (sp_db)
 
 
 def get_first_sp_db_from_wdg_com(wdg_com):
-    #sp_id = wdg_com['SPATIAL_ROIS'].keys()[0]
+    # sp_id = wdg_com['SPATIAL_ROIS'].keys()[0]
     sp_id = list(wdg_com['SPATIAL_ROIS'])[0]
     sp_db = wdg_com['SPATIAL_ROIS'][sp_id]
     return (sp_db)
@@ -135,7 +127,7 @@ def get_generic_scan_data_from_entry(entry_dct, counter=DNM_DEFAULT_COUNTER):
     :param counter:
     :return:
     '''
-    #datas = [entry_dct['data'][counter]['signal'][0][0]]
+    # datas = [entry_dct['data'][counter]['signal'][0][0]]
     datas = [entry_dct['data'][counter]['signal']]
     return (datas)
 
@@ -237,7 +229,7 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
         self.info_str = info_dct['info_str']
         self.info_jstr = info_dct['info_jstr']
 
-        if(is_folder):
+        if (is_folder):
             self.getpic = self.get_folder_pic
 
         elif (self.scan_type in spectra_type_scans):
@@ -374,18 +366,30 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
 
     def save_tif(self, sender):
         '''
-        call PrintSTXMThumbnailWidget()
+        call save_tif(), when saving a tif file keep the dimensions the same as the data, only thunmbnails
+        are square
         :param sender:
         :return:
         '''
-        size = 512
         self = sender
         _data = flip_data_upsdown(self.data)
+        rows, cols = _data.shape
         im = array_to_image(_data)
-        im = im.resize([size, size], Image.NEAREST)  # Image.ANTIALIAS)  # resizes to 256x512 exactly
+        # make sure tifs are at least 100x100
+        if (rows < cols):
+            # scale by rows
+            if (rows < 100):
+                _fctr = int(100 / rows)
+                rows = int(_fctr * rows)
+                cols = int(_fctr * cols)
+        else:
+            if (cols < 100):
+                _fctr = int(100 / cols)
+                rows = int(_fctr * rows)
+                cols = int(_fctr * cols)
+        # im = im.resize([rows, cols], Image.NEAREST)  # Image.ANTIALIAS)  # resizes to 256x512 exactly
+        im = im.resize([cols, rows], Image.NEAREST)  # Image.ANTIALIAS)  # resizes to 256x512 exactly
         im.save(self.fname.replace('.hdf5', '.tif'))
-
-
 
     def create_gradient_pmap(self, _min, _max):
         box = QtCore.QSize(20, THUMB_HEIGHT)
@@ -474,28 +478,44 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
 
         return (pmap)
 
-
     def get_folder_pic(self, scale_it=True, as_thumbnail=True):
         """
         pmap = get_pixmap(os.path.join(icoDir, 'reload.ico'), ICONSIZE, ICONSIZE)
         :param scale_it:
+        :type scale_it: bool
+        :parm as_thumbnail:
+        :type as_thumbnail: bool
+        :parm fldr_type:
+        :type fldr_type: a string either 'stack' or 'tomo'
         :return:
         """
-        if(self.title.find('.') > -1):
-            image_fname = 'updir.png'
+        sz_x = 222
+        sz_y = 164
+
+        if (self.title.find('.') > -1):
+            #image_fname = 'updir.png'
+            #image_fname = 'open-folder-icon-png.png'
+            image_fname = 'directory_up_bw.png'
+
         else:
-            image_fname = 'folder.png'
+            if(self.scan_type is scan_types.SAMPLE_IMAGE_STACK):
+                image_fname = 'stack.bmp'
+            elif(self.scan_type is scan_types.TOMOGRAPHY_SCAN):
+                #image_fname = 'tomo.png'
+                image_fname = 'folder_bw_tomo.png'
+            else:
+                image_fname = 'folder_bw.ico'
 
         if (as_thumbnail):
-           # return a lower res pmap for use as a thumbnail image
-           pmap = get_pixmap(os.path.join(icoDir, image_fname), 222, 164)
+            # return a lower res pmap for use as a thumbnail image
+            pmap = get_pixmap(os.path.join(icoDir, image_fname), sz_x, sz_y)
         else:
-           # return a higher res pixmap for eventual printing
-           pmap = get_pixmap(os.path.join(icoDir, image_fname), 222, 164)
-           pmap = pmap.scaled(QtCore.QSize(QtCore.QSize(SPEC_THMB_WD, SPEC_THMB_HT)), QtCore.Qt.KeepAspectRatio)
+            # return a higher res pixmap for eventual printing
+            pmap = get_pixmap(os.path.join(icoDir, image_fname), sz_x, sz_y)
+            pmap = pmap.scaled(QtCore.QSize(QtCore.QSize(SPEC_THMB_WD, SPEC_THMB_HT)), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
 
         if (as_thumbnail):
-            pmap = pmap.scaled(QtCore.QSize(QtCore.QSize(THMB_SIZE, THMB_SIZE)), QtCore.Qt.KeepAspectRatio)
+            pmap = pmap.scaled(QtCore.QSize(QtCore.QSize(THMB_SIZE, THMB_SIZE)), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
 
         return (pmap)
 
@@ -560,7 +580,7 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
         # xdata = self.dct['entries'][ekey]['data'][self.counter]['energy']['signal']
 
         ydatas = []
-        #for ekey in self.dct['entries'].keys():
+        # for ekey in self.dct['entries'].keys():
         for ekey in list(self.dct['entries']):
             entry_dct = self.dct['entries'][ekey]
             # ydatas.append(self.dct['entries'][ekey]['data'][self.counter]['signal'])
@@ -692,23 +712,23 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
 
             # Draw text
             # QRect(x, y, width, height)
-            text_rect = QtCore.QRect(0,                                               # x
+            text_rect = QtCore.QRect(0,  # x
                                      black_pm.rect().y() + black_pm.rect().height(),  # y
-                                     black_pm.rect().width(),                         # width
-                                     self.labelheight)                                # height
+                                     black_pm.rect().width(),  # width
+                                     self.labelheight)  # height
             font = painter.font()
             font.setPixelSize(11)
             painter.setFont(font)
             painter.drawText(text_rect, QtCore.Qt.AlignCenter, self.title)
 
     def mouseDoubleClickEvent(self, event):
-        if(self.is_folder):
+        if (self.is_folder):
             path = self.fname
-            if(self.fname.find('..') > -1):
-                #we want an updir path emittted here
+            if (self.fname.find('..') > -1):
+                # we want an updir path emittted here
                 path, folder = os.path.split(self.fname)
                 path, folder = os.path.split(path)
-                #print('DoubleClicked: [%s]' % path)
+                # print('DoubleClicked: [%s]' % path)
             self.dbl_clicked.emit(path)
 
     def mousePressEvent(self, event):
@@ -728,10 +748,11 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
             self.is_selected = True
 
         self.select.emit(self)
-        self.update(QtCore.QRectF(0.0,
-                                  0.0,
-                                  self.pic.rect().width() + self.bordersize,
-                                  self.pic.rect().height() + self.labelheight + self.bordersize))
+        if (self.pic is not None):
+            self.update(QtCore.QRectF(0.0,
+                                      0.0,
+                                      self.pic.rect().width() + self.bordersize,
+                                      self.pic.rect().height() + self.labelheight + self.bordersize))
         QtWidgets.QGraphicsItem.mousePressEvent(self, event)
 
         if btn == QtCore.Qt.LeftButton:
@@ -785,7 +806,7 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
 
             ydatas = []
             # it matters that the data is in sequential entry order
-            #ekeys = sorted(self.dct['entries'].keys())
+            # ekeys = sorted(self.dct['entries'].keys())
             ekeys = sorted(list(self.dct['entries']))
             for ekey in ekeys:
                 entry_dct = self.dct['entries'][ekey]
@@ -1128,7 +1149,7 @@ class ContactSheet(QtWidgets.QWidget):
         f_removed = []
         while not self.f_queue.empty():
             resp = self.f_queue.get()
-            #if ('added' in resp.keys()):
+            # if ('added' in resp.keys()):
             if ('added' in list(resp)):
                 f_added = resp['added']
                 call_task_done = True
@@ -1218,7 +1239,7 @@ class ContactSheet(QtWidgets.QWidget):
             return (None, None)
 
         # wdg_com = dct_get(ado_obj, ADO_CFG_WDG_COM)
-        #ekey = entry_dct.keys()[0]
+        # ekey = entry_dct.keys()[0]
         ekey = list(entry_dct)[0]
         wdg_com = self.data_io.get_wdg_com_from_entry(entry_dct, ekey)
         sp_db = get_first_sp_db_from_wdg_com(wdg_com)
@@ -1249,13 +1270,13 @@ class ContactSheet(QtWidgets.QWidget):
             _logger.info('Problem with file [%s]' % fname)
             return (sp_db, data)
 
-        #num_entries = len(entry_dct.keys())
+        # num_entries = len(entry_dct.keys())
         num_entries = len(list(entry_dct))
         sp_db_lst = []
         data_lst = []
 
         if (num_entries > 1):
-            #for ekey in entry_dct.keys():
+            # for ekey in entry_dct.keys():
             for ekey in list(entry_dct):
                 wdg_com = self.data_io.get_wdg_com_from_entry(entry_dct, ekey)
                 _sp_db = get_first_sp_db_from_wdg_com(wdg_com)
@@ -1269,28 +1290,31 @@ class ContactSheet(QtWidgets.QWidget):
             sp_db = get_first_sp_db_from_wdg_com(wdg_com)
             _scan_type = dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE)
             data = self.get_data_from_entry(entry_dct, ekey, stack_dir=stack_dir, fname=fname, stype=_scan_type)
+            if(sp_db['EV_NPOINTS'] > 1):
+                sp_db_lst.append(sp_db)
+                data_lst.append(data)
 
         try:
             if (len(data_lst) > 0):
                 stack_dir = 1
-                #dl = len(data_lst[0])
+                # dl = len(data_lst[0])
                 dl_shape = data_lst[0].shape
-                if(data_lst[0].ndim == 1):
+                if (data_lst[0].ndim == 1):
                     data = np.zeros((num_entries, dl_shape[0]))
-                elif(data_lst[0].ndim == 2):
+                elif (data_lst[0].ndim == 2):
                     data = np.zeros((num_entries, dl_shape[0], dl_shape[1]))
                 elif (data_lst[0].ndim == 3):
                     data = np.zeros((num_entries, dl_shape[0], dl_shape[1], dl_shape[2]))
 
-                #data = np.zeros((num_entries, dl_shape[0], dl_shape[1]))
+                # data = np.zeros((num_entries, dl_shape[0], dl_shape[1]))
                 for i in range(num_entries):
                     data[i] = data_lst[i]
                 sp_db = sp_db_lst[0]
 
         except:
             _logger.error('get_sp_db_and_data: problem with [%s]' % fname)
-        if(stack_dir):
-            return(sp_db_lst, data_lst)
+        if (stack_dir):
+            return (sp_db_lst, data_lst)
         else:
             return (sp_db, data)
 
@@ -1336,8 +1360,8 @@ class ContactSheet(QtWidgets.QWidget):
             return
 
         # ekey = entry_dct.keys()[0]
-
-        self.ensure_instance_of_data_io_class(fname)
+        if(self.data_io is None):
+            self.ensure_instance_of_data_io_class(fname)
         nx_datas = self.data_io.get_NXdatas_from_entry(entry_dct, ekey)
         # currently only support 1 counter
         # counter_name = nx_datas.keys()[0]
@@ -1430,8 +1454,8 @@ class ContactSheet(QtWidgets.QWidget):
 
 
         """
-        if(sp_db is None):
-            return(None, None)
+        if (sp_db is None):
+            return (None, None)
         focus_scans = [scan_types.OSA_FOCUS, scan_types.SAMPLE_FOCUS]
         spectra_scans = [scan_types.SAMPLE_POINT_SPECTRA, scan_types.SAMPLE_LINE_SPECTRA]
         stack_scans = [scan_types.SAMPLE_IMAGE_STACK]
@@ -1458,7 +1482,7 @@ class ContactSheet(QtWidgets.QWidget):
             e_pnt = sp_db[EV_ROIS][ev_idx][SETPOINTS][ev_pnt]
             e_npts = 0
             for e in sp_db['EV_ROIS']:
-                if(len(e[SETPOINTS])>1):
+                if (len(e[SETPOINTS]) > 1):
                     e_npts += len(e[SETPOINTS])
                 else:
                     e_npts = 1
@@ -1473,6 +1497,8 @@ class ContactSheet(QtWidgets.QWidget):
                 height, width = data.shape
 
             # s = 'File: %s  \n' %  (fprefix + '.hdf5')
+            #if (fpath.find('12162') > -1):
+            #    print()
             dct = {}
             dct['file'] = fpath
             dct['scan_type_num'] = dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE)
@@ -1487,14 +1513,22 @@ class ContactSheet(QtWidgets.QWidget):
             dct['offset'] = sp_db[EV_ROIS][ev_idx][POL_ROIS][pol_idx][OFF]
             dct['angle'] = sp_db[EV_ROIS][ev_idx][POL_ROIS][pol_idx][ANGLE]
             dct['dwell'] = sp_db[EV_ROIS][ev_idx][DWELL]
-            dct['npoints'] = (width, height)
+            # dct['npoints'] = (width, height)
+            dct['npoints'] = (dct_get(sp_db, SPDB_XNPOINTS), dct_get(sp_db, SPDB_YNPOINTS))
+            if (width != dct_get(sp_db, SPDB_XNPOINTS)):
+                _logger.debug('[%s] The data doesnt match the scan params for X npoints' % fpath)
+                width = dct_get(sp_db, SPDB_XNPOINTS)
 
-            if(type(sp_db[SPDB_ACTIVE_DATA_OBJECT][ADO_END_TIME]) is bytes):
+            if (height != dct_get(sp_db, SPDB_YNPOINTS)):
+                _logger.debug('[%s] The data doesnt match the scan params for Y npoints' % fpath)
+                height = dct_get(sp_db, SPDB_YNPOINTS)
+
+            if (type(sp_db[SPDB_ACTIVE_DATA_OBJECT][ADO_END_TIME]) is bytes):
                 date_str = sp_db[SPDB_ACTIVE_DATA_OBJECT][ADO_END_TIME].decode("utf-8")
             else:
                 date_str = sp_db[SPDB_ACTIVE_DATA_OBJECT][ADO_END_TIME]
 
-            #dt, tm = self.extract_date_time_from_nx_time(sp_db[SPDB_ACTIVE_DATA_OBJECT][ADO_END_TIME])
+            # dt, tm = self.extract_date_time_from_nx_time(sp_db[SPDB_ACTIVE_DATA_OBJECT][ADO_END_TIME])
             dt, tm = self.extract_date_time_from_nx_time(date_str)
             dct['date'] = dt
             dct['end_time'] = tm
@@ -1541,7 +1575,7 @@ class ContactSheet(QtWidgets.QWidget):
                 dct['xpositioner'] = dct_get(sp_db, SPDB_XPOSITIONER)
                 dct['ypositioner'] = dct_get(sp_db, SPDB_YPOSITIONER)
 
-            #if ('GONI' in sp_db.keys()):
+            # if ('GONI' in sp_db.keys()):
             if ('GONI' in list(sp_db)):
                 if (dct_get(sp_db, SPDB_GT) is None):
                     pass
@@ -1555,26 +1589,29 @@ class ContactSheet(QtWidgets.QWidget):
             # construct the tooltip string using html formatting for bold etc
             s = '%s' % self.format_info_text('File:', dct['file'], start_preformat=True)
             s += '%s %s' % (
-            self.format_info_text('Date:', dct['date'], newline=False), self.format_info_text('Time:', dct['end_time']))
+                self.format_info_text('Date:', dct['date'], newline=False),
+                self.format_info_text('Time:', dct['end_time']))
 
-            if(_scan_type is scan_types.GENERIC_SCAN):
-                #add the positioner name
-                #s += '%s' % self.format_info_text('Scan Type:', dct['scan_type'] + ' %s' % dct_get(sp_db, SPDB_XPOSITIONER))
-                s += '%s' % self.format_info_text('Scan Type:',dct['scan_type'] , newline=False)
-                s += ' %s' % self.format_info_text(dct_get(sp_db, SPDB_XPOSITIONER),'')
+            if (_scan_type is scan_types.GENERIC_SCAN):
+                # add the positioner name
+                # s += '%s' % self.format_info_text('Scan Type:', dct['scan_type'] + ' %s' % dct_get(sp_db, SPDB_XPOSITIONER))
+                s += '%s' % self.format_info_text('Scan Type:', dct['scan_type'], newline=False)
+                s += ' %s' % self.format_info_text(dct_get(sp_db, SPDB_XPOSITIONER), '')
 
             else:
                 s += '%s' % self.format_info_text('Scan Type:', dct['scan_type'])
 
-            #s += '%s' % self.format_info_text('Scan Type:', dct['scan_type'])
-            #if (is_folder and ( (_scan_type in spectra_scans) or (_scan_type in stack_scans)) ):
+            # s += '%s' % self.format_info_text('Scan Type:', dct['scan_type'])
+            # if (is_folder and ( (_scan_type in spectra_scans) or (_scan_type in stack_scans)) ):
             if ((_scan_type in spectra_scans) or (_scan_type in stack_scans)):
-                #s += '%s' % self.format_info_text('Energy:', '[%.2f ---> %.2f] eV' % (dct['estart'], dct['estop']))
-                #s += '%s' % self.format_info_text('Num Energy Points:', '%d' % dct['e_npnts'])
-                #s += '%s' % self.format_info_text('Energy:', '[%.2f ---> %.2f] eV   %s' % (dct['estart'], dct['estop'],
+                # s += '%s' % self.format_info_text('Energy:', '[%.2f ---> %.2f] eV' % (dct['estart'], dct['estop']))
+                # s += '%s' % self.format_info_text('Num Energy Points:', '%d' % dct['e_npnts'])
+                # s += '%s' % self.format_info_text('Energy:', '[%.2f ---> %.2f] eV   %s' % (dct['estart'], dct['estop'],
                 #                                    self.format_info_text('Num Energy Points:', '%d' % dct['e_npnts'])))
-                s += '%s %s' %(self.format_info_text('Energy:', '[%.2f ---> %.2f] eV \t' % (dct['estart'], dct['estop']), newline=False),
-                                                     self.format_info_text('Num Energy Points:', '%d' % dct['e_npnts']))
+                s += '%s %s' % (
+                self.format_info_text('Energy:', '[%.2f ---> %.2f] eV \t' % (dct['estart'], dct['estop']),
+                                      newline=False),
+                self.format_info_text('Num Energy Points:', '%d' % dct['e_npnts']))
             else:
                 s += '%s' % self.format_info_text('Energy:', '%.2f eV' % (e_pnt))
 
@@ -1589,10 +1626,12 @@ class ContactSheet(QtWidgets.QWidget):
             s += '%s' % self.format_info_text('Center:', '(%.2f, %.2f) um' % dct['center'])
             s += '%s' % self.format_info_text('Range:', '(%.2f, %.2f) um' % dct['range'])
 
-            #if ('goni_theta_cntr' in dct.keys()):
+            # if (_scan_type in focus_scans):
+            #     s += '%s' % self.format_info_text('ZPZ Range:', '(%.2f, %.2f) um' % dct['range'])
+            # if ('goni_theta_cntr' in dct.keys()):
             if ('goni_theta_cntr' in list(dct)):
                 s += '%s' % self.format_info_text('StepSize:', '(%.3f, %.3f) um' % dct['step'])
-                #if ('goni_z_cntr' in dct.keys()):
+                # if ('goni_z_cntr' in dct.keys()):
                 if ('goni_z_cntr' in list(dct)):
                     s += '%s' % self.format_info_text('Goni Z:', '%.3f um' % dct['goni_z_cntr'])
                 s += '%s' % self.format_info_text('Goni Theta:', '%.2f deg' % (dct['goni_theta_cntr']), newline=False,
@@ -1659,11 +1698,11 @@ class ContactSheet(QtWidgets.QWidget):
         # check if directory contains a stack
         if (self.is_stack_dir(dir)):
             self.set_data_dir(dir, is_stack_dir=True)
-            #data_fnames = dirlist(dir, self.data_file_extension, remove_suffix=False)
+            # data_fnames = dirlist(dir, self.data_file_extension, remove_suffix=False)
             dirs, data_fnames = dirlist_withdirs(dir, self.data_file_extension)
             fname = os.path.join(dir, data_fnames[0])
             sp_db, data = self.get_stack_data(fname)
-            #self.load_stack_into_view(data_fnames[0])
+            # self.load_stack_into_view(data_fnames[0])
             self.load_entries_into_view(data_fnames[0])
 
             self.fsys_mon.set_data_dir(self.data_dir)
@@ -1680,7 +1719,7 @@ class ContactSheet(QtWidgets.QWidget):
         # QtWidgets.QApplication.setOverrideCursor(QtGui.QCursor(prev_cursor))
         # QtWidgets.QApplication.processEvents()
 
-    #def on_dir_changed(self, (f_added, f_removed)):
+    # def on_dir_changed(self, (f_added, f_removed)):
     def on_dir_changed(self, f_added_removed):
         """
         on_dir_changed(): this handler needs to discern between files that are not finished writing and those that are ready to be read
@@ -1708,8 +1747,8 @@ class ContactSheet(QtWidgets.QWidget):
 
                 fstr = os.path.join(self.data_dir, fname)
                 sp_db, data = self.get_sp_db_and_data(fstr)
-                #we dont support stack or multi spatials yet so just load it as a single
-                if(type(sp_db) is list):
+                # we dont support stack or multi spatials yet so just load it as a single
+                if (type(sp_db) is list):
                     sp_db = sp_db[0]
                     data = data[0]
 
@@ -1762,7 +1801,6 @@ class ContactSheet(QtWidgets.QWidget):
         progbar.setStyleSheet(ss)
         return (progbar)
 
-
     def load_image_items(self, is_stack_dir=False, hide=False):
         # assert isinstance(xdata, (tuple, list)) and len(xdata) == 2
         # assert isinstance(ydata, (tuple, list)) and len(ydata) == 2
@@ -1779,7 +1817,7 @@ class ContactSheet(QtWidgets.QWidget):
             return
 
         dirs, data_fnames = dirlist_withdirs(self.data_dir, '.hdf5')
-        #data_fnames = dirlist(self.data_dir, self.data_file_extension, remove_suffix=False)
+        # data_fnames = dirlist(self.data_dir, self.data_file_extension, remove_suffix=False)
         thumb_fnames = sorted(data_fnames)
 
         num_fnames = len(thumb_fnames)
@@ -1788,7 +1826,8 @@ class ContactSheet(QtWidgets.QWidget):
         if ((num_fnames > 10) and not hide):
             self.progbar.show()
         # ref: https://www.twobitarcade.net/article/multithreading-pyqt-applications-with-qthreadpool/
-        worker = Worker(self.reload_view, self.data_dir, is_stack_dir)  # Any other args, kwargs are passed to the run function
+        worker = Worker(self.reload_view, self.data_dir,
+                        is_stack_dir)  # Any other args, kwargs are passed to the run function
         worker.signals.result.connect(self.load_thumbs)
 
         worker.signals.progress.connect(self.progress_fn)
@@ -1803,7 +1842,7 @@ class ContactSheet(QtWidgets.QWidget):
         self.progbar.setValue(n)
 
     def thread_complete(self):
-        #print("THREAD COMPLETE!")
+        # print("THREAD COMPLETE!")
         self.progbar.hide()
 
     def hide_progbar(self):
@@ -1838,7 +1877,7 @@ class ContactSheet(QtWidgets.QWidget):
         if (self.get_drag_enabled()):
             itemData = QtCore.QByteArray()
             dataStream = QtCore.QDataStream(itemData, QtCore.QIODevice.WriteOnly)
-            #dataStream << QtCore.QByteArray(obj.info_jstr) << (event.pos() - obj.rect().topLeft())
+            # dataStream << QtCore.QByteArray(obj.info_jstr) << (event.pos() - obj.rect().topLeft())
             dataStream << QtCore.QByteArray(bytearray(obj.info_jstr.encode())) << (event.pos() - obj.rect().topLeft())
 
             # dataStream << QtCore.QByteArray(obj.data.tobytes()) << QtCore.QByteArray(obj.info_str) << (event.pos() - obj.rect().topLeft())
@@ -1851,7 +1890,8 @@ class ContactSheet(QtWidgets.QWidget):
             drag.setMimeData(mimeData)
             pos = event.pos() - obj.rect().topLeft()
             drag.setHotSpot(QtCore.QPoint(pos.x(), pos.y()))
-            drag.setPixmap(obj.pic)
+            if (obj.pic is not None):
+                drag.setPixmap(obj.pic)
 
             if drag.exec_(QtCore.Qt.MoveAction | QtCore.Qt.CopyAction, QtCore.Qt.CopyAction) == QtCore.Qt.MoveAction:
                 pass
@@ -1884,14 +1924,16 @@ class ContactSheet(QtWidgets.QWidget):
         :returns: None
 
         """
-        if(fname.find('..') > -1):
-            thumb_widget = ThumbnailWidget(os.path.join(data_dir, '..'), None, data, '..', info_dct, scan_type=None, is_folder=is_folder,
+        if (fname.find('..') > -1):
+            thumb_widget = ThumbnailWidget(os.path.join(data_dir, '..'), None, data, '..', info_dct, scan_type=None,
+                                           is_folder=is_folder,
                                            parent=None)
 
         fstr = os.path.join(data_dir, fname)
-        if(is_folder):
+        if (is_folder):
             fname = fname.split('.')[0]
-            thumb_widget = ThumbnailWidget(fstr, sp_db, data, title, info_dct, scan_type=stype, is_folder=is_folder, parent=None)
+            thumb_widget = ThumbnailWidget(fstr, sp_db, data, title, info_dct, scan_type=stype, is_folder=is_folder,
+                                           parent=None)
 
         elif (stype in spectra_type_scans):
             from cls.data_io.stxm_data_io import STXMDataIo
@@ -1906,7 +1948,7 @@ class ContactSheet(QtWidgets.QWidget):
         if (thumb_widget.is_valid()):
 
             if (is_folder):
-                #thumb_widget.doubleClicked.connect(self.do_select)
+                # thumb_widget.doubleClicked.connect(self.do_select)
                 thumb_widget.dbl_clicked.connect(self.change_dir)
 
             else:
@@ -1940,12 +1982,12 @@ class ContactSheet(QtWidgets.QWidget):
         if (graphics is None):
             graphics = self.images_graphics_wdg
 
-        if(data_dir.find('..') > -1):
+        if (data_dir.find('..') > -1):
             # create a directory widget to go UP a directory
             thumb_widget = self.make_updir_thumbwidget(self.data_dir)
         else:
             thumb_widget = self.make_thumbWidget(data_dir, fname, info_dct, title=title, sp_db=sp_db, data=data,
-                                             stype=dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE))
+                                                 stype=dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE))
         if (thumb_widget):
             graphics.gridlayout.addItem(thumb_widget, row, column, 1, 1)
             graphics.gridlayout.setColumnSpacing(column, 20)
@@ -2009,12 +2051,11 @@ class ContactSheet(QtWidgets.QWidget):
         if (view is None):
             view = self.images_view
 
-        if(fname.find('..') > -1):
-            #is an updir widget
+        if (fname.find('..') > -1):
+            # is an updir widget
             status = self.add_thumb_widget(fname, fname, {}, row, col, title='..', sp_db=sp_db, data=data,
                                            graphics=graphics)
-            return(status)
-
+            return (status)
 
         if (data is None):
             return (False)
@@ -2062,10 +2103,9 @@ class ContactSheet(QtWidgets.QWidget):
         else:
             ttl = title + '_%d' % image_num
 
-
         status = self.add_thumb_widget(self.data_dir, fname, info_dct, row, col, title=ttl, sp_db=sp_db, data=data,
                                        graphics=graphics)
-        #print('add_to_view: add_thumb_widget [%s] at rowcol (%d, %d)' % (ttl, row, col))
+        # print('add_to_view: add_thumb_widget [%s] at rowcol (%d, %d)' % (ttl, row, col))
 
         if (update_scene and status):
             # self.update_scenes(graphics, scene, view)
@@ -2089,7 +2129,7 @@ class ContactSheet(QtWidgets.QWidget):
         :param view:
         :return:
         '''
-        num_rows = grphcs_wdg.gridlayout.rowCount() + 1 #make sure there is always enough room at the bottom
+        num_rows = grphcs_wdg.gridlayout.rowCount() + 1  # make sure there is always enough room at the bottom
         # qr = QtCore.QRectF(0.0, 0.0, 290.0, num_rows * 170.0)
         qr = QtCore.QRectF(0.0, 0.0, SCENE_WIDTH, num_rows * THUMB_HEIGHT)
         # print 'num_rows = %d, ht = %d' % (num_rows, num_rows * 170.0)
@@ -2116,9 +2156,9 @@ class ContactSheet(QtWidgets.QWidget):
         self.clear_grid_layout(self.images_graphics_wdg, self.images_view, self.images_scene)
         self.clear_grid_layout(self.spectra_graphics_wdg, self.spectra_view, self.spectra_scene)
 
-        #num_images, rows, cols = data.shape
+        # num_images, rows, cols = data.shape
         num_images, rows, cols = data.shape
-        num_images += 1 #because we are adding an updir thumbnailwidget
+        num_images += 1  # because we are adding an updir thumbnailwidget
 
         ROWS = math.ceil(num_images / MAX_THUMB_COLUMNS)
         # rowcol = itertools.product(range(ROWS),range(MAX_THUMB_COLUMNS))
@@ -2127,7 +2167,8 @@ class ContactSheet(QtWidgets.QWidget):
         ev_idx = 0
         i = 0
         row, column = rowcol[rowcol_iter]
-        status = self.add_to_view(os.path.join(self.data_dir,'..'), None, None, image_num=0, ev_idx=ev_idx, ev_pnt=0.0, pol_idx=0, pol_pnt=0, row=row, col=column, update_scene=False)
+        status = self.add_to_view(os.path.join(self.data_dir, '..'), None, None, image_num=0, ev_idx=ev_idx, ev_pnt=0.0,
+                                  pol_idx=0, pol_pnt=0, row=row, col=column, update_scene=False)
         rowcol_iter += 1
         for ev_roi in sp_db[EV_ROIS]:
             # ev_idx = 0
@@ -2143,7 +2184,7 @@ class ContactSheet(QtWidgets.QWidget):
                 for p in range(polnpnts):
                     row, column = rowcol[rowcol_iter]
                     ev_pnt, pol_idx = ev_pol_idxs[ev_pol_iter]
-                    #print('load_stack_into_view: calling add_to_view for next_iter=%d, i=%d at rowcol (%d, %d)' % (rowcol_iter, i, row, column))
+                    # print('load_stack_into_view: calling add_to_view for next_iter=%d, i=%d at rowcol (%d, %d)' % (rowcol_iter, i, row, column))
                     ev_pol_iter += 1
                     rowcol_iter += 1
                     status = self.add_to_view(fname, sp_db, data[i], image_num=i, ev_idx=ev_idx, ev_pnt=ev_pnt,
@@ -2173,10 +2214,10 @@ class ContactSheet(QtWidgets.QWidget):
         self.clear_grid_layout(self.images_graphics_wdg, self.images_view, self.images_scene)
         self.clear_grid_layout(self.spectra_graphics_wdg, self.spectra_view, self.spectra_scene)
 
-        #num_images, rows, cols = data.shape
+        # num_images, rows, cols = data.shape
         num_ev, rows, cols = data_lst[0].shape
         num_images = len(sp_db_lst) * num_ev
-        num_images += 1 #because we are adding an updir thumbnailwidget
+        num_images += 1  # because we are adding an updir thumbnailwidget
 
         ROWS = math.ceil(num_images / MAX_THUMB_COLUMNS)
         # rowcol = itertools.product(range(ROWS),range(MAX_THUMB_COLUMNS))
@@ -2185,7 +2226,8 @@ class ContactSheet(QtWidgets.QWidget):
         ev_idx = 0
         i = 0
         row, column = rowcol[rowcol_iter]
-        status = self.add_to_view(os.path.join(self.data_dir,'..'), None, None, image_num=0, ev_idx=ev_idx, ev_pnt=0.0, pol_idx=0, pol_pnt=0, row=row, col=column, update_scene=False)
+        status = self.add_to_view(os.path.join(self.data_dir, '..'), None, None, image_num=0, ev_idx=ev_idx, ev_pnt=0.0,
+                                  pol_idx=0, pol_pnt=0, row=row, col=column, update_scene=False)
         rowcol_iter += 1
         sp_id_idx = 0
         for sp_db in sp_db_lst:
@@ -2203,12 +2245,14 @@ class ContactSheet(QtWidgets.QWidget):
                     for p in range(polnpnts):
                         row, column = rowcol[rowcol_iter]
                         ev_pnt, pol_idx = ev_pol_idxs[ev_pol_iter]
-                        #print('load_stack_into_view: calling add_to_view for next_iter=%d, i=%d at rowcol (%d, %d)' % (rowcol_iter, i, row, column))
+                        # print('load_stack_into_view: calling add_to_view for next_iter=%d, i=%d at rowcol (%d, %d)' % (rowcol_iter, i, row, column))
                         ev_pol_iter += 1
                         rowcol_iter += 1
-                        if(i < num_ev):
-                            status = self.add_to_view(fname, sp_db, data_lst[sp_id_idx][i], image_num=i, ev_idx=ev_idx, ev_pnt=ev_pnt,
-                                                      pol_idx=pol_idx, pol_pnt=0, row=row, col=column, update_scene=False)
+                        if (i < num_ev):
+                            status = self.add_to_view(fname, sp_db, data_lst[sp_id_idx][i], image_num=i, ev_idx=ev_idx,
+                                                      ev_pnt=ev_pnt,
+                                                      pol_idx=pol_idx, pol_pnt=0, row=row, col=column,
+                                                      update_scene=False)
 
                         if (not status):
                             continue
@@ -2245,7 +2289,7 @@ class ContactSheet(QtWidgets.QWidget):
     def make_updir_thumbwidget(self, data_dir):
         info_dct = {'info_str': 'up a directory', 'info_jstr': 'info_jstr'}
         th_wdg = self.make_thumbWidget(data_dir, '..', info_dct, sp_db={}, data=None, stype=None, is_folder=True)
-        return(th_wdg)
+        return (th_wdg)
 
     @cached(cache)  # 3 - it's time to decorate the method to use our cache system!
     def reload_view(self, datadir, is_stack_dir=False, progress_callback=None):
@@ -2274,20 +2318,19 @@ class ContactSheet(QtWidgets.QWidget):
             return
 
         stack_dirs, data_fnames = dirlist_withdirs(self.data_dir, self.data_file_extension)
-        #data_fnames = dirlist(self.data_dir, self.data_file_extension, remove_suffix=False)
+        # data_fnames = dirlist(self.data_dir, self.data_file_extension, remove_suffix=False)
         # only look at files that have an image and data file, then turn to list, then sort ascending
         # thumb_fnames = sorted( list(set(image_fnames) & set(data_fnames)) )
-        if(len(stack_dirs) > 0):
+        if (len(stack_dirs) > 0):
             data_fnames = data_fnames + stack_dirs
 
         thumb_fnames = sorted(data_fnames)
-        #dirs = sorted(stack_dirs)
+        # dirs = sorted(stack_dirs)
         image_thumb_lst = []
         spectra_thumb_lst = []
         iidx = 0
 
-
-        #create a directory widget to go UP a directory
+        # create a directory widget to go UP a directory
         th_wdg = self.make_updir_thumbwidget(self.data_dir)
         image_thumb_lst.append(th_wdg)
 
@@ -2296,6 +2339,7 @@ class ContactSheet(QtWidgets.QWidget):
         elif (len(thumb_fnames) == 1):
             # there is only a single file in directory
             fstr = os.path.join(self.data_dir, thumb_fnames[0])
+            #print(fstr)
             sp_db, data = self.get_sp_db_and_data(fstr)
             is_spec = False
             if ((sp_db is not None) and (data is not None)):
@@ -2333,17 +2377,27 @@ class ContactSheet(QtWidgets.QWidget):
                     break
                 is_folder = False
                 fstr = os.path.join(self.data_dir, thumb_fnames[i])
+                #print(fstr)
                 if (os.path.isdir(fstr)):
                     # this is likely a stack directory
                     data_dir, fprefix, fsuffix = get_file_path_as_parts(fstr)
                     _fname = os.path.join(fstr, fprefix + self.data_file_extension)
-                    sp_db, data = self.get_sp_db_and_data(_fname)
+                    #dont say this is a stack dir because we are not creating all of the thumbnails for the stack here
+                    #that is done elsewhere, so just return the first sp_db and data
+                    sp_db, data = self.get_sp_db_and_data(_fname, stack_dir=False)
+
                     if ((sp_db is None) or (data is None)):
                         _logger.error('reload_view: problem loading [%s]' % fstr)
                         continue
-                    info_str, info_jstr = self.build_image_params(_fname, sp_db, data, ev_idx=0, pol_idx=0, is_folder=True)
+                    #there may have been multi entries in the file, only support 1 for now
+                    if(type(sp_db) is list):
+                        sp_db = sp_db[0]
+                        data = data[0]
+                    info_str, info_jstr = self.build_image_params(_fname, sp_db, data, ev_idx=0, pol_idx=0,
+                                                                  is_folder=True)
                     info_dct = {'info_str': info_str, 'info_jstr': info_jstr}
-                    th_wdg = self.make_thumbWidget(self.data_dir, thumb_fnames[i], info_dct, sp_db={}, data=None, stype=None, is_folder=True)
+                    th_wdg = self.make_thumbWidget(self.data_dir, thumb_fnames[i], info_dct, sp_db={}, data=None,
+                                                   stype=dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE), is_folder=True)
                     if ((not th_wdg) or (not info_str)):
                         continue
                     image_thumb_lst.append(th_wdg)
@@ -2351,19 +2405,19 @@ class ContactSheet(QtWidgets.QWidget):
                     if (progress_callback is not None):
                         progress_callback.emit((float(iidx) / float(len(thumb_fnames))) * 100.0)
                 else:
-                    #its files
+                    # its files
                     sp_db, data = self.get_sp_db_and_data(fstr)
-                    if((sp_db is None) or (data is None)):
+                    if ((sp_db is None) or (data is None)):
                         _logger.error('reload_view: problem loading [%s]' % fstr)
                         continue
-                    if(type(sp_db) is list):
-                        #_scan_type = dct_get(sp_db[0], SPDB_SCAN_PLUGIN_TYPE)
+                    if (type(sp_db) is list):
+                        # _scan_type = dct_get(sp_db[0], SPDB_SCAN_PLUGIN_TYPE)
                         sp_db = sp_db[0]
                         data = data[0]
                     # else:
                     #     _scan_type = dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE)
 
-                    #if (_scan_type not in spectra_type_scans):
+                    # if (_scan_type not in spectra_type_scans):
                     if (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in spectra_type_scans):
                         fstr = os.path.join(self.data_dir, thumb_fnames[i])
                         info_str, info_jstr = self.build_image_params(fstr, sp_db, data, ev_idx=0, pol_idx=0)
@@ -2625,8 +2679,8 @@ class ContactSheet(QtWidgets.QWidget):
             data = dct['data']
             sp_db = dct['sp_db']
             title = dct['title']
-            if(dct['scan_type'] is scan_types.SAMPLE_LINE_SPECTRA):
-                #sample line spec data may have different ev region resolutions so its special
+            if (dct['scan_type'] is scan_types.SAMPLE_LINE_SPECTRA):
+                # sample line spec data may have different ev region resolutions so its special
                 wdg_com = make_base_wdg_com()
                 dct_put(wdg_com, WDGCOM_CMND, widget_com_cmnd_types.LOAD_SCAN)
                 dct_put(wdg_com, SPDB_SPATIAL_ROIS, {sp_db[ID_VAL]: sp_db})
@@ -2684,7 +2738,7 @@ if __name__ == "__main__":
     dir = r'S:\STXM-data\Cryo-STXM\2018\guest\1214'
     dir = r'S:\STXM-data\Cryo-STXM\2019\guest\test\0215'
     dir = r'C:\controls\stxm-data\guest\0515'
-    dir = r'C:\controls\stxm-data\guest\1115'
+    dir = r'C:\controls\stxm-data\guest\0110'
     # dir = r'/home/bergr/git/testing/py27_qt5/py2.7/cls/data/guest'
     # main = ContactSheet(r'S:\STXM-data\Cryo-STXM\2016\guest\test')
     # main = ContactSheet(dir, BioxasDataIo)

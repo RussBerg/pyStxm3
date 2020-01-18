@@ -1090,5 +1090,8 @@ if __name__ == "__main__":
     #nxstxm_validate(sys.argv[1:])
     #nxstxm_validate('-d C:\controls\py2.7\Beamlines\sm\data\guest\May19'.split())
     #nxstxm_validate(r'-f C:\\controls\\py2.7\\Beamlines\\sm\\data\\guest\\testdir\\C160810039.hdf5'.split())
-    nxstxm_validate(r'-f C:\Continuum\Anaconda3\Lib\site-packages\suitcase\nxstxm\tests\test_results\CTEST000.hdf5'.split())
+    #nxstxm_validate(r'-f C:\Continuum\Anaconda3\Lib\site-packages\suitcase\nxstxm\tests\test_results\CTEST000.hdf5'.split())
     #nxstxm_validate('-d C:\controls\py2.7\Beamlines\sm\data\SLS_pixelator_files'.split())
+    nxstxm_validate(r'-f C:\controls\stxm-data\guest\0110\C200110013.hdf5'.split())
+
+

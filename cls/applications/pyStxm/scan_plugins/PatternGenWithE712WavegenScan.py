@@ -272,12 +272,18 @@ class PatternGenWithE712WavegenScanClass(BaseScan):
                 #     #this data will be used to add to previously created entries
                 #     #yield from self.make_single_image_e712_plan(dets, gate, md=md, do_baseline=False)
                 #     yield from self.make_single_pxp_image_plan(dets, gate, md=md, do_baseline=False)
-                yield from self.make_single_pxp_image_plan(dets, gate, md=md, do_baseline=False)
+                #make sure there is a single baseline reading of devices
+                if(self._current_img_idx is 0):
+                    do_baseline = True
+                else:
+                    do_baseline = False
+                yield from self.make_single_pxp_image_plan(dets, gate, md=md, do_baseline=do_baseline)
                 #entry_num += 1
                 #idx += 1
                 self._current_img_idx += 1
                 #prev_entry_nm = img_dct['entry']
                 entrys_lst.append(img_dct['entry'])
+
 
             print('make_pattern_generator_plan Leaving')
 

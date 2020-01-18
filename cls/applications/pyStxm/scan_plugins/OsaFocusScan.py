@@ -16,7 +16,7 @@ from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
 from cls.scanning.BaseScan import BaseScan
 from cls.utils.roi_dict_defs import *
 
-from cls.types.stxmTypes import scan_sub_types
+from cls.types.stxmTypes import scan_sub_types, scan_types
 from cls.utils.dict_utils import dct_get, dct_put
 from cls.utils.log import get_module_logger
 from cls.utils.json_utils import dict_to_json
@@ -60,6 +60,7 @@ class OsaFocusScanClass(BaseScan):
 
         # need to handle this better for multiple detectors, in the future todo
         dets[0].set_dwell(self.dwell)
+        dets[0].set_num_points(1)
 
     def make_pxp_scan_plan(self, dets, gate, md=None, bi_dir=False):
         dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
@@ -70,8 +71,8 @@ class OsaFocusScanClass(BaseScan):
                 self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
 
         @bpp.baseline_decorator(dev_list)
-        @bpp.stage_decorator(dets)
-        # @bpp.run_decorator(md={'entry_name': 'entry0', 'scan_type': scan_types.DETECTOR_IMAGE})
+        #@bpp.stage_decorator(dets)
+        #@bpp.run_decorator(md={'entry_name': 'entry0', 'scan_type': scan_types.OSA_FOCUS})
         def do_scan():
             mtr_x = self.main_obj.device(DNM_OSA_X)
             mtr_y = self.main_obj.device(DNM_OSA_Y)

@@ -71,7 +71,7 @@ def get_docdata_from_databroker(uids, as_dict=False):
     dct = {}
     db = Broker.named('mongo_databroker')
     for uid in uids:
-        print('starting basic export [%s]' % uid)
+        print('retrieving data from databroker for [%s]' % uid)
         header = db[uid]
         md = json.loads(header['start']['metadata'])
         _img_idx_map = json.loads(md['img_idx_map'])
@@ -79,12 +79,12 @@ def get_docdata_from_databroker(uids, as_dict=False):
         primary_docs = header.documents(fill=True)
         dct[uid] = list(primary_docs)
         scan_type_str = get_scan_type_str(md['scan_type'])
-        print('Saving [%s]' % scan_type_str)
 
     docs = json.dumps(dct, sort_keys=True, indent=4, cls=NumpyAwareJSONEncoder)
     if(as_dict):
         return(scan_type_str, dct)
     else:
+        print('Saving [%s]' % scan_type_str)
         return(scan_type_str, docs)
 
 def save_doc_data(fpath, docs):
@@ -143,8 +143,10 @@ if __name__ == '__main__':
     #uids = ['eba21360-1f53-485b-927e-a8257d410373', '2ba10d20-69bd-4c1e-9796-037204b30db7', 'f784a26a-5aeb-472c-9fcf-939b3b613639', '4b3ff219-1a54-4df2-9d6f-7fa004bae993', 'c8c86628-4fe3-4c40-95f4-0e092be76975', 'f0df13a6-4dd7-46bd-b59b-fb13072166f3', 'f4e10859-e82b-4ee5-a17a-f80256ac9fd1', '02c4c7be-b944-49b7-8e5c-2b4b976b610c', 'c1b88491-de32-458d-bc47-bd571758416b', 'a32087f9-195e-4280-b725-8a6092ff7700']
 
     #1520 x 160
-    uids = ['37e290a0-b8c8-4078-b033-7bb760b6b933']
+    #uids = ['37e290a0-b8c8-4078-b033-7bb760b6b933']
     #80 x 160
     #uids = ['ac4d47ad-c473-4944-99db-0178fed66934']
+
+    uids = ['203e8664-ef19-496f-b214-07226037b6dc']
     scan_type_str, docs = get_docdata_from_databroker(uids, as_dict=True)
     print(docs)

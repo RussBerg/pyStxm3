@@ -323,6 +323,7 @@ R        values will be delivered here and,  if required, the stepsizes will be 
         :returns: None
      
         """
-        wdg_com = self.focus_scan_update_data()
+        #force the subtype to be a PXP
+        wdg_com = self.focus_scan_update_data(force_pxp=True)
         self.roi_changed.emit(wdg_com)
         return(wdg_com)

@@ -27,12 +27,10 @@ import atexit
 import logging
 import numpy as np
 import simplejson as json
+import webbrowser
 
 from PyQt5 import QtCore, QtGui, uic, QtWidgets
 
-
-#from guiqwt.config import _
-#from threading import Lock
 import copy
 
 from yapsy.PluginManager import PluginManager
@@ -99,11 +97,28 @@ import suitcase.nxstxm as suit_nxstxm
 #from bcm.devices.device_names import *
 from bcm.devices.device_names import *
 
+
+# from event_model import RunRouter
+# from suitcase.nxstxm import Serializer
+#
+# def factory(name, start_doc):
+#
+#     serializer = Serializer(data_dir)
+#     serializer('start', start_doc)
+#
+#     return [serializer], []
+#
+#
+# #connect outr data
+# rr = RunRouter([factory])
+# RE.subscribe(rr)
+
 # read the ini file and load the default directories
 appConfig = ConfigClass(abs_path_to_ini_file)
 scanPluginDir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'scan_plugins')
 uiDir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'ui')
 prefsDir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'preferences')
+docs_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','..','docs','_build','html','index.html')
 
 sample_pos_mode = MAIN_OBJ.get_sample_positioning_mode()
 sample_finepos_mode = MAIN_OBJ.get_fine_sample_positioning_mode()
@@ -725,7 +740,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.aboutForm.show()
 
     def on_pystxm_help(self):
-        pass
+        webbrowser.open(docs_path)
 
     def on_switch_user(self):
         pass
@@ -2003,7 +2018,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
             if (is_line):
                 if (not self.executingScan.image_started and (row == 0)):
-                    #print 'calling on_image_start: not self.executingScan.image_started and (row == 0)'
+                    #print('calling on_image_start: not self.executingScan.image_started and (row == 0)')
                     self.on_image_start(sp_id=sp_id)
 
             if (row > 0):
@@ -2581,23 +2596,28 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         :return:
         '''
         print('on_state_changed: [%s]' % state_str)
-        if (state_str.find('Paused') > -1):
+        if (state_str.find('paused') > -1):
             pass
-        elif(state_str.find('Idle') > -1):
+        elif(state_str.find('idle') > -1):
             self.executingScan.on_scan_done()
             self.executingScan.clear_subscriptions(MAIN_OBJ.engine_widget)
             self.disconnect_executingScan_signals()
             self.set_buttons_for_starting()
 
-            if(self.executingScan.scan_type is not scan_types.PATTERN_GEN_SCAN):
-                #fireoff a thread to handle saving data to an nxstxm file
-                worker = Worker(self.do_data_export, run_uids, 'datadir', False)  # Any other args, kwargs are passed to the run function
-                #worker.signals.result.connect(self.load_thumbs)
-                #worker.signals.progress.connect(self.progress_fn)
-                #worker.signals.finished.connect(self.thread_complete)
+            # if(self.executingScan.scan_type is not scan_types.PATTERN_GEN_SCAN):
+            #     #fireoff a thread to handle saving data to an nxstxm file
+            #     worker = Worker(self.do_data_export, run_uids, 'datadir', False)  # Any other args, kwargs are passed to the run function
+            #     #worker.signals.result.connect(self.load_thumbs)
+            #     #worker.signals.progress.connect(self.progress_fn)
+            #     #worker.signals.finished.connect(self.thread_complete)
+            #
+            #     # Execute
+            #     self._threadpool.start(worker)
 
-                # Execute
-                self._threadpool.start(worker)
+            # fireoff a thread to handle saving data to an nxstxm file
+            worker = Worker(self.do_data_export, run_uids, 'datadir', False)  # Any other args, kwargs are passed to the run function
+            # Execute
+            self._threadpool.start(worker)
 
 
     def check_data_export_good_to_go(self):
@@ -2623,9 +2643,17 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
         scan_type = self.get_cur_scan_type()
         first_uid = run_uids[0]
+        is_stack = False
+
+        if (scan_type is scan_types.PATTERN_GEN_SCAN):
+            #we only want the information in the main
+            first_uid = run_uids[4]
+            run_uids = [first_uid]
 
         if(scan_type in [scan_types.SAMPLE_IMAGE_STACK, scan_types.TOMOGRAPHY_SCAN]):
             #could also just be multiple rois on a single energy
+            data_dir = os.path.join(data_dir, fprefix)
+            is_stack = True
             self.do_multi_entry_export(run_uids, data_dir, fprefix)
 
         #elif(scan_type is scan_types.SAMPLE_POINT_SPECTRA):
@@ -2645,8 +2673,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                 # suit_nxstxm.export(primary_docs, data_dir, file_prefix=fprefix, index=0, rev_lu_dct=MAIN_OBJ.get_device_reverse_lu_dct(), \
                 #                 img_idx_map=_img_idx_map['0'], first_uid=uid, last_uid=_uid)
                 #suit_nxstxm.export(primary_docs, data_dir, file_prefix=fprefix, first_uid=first_uid)
-                suit_nxstxm.export(primary_docs, data_dir, file_prefix=fprefix)
-        suit_nxstxm.finish_export(data_dir, fprefix, first_uid)
+                suit_nxstxm.export(primary_docs, data_dir, file_prefix=fprefix, first_uid=first_uid)
+        suit_nxstxm.finish_export(data_dir, fprefix, first_uid, is_stack_dir=is_stack)
 
     def get_counter_from_table(self, tbl, prime_cntr):
         for k in list(tbl.keys()):
@@ -2935,6 +2963,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         #print 'on_image_start called'
         #_logger.debug('on_image_start called')
         #set these as defaults
+        self.reset_image_plot()
         self.lineByLineImageDataWidget.set_lock_aspect_ratio(True)
         self.lineByLineImageDataWidget.set_fill_plot_window(False)
         # default img_idx is 0
@@ -3292,7 +3321,11 @@ def go():
 
     try:
         #starts event loop
-        sys.exit(app.exec_())
+        try:
+            sys.exit(app.exec_())
+        except:
+            print("Exiting")
+            exit()
     except:
         print("Exiting")
 

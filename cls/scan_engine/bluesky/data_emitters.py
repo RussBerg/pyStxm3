@@ -178,7 +178,7 @@ class SpecDataEmitter(BaseQtSpectraDataEmitter):
                 if (self.det in doc['data'].keys()):
                     new_y = doc['data'][self.det]
                     #if(self.x not in doc['data'].keys()):
-                    if (self.x in doc['data'].keys()):
+                    if (self.x not in doc['data'].keys()):
                         #new_x = doc['data'][self.x]
                         new_x = self._spid_seq_map[doc['seq_num']][1]
                     else:

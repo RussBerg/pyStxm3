@@ -4453,6 +4453,7 @@ class BaseScan(BaseObject):
         # print('goniometer scan: deccRange=%.2f um' % (deccRange))
 
         if(self.is_lxl):
+            accRange = deccRange = 5.0
             self.config_samplex_start_stop(dct['fine_pv_nm']['X'], self.zx_roi[START], self.zx_roi[STOP], self.numZX, accRange=accRange, deccRange=deccRange, line=True)
         else:
             accRange = deccRange = 0
@@ -5263,6 +5264,10 @@ class BaseScan(BaseObject):
             print('make_single_image_e712_plan: putting x_tbl_id=%d, y_tbl_id=%d' % (x_tbl_id, y_tbl_id))
             e712_x_usetablenum.put(x_tbl_id)
             e712_y_usetablenum.put(y_tbl_id)
+
+            #make sure servo power is on
+            finemtrx = self.main_obj.get_sample_fine_positioner('X').ServoPower.put(1)
+            finemtry = self.main_obj.get_sample_fine_positioner('Y').ServoPower.put(1)
             # get the X motor reset position * /
             # samplemtrx = self.main_obj.get_sample_positioner('X')
             # samplemtry = self.main_obj.get_sample_positioner('Y')

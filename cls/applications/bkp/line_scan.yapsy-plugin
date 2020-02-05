@@ -1,9 +1,0 @@
-[Core]
-Name = Line scan params
-Module = line_scan
-
-[Documentation]
-Author = Russ Berg
-Version = 0.1
-Website = http://lateral.netmanagers.com.ar
-Description = Params for a Line Scan Line Unidirectional or Point by Point 

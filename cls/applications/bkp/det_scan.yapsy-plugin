@@ -1,9 +1,0 @@
-[Core]
-Name = Detector scan params
-Module = det_scan
-
-[Documentation]
-Author = Russ Berg
-Version = 0.1
-Website = http://lateral.netmanagers.com.ar
-Description = Params for an Image by Image line scan 

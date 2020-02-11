@@ -13,7 +13,6 @@ at the SM beam line (10ID1) at the CLS. The application uses several main framew
 There is a second part to this software and that is the SynApps Epics applications that provide the low level device control, namely:
 	
 - **motor**: to provide the positioner control
-- **sscan**: with some slight additions to allow the reloading of settings files which provides the scanning engine capability
 
 
 ## Getting Started

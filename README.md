@@ -19,8 +19,6 @@ There is a second part to this software and that is the SynApps Epics applicatio
 
 This software is completely dependant on Epics for providing the connection to all positioners and counters as well as the engine for doing scans. When the software is started a connection is made to all configured devices and therefore the Epics side of the software must be running before attempting to start pyStxm.
 
-At the time of authorship this repo is currently only available within the CLS.
-
 ### Prerequisites
 
 The pyStxm software is dependent on the following python modules (note that their individual dependencies are not listed):

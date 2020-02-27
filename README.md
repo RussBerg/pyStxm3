@@ -107,9 +107,6 @@ and run pyStxm like this:
 * [Synapps] (https://www1.aps.anl.gov/bcda/synapps/) The device and data collection software the 
 
 
-The use of Epics SSCAN records as the data collection engine allows for fairly simple scalability of new scans and a high degree of
-standardization of device control here at the CLS.
-
 ## Contributing
 
 Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.

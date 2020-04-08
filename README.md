@@ -93,7 +93,7 @@ You should now be able to cd to:
 
 and run pyStxm like this:
 
-```>python stxmMain.py```
+```>python runPyStxm.py```
 
 
 ## Built With

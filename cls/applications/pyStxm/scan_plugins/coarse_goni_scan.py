@@ -9,7 +9,7 @@ from PyQt5 import uic
 import time
 import os
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, DEFAULTS
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ, DEFAULTS
 from cls.applications.pyStxm.scan_plugins import plugin_dir
 from cls.scanning.paramLineEdit import intLineEditParamObj, dblLineEditParamObj
 from bcm.devices.device_names import *
@@ -73,7 +73,7 @@ class CoarseGoniScanParam(ScanParamWidget):
 		'''
 		self.name = "Coarse Goni Scan"
 		self.idx = scan_panel_order.COARSE_GONI_IMAGE_SCAN
-		self.type = scan_types.COARSE_GONI_SCAN
+		self.type = scan_types.COARSE_GONI
 		self.section_id = 'COARSE_GONI'
 		self.axis_strings = ['Goni Y microns', 'Goni X microns', '', '']
 		self.zp_focus_mode = zp_focus_modes.A0MOD

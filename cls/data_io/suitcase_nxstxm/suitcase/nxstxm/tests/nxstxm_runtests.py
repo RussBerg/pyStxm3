@@ -85,7 +85,7 @@ if __name__ == '__main__':
         # sample_focus
         # uids = ['e9fea907-781f-4ce4-918e-0b404817334c']
 
-        # SAMPLE_POINT_SPECTRA
+        # SAMPLE_POINT_SPECTRUM
         # uids = ['343a0683-04fa-4391-a854-cb19672be6e6']
 
         # line scan
@@ -96,7 +96,7 @@ if __name__ == '__main__':
 
     #do_export(test_data_dir, example_data_docs)
 
-    #do_export('COARSE_GONI_SCAN.json')
+    #do_export('COARSE_GONI.json')
     #do_export('DETECTOR_IMAGE.json')
     #do_export('GENERIC_SCAN.json')
     # do_export('OSA_FOCUS.json')
@@ -106,6 +106,6 @@ if __name__ == '__main__':
     #do_export('SAMPLE_IMAGE_STACK.json', first_uid='cbb39dd0-2d7b-4409-8ac9-9db19d4c9ad1')
     do_export('SAMPLE_IMAGE_STACK.json', first_uid='6c8d070f-cd7b-4ebf-8cd7-0bfa0808ea11')
 
-    # do_export('SAMPLE_LINE_SPECTRA.json', first_uid='f31df4d7-f5e5-408a-bf94-eaea54e44fe3')
-    # do_export('SAMPLE_POINT_SPECTRA.json', first_uid='343a0683-04fa-4391-a854-cb19672be6e6')
-    # do_export('TOMOGRAPHY_SCAN.json', first_uid='69e8848e-d132-4cbe-abe1-ee0ce1ca9145')
+    # do_export('SAMPLE_LINE_SPECTRUM.json', first_uid='f31df4d7-f5e5-408a-bf94-eaea54e44fe3')
+    # do_export('SAMPLE_POINT_SPECTRUM.json', first_uid='343a0683-04fa-4391-a854-cb19672be6e6')
+    # do_export('TOMOGRAPHY.json', first_uid='69e8848e-d132-4cbe-abe1-ee0ce1ca9145')

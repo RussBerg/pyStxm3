@@ -1,5 +1,6 @@
 
 from PyQt5 import QtCore, QtWidgets
+from datetime import datetime
 
 from cls.appWidgets.splashScreen import get_splash
 from cls.utils.dict_utils import dct_put, dct_get, dct_merge
@@ -107,6 +108,8 @@ class main_object_base(QtCore.QObject):
         dct_put(self.main_obj, 'SCAN.DATA.SSCANS', {})
         
         dct_put(self.main_obj, 'DEVICES', {})
+
+        dct_put(self.main_obj, 'PRESETS', {})
         
         self.sample_positioning_mode = None
         self.sample_fine_positioning_mode = None
@@ -123,8 +126,12 @@ class main_object_base(QtCore.QObject):
         self.zmq_client = None
         #self.zmq_client = qt5_zmqClientWidget(compression_type=compression_types.MSGPACK)
             #self.zmq_client = zmq_epicsClient(self.zmq_sock)
+        self.rot_angle_dev = None
 
         self.engine_widget = EngineWidget()
+
+    def set_presets(self, preset_dct):
+        self.main_obj['PRESETS'] = preset_dct
 
     def is_device_supported(self, devname):
         '''
@@ -177,6 +184,20 @@ class main_object_base(QtCore.QObject):
 
     def get_device_reverse_lu_dct(self):
         return(self.main_obj['DEVICES'].device_reverse_lookup_dct)
+
+    def set_rot_angle_device(self, dev):
+        '''
+        set the device to be used to retrieve the rsample rotation angle
+        :param dev:
+        :return:
+        '''
+        self.rot_angle_dev = dev
+
+    def get_sample_rotation_angle(self):
+        if(self.rot_angle_dev is None):
+            return(0.0)
+        else:
+            return(self.rot_angle_dev.get_position())
 
     def cleanup(self):
         #self.zmq_client.terminate()
@@ -329,7 +350,7 @@ class main_object_base(QtCore.QObject):
         self.changed.emit()
     
     def device(self, name, do_warn=True):
-        """ call the device method from the devices class """
+        """ return the device if it exists"""
         dev = self.main_obj['DEVICES'].device(name, do_warn=do_warn)
         if(dev is None):
             if(do_warn):
@@ -359,37 +380,70 @@ class main_object_base(QtCore.QObject):
         self.main_obj['SSCANS'] = []
         self.changed.emit()
         
-    def get_preset(self, name):
-        devices = self.get_devices()
-        if(name in list(devices['PRESETS'].keys())):
-            return(devices['PRESETS'][name])
+    # def get_preset(self, name):
+    #     devices = self.get_devices()
+    #     if(name in list(devices['PRESETS'].keys())):
+    #         return(devices['PRESETS'][name])
+    #     else:
+    #         _logger.warn('PRESET [%s] not found in device configuration' % name)
+    #         return(None)
+    def get_preset(self, name, section=None):
+        '''
+        search through all sections looking for the FIRST instance of the desired preset, this is case insensitive
+        :param name:
+        :param section: is section is None, then search entire PRESET dict
+        :return:
+        '''
+        result = None
+        name_upper = name.upper()
+        name_lower = name.lower()
+
+        presets = self.main_obj['PRESETS']
+        sections = presets.keys()
+        if(section):
+            if(section in sections):
+                if(name_upper in presets[section].keys()):
+                    result = presets[section][name_upper]
+                elif(name_lower in presets[section].keys()):
+                    result = presets[section][name_lower]
+                else:
+                    _logger.debug('PRESET [%s][%s] not found in presets' % (section, name))
         else:
-            _logger.warn('PRESET [%s] not found in device configuration' % name)
-            return(None)    
+            for s in sections:
+                if(name_upper in list(presets[s].keys())):
+                    result = presets[s][name_upper]
+                    break
+                if (name_lower in list(presets[s].keys())):
+                    result = presets[s][name_lower]
+                    break
+        if(result is None):
+            _logger.debug('PRESET [%s] not found in presets' % name)
+
+        return(result)
     
-    def get_preset_as_float(self, name):
-        val = self.get_preset(name)
+    def get_preset_as_float(self, name, section=None):
+        val = self.get_preset(name, section)
         if(val is not None):
             return(float(val))
         else:
             return(None)
 
-    def get_preset_as_int(self, name):
-        val = self.get_preset(name)
+    def get_preset_as_int(self, name, section=None):
+        val = self.get_preset(name, section)
         if(val is not None):
             return(int(val))
         else:
             return(None)
 
-    def get_preset_as_bool(self, name):
-        val = self.get_preset(name)
+    def get_preset_as_bool(self, name, section=None):
+        val = self.get_preset(name, section)
         if(val is not None):
             if(val.find('true') > -1):
                 return(True)
             else:
                 return(False)
         else:
-            return(None)
+            return(False)
     
     def init_zmq_socket(self):
         import zmq
@@ -667,7 +721,7 @@ class dev_config_base(QtCore.QObject):
         self.devices['PVS'] = {}
         self.devices['PVS_DONT_RECORD'] = {}
         self.devices['PVS_DONT_RECORD']['HEARTBEATS'] = {}
-        self.devices['PRESETS'] = {}
+        #self.devices['PRESETS'] = {}
         self.devices['ACTUATORS'] = {}
         self.devices['WIDGETS'] = {}
         
@@ -747,7 +801,10 @@ class dev_config_base(QtCore.QObject):
         QtWidgets.QApplication.processEvents()
 
     def msg_splash(self, msg):
-        print(msg)
+
+        now = datetime.now()  # current date and time
+        date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
+        print('%s: %s' % (date_time, msg))
         # return
         if (self.splash):
             # self.splash.showMessage(self.splash.tr(msg), QtCore.Qt.AlignBottom,QtCore.Qt.white)
@@ -820,29 +877,56 @@ class dev_config_base(QtCore.QObject):
             return(None)
 
 
+    # def device(self, name, do_warn=True):
+    #     if(name in list(self.devices['POSITIONERS'].keys())):
+    #         return(self.devices['POSITIONERS'][name])
+    #     elif(name in list(self.devices['DETECTORS'].keys())):
+    #         return(self.devices['DETECTORS'][name])
+    #     elif(name in list(self.devices['DETECTORS_NO_RECORD'].keys())):
+    #         return(self.devices['DETECTORS_NO_RECORD'][name])
+    #     elif(name in list(self.devices['DIO'].keys())):
+    #         return(self.devices['DIO'][name])
+    #     elif(name in list(self.devices['SSCANS'].keys())):
+    #         return(self.devices['SSCANS'][name])
+    #     elif(name in list(self.devices['PVS'].keys())):
+    #         return(self.devices['PVS'][name])
+    #     elif(name in list(self.devices['PVS_DONT_RECORD'].keys())):
+    #         return(self.devices['PVS_DONT_RECORD'][name])
+    #     elif(name in list(self.devices['ACTUATORS'].keys())):
+    #         return(self.devices['ACTUATORS'][name])
+    #     elif (name in list(self.devices['WIDGETS'].keys())):
+    #         return (self.devices['WIDGETS'][name])
+    #     else:
+    #         if(do_warn):
+    #             _logger.debug('Device [%s] not found in device configuration' % name)
+    #         return(None)
+
+    def devs_exist(self, devlist=[]):
+        '''
+        check to see if a list of devices exist in the device database
+
+        :param devlist:
+        :return:
+        '''
+        for dev in devlist:
+            if(self.device(dev) is None):
+                return(False)
+        return(True)
+
     def device(self, name, do_warn=True):
-        if(name in list(self.devices['POSITIONERS'].keys())):
-            return(self.devices['POSITIONERS'][name])
-        elif(name in list(self.devices['DETECTORS'].keys())):
-            return(self.devices['DETECTORS'][name])
-        elif(name in list(self.devices['DETECTORS_NO_RECORD'].keys())):
-            return(self.devices['DETECTORS_NO_RECORD'][name])
-        elif(name in list(self.devices['DIO'].keys())):
-            return(self.devices['DIO'][name])
-        elif(name in list(self.devices['SSCANS'].keys())):
-            return(self.devices['SSCANS'][name])
-        elif(name in list(self.devices['PVS'].keys())):
-            return(self.devices['PVS'][name])
-        elif(name in list(self.devices['PVS_DONT_RECORD'].keys())):
-            return(self.devices['PVS_DONT_RECORD'][name])
-        elif(name in list(self.devices['ACTUATORS'].keys())):
-            return(self.devices['ACTUATORS'][name])
-        elif (name in list(self.devices['WIDGETS'].keys())):
-            return (self.devices['WIDGETS'][name])
-        else:
-            if(do_warn):
-                _logger.warning('Device [%s] not found in device configuration' % name)
-            return(None)
+        '''
+            search entire device database looking for device
+        :param name:
+        :param do_warn:
+        :return:
+        '''
+
+        for cat in list(self.devices.keys()):
+            if (name in list(self.devices[cat].keys())):
+                return (self.devices[cat][name])
+        if(do_warn):
+            _logger.debug('Device [%s] not found in device configuration' % name)
+        return(None)
 
 
     def device_report(self):
@@ -850,32 +934,26 @@ class dev_config_base(QtCore.QObject):
         dump a report of all devices
         :return:
         '''
-        for name in list(self.devices['POSITIONERS'].keys()):
-            self.devices['POSITIONERS'][name].report()
+        skip_list = ['PRESETS', 'WIDGETS','ACTUATORS']
+        for category in list(self.devices.keys()):
+            print('[%s]' % category)
+            if(category in skip_list):
+                continue
+            for name in list(self.devices[category].keys()):
+                if((name.find('ES') > -1) or (name.find('BL') > -1)):
+                    for _name in list(self.devices[category][name].keys()):
+                        self.devices[category][name][_name].report()
+                elif(name.find('HEARTBEATS') > -1):
+                    for _name in list(self.devices[category][name].keys()):
+                        self.devices[category][name][_name]['dev'].report()
 
-        for name in list(self.devices['DETECTORS'].keys()):
-            self.devices['DETECTORS'][name].report()
-
-        for name in list(self.devices['DETECTORS_NO_RECORD'].keys()):
-            self.devices['DETECTORS_NO_RECORD'][name].report()
-
-        for name in list(self.devices['DIO'].keys()):
-            self.devices['DIO'][name].report()
-
-        for name in list(self.devices['SSCANS'].keys()):
-            self.devices['SSCANS'][name].report()
-
-        for name in list(self.devices['PVS'].keys()):
-            self.devices['PVS'][name].report()
-
-        for name in list(self.devices['PVS_DONT_RECORD'].keys()):
-            print(self.devices['PVS_DONT_RECORD'][name].report())
-
-        for name in list(self.devices['ACTUATORS'].keys()):
-            self.devices['ACTUATORS'][name].report()
-
-        for name in list(self.devices['WIDGETS'].keys()):
-            self.devices['WIDGETS'][name].report()
+                else:
+                    #print('NAME=[%s]' % name)
+                    if(type(self.devices[category][name]) == list):
+                        for _dev in list(self.devices[category][name]):
+                            _dev.report()
+                    else:
+                        self.devices[category][name].report()
 
 
 #     def device(self, name):

@@ -16,7 +16,7 @@ from cls.scan_engine.bluesky.bluesky_defs import bs_dev_modes
 from cls.scan_engine.bluesky.test_gate import trig_src_types
 
 from cls.applications.pyStxm import abs_path_to_ini_file
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 from cls.scanning.BaseScan import BaseScan, SIM_SPEC_DATA, SIMULATE_SPEC_DATA
 from cls.scanning.SScanClass import SScanClass
 from cls.scanning.scan_cfg_utils import set_devices_for_point_scan, set_devices_for_line_scan, \
@@ -73,8 +73,7 @@ class TomographyWithE712WavegenScanClass(BaseScan):
 
         :returns: None
         """
-        super(TomographyWithE712WavegenScanClass, self).__init__('%sstxm' % MAIN_OBJ.get_sscan_prefix(), 'SAMPLEXY_EV_WG',
-                                                                      main_obj=MAIN_OBJ)
+        super(TomographyWithE712WavegenScanClass, self).__init__(main_obj=MAIN_OBJ)
         self.x_use_reinit_ddl = False
         # self.x_use_ddl = False
         # self.x_use_reinit_ddl = False
@@ -146,7 +145,7 @@ class TomographyWithE712WavegenScanClass(BaseScan):
             self.scan_type = scan_types.SAMPLE_IMAGE
             return (self.make_single_image_e712_plan(dets, gate, md=md, bi_dir=bi_dir))
         else:
-            self.scan_type = scan_types.TOMOGRAPHY_SCAN
+            self.scan_type = scan_types.TOMOGRAPHY
             return (self.make_tomo_plan(dets, gate, md=md, bi_dir=bi_dir))
 
     def get_ev_starting_setpoint(self, e_rois):
@@ -313,27 +312,29 @@ class TomographyWithE712WavegenScanClass(BaseScan):
         :returns: None
 
         """
+        super(TomographyWithE712WavegenScanClass, self).configure(wdg_com, sp_id=sp_id, line=line, z_enabled=False)
+
         _logger.info('\n\nTomographyWithE712WavegenScanClass: configuring sp_id [%d]' % sp_id)
         self.new_spatial_start_sent = False
         # initial setup and retrieval of common scan information
         self.set_spatial_id(sp_id)
-        self.wdg_com = wdg_com
-        self.sp_rois = wdg_com[WDGCOM_SPATIAL_ROIS]
-        self.sp_ids = list(self.sp_rois.keys())
-        self.sp_id = sp_id
-        self.sp_db = self.sp_rois[sp_id]
-        self.scan_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_TYPE)
-        self.scan_sub_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE)
-        self.sample_positioning_mode = MAIN_OBJ.get_sample_positioning_mode()
-        self.sample_fine_positioning_mode = MAIN_OBJ.get_fine_sample_positioning_mode()
-
-        self.update_roi_member_vars(self.sp_db)
-
-        #the wavegenerator does both axis in one sscan record by calling the wavegenerator to execute,
-        # this is done in sscan2
-        # self.xyScan = self._scan2
-
-        self.determine_scan_res()
+        # self.wdg_com = wdg_com
+        # self.sp_rois = wdg_com[WDGCOM_SPATIAL_ROIS]
+        # self.sp_ids = list(self.sp_rois.keys())
+        # self.sp_id = sp_id
+        # self.sp_db = self.sp_rois[sp_id]
+        # self.scan_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_TYPE)
+        # self.scan_sub_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE)
+        # self.sample_positioning_mode = MAIN_OBJ.get_sample_positioning_mode()
+        # self.sample_fine_positioning_mode = MAIN_OBJ.get_fine_sample_positioning_mode()
+        #
+        # self.update_roi_member_vars(self.sp_db)
+        #
+        # #the wavegenerator does both axis in one sscan record by calling the wavegenerator to execute,
+        # # this is done in sscan2
+        # # self.xyScan = self._scan2
+        #
+        # self.determine_scan_res()
 
         # dct_put(self.sp_db, SPDB_RECT, (self.x_roi[START], self.y_roi[START], self.x_roi[STOP], self.y_roi[STOP]))
         # the sample motors have different modes, make a call to handle that they are setup correctly for this scan
@@ -369,44 +370,44 @@ class TomographyWithE712WavegenScanClass(BaseScan):
         dwells = dct_get(self.wdg_com, SPDB_SINGLE_LST_DWELLS)
         sub_type = dct_get(self.wdg_com, SPDB_SCAN_PLUGIN_SUBTYPE)
 
-        self.is_lxl = False
-        self.is_pxp = False
-        self.is_point_spec = False
-        self.file_saved = False
-        self.sim_point = 0
+        # self.is_lxl = False
+        # self.is_pxp = False
+        # self.is_point_spec = False
+        # self.file_saved = False
+        # self.sim_point = 0
+        #
+        # if(sub_type is scan_sub_types.POINT_BY_POINT):
+        #     self.is_pxp = True
+        #     self.is_lxl = False
+        # else:
+        #     self.is_pxp = False
+        #     self.is_lxl = True
+        #
+        # self.use_hdw_accel = dct_get(self.sp_db, SPDB_HDW_ACCEL_USE)
+        # if (self.use_hdw_accel is None):
+        #     self.use_hdw_accel = True
+        #     if (dct_get(self.sp_db, SPDB_HDW_ACCEL_AUTO_DDL)):
+        #         self.x_auto_ddl = True
+        #         self.x_use_reinit_ddl = False
+        #     else:
+        #         # Reinit DDL for the current scan
+        #         self.x_auto_ddl = False
+        #         self.x_use_reinit_ddl = True
+        #
+        # self.is_fine_scan = True
+        #
+        # # setup some convienience member variables
+        # self.dwell = e_roi[DWELL]
+        # self.numX = int(self.x_roi[NPOINTS])
+        # self.numY = int(self.y_roi[NPOINTS])
+        # self.numZX = int(self.zx_roi[NPOINTS])
+        # self.numZY = int(self.zy_roi[NPOINTS])
+        # self.numEPU = len(self.setpointsPol)
+        # self.numE = int(self.sp_db[SPDB_EV_NPOINTS])
+        #
+        # self.numSPIDS = len(self.sp_rois)
 
-        if(sub_type is scan_sub_types.POINT_BY_POINT):
-            self.is_pxp = True
-            self.is_lxl = False
-        else:
-            self.is_pxp = False
-            self.is_lxl = True
-
-        self.use_hdw_accel = dct_get(self.sp_db, SPDB_HDW_ACCEL_USE)
-        if (self.use_hdw_accel is None):
-            self.use_hdw_accel = True
-            if (dct_get(self.sp_db, SPDB_HDW_ACCEL_AUTO_DDL)):
-                self.x_auto_ddl = True
-                self.x_use_reinit_ddl = False
-            else:
-                # Reinit DDL for the current scan
-                self.x_auto_ddl = False
-                self.x_use_reinit_ddl = True
-
-        self.is_fine_scan = True
-
-        # setup some convienience member variables
-        self.dwell = e_roi[DWELL]
-        self.numX = int(self.x_roi[NPOINTS])
-        self.numY = int(self.y_roi[NPOINTS])
-        self.numZX = int(self.zx_roi[NPOINTS])
-        self.numZY = int(self.zy_roi[NPOINTS])
-        self.numEPU = len(self.setpointsPol)
-        self.numE = int(self.sp_db[SPDB_EV_NPOINTS])
-
-        self.numSPIDS = len(self.sp_rois)
-
-        if (self.scan_type != scan_types.SAMPLE_POINT_SPECTRA):
+        if (self.scan_type != scan_types.SAMPLE_POINT_SPECTRUM):
             self.numImages = int(self.sp_db[SPDB_EV_NPOINTS] * self.numEPU * self.numSPIDS)
         else:
             # is a sample point spectrum
@@ -418,8 +419,6 @@ class TomographyWithE712WavegenScanClass(BaseScan):
             self.save_all_data = True
         else:
             self.stack = False
-
-
 
         #if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
         if (self.fine_sample_positioning_mode == sample_fine_positioning_modes.ZONEPLATE):
@@ -436,6 +435,8 @@ class TomographyWithE712WavegenScanClass(BaseScan):
 
         # depending on the current samplpositioning_mode perform a different configuration
         if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
+            self.seq_map_dct = self.generate_2d_seq_image_map(self.numE, self.zy_roi[NPOINTS], self.zx_roi[NPOINTS],
+                                                              lxl=self.is_lxl)
             if(self.use_hdw_accel):
                 self.config_for_goniometer_scan_hdw_accel(dct)
             else:
@@ -443,12 +444,18 @@ class TomographyWithE712WavegenScanClass(BaseScan):
 
         else:
             if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
+                self.seq_map_dct = self.generate_2d_seq_image_map(self.numE, self.zy_roi[NPOINTS], self.zx_roi[NPOINTS],
+                                                                  lxl=self.is_lxl)
                 # goniometer_zoneplate mode
                 self.configure_for_zxzy_fine_scan_hdw_accel(dct)
             elif((self.sample_positioning_mode == sample_positioning_modes.COARSE) and (self.fine_sample_positioning_mode == sample_fine_positioning_modes.ZONEPLATE)):
+                self.seq_map_dct = self.generate_2d_seq_image_map(self.numE, self.y_roi[NPOINTS], self.x_roi[NPOINTS],
+                                                                  lxl=self.is_lxl)
                 self.configure_for_coarse_zoneplate_fine_scan_hdw_accel(dct)
             else:
                 # coarse_samplefine mode
+                self.seq_map_dct = self.generate_2d_seq_image_map(self.numE, self.y_roi[NPOINTS], self.x_roi[NPOINTS],
+                                                                  lxl=self.is_lxl)
                 self.configure_for_samplefxfy_fine_scan_hdw_accel(dct)
 
 
@@ -478,6 +485,7 @@ class TomographyWithE712WavegenScanClass(BaseScan):
         # make sure OSA XY is in its center
         self.move_osaxy_to_its_center()
 
+        self.seq_map_dct = self.generate_2d_seq_image_map(self.numE, self.y_roi[NPOINTS], self.x_roi[NPOINTS], lxl=self.is_lxl)
         # THIS must be the last call
         self.finish_setup()
 
@@ -511,8 +519,8 @@ class TomographyWithE712WavegenScanClass(BaseScan):
 
         """
         ### VERY IMPORTANT the current PID tune for ZX is based on a velo (SLew Rate) of 1,000,000
-        self.main_obj.device(DNM_ZONEPLATE_X).put('velocity', 1000000.0)
-        self.main_obj.device(DNM_ZONEPLATE_Y).put('velocity', 1000000.0)
+        self.main_obj.device(DNM_ZONEPLATE_X).set_velo(1000000.0)
+        self.main_obj.device(DNM_ZONEPLATE_Y).set_velo(1000000.0)
 
         self.set_config_devices_func(self.on_this_dev_cfg)
 
@@ -564,11 +572,11 @@ class TomographyWithE712WavegenScanClass(BaseScan):
                 """
         ### VERY IMPORTANT the current PID tune for ZX is based on a velo (SLew Rate) of 1,000,000
         # must be FxFy
-        self.main_obj.device(DNM_SAMPLE_FINE_X).put('ServoPower', 1)
-        self.main_obj.device(DNM_SAMPLE_FINE_Y).put('ServoPower', 1)
+        self.main_obj.device(DNM_SAMPLE_FINE_X).set_power( 1)
+        self.main_obj.device(DNM_SAMPLE_FINE_Y).set_power( 1)
 
-        self.main_obj.device(DNM_SAMPLE_FINE_X).put('velocity', 100000.0)
-        self.main_obj.device(DNM_SAMPLE_FINE_Y).put('velocity', 100000.0)
+        self.main_obj.device(DNM_SAMPLE_FINE_X).set_velo(100000.0)
+        self.main_obj.device(DNM_SAMPLE_FINE_Y).set_velo(100000.0)
 
         #this scan is used with and without the goniometer so setupScan maybe None
         # if(self.setupScan):
@@ -626,11 +634,11 @@ class TomographyWithE712WavegenScanClass(BaseScan):
                 """
         ### VERY IMPORTANT the current PID tune for ZX is based on a velo (SLew Rate) of 1,000,000
         # must be FxFy
-        self.main_obj.device(DNM_ZONEPLATE_X).put('ServoPower', 1)
-        self.main_obj.device(DNM_ZONEPLATE_Y).put('ServoPower', 1)
+        self.main_obj.device(DNM_ZONEPLATE_X).set_power( 1)
+        self.main_obj.device(DNM_ZONEPLATE_Y).set_power( 1)
 
-        self.main_obj.device(DNM_ZONEPLATE_X).put('velocity', 1000000.0)
-        self.main_obj.device(DNM_ZONEPLATE_Y).put('velocity', 1000000.0)
+        self.main_obj.device(DNM_ZONEPLATE_X).set_velo(1000000.0)
+        self.main_obj.device(DNM_ZONEPLATE_Y).set_velo(1000000.0)
 
         #this scan is used with and without the goniometer so setupScan maybe None
         # if(self.setupScan):
@@ -684,8 +692,8 @@ class TomographyWithE712WavegenScanClass(BaseScan):
     #
     #     """
     #     ### VERY IMPORTANT the current PID tune for ZX is based on a velo (SLew Rate) of 1,000,000
-    #     self.main_obj.device(DNM_ZONEPLATE_X).put('velocity', 1000000.0)
-    #     self.main_obj.device(DNM_ZONEPLATE_Y).put('velocity', 1000000.0)
+    #     self.main_obj.device(DNM_ZONEPLATE_X).set_velo(1000000.0)
+    #     self.main_obj.device(DNM_ZONEPLATE_Y).set_velo(1000000.0)
     #     #
     #     # gx_mtr = self.main_obj.device(dct['cx_name'])
     #     # gy_mtr = self.main_obj.device(dct['cy_name'])
@@ -931,7 +939,7 @@ class TomographyWithE712WavegenScanClass(BaseScan):
 #         if (update):
 #             _logger.info('Skipping save_hdr() update = True')
 #             return
-#         upside_dwn_scans = [scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE]
+#         upside_dwn_scans = [scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE]
 #         # _logger.info('save_hdr: starting')
 #         if (self.is_point_spec):
 #             self.save_point_spec_hdr(update)
@@ -1227,296 +1235,296 @@ class TomographyWithE712WavegenScanClass(BaseScan):
 #             self.main_obj.device('CX_auto_disable_power').put(1)  # enabled
 #             self.main_obj.device('CY_auto_disable_power').put(1)  # enabled
 
-    def hdw_accel_chk_for_more_evregions(self):
-        """
-        chk_for_more_evregions(): description
+    # def hdw_accel_chk_for_more_evregions(self):
+    #     """
+    #     chk_for_more_evregions(): description
+    #
+    #     :returns: None
+    #     """
+    #     """
+    #     this slot handles the end of scan, when the default on_scan_done() is called in the
+    #     base scan class it will check for an installed child on_scan_done slot (this one)
+    #     once this has been called it returns True or False
+    #         return True if there are no more ev regions and you want the default on_scan_done(0) to finish and clean everything up
+    #
+    #         return False if there are more ev Regions and you dont want everything stopped and cleaned up
+    #     """
+    #     multi_ev_single_image_scans = [scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_POINT_SPECTRUM]
+    #
+    #     _logger.info('hdw_accel_chk_for_more_evregions: checking')
+    #
+    #     if (self._abort):
+    #         _logger.info('hdw_accel_chk_for_more_evregions: scan aborting')
+    #         # make sure to save current scan
+    #         if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+    #             self.gate.stop()
+    #             self.counter.stop()
+    #         # self.on_save_sample_image()
+    #         self.on_data_level_done()
+    #         self.save_hdr()
+    #         self.hdr.remove_tmp_file()
+    #
+    #         return (True)
+    #
+    #     # increment the index into ev regions
+    #     self.incr_evidx()
+    #
+    #     # if(self._current_ev_idx < len(self.e_rois)):
+    #     if (self.get_evidx() < len(self.e_rois)):
+    #         _logger.info('hdw_accel_chk_for_more_evregions: yes there is, loading and starting')
+    #         if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+    #             if(not self.is_point_spec):
+    #                 self.gate.stop()
+    #                 self.counter.stop()
+    #
+    #         if (self.scan_type not in multi_ev_single_image_scans):
+    #             # signal plotter to start a new image
+    #             # sp_id = self.get_next_spatial_id()
+    #             # self.new_spatial_start.emit(sp_id)
+    #             self.new_spatial_start.emit(self.sp_db[SPDB_ID_VAL])
+    #
+    #         e_roi = self.e_rois[self._current_ev_idx]
+    #         # configure next ev sscan record with next ev region start/stop
+    #         self._config_start_stop(self.evScan, 1, e_roi[START], e_roi[STOP], e_roi[NPOINTS])
+    #
+    #         # prev_dwell = self.dwell
+    #         self.dwell = e_roi[DWELL]
+    #
+    #         if (self.use_hdw_accel):
+    #         #     # need to check to see if dwell changed, if it did we need to re-configure the wavetables
+    #         #     # if(prev_dwell != self.dwell):
+    #         #     # _logger.debug('dwell changed [%.2f] so reconfiguring the hardware accel' % self.dwell)
+    #              self.modify_config()
+    #              # wait for gate and counter to start
+    #         #     time.sleep(2.0)
+    #         #    pass
+    #
+    #
+    #         # need to determine the scan velocity if there is a change in Dwell for this next ev region
+    #         elif (not self.is_point_spec):
+    #             # the dwell ime for the new ev region could have changed so determine the scan velo and accRange
+    #             # need to determine the scan velocity if there is a change in Dwell for this next ev region
+    #             if (self.is_line_spec and self.is_pxp):
+    #                 scan_velo = self.get_mtr_max_velo(self.xyScan.P1)
+    #                 # vmax = self.get_mtr_max_velo(self.xyScan.P1)
+    #             else:
+    #                 vmax = self.get_mtr_max_velo(self.xScan.P1)
+    #                 (scan_velo, npts, dwell) = ensure_valid_values(self.x_roi[START], self.x_roi[STOP], self.dwell,
+    #                                                                self.numX, vmax, do_points=True)
+    #                 # need the range of scan to be passed to calc_accRange()
+    #                 rng = self.x_roi[STOP] - self.x_roi[START]
+    #                 accRange = calc_accRange('SampleX', 'Fine', rng, scan_velo, dwell, accTime=0.04)
+    #                 # reassign dwell because it ay have changed on return from ensure_valid_values()
+    #                 self.dwell = dwell
+    #                 _logger.debug('set_sample_scan_velocity Image scan: scan_velo=%.2f um/s accRange=%.2f um' % (
+    #                 scan_velo, accRange))
+    #
+    #             self.set_x_scan_velo(scan_velo)
+    #             # ok now finish configuration and start it
+    #             self.on_this_dev_cfg()
+    #             if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+    #                 self.gate.start()
+    #                 self.counter.start()
+    #
+    #
+    #         elif (self.is_point_spec):
+    #             # ok now finish configuration and start it
+    #             self.on_this_dev_cfg()
+    #             if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+    #                 self.gate.start()
+    #                 self.counter.start()
+    #
+    #         self.start()
+    #         # let caller know were not done
+    #         return (False)
+    #     else:
+    #         _logger.info('chk_for_more_evregions: Nope no more')
+    #         if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+    #             self.gate.stop()
+    #             self.counter.stop()
+    #
+    #         # ok scan is all done now, so save final header file
+    #         if (not self.file_saved):
+    #             _logger.debug('chk_for_more_evregions: calling on_save_sample_image()')
+    #             self.on_save_sample_image()
+    #         self.save_hdr()
+    #
+    #         # ok there are no more ev regions to execute
+    #         return (True)
 
-        :returns: None
-        """
-        """
-        this slot handles the end of scan, when the default on_scan_done() is called in the
-        base scan class it will check for an installed child on_scan_done slot (this one)
-        once this has been called it returns True or False
-            return True if there are no more ev regions and you want the default on_scan_done(0) to finish and clean everything up
-
-            return False if there are more ev Regions and you dont want everything stopped and cleaned up
-        """
-        multi_ev_single_image_scans = [scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_POINT_SPECTRA]
-
-        _logger.info('hdw_accel_chk_for_more_evregions: checking')
-
-        if (self._abort):
-            _logger.info('hdw_accel_chk_for_more_evregions: scan aborting')
-            # make sure to save current scan
-            if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-                self.gate.stop()
-                self.counter.stop()
-            # self.on_save_sample_image()
-            self.on_data_level_done()
-            self.save_hdr()
-            self.hdr.remove_tmp_file()
-
-            return (True)
-
-        # increment the index into ev regions
-        self.incr_evidx()
-
-        # if(self._current_ev_idx < len(self.e_rois)):
-        if (self.get_evidx() < len(self.e_rois)):
-            _logger.info('hdw_accel_chk_for_more_evregions: yes there is, loading and starting')
-            if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-                if(not self.is_point_spec):
-                    self.gate.stop()
-                    self.counter.stop()
-
-            if (self.scan_type not in multi_ev_single_image_scans):
-                # signal plotter to start a new image
-                # sp_id = self.get_next_spatial_id()
-                # self.new_spatial_start.emit(sp_id)
-                self.new_spatial_start.emit(self.sp_db[SPDB_ID_VAL])
-
-            e_roi = self.e_rois[self._current_ev_idx]
-            # configure next ev sscan record with next ev region start/stop
-            self._config_start_stop(self.evScan, 1, e_roi[START], e_roi[STOP], e_roi[NPOINTS])
-
-            # prev_dwell = self.dwell
-            self.dwell = e_roi[DWELL]
-
-            if (self.use_hdw_accel):
-            #     # need to check to see if dwell changed, if it did we need to re-configure the wavetables
-            #     # if(prev_dwell != self.dwell):
-            #     # _logger.debug('dwell changed [%.2f] so reconfiguring the hardware accel' % self.dwell)
-                 self.modify_config()
-                 # wait for gate and counter to start
-            #     time.sleep(2.0)
-            #    pass
-
-
-            # need to determine the scan velocity if there is a change in Dwell for this next ev region
-            elif (not self.is_point_spec):
-                # the dwell ime for the new ev region could have changed so determine the scan velo and accRange
-                # need to determine the scan velocity if there is a change in Dwell for this next ev region
-                if (self.is_line_spec and self.is_pxp):
-                    scan_velo = self.get_mtr_max_velo(self.xyScan.P1)
-                    # vmax = self.get_mtr_max_velo(self.xyScan.P1)
-                else:
-                    vmax = self.get_mtr_max_velo(self.xScan.P1)
-                    (scan_velo, npts, dwell) = ensure_valid_values(self.x_roi[START], self.x_roi[STOP], self.dwell,
-                                                                   self.numX, vmax, do_points=True)
-                    # need the range of scan to be passed to calc_accRange()
-                    rng = self.x_roi[STOP] - self.x_roi[START]
-                    accRange = calc_accRange('SampleX', 'Fine', rng, scan_velo, dwell, accTime=0.04)
-                    # reassign dwell because it ay have changed on return from ensure_valid_values()
-                    self.dwell = dwell
-                    _logger.debug('set_sample_scan_velocity Image scan: scan_velo=%.2f um/s accRange=%.2f um' % (
-                    scan_velo, accRange))
-
-                self.set_x_scan_velo(scan_velo)
-                # ok now finish configuration and start it
-                self.on_this_dev_cfg()
-                if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-                    self.gate.start()
-                    self.counter.start()
-
-
-            elif (self.is_point_spec):
-                # ok now finish configuration and start it
-                self.on_this_dev_cfg()
-                if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-                    self.gate.start()
-                    self.counter.start()
-
-            self.start()
-            # let caller know were not done
-            return (False)
-        else:
-            _logger.info('chk_for_more_evregions: Nope no more')
-            if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-                self.gate.stop()
-                self.counter.stop()
-
-            # ok scan is all done now, so save final header file
-            if (not self.file_saved):
-                _logger.debug('chk_for_more_evregions: calling on_save_sample_image()')
-                self.on_save_sample_image()
-            self.save_hdr()
-
-            # ok there are no more ev regions to execute
-            return (True)
-
-    def coarse_chk_for_more_evregions(self):
-        """
-        chk_for_more_evregions(): description
-
-        :returns: None
-        """
-        """
-        this slot handles the end of scan, when the default on_scan_done() is called in the 
-        base scan class it will check for an installed child on_scan_done slot (this one)
-        once this has been called it returns True or False
-            return True if there are no more ev regions and you want the default on_scan_done(0) to finish and clean everything up
-
-            return False if there are more ev Regions and you dont want everything stopped and cleaned up 
-        """
-        multi_ev_single_image_scans = [scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_POINT_SPECTRA]
-
-        # Sept 6 if(TEST_SAVE_INITIAL_FILE):
-        # Sept 6     self.save_hdr(update=True)
-        _logger.info('chk_for_more_evregions: checking')
-
-        if (self._abort):
-            _logger.info('chk_for_more_evregions: scan aborting')
-            # make sure to save current scan
-            if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-                self.gate.stop()
-                self.counter.stop()
-            # self.on_save_sample_image()
-            # self.on_data_level_done()
-            self.save_hdr()
-            self.hdr.remove_tmp_file()
-
-            return (True)
-
-        # increment the index into ev regions
-        self.incr_evidx()
-
-        # if(self._current_ev_idx < len(self.e_rois)):
-        if (self.get_evidx() < len(self.e_rois)):
-            _logger.info('chk_for_more_evregions: yes there is, loading and starting')
-            if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-                if (not self.is_point_spec):
-                    self.gate.stop()
-                    self.counter.stop()
-
-                    # sept 11
-                    self.counter.wait_till_stopped()
-
-            if (self.scan_type not in multi_ev_single_image_scans):
-                # signal plotter to start a new image
-                # sp_id = self.get_next_spatial_id()
-                # self.new_spatial_start.emit(sp_id)
-                self.new_spatial_start.emit(self.sp_db[SPDB_ID_VAL])
-
-            e_roi = self.e_rois[self._current_ev_idx]
-            # configure next ev sscan record with next ev region start/stop
-            self._config_start_stop(self.evScan, 1, e_roi[START], e_roi[STOP], e_roi[NPOINTS])
-
-            # prev_dwell = self.dwell
-            self.dwell = e_roi[DWELL]
-
-            if (self.use_hdw_accel):
-                # need to check to see if dwell changed, if it did we need to re-configure the wavetables
-                # if(prev_dwell != self.dwell):
-                # _logger.debug('dwell changed [%.2f] so reconfiguring the hardware accel' % self.dwell)
-                self.modify_config()
-                # wait for gate and counter to start
-                time.sleep(2.0)
-
-            # need to determine the scan velocity if there is a change in Dwell for this next ev region
-            elif (not self.is_point_spec):
-                # the dwell ime for the new ev region could have changed so determine the scan velo and accRange
-                # need to determine the scan velocity if there is a change in Dwell for this next ev region
-                if (self.is_line_spec and self.is_pxp):
-                    scan_velo = self.get_mtr_max_velo(self.xyScan.P1)
-                    # vmax = self.get_mtr_max_velo(self.xyScan.P1)
-                else:
-                    vmax = self.get_mtr_max_velo(self.xScan.P1)
-                    (scan_velo, npts, dwell) = ensure_valid_values(self.x_roi[START], self.x_roi[STOP], self.dwell,
-                                                                   self.numX, vmax, do_points=True)
-                    # need the range of scan to be passed to calc_accRange()
-                    rng = self.x_roi[STOP] - self.x_roi[START]
-                    accRange = calc_accRange('SampleX', 'Fine', rng, scan_velo, dwell, accTime=0.04)
-                    # reassign dwell because it ay have changed on return from ensure_valid_values()
-                    self.dwell = dwell
-                    _logger.debug('set_sample_scan_velocity Image scan: scan_velo=%.2f um/s accRange=%.2f um' % (
-                    scan_velo, accRange))
-
-                self.set_x_scan_velo(scan_velo)
-                # ok now finish configuration and start it
-                self.on_this_dev_cfg()
-                if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-                    self.gate.start()
-                    self.counter.start()
-                    # sept 11
-                    self.counter.wait_till_running()
-
-
-            elif (self.is_point_spec):
-                # ok now finish configuration and start it
-                self.on_this_dev_cfg()
-                if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-                    if (not self.is_point_spec):
-                        self.gate.start()
-                        self.counter.start()
-                        # sept 11
-                        self.counter.wait_till_running()
-
-            self.start()
-            # let caller know were not done
-            return (False)
-        else:
-            _logger.info('chk_for_more_evregions: Nope no more')
-            if ((not self.is_point_spec) and self.coarse_chk_for_more_spatial_regions()):
-                # were not done
-                return (False)
-            else:
-                if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-                    self.gate.stop()
-                    self.counter.stop()
-
-                # ok scan is all done now, so save final header file
-                if (not self.file_saved):
-                    _logger.debug('chk_for_more_evregions: calling on_save_sample_image()')
-                    self.on_save_sample_image()
-                self.save_hdr()
-
-                # ok there are no more spatial regions to execute
-                return (True)
-
-    def coarse_chk_for_more_spatial_regions(self):
-        """
-        chk_for_more_spatial_regions(): this slot handles the end of scan, when the default on_scan_done() is called in the
-            base scan class it will check for an installed child on_scan_done slot (this one)
-            once this has been called it returns True or False
-
-            return True if there are more spatial Regions and you dont want everything stopped and cleaned up
-
-            return False if there are no more spatial regions and you want the default on_scan_done(0 to finish and clean everything up
-
-        :returns: True if there are more spatial Regions and you dont want everything stopped and cleaned up
-                return False if there are no more spatial regions and you want the default on_scan_done(0 to finish and clean everything up
-
-        """
-        _logger.info('chk_for_more_spatial_regions: checking')
-
-        if (self._abort):
-            _logger.info('chk_for_more_spatial_regions: scan aborting')
-            self.save_hdr()
-            self.hdr.remove_tmp_file()
-            return (True)
-
-        # get the next spatial ID in the list of spatial regions we are to scan
-        sp_id = self.get_next_spatial_id()
-        if (sp_id is not None):
-            # save the current one and then go again
-            self.save_hdr()
-
-            _logger.info('chk_for_more_spatial_regions: found sp_id=%d, loading and starting' % sp_id)
-
-            # because we will be starting a new scan that will have new self.data created we need to reinit the index to the data
-            # because imgidx is what is used as the first dimension of the data
-            _logger.info('chk_for_more_spatial_regions: resetting the data image index')
-            self.reset_imgidx()
-
-            if (self.is_lxl):
-                self.configure(self.wdg_com, sp_id, ev_idx=0, line=True, block_disconnect_emit=True)
-            else:
-                if (self.is_point_spec):
-                    self.configure(self.wdg_com, sp_id, ev_idx=0, line=False, block_disconnect_emit=True)
-                else:
-                    self.configure(self.wdg_com, sp_id, ev_idx=0, line=False, block_disconnect_emit=True)
-            self.start()
-            return (True)
-        else:
-            _logger.info('chk_for_more_spatial_regions: nope all done')
-            return (False)
+    # def coarse_chk_for_more_evregions(self):
+    #     """
+    #     chk_for_more_evregions(): description
+    #
+    #     :returns: None
+    #     """
+    #     """
+    #     this slot handles the end of scan, when the default on_scan_done() is called in the
+    #     base scan class it will check for an installed child on_scan_done slot (this one)
+    #     once this has been called it returns True or False
+    #         return True if there are no more ev regions and you want the default on_scan_done(0) to finish and clean everything up
+    #
+    #         return False if there are more ev Regions and you dont want everything stopped and cleaned up
+    #     """
+    #     multi_ev_single_image_scans = [scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_POINT_SPECTRUM]
+    #
+    #     # Sept 6 if(TEST_SAVE_INITIAL_FILE):
+    #     # Sept 6     self.save_hdr(update=True)
+    #     _logger.info('chk_for_more_evregions: checking')
+    #
+    #     if (self._abort):
+    #         _logger.info('chk_for_more_evregions: scan aborting')
+    #         # make sure to save current scan
+    #         if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+    #             self.gate.stop()
+    #             self.counter.stop()
+    #         # self.on_save_sample_image()
+    #         # self.on_data_level_done()
+    #         self.save_hdr()
+    #         self.hdr.remove_tmp_file()
+    #
+    #         return (True)
+    #
+    #     # increment the index into ev regions
+    #     self.incr_evidx()
+    #
+    #     # if(self._current_ev_idx < len(self.e_rois)):
+    #     if (self.get_evidx() < len(self.e_rois)):
+    #         _logger.info('chk_for_more_evregions: yes there is, loading and starting')
+    #         if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+    #             if (not self.is_point_spec):
+    #                 self.gate.stop()
+    #                 self.counter.stop()
+    #
+    #                 # sept 11
+    #                 self.counter.wait_till_stopped()
+    #
+    #         if (self.scan_type not in multi_ev_single_image_scans):
+    #             # signal plotter to start a new image
+    #             # sp_id = self.get_next_spatial_id()
+    #             # self.new_spatial_start.emit(sp_id)
+    #             self.new_spatial_start.emit(self.sp_db[SPDB_ID_VAL])
+    #
+    #         e_roi = self.e_rois[self._current_ev_idx]
+    #         # configure next ev sscan record with next ev region start/stop
+    #         self._config_start_stop(self.evScan, 1, e_roi[START], e_roi[STOP], e_roi[NPOINTS])
+    #
+    #         # prev_dwell = self.dwell
+    #         self.dwell = e_roi[DWELL]
+    #
+    #         if (self.use_hdw_accel):
+    #             # need to check to see if dwell changed, if it did we need to re-configure the wavetables
+    #             # if(prev_dwell != self.dwell):
+    #             # _logger.debug('dwell changed [%.2f] so reconfiguring the hardware accel' % self.dwell)
+    #             self.modify_config()
+    #             # wait for gate and counter to start
+    #             time.sleep(2.0)
+    #
+    #         # need to determine the scan velocity if there is a change in Dwell for this next ev region
+    #         elif (not self.is_point_spec):
+    #             # the dwell ime for the new ev region could have changed so determine the scan velo and accRange
+    #             # need to determine the scan velocity if there is a change in Dwell for this next ev region
+    #             if (self.is_line_spec and self.is_pxp):
+    #                 scan_velo = self.get_mtr_max_velo(self.xyScan.P1)
+    #                 # vmax = self.get_mtr_max_velo(self.xyScan.P1)
+    #             else:
+    #                 vmax = self.get_mtr_max_velo(self.xScan.P1)
+    #                 (scan_velo, npts, dwell) = ensure_valid_values(self.x_roi[START], self.x_roi[STOP], self.dwell,
+    #                                                                self.numX, vmax, do_points=True)
+    #                 # need the range of scan to be passed to calc_accRange()
+    #                 rng = self.x_roi[STOP] - self.x_roi[START]
+    #                 accRange = calc_accRange('SampleX', 'Fine', rng, scan_velo, dwell, accTime=0.04)
+    #                 # reassign dwell because it ay have changed on return from ensure_valid_values()
+    #                 self.dwell = dwell
+    #                 _logger.debug('set_sample_scan_velocity Image scan: scan_velo=%.2f um/s accRange=%.2f um' % (
+    #                 scan_velo, accRange))
+    #
+    #             self.set_x_scan_velo(scan_velo)
+    #             # ok now finish configuration and start it
+    #             self.on_this_dev_cfg()
+    #             if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+    #                 self.gate.start()
+    #                 self.counter.start()
+    #                 # sept 11
+    #                 self.counter.wait_till_running()
+    #
+    #
+    #         elif (self.is_point_spec):
+    #             # ok now finish configuration and start it
+    #             self.on_this_dev_cfg()
+    #             if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+    #                 if (not self.is_point_spec):
+    #                     self.gate.start()
+    #                     self.counter.start()
+    #                     # sept 11
+    #                     self.counter.wait_till_running()
+    #
+    #         self.start()
+    #         # let caller know were not done
+    #         return (False)
+    #     else:
+    #         _logger.info('chk_for_more_evregions: Nope no more')
+    #         if ((not self.is_point_spec) and self.coarse_chk_for_more_spatial_regions()):
+    #             # were not done
+    #             return (False)
+    #         else:
+    #             if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+    #                 self.gate.stop()
+    #                 self.counter.stop()
+    #
+    #             # ok scan is all done now, so save final header file
+    #             if (not self.file_saved):
+    #                 _logger.debug('chk_for_more_evregions: calling on_save_sample_image()')
+    #                 self.on_save_sample_image()
+    #             self.save_hdr()
+    #
+    #             # ok there are no more spatial regions to execute
+    #             return (True)
+    #
+    # def coarse_chk_for_more_spatial_regions(self):
+    #     """
+    #     chk_for_more_spatial_regions(): this slot handles the end of scan, when the default on_scan_done() is called in the
+    #         base scan class it will check for an installed child on_scan_done slot (this one)
+    #         once this has been called it returns True or False
+    #
+    #         return True if there are more spatial Regions and you dont want everything stopped and cleaned up
+    #
+    #         return False if there are no more spatial regions and you want the default on_scan_done(0 to finish and clean everything up
+    #
+    #     :returns: True if there are more spatial Regions and you dont want everything stopped and cleaned up
+    #             return False if there are no more spatial regions and you want the default on_scan_done(0 to finish and clean everything up
+    #
+    #     """
+    #     _logger.info('chk_for_more_spatial_regions: checking')
+    #
+    #     if (self._abort):
+    #         _logger.info('chk_for_more_spatial_regions: scan aborting')
+    #         self.save_hdr()
+    #         self.hdr.remove_tmp_file()
+    #         return (True)
+    #
+    #     # get the next spatial ID in the list of spatial regions we are to scan
+    #     sp_id = self.get_next_spatial_id()
+    #     if (sp_id is not None):
+    #         # save the current one and then go again
+    #         self.save_hdr()
+    #
+    #         _logger.info('chk_for_more_spatial_regions: found sp_id=%d, loading and starting' % sp_id)
+    #
+    #         # because we will be starting a new scan that will have new self.data created we need to reinit the index to the data
+    #         # because imgidx is what is used as the first dimension of the data
+    #         _logger.info('chk_for_more_spatial_regions: resetting the data image index')
+    #         self.reset_imgidx()
+    #
+    #         if (self.is_lxl):
+    #             self.configure(self.wdg_com, sp_id, ev_idx=0, line=True, block_disconnect_emit=True)
+    #         else:
+    #             if (self.is_point_spec):
+    #                 self.configure(self.wdg_com, sp_id, ev_idx=0, line=False, block_disconnect_emit=True)
+    #             else:
+    #                 self.configure(self.wdg_com, sp_id, ev_idx=0, line=False, block_disconnect_emit=True)
+    #         self.start()
+    #         return (True)
+    #     else:
+    #         _logger.info('chk_for_more_spatial_regions: nope all done')
+    #         return (False)

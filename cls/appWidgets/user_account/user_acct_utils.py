@@ -27,10 +27,10 @@ _logger = get_module_logger(__name__)
 
 #fix this later so that it uses a configurable path
 #appConfig = ConfigClass(abs_path_to_ini_file)
-#uiDir = appConfig.get_value('DEFAULT', 'uiDir')
-#dataDir = appConfig.get_value('DEFAULT', 'dataDir')
-#mtrcfg = appConfig.get_value('DEFAULT', 'mtrcfg')
-#SLASH = appConfig.get_value('DEFAULT', 'dirslash')
+#uiDir = appConfig.get_value('MAIN', 'uiDir')
+#dataDir = appConfig.get_value('MAIN', 'dataDir')
+#mtrcfg = appConfig.get_value('MAIN', 'mtrcfg')
+#SLASH = appConfig.get_value('MAIN', 'dirslash')
 
 
 class user_accnt_mgr(object):

@@ -1,5 +1,6 @@
 #!/usr/bin/python 
 from bcm.devices import BaseObject
+from bcm.devices.mode import DO_SIM
 
 class Mbbo(BaseObject):
 	""" 
@@ -12,11 +13,14 @@ class Mbbo(BaseObject):
 
 		super(Mbbo, self).__init__(base_signal_name, write_pv=base_signal_name + '.VAL', **cb_kwargs)
 
-		self.attrs = ('VAL', 'OUT', 'NAME', 'DESC',
-				 'ZRVL', 'ONVL', 'TWVL', 'THVL', 'FRVL', 'FVVL', 'SXVL', 'SVVL', 'EIVL', 'NIVL', 'TEVL', 'ELVL', 'TVVL',
-				 'TTVL', 'FTVL', 'FFVL',
-				 'ZRST', 'ONST', 'TWST', 'THST', 'FRST', 'FVST', 'SXST', 'SVST', 'EIST', 'NIST', 'TEST', 'ELST', 'TVST',
-				 'TTST', 'FTST', 'FFST')
+		if(DO_SIM):
+			self.attrs = ('VAL', 'OUT', 'NAME', 'DESC')
+		else:
+			self.attrs = ('VAL', 'OUT', 'NAME', 'DESC',
+					 'ZRVL', 'ONVL', 'TWVL', 'THVL', 'FRVL', 'FVVL', 'SXVL', 'SVVL', 'EIVL', 'NIVL', 'TEVL', 'ELVL', 'TVVL',
+					 'TTVL', 'FTVL', 'FFVL',
+					 'ZRST', 'ONST', 'TWST', 'THST', 'FRST', 'FVST', 'SXST', 'SVST', 'EIST', 'NIST', 'TEST', 'ELST', 'TVST',
+					 'TTST', 'FTST', 'FFST')
 
 		self.val_flds = ['ZRVL', 'ONVL', 'TWVL', 'THVL', 'FRVL', 'FVVL', 'SXVL', 'SVVL', 'EIVL', 'NIVL', 'TEVL', 'ELVL',
 					'TVVL', 'TTVL', 'FTVL', 'FFVL']
@@ -25,6 +29,8 @@ class Mbbo(BaseObject):
 
 		self.main_dev = self.add_device(base_signal_name)
 		self.changed = self.main_dev.changed
+		self.on_connect = self.main_dev.on_connect
+		self.is_connected = self.main_dev.is_connected
 
 		for _attr in self.attrs:
 			# sig_name = self.base_signal_name + self._delim + '%s' % _attr

@@ -37,7 +37,7 @@ class DetectorScanClass(BaseScan):
         
         :returns: None
         """
-        super(DetectorScanClass, self).__init__('%sstxm' % main_obj.get_sscan_prefix(), SPDB_XY, main_obj=main_obj)
+        super(DetectorScanClass, self).__init__(main_obj=main_obj)
 
     def configure_devs(self, dets, gate):
         gate.set_dwell(self.dwell)
@@ -133,35 +133,13 @@ class DetectorScanClass(BaseScan):
         self.is_pxp = True
 
         self.config_basic_2d(wdg_com, sp_id=sp_id,z_enabled=False)
+
+        self.seq_map_dct = self.generate_2d_seq_image_map(1, self.y_roi[NPOINTS], self.x_roi[NPOINTS], lxl=False)
+
         # THIS must be the last call
         self.finish_setup()
 
         self.move_zpxy_to_its_center()
-        
-        
-    def on_this_data_level_done(self):
-        """
-        on_this_data_level_done(): description
-
-        :returns: None
-        """
-        """
-        this is an API slot that gets fired when the data level scan_done signal
-        
-        The final data dict should have the main keys of:
-            all_data['SSCANS']      - all fields of each sscan record, this will be a list of sscans
-            all_data['SCAN_CFG']    - all params from the GUI for this scan, center, range etc, also any flags such as XMCD=True that relate to how to execute this scan
-            all_data['DATA']        - counter data collected during scan, for images this will be a 2d array, for point scans this will be a 1d array
-            
-        The goal of all_data dict is to write the dict out to disk in <data dir>/master.json. Once it has been recorded to disk the data recorder
-        module can open it as a json object and export it based on the scan type so that it can pick and choose what to pull out and write to the header file.   
-        
-        """
-        #_logger.debug('Detector: on_data_level_done:')
-        # MAIN_OBJ.device( 'DX_auto_disable_power' ).put(1) #enable again
-        # MAIN_OBJ.device( 'DY_auto_disable_power' ).put(1)
-        # self.on_x_y_scan_data_level_done()
-        pass
         
     def on_this_dev_cfg(self):
         """

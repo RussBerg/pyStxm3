@@ -11,7 +11,7 @@ import os
 import numpy as np
 from cls.app_data.defaults import get_style
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, DEFAULTS
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ, DEFAULTS
 from cls.scanning.base import ScanParamWidget, zp_focus_modes
 from cls.applications.pyStxm.scan_plugins import plugin_dir
 #from cls.applications.pyStxm.scan_plugins.SampleImageWithEnergySSCAN import SampleImageWithEnergySSCAN
@@ -38,21 +38,23 @@ from cls.utils.log import get_module_logger
 
 _logger = get_module_logger(__name__)
 
-MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
-MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
-MAX_SCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_X')
-MAX_SCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_Y')
-USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_int('USE_E712_HDW_ACCEL')
+MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('max_fine_x')
+MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('max_fine_y')
+MAX_SCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('max_coarse_x')
+MAX_SCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('max_coarse_y')
+USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_bool('USE_E712_HDW_ACCEL', 'BL_CFG_MAIN')
 
 
 class TomographyScanParam(ScanParamWidget):
 
     
     def __init__(self, parent=None):
+
         ScanParamWidget.__init__(self, main_obj=MAIN_OBJ, data_io=STXMDataIo, dflts=DEFAULTS)
         self._parent = parent
         self.epu_supported = False
         self.goni_supported = False
+        uic.loadUi(os.path.join(plugin_dir, 'tomography_scan.ui'), self)
 
         if (self.sample_positioning_mode != sample_positioning_modes.GONIOMETER):
             self.name = "Tomography Scan ---- [DISABLED by scanning mode] "
@@ -60,8 +62,6 @@ class TomographyScanParam(ScanParamWidget):
             self.setToolTip('TomographyScansParam: Scan plugin is disabled while in Goniometer sample positioning mode')
         else:
             self.goni_supported = True
-
-            uic.loadUi( os.path.join(plugin_dir, 'tomography_scan.ui'), self)
             self.tomo_zpz_adjust_wdg = uic.loadUi(os.path.join(plugin_dir, 'tomo_zpz_adjust.ui'))
             self.tomo_zpz_adjust_wdg.setModal(True)
 
@@ -113,8 +113,8 @@ class TomographyScanParam(ScanParamWidget):
         :return:
         '''
         self.name = "Tomography Scan"
-        self.idx = scan_panel_order.TOMOGRAPHY_SCAN  # by default
-        self.type = scan_types.TOMOGRAPHY_SCAN
+        self.idx = scan_panel_order.TOMOGRAPHY  # by default
+        self.type = scan_types.TOMOGRAPHY
         self.sub_type = scan_sub_types.LINE_UNIDIR
         self.data = {}
         self.section_id = image_scan_secids[image_scan_secids.TOMO]  # by default
@@ -573,7 +573,7 @@ class TomographyScanParam(ScanParamWidget):
             sp_id = sp_ids[0]
             sp_db = sp_db_dct[sp_id]
             self.sp_db = sp_db
-            image_scans = [scan_types.TOMOGRAPHY_SCAN]
+            image_scans = [scan_types.TOMOGRAPHY]
             if((not ev_only) and (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in image_scans)):
                 return
 
@@ -666,11 +666,11 @@ class TomographyScanParam(ScanParamWidget):
                     x_roi[SCAN_RES] = FINE
 
                 if(dct_get(sp_db, SPDB_EV_NPOINTS) > 1):
-                    self.type = scan_types.TOMOGRAPHY_SCAN
-                    dct_put(sp_db, SPDB_SCAN_PLUGIN_TYPE, scan_types.TOMOGRAPHY_SCAN)     #the scan type: scan_types-> Enum('Detector_Image','OSA_Image','OSA_Focus','Sample_Focus','Sample_Point_Spectrum', 'Sample_Line_Spectrum', 'Sample_Image', 'Sample_Image_Stack', 'Generic_Scan')
+                    self.type = scan_types.TOMOGRAPHY
+                    dct_put(sp_db, SPDB_SCAN_PLUGIN_TYPE, scan_types.TOMOGRAPHY)     #the scan type: scan_types-> Enum('Detector_Image','OSA_Image','OSA_Focus','Sample_Focus','Sample_Point_Spectrum', 'Sample_Line_Spectrum', 'Sample_Image', 'Sample_Image_Stack', 'Generic_Scan')
                     #dct_put(sp_db, SPDB_SCAN_PLUGIN_SUBTYPE, None)
                 else:
-                    dct_put(sp_db, SPDB_SCAN_PLUGIN_TYPE, scan_types.TOMOGRAPHY_SCAN)
+                    dct_put(sp_db, SPDB_SCAN_PLUGIN_TYPE, scan_types.TOMOGRAPHY)
     
     
     

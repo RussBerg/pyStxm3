@@ -105,7 +105,7 @@ def modify_stack_nxdata_group(parent, data_nxgrp, doc, scan_type):
     primary_det_nm = parent.get_primary_det_nm(uid)
     #prim_data_lst = parent._data['primary'][primary_det_nm]['data']
     prim_data_arr = np.array(parent._data['primary'][primary_det_nm][uid]['data'])
-    if(scan_type is scan_types.SAMPLE_POINT_SPECTRA):
+    if(scan_type is scan_types.SAMPLE_POINT_SPECTRUM):
         rows = 1
         cols, = prim_data_arr.shape
     else:

@@ -11,7 +11,7 @@ from PyQt5 import uic
 from bcm.devices.device_names import *
 from bcm.devices import Transform
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 from cls.devWidgets.ophydLabelWidget import assign_aiLabelWidget
 from cls.types.stxmTypes import endstation_id_types
 from cls.appWidgets.basePreference import BasePreference
@@ -168,12 +168,12 @@ class FocusParams(BasePreference):
 		self._parent = parent
 		uic.loadUi(	os.path.join(widgetsUiDir, 'focusAndZoneplateParms.ui'), self) 
 
-		self.evFbkLbl = assign_aiLabelWidget(self.evFbkLbl, MAIN_OBJ.device('ENERGY_RBV'), hdrText='Energy', egu='eV', title_color='white', var_clr='white')
-		self.a1FbkLbl = assign_aiLabelWidget(self.a1FbkLbl, MAIN_OBJ.device('Zp_def.A'), hdrText='A1', egu='', title_color='white', var_clr='white',format='%5.4f')
-		self.a0MaxFbkLbl = assign_aiLabelWidget(self.a0MaxFbkLbl, MAIN_OBJ.device('A0Max'), hdrText='A0Max', egu='um', title_color='white', var_clr='white',format='%5.2f')
-		self.flFbkLbl = assign_aiLabelWidget(self.flFbkLbl, MAIN_OBJ.device('Focal_Length'), hdrText='Fl', egu='um', title_color='white', var_clr='white',format='%5.2f')
-		self.sampleZFbkLbl = assign_aiLabelWidget(self.sampleZFbkLbl, MAIN_OBJ.device('Ideal_A0'), hdrText='Cz', egu='um', title_color='white', var_clr='white',format='%5.2f')
-		self.zpzFbkLbl = assign_aiLabelWidget(self.zpzFbkLbl, MAIN_OBJ.device('ZPZ_RBV'), hdrText='Zpz', egu='um', title_color='white', var_clr='white',format='%5.2f')
+		self.evFbkLbl = assign_aiLabelWidget(self.evFbkLbl, MAIN_OBJ.device(DNM_ENERGY_RBV), hdrText='Energy', egu='eV', title_color='white', var_clr='white')
+		self.a1FbkLbl = assign_aiLabelWidget(self.a1FbkLbl, MAIN_OBJ.device(DNM_ZP_DEF_A), hdrText='A1', egu='', title_color='white', var_clr='white',format='%5.4f')
+		self.a0MaxFbkLbl = assign_aiLabelWidget(self.a0MaxFbkLbl, MAIN_OBJ.device(DNM_A0MAX), hdrText='A0Max', egu='um', title_color='white', var_clr='white',format='%5.2f')
+		self.flFbkLbl = assign_aiLabelWidget(self.flFbkLbl, MAIN_OBJ.device(DNM_FOCAL_LEN), hdrText='Fl', egu='um', title_color='white', var_clr='white',format='%5.2f')
+		self.sampleZFbkLbl = assign_aiLabelWidget(self.sampleZFbkLbl, MAIN_OBJ.device(DNM_IDEAL_A0), hdrText='Cz', egu='um', title_color='white', var_clr='white',format='%5.2f')
+		self.zpzFbkLbl = assign_aiLabelWidget(self.zpzFbkLbl, MAIN_OBJ.device(DNM_ZPZ_RBV), hdrText='Zpz', egu='um', title_color='white', var_clr='white',format='%5.2f')
 		
 		self.a0Fld.returnPressed.connect(self.on_a0_changed)
 		
@@ -336,7 +336,7 @@ class FocusParams(BasePreference):
 		self._cur_sel_zp_def = {}
 
 		self._cur_sel_zp_def['fl'] = fl = float(str(self.flFbkLbl.get_text()))
-		self._cur_sel_zp_def['Zpz_pos'] = Zpz_pos = float(str(self.zpzFbkLbl.get_text()))
+		self._cur_sel_zp_def[DNM_ZPZ_POS] = Zpz_pos = float(str(self.zpzFbkLbl.get_text()))
 		self._cur_sel_zp_def['Cz_pos'] = Cz_pos = float(str(self.sampleZFbkLbl.get_text()))
 		self._cur_sel_zp_def['zpD'] = zpD = float(str(zpParms_ui.zpDFld.text()))
 		self._cur_sel_zp_def['zpCStop'] = zpCStop = float(str(zpParms_ui.zpCStopFld.text()))

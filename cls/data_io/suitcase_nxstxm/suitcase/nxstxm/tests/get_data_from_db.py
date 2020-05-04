@@ -124,7 +124,7 @@ if __name__ == '__main__':
     # sample_focus
     #uids = ['224df41b-94f7-487f-9327-b8a4e06a6de2']
 
-    # SAMPLE_POINT_SPECTRA
+    # SAMPLE_POINT_SPECTRUM
     #uids = ['343a0683-04fa-4391-a854-cb19672be6e6']
 
     #line scan
@@ -237,6 +237,11 @@ if __name__ == '__main__':
             '462978a5-945b-4784-93ee-b523dc744cd1', 'afa6b078-ae7d-4688-9659-9d07ee060986',
             '6c8d070f-cd7b-4ebf-8cd7-0bfa0808ea11']
     uids = ['1f1be5ee-2c8c-4243-81e6-f176cdf6f382']
+    #ptycho
+    uids = ['7e3627e2-4c4c-4c27-add7-b6304dc9393a']
+    #uids = ['cf4e5778-6dfc-4368-92fc-8d23b475e853']
+
+    uids = ['9890c548-e405-4b8a-b291-3fd7d2e1bff5']
     scan_type_str, docs = get_docdata_from_databroker(uids, as_dict=True)
     #print(docs)
     save_doc_data(os.path.join(example_data_dir, scan_type_str + '.json'), docs)

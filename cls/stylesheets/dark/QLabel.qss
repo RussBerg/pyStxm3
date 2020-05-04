@@ -27,6 +27,8 @@ QLabel#posFbkLbl{
   font: bold 11px "MS Shell Dlg 2";  
 }
 
+
+
 QLabel#mtrNameFld{
 	background-color: app_blue;
   color: rgb(0, 0, 0);

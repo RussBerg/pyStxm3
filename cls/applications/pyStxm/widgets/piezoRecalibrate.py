@@ -10,7 +10,7 @@ import time
 import queue
 import atexit
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, POS_TYPE_BL, POS_TYPE_ES
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ, POS_TYPE_BL, POS_TYPE_ES
 from bcm.devices.device_names import *
 from cls.applications.pyStxm.widgets.piezo_recal import piezo_recal
  

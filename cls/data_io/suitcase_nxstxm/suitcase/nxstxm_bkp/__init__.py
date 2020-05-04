@@ -548,9 +548,9 @@ class Serializer(event_model.DocumentRouter):
 				'sample_image', \
 				'sample_image_stack', \
 				'generic_scan', \
-				'coarse_image_scan', \
-				'coarse_goni_scan', \
-				'tomography_scan')
+				'coarse_image', \
+				'coarse_goni', \
+				'tomography')
         :param doc:
         :param scan_type:
         :return:
@@ -709,19 +709,19 @@ class Serializer(event_model.DocumentRouter):
 				'sample_image', \
 				'sample_image_stack', \
 				'generic_scan', \
-				'coarse_image_scan', \
-				'coarse_goni_scan', \
-				'tomography_scan'
+				'coarse_image', \
+				'coarse_goni', \
+				'tomography'
 
         :param scan_type:
         :return:
         '''
-        single_2d_scans = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.COARSE_IMAGE_SCAN, \
-                           scan_types.COARSE_GONI_SCAN]
+        single_2d_scans = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.COARSE_IMAGE, \
+                           scan_types.COARSE_GONI]
         focus_scans = [ scan_types.SAMPLE_FOCUS, scan_types.OSA_FOCUS]
 
         single_image_scans = [scan_types.SAMPLE_IMAGE]
-        stack_type_scans = [scan_types.SAMPLE_IMAGE_STACK, scan_types.TOMOGRAPHY_SCAN]
+        stack_type_scans = [scan_types.SAMPLE_IMAGE_STACK, scan_types.TOMOGRAPHY]
 
         dct = {}
         if(scan_type is scan_types.GENERIC_SCAN):
@@ -762,12 +762,12 @@ class Serializer(event_model.DocumentRouter):
         :param scan_type:
         :return:
         '''
-        single_2d_scans = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.COARSE_IMAGE_SCAN, \
-                           scan_types.COARSE_GONI_SCAN]
+        single_2d_scans = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.COARSE_IMAGE, \
+                           scan_types.COARSE_GONI]
 
         three_d_scans = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.OSA_FOCUS, scan_types.SAMPLE_FOCUS,
-                         scan_types.SAMPLE_IMAGE_STACK, scan_types.COARSE_IMAGE_SCAN, scan_types.COARSE_GONI_SCAN, \
-                         scan_types.TOMOGRAPHY_SCAN]
+                         scan_types.SAMPLE_IMAGE_STACK, scan_types.COARSE_IMAGE, scan_types.COARSE_GONI, \
+                         scan_types.TOMOGRAPHY]
 
         if(scan_type is scan_types.GENERIC_SCAN):
             create_generic_scan_nxdata_group(entry_nxgrp, cntr_nm, doc)
@@ -1293,9 +1293,9 @@ class Serializer(event_model.DocumentRouter):
                 'sample_image', \
                 'sample_image_stack', \
                 'generic_scan', \
-                'coarse_image_scan', \
-                'coarse_goni_scan', \
-                'tomography_scan'
+                'coarse_image', \
+                'coarse_goni', \
+                'tomography'
 
 
                 '''
@@ -1307,7 +1307,7 @@ class Serializer(event_model.DocumentRouter):
         if (scan_type is scan_types.DETECTOR_IMAGE):
             # print('processing a detector scan')
             pass
-        elif (scan_type is scan_types.COARSE_GONI_SCAN):
+        elif (scan_type is scan_types.COARSE_GONI):
             # print('processing a Coarse Goniometer scan')
             pass
 

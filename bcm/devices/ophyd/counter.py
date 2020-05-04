@@ -59,8 +59,8 @@ class Counter(BaseObject):
 
     ##implements(ICounter)
 
-    def __init__(self, base_signal_name=None, zero=0, **kwargs):
-        super(Counter, self).__init__(base_signal_name=base_signal_name, **kwargs)
+    def __init__(self, name=None, zero=0, **kwargs):
+        super(Counter, self).__init__(name=name, **kwargs)
         self.zero = float(zero)
         self.value = None
         self.DESC = ''
@@ -113,8 +113,8 @@ class BaseGate(BaseObject):
     """
 
     # def __init__(self, prefix, num_points=1, dwell=2.0, duty=0.5, soft_trig=False):
-    def __init__(self, base_signal_name=None, **kwargs):
-        super(BaseGate, self).__init__(base_signal_name=base_signal_name, **kwargs)
+    def __init__(self, name=None, **kwargs):
+        super(BaseGate, self).__init__(name=name, **kwargs)
         self.p_dwell = 2.0
         self.p_duty_cycle = 0.5
         self.p_num_points = 1
@@ -150,6 +150,9 @@ class BaseGate(BaseObject):
         self.isRunning = 0
         time.sleep(0.4)
         self.stop()
+
+
+
 
     # self.configure()
     def get_name(self):
@@ -241,14 +244,17 @@ class BaseGate(BaseObject):
         if (self.trig is not None):
             self.trig.put(1)
 
+    def set_dwell(self, val):
+        self.dwell.put(val)
+
 
 class BaseCounter(BaseObject):
     changed = QtCore.pyqtSignal(int, object)
     proc_queue = QtCore.pyqtSignal()
 
-    def __init__(self, base_signal_name=None, **kwargs):
-        super(BaseCounter, self).__init__(base_signal_name=base_signal_name, **kwargs)
-        self.name = self.base_signal_name = self.base_signal_name + ':Run'
+    def __init__(self, name=None, **kwargs):
+        super(BaseCounter, self).__init__(name=name, **kwargs)
+        self.name = self.name = name
         self.data_q = queue.Queue()
         self.proc_queue.connect(self.on_proc_queue)
 

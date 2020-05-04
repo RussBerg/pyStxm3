@@ -12,7 +12,7 @@ import bluesky.preprocessors as bpp
 from cycler import cycler
 
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 from cls.scanning.BaseScan import BaseScan
 from cls.utils.roi_dict_defs import *
 
@@ -36,7 +36,7 @@ class OsaFocusScanClass(BaseScan):
 
         :returns: None
         """
-        super(OsaFocusScanClass, self).__init__('%sstxm' % MAIN_OBJ.get_sscan_prefix(), 'XYZ', main_obj=MAIN_OBJ)
+        super(OsaFocusScanClass, self).__init__(main_obj=MAIN_OBJ)
 
     def init_subscriptions(self, ew, func):
         '''
@@ -49,7 +49,7 @@ class OsaFocusScanClass(BaseScan):
 
         self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE, x=DNM_OSA_X,
                                                 scan_type=self.scan_type, bi_dir=self._bi_dir)
-        self._emitter_cb.set_row_col(rows=self.zz_roi[NPOINTS], cols=self.x_roi[NPOINTS])
+        self._emitter_cb.set_row_col(rows=self.zz_roi[NPOINTS], cols=self.x_roi[NPOINTS], seq_dct=self.seq_map_dct)
         self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
         self._emitter_cb.new_plot_data.connect(func)
 
@@ -126,6 +126,8 @@ class OsaFocusScanClass(BaseScan):
 
         self.configure_x_y_z_arb_linescan(wdg_com, sp_id=sp_id, line=line, z_enabled=z_enabled)
         self.move_zpxy_to_its_center()
+
+        self.seq_map_dct = self.generate_2d_seq_image_map(1, self.zz_roi[NPOINTS], self.x_roi[NPOINTS] , lxl=False)
         
     def on_this_dev_cfg(self):
         """

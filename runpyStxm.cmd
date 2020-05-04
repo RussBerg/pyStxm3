@@ -25,7 +25,7 @@ set LOC=C:\controls\epics\R3.14.12.4\local
 
 set C:\GnuWin32\bin;C:\Perl\bin;%EXTS%\bin\win32-x86;%LOC%\bin\win32-x86;C:\controls\EPICS Windows Tools;%PATH%
 set PATH=%MODS%/asyn-4-21/bin/win32-x86;%PATH%;C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\redist\x86\Microsoft.VC90.CRT
-
+set PATH=C:\Continuum\anaconda3\Library\bin;%PATH%
 cd %CD%\cls\applications\pyStxm
-C:\Continuum\Anaconda2\python.exe %CD%\runPyStxm.py
+C:\Continuum\Anaconda3\python.exe %CD%\runPyStxm.py
 

@@ -1498,7 +1498,7 @@ def make_data_section(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_IMAGE, 
 
     # type_a_scans = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK] #, scan_types.SAMPLE_FOCUS]
     type_a_scans = [scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK,
-                    scan_types.TOMOGRAPHY_SCAN]  # , scan_types.SAMPLE_FOCUS]
+                    scan_types.TOMOGRAPHY]  # , scan_types.SAMPLE_FOCUS]
 
     if (name not in list(nf.keys())):
         src_grp = _group(nf, name, 'NXdata')
@@ -1623,7 +1623,7 @@ def make_data_section(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_IMAGE, 
                 _string_attr(ctrl_grp, 'sample_y_indices', '0')
                 _string_attr(ctrl_grp, 'sample_x_indices', '1')
 
-        elif ((scan_type == scan_types.SAMPLE_IMAGE_STACK) or (scan_type == scan_types.TOMOGRAPHY_SCAN)):
+        elif ((scan_type == scan_types.SAMPLE_IMAGE_STACK) or (scan_type == scan_types.TOMOGRAPHY)):
             if (modify):
                 if (dddata is not None):
                     src_grp[nxkd.NXD_DATA][()] = dddata
@@ -2424,7 +2424,7 @@ def make_control_section_new(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_
 
     # type_a_scans = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK] #, scan_types.SAMPLE_FOCUS]
     type_a_scans = [scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE,
-                    scan_types.SAMPLE_IMAGE_STACK, scan_types.TOMOGRAPHY_SCAN]  # , scan_types.SAMPLE_FOCUS]
+                    scan_types.SAMPLE_IMAGE_STACK, scan_types.TOMOGRAPHY]  # , scan_types.SAMPLE_FOCUS]
 
     if ('control' not in list(nf.keys())):
         ctrl_grp = _group(nf, 'control', 'NXmonitor')
@@ -2487,7 +2487,7 @@ def make_control_section_new(nf, name, data_dct={}, scan_type=scan_types.SAMPLE_
                 _string_attr(ctrl_grp, 'sample_x_indices', '1')
 
         # elif (scan_type == scan_types.SAMPLE_IMAGE_STACK):
-        elif ((scan_type == scan_types.SAMPLE_IMAGE_STACK) or (scan_type == scan_types.TOMOGRAPHY_SCAN)):
+        elif ((scan_type == scan_types.SAMPLE_IMAGE_STACK) or (scan_type == scan_types.TOMOGRAPHY)):
             if (modify):
                 if (dddata is not None):
                     ctrl_grp[nxkd.NXD_DATA][()] = dddata

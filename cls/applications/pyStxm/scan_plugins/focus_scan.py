@@ -19,7 +19,7 @@ from cls.applications.pyStxm.scan_plugins import plugin_dir
 
 from cls.devWidgets.ophydLabelWidget import assign_aiLabelWidget
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, DEFAULTS
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ, DEFAULTS
 
 #from cls.applications.pyStxm.scan_plugins.FocusSSCAN import FocusSSCAN
 from cls.applications.pyStxm.scan_plugins.FocusScan import FocusScanClass
@@ -40,14 +40,11 @@ from cls.utils.log import get_module_logger
 from cls.types.stxmTypes import scan_types, scan_panel_order, spatial_type_prefix, sample_positioning_modes
 
 
-MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
-MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
-MAX_SCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_X')
-MAX_SCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_Y')
-#MAX_ZP_SUBSCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('MAX_ZP_SUBSCAN_RANGE_X')
-#MAX_ZP_SUBSCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('MAX_ZP_SUBSCAN_RANGE_Y')
-
-
+MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('max_fine_x')
+MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('max_fine_y')
+MAX_SCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('max_coarse_x')
+MAX_SCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('max_coarse_y')
+USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_bool('USE_E712_HDW_ACCEL', 'BL_CFG_MAIN')
 
 _logger = get_module_logger(__name__)
 
@@ -78,10 +75,14 @@ class FocusScanParam(ScanParamWidget):
         self.resetDeltaA0Btn.clicked.connect(self.on_reset_delta_a0)
 
         #instanciate both because the non-E712 version is used for coarse scans
-        self.scan_class_coarse = FocusScanClass(main_obj=self.main_obj)
-        self.scan_class_e712 = FocusE712ScanClass(main_obj=self.main_obj)
 
-        self.scan_class = self.scan_class_e712
+        self.scan_class_coarse = FocusScanClass(main_obj=self.main_obj)
+        #set the e712 class to the coarse scan class in case there is no e712 support
+        self.scan_class_e712 = self.scan_class_coarse
+        self.scan_class = self.scan_class_coarse
+        if(USE_E712_HDW_ACCEL):
+            self.scan_class_e712 = FocusE712ScanClass(main_obj=self.main_obj)
+            self.scan_class = self.scan_class_e712
         
         self.sp_db = None
         self.load_from_defaults()
@@ -384,17 +385,17 @@ class FocusScanParam(ScanParamWidget):
 #         
 #         """
 #         #dat = self.get_local_params()
-#         #(calcd_zpz, new_Cz) = focus_to_cursor_set_Cz(dat['fl'], dat['A0'], dat['idealA0'], dat['new_zpz'])
+#         #(calcd_zpz, new_Cz) = focus_to_cursor_set_Cz(dat['fl'], dat[DNM_A0], dat['idealA0'], dat['new_zpz'])
 #         
 #         sflag = self.main_obj.device('Zpz_scanFlag')
 #         sflag.put(0)
 #         #1 for OSA focus scan 0 for anything else
 #         #mtrz = self.main_obj.device('ZonePlateZ.Z')
 #         mtrz = self.main_obj.device(DNM_ZONEPLATE_Z_BASE)
-#         fl = self.main_obj.device('Focal_Length').get_position()
+#         fl = self.main_obj.device(DNM_FOCAL_LEN).get_position()
 #         theo_sample_in_focus = self.main_obj.device('Calcd_Zpz').get_position()
 #         A0 = self.main_obj.device('A0').get_position()
-#         idealA0 = self.main_obj.device('Ideal_A0').get_position()
+#         idealA0 = self.main_obj.device(DNM_IDEAL_A0).get_position()
 #         new_zpz = float(str(self.centerZPFld.text())) 
 #         
 #         (calcd_zpz, A0updated) = focus_to_cursor_set_A0(fl, A0, idealA0, new_zpz)
@@ -416,7 +417,7 @@ class FocusScanParam(ScanParamWidget):
         mtrz.move(zp_cent)
         mtrz.confirm_stopped()
         
-        fl = self.main_obj.device('Focal_Length').get_position()
+        fl = self.main_obj.device(DNM_FOCAL_LEN).get_position()
         mtrz.set_position(fl)
 
         #added Jan 18 2018, if this btn is pressed need to reset delta to 0
@@ -441,7 +442,7 @@ class FocusScanParam(ScanParamWidget):
 #         mtrz.move(zp_cent)
 #         mtrz.confirm_stopped()
 #         
-#         fl = self.main_obj.device('Focal_Length').get_position()
+#         fl = self.main_obj.device(DNM_FOCAL_LEN).get_position()
 #         mtrz.set_position(fl)
     
     def on_focus_a0(self):
@@ -512,9 +513,9 @@ class FocusScanParam(ScanParamWidget):
 #         sflag.put(0)
 #         #1 for OSA focus scan 0 for anything else
 #         mtrz = self.main_obj.device('ZonePlateZ.Z')
-#         fl = self.main_obj.device('Focal_Length').get_position()
+#         fl = self.main_obj.device(DNM_FOCAL_LEN).get_position()
 #         A0 = self.main_obj.device('A0').get_position()
-#         idealA0 = self.main_obj.device('Ideal_A0').get_position()
+#         idealA0 = self.main_obj.device(DNM_IDEAL_A0).get_position()
 #         new_zpz = float(str(self.centerZPFld.text())) 
 #         
 #         (calcd_zpz, A0updated) = focus_to_cursor_set_A0(fl, A0, idealA0, new_zpz)

@@ -36,9 +36,9 @@ _fromUtf8 = lambda s: s
 _logger = get_module_logger(__name__)
 
 #appConfig = ConfigClass(r'../stxmMain.ini')
-#widgetsDir = appConfig.get_value('DEFAULT', 'widgetsDir')
-#imagesDir = appConfig.get_value('DEFAULT', 'imagesDir')
-#SLASH = appConfig.get_value('DEFAULT', 'dirslash')
+#widgetsDir = appConfig.get_value('MAIN', 'widgetsDir')
+#imagesDir = appConfig.get_value('MAIN', 'imagesDir')
+#SLASH = appConfig.get_value('MAIN', 'dirslash')
 
 
 

@@ -614,7 +614,7 @@ class ImageWidget(ImageDialog):
                 self.openfile([dct['file']], addimages=True, dropped=True)
                 self.blockSignals(False)
             elif mimeData.hasUrls():
-                #self.setText("\n{"energy": 1078.7, "xpositioner": "GoniX", "file": "S:\\STXM-data\\Cryo-STXM\\2019\\guest\\0516\\C190516001.hdf5", "estop": 1078.7, "estart": 1078.7, "angle": 0.0, "ypositioner": "GoniY", "polarization": "CircLeft", "start": [356.531656880734, -102.98874617737003], "dwell": 1.0, "stop": [406.531656880734, -52.98874617737003], "scan_type": "sample_image Line_Unidir", "step": [0.33557046979865773, 0.33557046979865773], "goni_theta_cntr": 0.0, "offset": 0.0, "date": "2019-05-16", "center": [374.1234, -72.66], "scan_type_num": 6, "range": [50.0, 50.0], "end_time": "09:10:55", "npoints": [150, 150], "scan_panel_idx": 5, "goni_z_cntr": 200.00643000000002}".join([url.path() for url in mimeData.urls()])){"polarity": "CircLeft", "angle": 0.0, "center": [-419.172, 5624.301], "energy": 1029.0, "step": [110.86591666666668, 114.90791666666667], "scan_type": "coarse_image_scan Line_Unidir", "range": [2660.782, 2757.79], "file": "S:\\STXM-data\\Cryo-STXM\\2017\\guest\\1207\\C171207014.hdf5", "offset": 0.0, "npoints": [25, 25], "dwell": 30.408937142857148, "scan_panel_idx": 8}
+                #self.setText("\n{"energy": 1078.7, "xpositioner": "GoniX", "file": "S:\\STXM-data\\Cryo-STXM\\2019\\guest\\0516\\C190516001.hdf5", "estop": 1078.7, "estart": 1078.7, "angle": 0.0, "ypositioner": "GoniY", "polarization": "CircLeft", "start": [356.531656880734, -102.98874617737003], "dwell": 1.0, "stop": [406.531656880734, -52.98874617737003], "scan_type": "sample_image Line_Unidir", "step": [0.33557046979865773, 0.33557046979865773], "goni_theta_cntr": 0.0, "offset": 0.0, "date": "2019-05-16", "center": [374.1234, -72.66], "scan_type_num": 6, "range": [50.0, 50.0], "end_time": "09:10:55", "npoints": [150, 150], "scan_panel_idx": 5, "goni_z_cntr": 200.00643000000002}".join([url.path() for url in mimeData.urls()])){"polarity": "CircLeft", "angle": 0.0, "center": [-419.172, 5624.301], "energy": 1029.0, "step": [110.86591666666668, 114.90791666666667], "scan_type": "coarse_image Line_Unidir", "range": [2660.782, 2757.79], "file": "S:\\STXM-data\\Cryo-STXM\\2017\\guest\\1207\\C171207014.hdf5", "offset": 0.0, "npoints": [25, 25], "dwell": 30.408937142857148, "scan_panel_idx": 8}
                 #print 'dropEvent: mime data has URLs'
                 pass
             else:
@@ -665,7 +665,7 @@ class ImageWidget(ImageDialog):
     def on_sig_axes_changed(self, obj):
         """
         on_sig_axes_changed(): description
-{"file": "S:\\STXM-data\\Cryo-STXM\\2019\\guest\\0613\\C190613003.hdf5", "scan_type_num": 10, "scan_type": "coarse_goni_scan Point_by_Point", "scan_panel_idx": 4, "energy": 815.4, "estart": 815.4, "estop": 815.4, "e_npnts": 1, "polarization": "CircLeft", "offset": 0.0, "angle": 0.0, "dwell": 1.0, "npoints": [5, 5], "date": "2019-06-13", "end_time": "09:48:44", "center": [800.0, 64.0], "range": [50.0, 50.0], "step": [10.0, 10.0], "start": [775.0, 39.0], "stop": [825.0, 89.0], "xpositioner": "GoniX", "ypositioner": "GoniY"}
+{"file": "S:\\STXM-data\\Cryo-STXM\\2019\\guest\\0613\\C190613003.hdf5", "scan_type_num": 10, "scan_type": "coarse_goni Point_by_Point", "scan_panel_idx": 4, "energy": 815.4, "estart": 815.4, "estop": 815.4, "e_npnts": 1, "polarization": "CircLeft", "offset": 0.0, "angle": 0.0, "dwell": 1.0, "npoints": [5, 5], "date": "2019-06-13", "end_time": "09:48:44", "center": [800.0, 64.0], "range": [50.0, 50.0], "step": [10.0, 10.0], "start": [775.0, 39.0], "stop": [825.0, 89.0], "xpositioner": "GoniX", "ypositioner": "GoniY"}
         :param obj: obj description
         :type obj: obj type
 
@@ -5611,7 +5611,7 @@ class ImageWidget(ImageDialog):
             wdg_com[WDGCOM_CMND] = widget_com_cmnd_types.LOAD_SCAN
             sp_db[WDGCOM_CMND] = widget_com_cmnd_types.LOAD_SCAN
 
-            if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != types.scan_types.SAMPLE_POINT_SPECTRA):
+            if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != types.scan_types.SAMPLE_POINT_SPECTRUM):
                 # self.on_set_aspect_ratio(True)
                 pass
 

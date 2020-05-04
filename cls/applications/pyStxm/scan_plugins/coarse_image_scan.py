@@ -9,7 +9,7 @@ from PyQt5.QtTest import QSignalSpy
 from PyQt5 import uic
 
 import os
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, DEFAULTS
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ, DEFAULTS
 from cls.applications.pyStxm.scan_plugins import plugin_dir
 from cls.applications.pyStxm.scan_plugins.CoarseSampleImageScan import CoarseSampleImageScanClass
 from cls.scanning.paramLineEdit import intLineEditParamObj, dblLineEditParamObj
@@ -34,10 +34,10 @@ from cls.utils.log import get_module_logger
 
 _logger = get_module_logger(__name__)
 
-MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
-MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
-MAX_SCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_X')
-MAX_SCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_Y')
+MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('max_fine_x')
+MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('max_fine_y')
+MAX_SCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('max_coarse_x')
+MAX_SCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('max_coarse_y')
 
 class CoarseImageScanParam(ScanParamWidget):
 
@@ -58,7 +58,7 @@ class CoarseImageScanParam(ScanParamWidget):
 
             self.scan_class = CoarseSampleImageScanClass(main_obj=self.main_obj)
 
-            self.scanTypeSelComboBox.currentIndexChanged.connect(self.scan_type_changed)
+            #does this exist?????self.scanTypeSelComboBox.currentIndexChanged.connect(self.scan_type_changed)
 
             self.data = {}
             self.sp_db = None
@@ -74,8 +74,8 @@ class CoarseImageScanParam(ScanParamWidget):
         :return:
         '''
         self.name = "Coarse Image Scan"
-        self.idx = scan_panel_order.COARSE_IMAGE_SCAN
-        self.type = scan_types.COARSE_IMAGE_SCAN
+        self.idx = scan_panel_order.COARSE_IMAGE
+        self.type = scan_types.COARSE_IMAGE
         self.sub_type = scan_sub_types.LINE_UNIDIR
         self.section_id = 'COARSE_IMAGE'
         self.axis_strings = ['Sample Y microns', 'Sample X microns', '', '']
@@ -106,27 +106,27 @@ class CoarseImageScanParam(ScanParamWidget):
         # call the base class defocus
         super(CoarseImageScanParam, self).on_plugin_defocus()
 
-    def scan_type_changed(self, idx):
-        if (idx == 0):
-            # line by line
-            #             self.idx = scan_types.SAMPLE_IMAGE #by default
-            #             self.type = scan_types.SAMPLE_IMAGE
-            self.sub_type = scan_sub_types.LINE_UNIDIR
-
-        else:
-            # point by point
-            #             self.idx = scan_types.SAMPLE_IMAGE #*POINT*
-            #             self.type = scan_types.SAMPLE_IMAGE
-            self.sub_type = scan_sub_types.POINT_BY_POINT
-
-
-        x_roi = self.sp_db[SPDB_X]
-        y_roi = self.sp_db[SPDB_Y]
-        dwell = self.sp_db[SPDB_EV_ROIS][0][DWELL]
-        if (self.sub_type == scan_sub_types.POINT_BY_POINT):
-            self.calc_new_scan_time_estemate(True, x_roi, y_roi, dwell)
-        else:
-              self.calc_new_scan_time_estemate(False, x_roi, y_roi, dwell)
+    # def scan_type_changed(self, idx):
+    #     if (idx == 0):
+    #         # line by line
+    #         #             self.idx = scan_types.SAMPLE_IMAGE #by default
+    #         #             self.type = scan_types.SAMPLE_IMAGE
+    #         self.sub_type = scan_sub_types.LINE_UNIDIR
+    #
+    #     else:
+    #         # point by point
+    #         #             self.idx = scan_types.SAMPLE_IMAGE #*POINT*
+    #         #             self.type = scan_types.SAMPLE_IMAGE
+    #         self.sub_type = scan_sub_types.POINT_BY_POINT
+    #
+    #
+    #     x_roi = self.sp_db[SPDB_X]
+    #     y_roi = self.sp_db[SPDB_Y]
+    #     dwell = self.sp_db[SPDB_EV_ROIS][0][DWELL]
+    #     if (self.sub_type == scan_sub_types.POINT_BY_POINT):
+    #         self.calc_new_scan_time_estemate(True, x_roi, y_roi, dwell)
+    #     else:
+    #           self.calc_new_scan_time_estemate(False, x_roi, y_roi, dwell)
 
 
     def connect_paramfield_signals(self):
@@ -149,22 +149,22 @@ class CoarseImageScanParam(ScanParamWidget):
         # call standard function to check the fields of the scan param and assign limits
         self.connect_param_flds_to_validator(lim_dct)
 
-    def update_sub_type(self):
-        idx = self.scanTypeSelComboBox.currentIndex()
-        if (idx == scan_sub_types.POINT_BY_POINT):
-            # point by point
-            #             self.idx = scan_types.SAMPLE_IMAGE #*POINT*
-            #             self.type = scan_types.SAMPLE_IMAGE
-
-            self.sub_type = scan_sub_types.POINT_BY_POINT
-
-        else:
-            # line by line
-            #             self.idx = scan_types.SAMPLE_IMAGE #by default
-            #             self.type = scan_types.SAMPLE_IMAGE
-            self.sub_type = scan_sub_types.LINE_UNIDIR
-
-        dct_put(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE, self.sub_type)
+    # def update_sub_type(self):
+    #     idx = self.scanTypeSelComboBox.currentIndex()
+    #     if (idx == scan_sub_types.POINT_BY_POINT):
+    #         # point by point
+    #         #             self.idx = scan_types.SAMPLE_IMAGE #*POINT*
+    #         #             self.type = scan_types.SAMPLE_IMAGE
+    #
+    #         self.sub_type = scan_sub_types.POINT_BY_POINT
+    #
+    #     else:
+    #         # line by line
+    #         #             self.idx = scan_types.SAMPLE_IMAGE #by default
+    #         #             self.type = scan_types.SAMPLE_IMAGE
+    #         self.sub_type = scan_sub_types.LINE_UNIDIR
+    #
+    #     dct_put(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE, self.sub_type)
 
     def update_min_max(self):
 
@@ -400,7 +400,7 @@ class CoarseImageScanParam(ScanParamWidget):
 
         """
         # update local widget_com dict
-        self.update_sub_type()
+        #self.update_sub_type()
         wdg_com = self.update_single_spatial_wdg_com()
 
         self.roi_changed.emit(wdg_com)

@@ -433,7 +433,7 @@ class test(QtWidgets.QWidget):
     def __init__(self):
         QtWidgets.QWidget.__init__(self)
         from PyQt5.QtWidgets import QVBoxLayout
-        from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+        from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
         from cls.utils.dict_utils import dct_get, dct_put
         from bcm.devices.device_names import DNM_AX2_INTERFER_VOLTS
         from bcm.devices.epics.aio import aio
@@ -467,7 +467,7 @@ class test(QtWidgets.QWidget):
         # self.modelabel = ca_mbbiLabelWidget(MAIN_OBJ.device('SYSTEM:mode:fbk'), hdrText='SR Mode',
         #                                     title_color=title_color, var_clr=fbk_color)
         # # self.modelabel = ca_biLabelWidget(MAIN_OBJ.device('SYSTEM:mode:fbk').get_name(), hdrText='SR Mode', title_color=title_color, var_clr=fbk_color)
-        self.evFbkLbl = ca_aiLabelWidget(MAIN_OBJ.device('ENERGY_RBV'), hdrText='Energy', egu='eV',
+        self.evFbkLbl = ca_aiLabelWidget(MAIN_OBJ.device(DNM_ENERGY_RBV), hdrText='Energy', egu='eV',
                                           title_color=title_color, var_clr=fbk_color, alarm=5, warn=50)
 
 

@@ -210,5 +210,5 @@ class EnergyScanTableModel(BaseScanTableModel):
                 self.scanListData[row][CENTER] = newscan[CENTER] 
                 self.scanListData[row][RANGE] = newscan[RANGE]
                 self.scanListData[row][ROI_STEP] = newscan[ROI_STEP]
-                self.scanListData[row][NPOINTS] = newscan[NPOINTS]
+                self.scanListData[row][NPOINTS] = int(newscan[NPOINTS])
             row += 1        

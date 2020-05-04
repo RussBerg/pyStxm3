@@ -6,5 +6,5 @@ Module = fine_point_scan
 [Documentation]
 Author = Russ Berg
 Version = 0.1
-Website = http://lateral.netmanagers.com.ar
+Website = http://
 Description = Params for an Point scan

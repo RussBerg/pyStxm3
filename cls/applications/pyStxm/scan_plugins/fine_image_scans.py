@@ -9,12 +9,13 @@ from PyQt5 import uic
 import os
 from cls.app_data.defaults import get_style
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, DEFAULTS
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ, DEFAULTS
 from cls.scanning.base import ScanParamWidget, zp_focus_modes
 from cls.applications.pyStxm.scan_plugins import plugin_dir
 # from cls.applications.pyStxm.scan_plugins.SampleImageWithEnergySSCAN import SampleImageWithEnergySSCAN
 # from cls.applications.pyStxm.scan_plugins.SampleImageWithE712Wavegen import SampleImageWithE712Wavegen
 from cls.applications.pyStxm.scan_plugins.SampleFineImageWithE712WavegenScan import SampleFineImageWithE712WavegenScanClass
+from cls.applications.pyStxm.scan_plugins.SampleFineImageScan import FineSampleImageScanClass
 from cls.applications.pyStxm.widgets.scan_table_view.multiRegionWidget import MultiRegionWidget
 from bcm.devices.device_names import *
 
@@ -35,11 +36,11 @@ from cls.utils.log import get_module_logger
 
 _logger = get_module_logger(__name__)
 
-MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
-MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
-MAX_SCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_X')
-MAX_SCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_Y')
-USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_int('USE_E712_HDW_ACCEL')
+MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('max_fine_x')
+MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('max_fine_y')
+MAX_SCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('max_coarse_x')
+MAX_SCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('max_coarse_y')
+USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_bool('USE_E712_HDW_ACCEL', 'BL_CFG_MAIN')
 
 class FineImageScansParam(ScanParamWidget):
 
@@ -95,7 +96,7 @@ class FineImageScansParam(ScanParamWidget):
         if(USE_E712_HDW_ACCEL):
             self.scan_class = SampleFineImageWithE712WavegenScanClass(main_obj=self.main_obj)
         else:
-            self.scan_class = SampleFineImageWithE712WavegenScanClass(main_obj=self.main_obj)
+            self.scan_class = FineSampleImageScanClass(main_obj=self.main_obj)
 
         #self.singleEVChkBx.clicked.connect(self.on_single_energy)
         self.hdwAccelDetailsBtn.clicked.connect(self.show_hdw_accel_details)

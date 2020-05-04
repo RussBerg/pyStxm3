@@ -206,7 +206,7 @@ class MultiRegionWidget(BaseSelectionWidget):
         self.compare_roi(roi_def, axis=SPDB_X)
     
     def on_load_scan(self ):
-        from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+        from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
         from cls.data_io.stxm_data_io import STXMDataIo
         from cls.utils.fileUtils import get_file_path_as_parts
         from cls.appWidgets.dialogs import getOpenFileName
@@ -264,9 +264,9 @@ class MultiRegionWidget(BaseSelectionWidget):
         tables
         scan_types = Enum('Detector_Image','OSA_Image','OSA_Focus','Sample_Focus','Sample_Point_Spectrum', 'Sample_Line_Spectrum', 'Sample_Image', 'Sample_Image_Stack', 'Generic_Scan')
         """
-        multi_scan_types = [scan_types.SAMPLE_POINT_SPECTRA, scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE, \
+        multi_scan_types = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE, \
                             scan_types.SAMPLE_IMAGE_STACK, scan_types.SAMPLE_IMAGE + IMAGE_LXL, \
-                            scan_types.SAMPLE_IMAGE + IMAGE_PXP, scan_types.TOMOGRAPHY_SCAN]
+                            scan_types.SAMPLE_IMAGE + IMAGE_PXP, scan_types.TOMOGRAPHY]
         
         sp_roi_dct = dct_get(wdg_com, WDGCOM_SPATIAL_ROIS)
         sp_ids = list(sp_roi_dct.keys())
@@ -621,7 +621,7 @@ class MultiRegionWidget(BaseSelectionWidget):
 
         :returns: None
         """
-        print()
+        print('multiRegionWidget: compare_roi: 624')
         fields = [CENTER, RANGE, NPOINTS, STEP, START, STOP]
         if(axis == SPDB_X):
             ax = roi_def[SPDB_SPATIAL_ROIS][0]

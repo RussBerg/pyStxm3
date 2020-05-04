@@ -11,7 +11,7 @@ from PyQt5 import uic
 from bcm.devices.device_names import *
 from bcm.epics_devices_MOVED.transform import Transform
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, DEFAULTS
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ, DEFAULTS
 from cls.caWidgets.caLabelWidget import assign_aiLabelWidget
 from cls.types.stxmTypes import endstation_id_types
 

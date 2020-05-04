@@ -16,7 +16,7 @@ import os
 
 
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, DEFAULTS
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ, DEFAULTS
 from cls.applications.pyStxm.scan_plugins import plugin_dir
 from cls.applications.pyStxm.scan_plugins.DetectorScan import DetectorScanClass
 from cls.scanning.paramLineEdit import intLineEditParamObj, dblLineEditParamObj

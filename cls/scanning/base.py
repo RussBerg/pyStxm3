@@ -64,7 +64,7 @@ WARN_BKGRND_COLOR = 'yellow'
 
 
 # appConfig = ConfigClass(abs_path_to_ini_file)
-# scanDefs_dir = appConfig.get_value('DEFAULT', 'scanDefsDir')
+# scanDefs_dir = appConfig.get_value('MAIN', 'scanDefsDir')
 
 
 class Formatter(object):
@@ -320,8 +320,8 @@ class ScanParamWidget(QtWidgets.QFrame):
     def gen_GONI_SCAN_max_scan_range_limit_def(self):
         """ to be overridden by inheriting class
         """
-        MAX_SCAN_RANGE_FINEX = self.main_obj.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
-        MAX_SCAN_RANGE_FINEY = self.main_obj.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
+        MAX_SCAN_RANGE_FINEX = self.main_obj.get_preset_as_float('max_fine_x')
+        MAX_SCAN_RANGE_FINEY = self.main_obj.get_preset_as_float('max_fine_y')
         MAX_SCAN_RANGE_X = self.main_obj.get_preset_as_float('MAX_SCAN_RANGE_X')
         MAX_SCAN_RANGE_Y = self.main_obj.get_preset_as_float('MAX_SCAN_RANGE_Y')
         mtr_zpx = self.main_obj.device(DNM_ZONEPLATE_X)
@@ -1203,7 +1203,7 @@ class ScanParamWidget(QtWidgets.QFrame):
                 if (not load_image_data):
                     return
 
-                if (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) == scan_types.SAMPLE_POINT_SPECTRA):
+                if (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) == scan_types.SAMPLE_POINT_SPECTRUM):
                     valid_data_dim = 1
 
                 elif (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) == scan_types.SAMPLE_IMAGE):
@@ -2320,8 +2320,8 @@ class ScanParamWidget(QtWidgets.QFrame):
         :return:
         '''
 
-        MAX_SCAN_RANGE_FINEX = self.main_obj.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
-        MAX_SCAN_RANGE_FINEY = self.main_obj.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
+        MAX_SCAN_RANGE_FINEX = self.main_obj.get_preset_as_float('max_fine_x')
+        MAX_SCAN_RANGE_FINEY = self.main_obj.get_preset_as_float('max_fine_y')
         MAX_SCAN_RANGE_X = self.main_obj.get_preset_as_float('MAX_SCAN_RANGE_X')
         MAX_SCAN_RANGE_Y = self.main_obj.get_preset_as_float('MAX_SCAN_RANGE_Y')
 

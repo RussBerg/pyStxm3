@@ -11,7 +11,7 @@ from bluesky.plans import scan
 import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 from bcm.devices.device_names import *
 from cls.scanning.BaseScan import BaseScan, SIMULATE_IMAGE_DATA, SIM_DATA
 from cls.scanning.SScanClass import SScanClass
@@ -19,6 +19,7 @@ from cls.scanning.scan_cfg_utils import set_devices_for_point_scan
 from cls.utils.roi_dict_defs import *
 from cls.utils.dict_utils import dct_get
 from cls.utils.log import get_module_logger
+from cls.utils.dict_utils import dct_put
 from cls.utils.prog_dict_utils import make_progress_dict
 from cls.types.stxmTypes import sample_fine_positioning_modes, spectra_type_scans, scan_types
 from cls.scan_engine.bluesky.data_emitters import SpecDataEmitter
@@ -29,6 +30,7 @@ from cls.plotWidgets.utils import *
 
 _logger = get_module_logger(__name__)
 
+USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_bool('USE_E712_HDW_ACCEL', 'BL_CFG_MAIN')
 
 class PositionerScanClass(BaseScan):
     """ a scan for executing a positioner line pxp scan in X, """
@@ -131,6 +133,7 @@ class PositionerScanClass(BaseScan):
 
         :returns: None
         """
+        super(PositionerScanClass, self).configure(wdg_com, sp_id=sp_id, line=line, z_enabled=False)
         #use base configure x y motor scan
         self.stack = False
         self.is_point_spec = True
@@ -138,11 +141,16 @@ class PositionerScanClass(BaseScan):
         self.is_lxl = False
         self.sp_id = sp_id
 
-        self.main_obj.device('e712_current_sp_id').put(sp_id)
+        dct_put(self.sp_db, SPDB_RECT, (self.x_roi[START], self.y_roi[START], self.x_roi[STOP], self.y_roi[STOP]))
+
+        if(USE_E712_HDW_ACCEL):
+            self.main_obj.device('e712_current_sp_id').put(sp_id)
 
         self.configure_x_scan_LINEAR(wdg_com, sp_id=sp_id, line=False)
 
         self.move_zpxy_to_its_center()
+
+        self.seq_map_dct = self.generate_2d_seq_image_map(1, self.y_roi[NPOINTS], self.x_roi[NPOINTS], lxl=False)
 
 
 

@@ -39,7 +39,7 @@ scan_types = Enum('detector_image', \
 
 positioner_sub_types = Enum('SampleXY', 'GoniometerXY')
 scan_sub_types = Enum('Point_by_Point', 'Line_Unidir')
-scans_with_energy = [scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_POINT_SPECTRA, scan_types.GENERIC_SCAN]
+scans_with_energy = [scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_POINT_SPECTRUM, scan_types.GENERIC_SCAN]
 image_types = Enum('focus', 'osafocus','image', 'line_plot')
 
 image_scan_secids = Enum('SAMPLE_LXL', 'SAMPLE_PXP')
@@ -52,9 +52,9 @@ scan_image_types = {scan_types.DETECTOR_IMAGE: image_types.IMAGE, \
                 scan_types.SAMPLE_IMAGE+IMAGE_LXL: image_types.IMAGE, \
                 scan_types.SAMPLE_IMAGE+IMAGE_PXP: image_types.IMAGE, \
                 scan_types.SAMPLE_IMAGE: image_types.IMAGE, \
-                scan_types.SAMPLE_POINT_SPECTRA: image_types.LINE_PLOT, \
+                scan_types.SAMPLE_POINT_SPECTRUM: image_types.LINE_PLOT, \
                 scan_types.GENERIC_SCAN: image_types.LINE_PLOT, \
-                scan_types.SAMPLE_LINE_SPECTRA: image_types.LINE_PLOT, \
+                scan_types.SAMPLE_LINE_SPECTRUM: image_types.LINE_PLOT, \
                 scan_types.ZP_IMAGE_SCAN+IMAGE_LXL: image_types.IMAGE, \
                 scan_types.ZP_IMAGE_SCAN+IMAGE_PXP: image_types.IMAGE, \
                 scan_types.ZP_IMAGE_SCAN: image_types.IMAGE, \

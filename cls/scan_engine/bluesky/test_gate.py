@@ -65,6 +65,9 @@ class BaseCounterOutputDevice(ophyd.Device):
         self.trig = None
         self.mode = bs_dev_modes.NORMAL_PXP # 0 == point, 1 == line
 
+    def report(self):
+        print('\tname = %s, type = %s' % (str(self.__class__), self.name))
+
     def set_trig_src(self, src=trig_src_types.NORMAL_PXP):
         assert src in trig_src_types._dict.keys(), "src must be of type trig_src_types"
         if(src in trig_src_types._dict.keys()):

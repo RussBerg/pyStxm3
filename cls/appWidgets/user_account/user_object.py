@@ -19,7 +19,7 @@ class user_obj(object):
     def __init__(self, abs_path_to_ini_file):
         super(user_obj, self).__init__()
         appConfig = ConfigClass(abs_path_to_ini_file)
-        dataDir = appConfig.get_value('DEFAULT', 'dataDir')
+        dataDir = appConfig.get_value('MAIN', 'dataDir')
 
         self._userName = None
         self._password = None

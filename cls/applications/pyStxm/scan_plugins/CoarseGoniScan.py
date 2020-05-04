@@ -11,7 +11,7 @@ import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 from bluesky.plan_stubs import pause, open_run, close_run, sleep, mv
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 from cls.scanning.BaseScan import BaseScan
 from cls.scanning.SScanClass import SScanClass
 from cls.scanning.scan_cfg_utils import set_devices_for_point_scan
@@ -35,7 +35,7 @@ class CoarseGoniScanClass(BaseScan):
 
         :returns: None
         """
-        super(CoarseGoniScanClass, self).__init__('%sstxm' % main_obj.get_sscan_prefix(), SPDB_XY, main_obj=main_obj)
+        super(CoarseGoniScanClass, self).__init__(main_obj=main_obj)
 
 
     def configure_devs(self, dets, gate):
@@ -123,8 +123,11 @@ class CoarseGoniScanClass(BaseScan):
         self.is_pxp = True
 
         self.config_basic_2d(wdg_com, sp_id=sp_id, z_enabled=False)
+
+        self.seq_map_dct = self.generate_2d_seq_image_map(1, self.y_roi[NPOINTS], self.x_roi[NPOINTS], lxl=False)
         # THIS must be the last call
         self.finish_setup()
+
 
         self.move_zpxy_to_its_center()
 

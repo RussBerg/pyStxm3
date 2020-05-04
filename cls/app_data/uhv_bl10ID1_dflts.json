@@ -3,15 +3,21 @@
         "UI": {
             "COLORS": {
                 "app_blue": "rgb(114, 148, 240);",
+                "app_drkblue": "rgb(0, 85, 255);",
                 "app_drkgray": "rgb(66, 69, 66);",
                 "app_green": "rgb(99, 142, 82);",
+                "app_ltblue": "rgb(115, 150, 247);",
                 "app_ltgray": "rgb(165, 165, 165);",
+                "app_ltgreen": "rgb(85,255,127);",
+                "app_medblue": "rgb(94,123, 209);",
                 "app_meddrkgray": "rgb(100, 100, 100);",
                 "app_medgray": "rgb(115, 113, 115);",
                 "app_red": "rgb(142,50,50);",
                 "app_superltgray": "rgb(205, 205, 205);",
                 "app_yellow": "rgb(236,236,0);",
                 "black": "rgb(0,0,0);",
+                "btn_pressed": "qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgb(94, 128, 220), stop:1 rgb(72, 99, 174));",
+                "fbk_moving_ylw": "rgb(254, 233, 0);",
                 "master_background_color": "rgb(115,113,115);",
                 "msg_color": "rgb(0, 0, 254);",
                 "plot_bckgrnd": "rgb(0,0,0);",
@@ -20,6 +26,24 @@
                 "plot_gridmin": "rgb(40,40,40);",
                 "scan_sts_blue": "rgb(60, 115, 235);",
                 "white": "rgb(255,255,255);"
+            }
+        }
+    },
+    "PREFS": {
+        "DETECTORSPANEL": {
+            "COUNTER_APD": {
+                "COUNTER": "ctr1",
+                "DEVICE": "Dev3",
+                "ENABLED": false,
+                "SRC_CLK": "PFI2",
+                "SRC_TERM": "PFI1"
+            },
+            "PMT": {
+                "COUNTER": "ctr2",
+                "DEVICE": "Dev4",
+                "ENABLED": false,
+                "SRC_CLK": "PFI12",
+                "SRC_TERM": "PFI0"
             }
         }
     },
@@ -117,27 +141,27 @@
     "SCAN": {
         "DETECTOR": {
             "CENTER": [
-                0.0,
-                0.0,
+                586,
+                259,
                 0,
                 0
             ],
             "DWELL": 2.0,
             "NPOINTS": [
-                60,
-                60,
+                20,
+                20,
                 0,
                 0
             ],
             "RANGE": [
-                50.0,
-                50.0,
+                20,
+                20,
                 0,
                 0
             ],
             "STEP": [
-                0.847457627118644,
-                0.847457627118644,
+                1,
+                1,
                 0,
                 0
             ]
@@ -277,33 +301,6 @@
                 0
             ]
         },
-        "POSITIONER": {
-            "CENTER": [
-                250.0,
-                0,
-                0,
-                0
-            ],
-            "DWELL": 50.0,
-            "NPOINTS": [
-                250,
-                0,
-                0,
-                0
-            ],
-            "RANGE": [
-                1500.0,
-                0,
-                0,
-                0
-            ],
-            "STEP": [
-                5.020080321285141,
-                0,
-                0,
-                0
-            ]
-        },
         "SAMPLE_LXL": {
             "CENTER": [
                 586,
@@ -359,5 +356,5 @@
             ]
         }
     },
-    "fpath": "/home/bergr/git/testing/feb17/pyStxm/cls/app_data/bioxas_dflts.json"
+    "fpath": "C:\\controls\\github\\pyStxm3\\cls\\app_data\\uhv_bl10ID1_dflts.json"
 }

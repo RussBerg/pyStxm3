@@ -6,7 +6,7 @@ Created on Aug 25, 2014
 from PyQt5 import QtCore, QtGui
 from PyQt5 import uic
 import os
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, DEFAULTS
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ, DEFAULTS
 from cls.scanning.base import ScanParamWidget, zp_focus_modes
 from cls.applications.pyStxm.scan_plugins import plugin_dir
 from cls.applications.pyStxm.scan_plugins.LineSpecScan import LineSpecScanClass
@@ -30,11 +30,11 @@ from cls.utils.log import get_module_logger
 
 _logger = get_module_logger(__name__)
 
-MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
-MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
-MAX_SCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_X')
-MAX_SCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_Y')
-USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_int('USE_E712_HDW_ACCEL')
+MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('max_fine_x')
+MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('max_fine_y')
+MAX_SCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('max_coarse_x')
+MAX_SCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('max_coarse_y')
+USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_bool('USE_E712_HDW_ACCEL', 'BL_CFG_MAIN')
 
 class LineScansParam(ScanParamWidget):
 
@@ -102,7 +102,7 @@ class LineScansParam(ScanParamWidget):
         '''
         self.name = "Line Scan"
         self.idx = scan_panel_order.LINE_SCAN  # by default
-        self.type = scan_types.SAMPLE_LINE_SPECTRA
+        self.type = scan_types.SAMPLE_LINE_SPECTRUM
         self.data = {}
         self.section_id = 'LINE'
         self.axis_strings = ['XY microns', 'Energy eV', '', '']
@@ -124,6 +124,7 @@ class LineScansParam(ScanParamWidget):
         if (self.isEnabled()):
             # call the standard init_base_values function for scan param widgets that contain a multiRegionWidget
             self.on_multiregion_widget_focus_init_base_values()
+
         super(LineScansParam, self).on_plugin_focus()
 
     def on_plugin_defocus(self):
@@ -284,7 +285,7 @@ class LineScansParam(ScanParamWidget):
             sp_id = sp_ids[0]
             sp_db = sp_roi_dct[sp_id]
 
-            if(not ev_only and (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_LINE_SPECTRA)):
+            if(not ev_only and (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_LINE_SPECTRUM)):
                 return
 
             # if(not ev_only):
@@ -523,7 +524,7 @@ class LineScansParam(ScanParamWidget):
         """
         sub_spatials = {}
         sp_dbs = dct_get(wdg_com, WDGCOM_SPATIAL_ROIS)
-        
+
         mtr_gx = self.main_obj.device(DNM_GONI_X)
         mtr_gy = self.main_obj.device(DNM_GONI_Y)
         mtr_gz = self.main_obj.device(DNM_GONI_Z)

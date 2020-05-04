@@ -30,11 +30,12 @@ class Transform(BaseObject):
         #              'OUT%s': 'OUT%s',
         #              'O%sV': 'O%sV',
         #              'CMT%s': 'CMT%s'}
-        self.attr_fmts = {'%s': '%s',
-                          'INP%s': 'INP%s',
-                          'CLC%s': 'CLC%s',
-                          'OUT%s': 'OUT%s',
-                          'CMT%s': 'CMT%s'}
+        # self.attr_fmts = {'%s': '%s',
+        #                   'INP%s': 'INP%s',
+        #                   'CLC%s': 'CLC%s',
+        #                   'OUT%s': 'OUT%s',
+        #                   'CMT%s': 'CMT%s'}
+        self.attr_fmts = {'%s': '%s'}
         self.attrs = ['COPT', 'PREC', 'PINI', 'DESC']
         self.rows = 'ABCDEFGHIJKLMNOP'
         self.all_rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P']
@@ -45,6 +46,11 @@ class Transform(BaseObject):
             base_signal_name = base_signal_name[:-1]
 
         super(Transform, self).__init__(base_signal_name)
+
+        self.main_dev = self.add_device(base_signal_name)
+        self.changed = self.main_dev.changed
+        self.on_connect = self.main_dev.on_connect
+        self.is_connected = self.main_dev.is_connected
 
         # self.attrs = ['COPT', 'PREC', 'PINI']
         for fmt in list(self.attr_fmts.values()):

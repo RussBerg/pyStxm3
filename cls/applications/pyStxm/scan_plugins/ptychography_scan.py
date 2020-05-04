@@ -1,8 +1,8 @@
-'''
+"""
 Created on Aug 25, 2014
 
 @author: bergr
-'''
+"""
 '''
 Created on Aug 25, 2014
 
@@ -13,7 +13,7 @@ from PyQt5 import uic
 
 import copy
 import os
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, DEFAULTS
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ, DEFAULTS
 from cls.scanning.base import ScanParamWidget, zp_focus_modes
 from cls.applications.pyStxm.scan_plugins import plugin_dir
 from cls.applications.pyStxm.scan_plugins.PtychographyScan import PtychographyScanClass
@@ -21,10 +21,12 @@ from bcm.devices.device_names import *
 from cls.scanning.paramLineEdit import intLineEditParamObj, dblLineEditParamObj
 from cls.data_io.stxm_data_io import STXMDataIo
 from cls.data_io.utils import test_eq, check_roi_for_match, get_first_entry_key, get_first_sp_db_from_entry, get_axis_setpoints_from_sp_db
-
+from cls.applications.pyStxm.widgets.scan_table_view.multiRegionWidget import MultiRegionWidget
 from cls.utils.roi_utils import get_base_roi, get_base_energy_roi, make_spatial_db_dict, widget_com_cmnd_types, on_range_changed, on_center_changed
-from cls.types.stxmTypes import scan_types, scan_panel_order, spatial_type_prefix, image_types, sample_positioning_modes, sample_fine_positioning_modes
-
+from cls.types.stxmTypes import scan_types, scan_sub_types, scan_panel_order, spatial_type_prefix, image_types, sample_positioning_modes, sample_fine_positioning_modes
+from cls.utils.roi_utils import make_spatial_db_dict, widget_com_cmnd_types, get_unique_roi_id, \
+                    on_range_changed, on_npoints_changed, on_step_size_changed, on_start_changed, on_stop_changed, \
+                    on_center_changed, recalc_setpoints, get_base_start_stop_roi, get_base_roi, get_first_sp_db_from_wdg_com
 from cls.plotWidgets.shape_restrictions import ROILimitObj, ROILimitDef
 from cls.plotWidgets.color_def import get_normal_clr, get_warn_clr, get_alarm_clr, get_normal_fill_pattern, get_warn_fill_pattern, get_alarm_fill_pattern
 
@@ -33,11 +35,11 @@ from cls.utils.roi_dict_defs import *
 from cls.utils.log import get_module_logger
 
 from cls.applications.pyStxm.scan_plugins.osa_scan_tester import test_sp_db
-MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
-MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
-MAX_SCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_X')
-MAX_SCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('MAX_SCAN_RANGE_Y')
-USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_int('USE_E712_HDW_ACCEL')
+MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('max_fine_x')
+MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('max_fine_y')
+MAX_SCAN_RANGE_X = MAIN_OBJ.get_preset_as_float('max_coarse_x')
+MAX_SCAN_RANGE_Y = MAIN_OBJ.get_preset_as_float('max_coarse_y')
+USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_bool('USE_E712_HDW_ACCEL', 'BL_CFG_MAIN')
 PTYCHOGRAPHY_ENABLED = MAIN_OBJ.get_preset_as_bool('PTYCHOGRAPHY_ENABLED')
 
 _logger = get_module_logger(__name__)
@@ -48,10 +50,10 @@ class PtychographyScanParam(ScanParamWidget):
     def __init__(self, parent=None):
         ScanParamWidget.__init__(self, main_obj=MAIN_OBJ, data_io=STXMDataIo, dflts=DEFAULTS)
         self._parent = parent
-        uic.loadUi( os.path.join(plugin_dir, 'ptychography_scan.ui'), self)
 
-        if ((self.sample_fine_positioning_mode != sample_fine_positioning_modes.ZONEPLATE) or (PTYCHOGRAPHY_ENABLED == False)):
-            if(not PTYCHOGRAPHY_ENABLED):
+        if ((self.sample_fine_positioning_mode != sample_fine_positioning_modes.ZONEPLATE) or (
+                PTYCHOGRAPHY_ENABLED == False)):
+            if (not PTYCHOGRAPHY_ENABLED):
                 self.name = "Ptychography Scan ---- [DISABLED in app.ini] "
             else:
                 self.name = "Ptychography Scan ---- [DISABLED by scanning mode] "
@@ -60,19 +62,42 @@ class PtychographyScanParam(ScanParamWidget):
                 'PtychographyScanParam: Scan plugin is disabled while in none Zoneplate sample fine positioning mode')
         else:
 
-            self.fbk_cntr = 0
-            self.scan_mod_path, self.scan_mod_name = self.derive_scan_mod_name(__file__)
-            #self.setup_OSA_plotWidget()
-            self.scan_class = PtychographyScanClass()
-            self.plotWidget = None
+            uic.loadUi( os.path.join(plugin_dir, 'ptychography_scan.ui'), self)
+
+            x_cntr = self.main_obj.device(DNM_SAMPLE_FINE_X).get_position()
+            y_cntr = self.main_obj.device(DNM_SAMPLE_FINE_Y).get_position()
+
+            self.multi_region_widget = MultiRegionWidget(enable_multi_spatial=False, max_range=MAX_SCAN_RANGE_FINEX,
+                                                         min_sp_rois=1, x_cntr=x_cntr, y_cntr=y_cntr, main_obj=self.main_obj)
+
+            if (not self.main_obj.is_device_supported(DNM_EPU_POLARIZATION)):
+
+                self.multi_region_widget.deslect_all_polarizations()
+                self.multi_region_widget.disable_polarization_table(True)
+                self.multi_region_widget.set_polarization_table_visible(False)
+            else:
+                self.epu_supported = True
+                self.multi_region_widget.deslect_all_polarizations()
+                self.multi_region_widget.disable_polarization_table(False)
+                self.multi_region_widget.set_polarization_table_visible(True)
+
+            self.multi_region_widget.spatial_row_selected.connect(self.on_spatial_row_selected)
+            self.multi_region_widget.spatial_row_changed.connect(self.on_spatial_row_changed)
+            self.multi_region_widget.spatial_row_deleted.connect(self.on_spatial_row_deleted)
+
+            self.evGrpBox.layout().addWidget(self.multi_region_widget)
             self.loadScanBtn.clicked.connect(self.load_scan)
-            self.osay_trcking_was = self.main_obj.device(DNM_OSAY_TRACKING).get_position()
+
+            self.scan_class = PtychographyScanClass(main_obj=self.main_obj)
+            self.on_ev_pol_sel(0)
+            self.evpol_flg_comboBox.currentIndexChanged.connect(self.on_ev_pol_sel)
+            self.wdg_com = None
             self.sp_db = None
+            self.osay_trcking_was = self.main_obj.device(DNM_OSAY_TRACKING).get_position()
             self.load_from_defaults()
             self.init_sp_db()
-            self.connect_paramfield_signals()
-            self.on_single_spatial_npoints_changed()
-            self.init_test_module()
+            #self.connect_paramfield_signals()
+            self.on_plugin_focus()
             self.init_loadscan_menu()
 
     def init_plugin(self):
@@ -81,8 +106,8 @@ class PtychographyScanParam(ScanParamWidget):
         :return:
         '''
         self.name = "Ptychography Scan"
-        self.idx = scan_panel_order.PTYCHOGRAPHY_SCAN
-        self.type = scan_types.PTYCHOGRAPHY_SCAN
+        self.idx = scan_panel_order.PTYCHOGRAPHY
+        self.type = scan_types.PTYCHOGRAPHY
         self.data = {}
         self.section_id = 'PTYCHOGRAPHY'
         self.axis_strings = ['Sample Y microns', 'Sample X microns', '', '']
@@ -100,6 +125,7 @@ class PtychographyScanParam(ScanParamWidget):
             #make sure that the OSA vertical tracking is off if it is on
             self.osay_trcking_was = self.main_obj.device(DNM_OSAY_TRACKING).get_position()
             self.main_obj.device(DNM_OSAY_TRACKING).put(0) #off
+            self.on_multiregion_widget_focus_init_base_values()
 
     def on_plugin_defocus(self):
         '''
@@ -114,7 +140,15 @@ class PtychographyScanParam(ScanParamWidget):
         # call the base class defocus
         super(PtychographyScanParam, self).on_plugin_defocus()
 
-
+    def on_ev_pol_sel(self, idx):
+        '''
+        set the flag, 0 == EV then Pol, 1 == Pol then EV
+        :param idx: 
+        :return: 
+        '''
+        self.scan_class.set_ev_first_flg(idx)
+        
+        
     def connect_paramfield_signals(self):
 
         mtr_x = self.main_obj.device(DNM_SAMPLE_FINE_X)
@@ -249,77 +283,40 @@ class PtychographyScanParam(ScanParamWidget):
 
         self.roi_limit_def = ROILimitDef(bounding, normal, warn, alarm)
 
-
-        
     def init_sp_db(self):
         """
-        init_sp_db standard function supported by all scan pluggins to initialize the local widget_com dict to whatever the 
+        init_sp_db standard function supported by all scan pluggins to initialize the local widget_com dict to whatever the
         GUI is currently displaying, this is usually called after the call to self.load_from_defaults()
-        
+
         :returns: None
-      
+
         """
-        cx = float(str(self.centerXFld.text())) 
-        rx = float(str(self.rangeXFld.text()))
-        cy = float(str(self.centerYFld.text()))
-        ry = float(str(self.rangeYFld.text()))
-        dwell = float(str(self.dwellFld.text()))
-        nx = int(str(self.npointsXFld.text())) 
-        ny = int(str(self.npointsYFld.text())) 
-        sx = float(str(self.stepXFld.text()))
-        sy = float(str(self.stepYFld.text()))
-        #now create the model that this pluggin will use to record its params
-        x_roi = get_base_roi(SPDB_X, DNM_SAMPLE_X, cx, rx, nx, sx)
-        y_roi = get_base_roi(SPDB_Y, DNM_SAMPLE_Y, cy, ry, ny, sy)
-        z_roi = get_base_roi(SPDB_Z, None, 0, 0, 0, enable=False)
-        #def get_base_energy_roi(name, positionerName, start, stop, rng, npoints, dwell, pol_rois, stepSize=None, enable=False):
-        energy_pos = self.main_obj.device(DNM_ENERGY).get_position()
-        #e_rois = [get_base_energy_roi('EV', DNM_ENERGY, energy_pos, energy_pos, 0, 1, dwell, None, enable=False )]
-        e_roi = get_base_energy_roi('EV', DNM_ENERGY, energy_pos, energy_pos, 0, 1, dwell, None, enable=False )
-        
-        self.sp_db = make_spatial_db_dict(x_roi=x_roi, y_roi=y_roi, z_roi=z_roi, e_roi=e_roi)    
-    
-    def check_scan_limits(self):
-        ''' a function to be implemented by the scan pluggin that
-        checks the scan parameters against the soft limits of the 
-        positioners, if all is well return true else false
-        
-        This function should provide an explicit error log msg to aide the user
-        '''
-        ret = self.check_center_range_xy_scan_limits(DNM_SAMPLE_X, DNM_SAMPLE_Y)
-        return(ret)
-    
-    def on_set_center(self):
-        centX = float(str(self.centerXFld.text())) 
-        centY = float(str(self.centerYFld.text()))
-        
-        mtrx = self.main_obj.device(DNM_SAMPLE_X)
-        mtry = self.main_obj.device(DNM_SAMPLE_Y)
-        mtrx.move(centX)
-        mtry.move(centY)
-        
-        mtrx.wait_for_stopped_and_zero()
-        mtry.wait_for_stopped_and_zero()
-        
-        self.sp_db[SPDB_X][CENTER] = 0.0
-        on_center_changed(self.sp_db[SPDB_X])
-        self.sp_db[SPDB_Y][CENTER] = 0.0
-        on_center_changed(self.sp_db[SPDB_Y])
-        
-        roi = {}
-        roi[CENTER] = (0.0, 0.0, 0.0, 0.0)
-        roi[RANGE] = (None, None, None, None)
-        roi[NPOINTS] = (None, None, None, None)
-        roi[STEP] = (None, None, None, None)
-        self.set_roi(roi)
-        
-        DEFAULTS.set('PRESETS.PTYCHOGRAPHY.CENTER', (0, 0, 0.0, 0.0))
-        DEFAULTS.set('SCAN.PTYCHOGRAPHY.CENTER', (0.0, 0.0, 0.0, 0.0))
+        self.sp_db = self.multi_region_widget.sp_widg.get_row_data_by_item_id(0)
 
-        DEFAULTS.update()
-
-        self.upd_timer.start(250)
+        # sgt = float(str(self.startGTFld.text()))
+        # egt = float(str(self.endGTFld.text()))
+        #
+        # cgt = float(sgt + egt) / 2.0
+        # rgt = float(egt - sgt)
+        # ngt = int(str(self.npointsGTFld.text()))
+        # stgt = float(str(self.stepGTFld.text()))
+        #
+        # # now create the model that this pluggin will use to record its params
+        # gt_roi = get_base_roi(SPDB_GT, DNM_GONI_THETA, cgt, rgt, ngt, stgt)
+        # goni_rois = {SPDB_GT: gt_roi}
+        # self.sp_db = make_spatial_db_dict(goni_rois=goni_rois)
     
+    # def check_scan_limits(self):
+    #     ''' a function to be implemented by the scan pluggin that
+    #     checks the scan parameters against the soft limits of the
+    #     positioners, if all is well return true else false
+    #
+    #     This function should provide an explicit error log msg to aide the user
+    #     '''
+    #     ret = self.check_center_range_xy_scan_limits(DNM_SAMPLE_X, DNM_SAMPLE_Y)
+    #     return(ret)
+    
+
     def set_roi(self, roi):
         """
         set_roi standard function supported by all scan pluggins to initialize the GUI for this scan with values
@@ -331,109 +328,106 @@ class PtychographyScanParam(ScanParamWidget):
         :returns: None
       
         """
-        #print 'det_scan: set_roi: ' , roi
-        (cx, cy, cz, c0) = roi[CENTER]
-        (rx, ry, rz, s0) = roi[RANGE]
-        (nx, ny, nz, n0) = roi[NPOINTS]
-        (sx, sy, sz, s0) = roi[STEP]
-        
-        if(DWELL in roi):
-            self.set_parm(self.dwellFld, roi[DWELL])
-        
-        self.set_parm(self.centerXFld, cx)
-        self.set_parm(self.centerYFld, cy)
-        
-        if(rx != None):
-            self.set_parm(self.rangeXFld, rx)
-        if(ry != None):
-            self.set_parm(self.rangeYFld, ry)
-        
-        if(nx != None):
-            self.set_parm(self.npointsXFld, nx, type='int', floor=2)
-            
-        if(ny != None):
-            self.set_parm(self.npointsYFld, ny, type='int', floor=2)
-        
-        if(sx != None):
-            self.set_parm(self.stepXFld, sx, type='float', floor=0)
-            
-        if(sy != None):
-            self.set_parm(self.stepYFld, sy, type='float', floor=0)
+        pass
 
-    def mod_roi(self, sp_db, do_recalc=True, sp_only=True):
+    def mod_roi(self, wdg_com, do_recalc=True, ev_only=False, sp_only=False):
         """
-        sp_db is a widget_com dict
+        wdg_com is a widget_com dict
         The purpose of the mod_roi() function is to update the fields in the GUI with the correct values
         it can be called by either a signal from one of the edit fields (ex: self.centerXFld) or
-        by a signal from a plotWidgetter (via the main gui that is connected to the plotWidgetter) so that as a user
-        grabs a region of interest marker in the plotWidget and either moves or resizes it, those new center and size
+        by a signal from a plotter (via the main gui that is connected to the plotter) so that as a user
+        grabs a region of interest marker in the plot and either moves or resizes it, those new center and size
         values will be delivered here and,  if required, the stepsizes will be recalculated
-        
-        
-        :param sp_db: is a standard dict returned from the call to sm.stxm_control.stxm_utils.roi_utils.make_spatial_db_dict()
-        :type sp_db: dict.
+
+
+        :param wdg_com: is a standard dict returned from the call to sm.stxm_control.stxm_utils.roi_utils.make_spatial_db_dict()
+        :type wdg_com: dict.
 
         :param do_recalc: selectively the STEP of the ROI's for X and Y can be recalculated if the number of points or range have changed
         :type do_recalc: flag.
-    
+
         :returns: None
-      
+
         """
-        if(sp_db[CMND] == widget_com_cmnd_types.DEL_ROI):
+        item_id = dct_get(wdg_com, SPDB_ID_VAL)
+        dct_put(wdg_com, SPDB_PLOT_SHAPE_TYPE, self.plot_item_type)
+
+        if (wdg_com[CMND] == widget_com_cmnd_types.LOAD_SCAN):
+            self.load_roi(wdg_com)
             return
-        
-        if(sp_db[CMND] == widget_com_cmnd_types.LOAD_SCAN):
-            self.sp_db = sp_db
-        else:    
-            if(sp_db[CMND] == widget_com_cmnd_types.SELECT_ROI):
-                dct_put(self.sp_db, SPDB_ID_VAL, dct_get(sp_db, SPDB_PLOT_ITEM_ID))
-                     
-            self.sp_db[SPDB_X][CENTER] = sp_db[SPDB_X][CENTER]
-            
-            if(sp_db[SPDB_X][RANGE] != 0):
-                self.sp_db[SPDB_X][RANGE] = sp_db[SPDB_X][RANGE]
-                
-            self.sp_db[SPDB_Y][CENTER] = sp_db[SPDB_Y][CENTER]
-            
-            if(sp_db[SPDB_Y][RANGE] != 0):
-                self.sp_db[SPDB_Y][RANGE] = sp_db[SPDB_Y][RANGE]
-            
-        x_roi = self.sp_db[SPDB_X]
-        y_roi = self.sp_db[SPDB_Y]
-        e_rois = self.sp_db[SPDB_EV_ROIS]
-        
-        #if do_recalc then it is because mod_roi() has been called by a signal that the
-        #plotWidgetter has resized/moved the ROI, the recalc of x/y when the number of points
-        #is changed is handled above in the signal for the npointsFld
-        if(do_recalc):
-            on_range_changed(x_roi)
-            on_range_changed(y_roi)
-        
-        self.set_parm(self.centerXFld, x_roi[CENTER])
-        self.set_parm(self.centerYFld, y_roi[CENTER])
-        
-        if(e_rois[0][DWELL] != None):
-            self.set_parm(self.dwellFld, e_rois[0][DWELL])
-        
-        if(x_roi[RANGE] != None):
-            self.set_parm(self.rangeXFld, x_roi[RANGE])
-        if(y_roi[RANGE] != None):
-            self.set_parm(self.rangeYFld, y_roi[RANGE])
-        
-        if(x_roi[NPOINTS] != None):
-            self.set_parm(self.npointsXFld, x_roi[NPOINTS], type='int', floor=2)
-            
-        if(y_roi[NPOINTS] != None):
-            self.set_parm(self.npointsYFld, y_roi[NPOINTS], type='int', floor=2)
-            
-        if(x_roi[STEP] != None):
-            self.set_parm(self.stepXFld, x_roi[STEP], type='float', floor=0)
-        
-        if(y_roi[STEP] != None):
-            self.set_parm(self.stepYFld, y_roi[STEP], type='float', floor=0)
-        
-        # if(sp_db[CMND] == widget_com_cmnd_types.SELECT_ROI):
-        #      self.update_last_settings()
+
+        # if((wdg_com[CMND] == widget_com_cmnd_types.SELECT_ROI) or (wdg_com[CMND] == widget_com_cmnd_types.LOAD_SCAN)):
+        if (wdg_com[CMND] == widget_com_cmnd_types.SELECT_ROI):
+            cur_scan = self.multi_region_widget.sp_widg.get_row_data_by_item_id(item_id)
+            if (cur_scan != None):
+                # change the command to add this ROI
+                self.multi_region_widget.sp_widg.select_row(item_id=item_id)
+                return
+                # wdg_com[CMND] = widget_com_cmnd_types.ROI_CHANGED
+            else:
+                x_roi = wdg_com[SPDB_X]
+                y_roi = wdg_com[SPDB_Y]
+                # x_roi[NPOINTS] = 20
+                # y_roi[NPOINTS] = 20
+                scan = make_spatial_db_dict(x_roi=x_roi, y_roi=y_roi)
+                on_npoints_changed(scan[SPDB_X])
+                on_npoints_changed(scan[SPDB_Y])
+                scan[SPDB_ID_VAL] = item_id
+                self.multi_region_widget.sp_widg.on_new_region(scan)
+                self.multi_region_widget.sp_widg.select_row(item_id=item_id)
+                return
+
+        if (wdg_com[CMND] == widget_com_cmnd_types.ROI_CHANGED):
+            # print 'image_scans.mod_roi: item_id = %d' % item_id
+            # we are being modified by the plotter
+            x_roi = wdg_com[SPDB_X]
+            y_roi = wdg_com[SPDB_Y]
+            scan = make_spatial_db_dict(x_roi=x_roi, y_roi=y_roi)
+            cur_scan = self.multi_region_widget.sp_widg.get_row_data_by_item_id(item_id)
+
+            if (cur_scan is None):
+                scan[SPDB_ID_VAL] = item_id
+                on_npoints_changed(scan[SPDB_X])
+                on_npoints_changed(scan[SPDB_Y])
+
+                _dwell = scan[SPDB_EV_ROIS][0][DWELL]
+                _x = scan[SPDB_X]
+                _y = scan[SPDB_Y]
+
+                # self.multi_region_widget.sp_widg.table_view.add_scan(scan, wdg_com['CURRENT']['PLOT']['ITEM']['ID'])
+                self.multi_region_widget.sp_widg.on_new_region(scan, ev_only=ev_only)
+                self.multi_region_widget.sp_widg.select_row(item_id=item_id)
+                # return
+            else:
+                # cur_scan = self.multi_region_widget.sp_widg.table_view.get_scan(item_id)
+                # update the center and range fields that have come from the plotter
+                # first call center recalc, then range
+                cur_scan[SPDB_X][CENTER] = scan[SPDB_X][CENTER]
+                on_center_changed(cur_scan[SPDB_X])
+
+                cur_scan[SPDB_X][RANGE] = scan[SPDB_X][RANGE]
+                on_range_changed(cur_scan[SPDB_X])
+
+                cur_scan[SPDB_Y][CENTER] = scan[SPDB_Y][CENTER]
+                on_center_changed(cur_scan[SPDB_Y])
+
+                cur_scan[SPDB_Y][RANGE] = scan[SPDB_Y][RANGE]
+                on_range_changed(cur_scan[SPDB_Y])
+
+                _dwell = cur_scan[SPDB_EV_ROIS][0][DWELL]
+                _x = cur_scan[SPDB_X]
+                _y = cur_scan[SPDB_Y]
+
+                self.multi_region_widget.sp_widg.select_row(item_id=item_id)
+                self.multi_region_widget.sp_widg.modify_row_data(item_id, cur_scan)
+
+                # return
+
+            if (self.sub_type == scan_sub_types.POINT_BY_POINT):
+                self.calc_new_scan_time_estemate(True, _x, _y, _dwell)
+            else:
+                self.calc_new_scan_time_estemate(False, _x, _y, _dwell)
+            return
 
 
     def update_last_settings(self):
@@ -461,7 +455,9 @@ class PtychographyScanParam(ScanParamWidget):
      
         """
         #update local widget_com dict
-        wdg_com = self.update_single_spatial_wdg_com()
+
+        #wdg_com = self.update_single_spatial_wdg_com()
+        wdg_com = self.update_multi_spatial_wdg_com()
                 
         self.roi_changed.emit(wdg_com)
         return(wdg_com)

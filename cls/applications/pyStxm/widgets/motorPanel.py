@@ -11,7 +11,8 @@ import queue
 import atexit
 
 from bcm.devices import BaseDevice
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, POS_TYPE_BL, POS_TYPE_ES
+#from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, POS_TYPE_BL, POS_TYPE_ES
+from cls.appWidgets.main_object import  POS_TYPE_BL, POS_TYPE_ES
 from cls.app_data.defaults import master_colors, get_style
 from cls.utils.log import get_module_logger
 from cls.utils.sig_utils import disconnect_signal, reconnect_signal
@@ -62,11 +63,11 @@ class PositionersPanel(QtWidgets.QWidget):
 	
 	:returns:  None
 	'''
-	def __init__(self, positioner_set='ES', exclude_list=[], parent=None):
+	def __init__(self, positioner_set='ES', exclude_list=[], main_obj=None, parent=None):
 		super(PositionersPanel, self).__init__(parent)
 		self.exclude_list = exclude_list
 		self.enum_list = ['EPUPolarization', 'EPUHarmonic', 'Branch' ]
-
+		self.main_obj = main_obj
 		self.fbk_enabled = False
 		self.positioner_set = positioner_set
 		self.mtr = None	
@@ -91,7 +92,7 @@ class PositionersPanel(QtWidgets.QWidget):
 		#self.qssheet = get_style('dark')
 		#self.setStyleSheet(self.qssheet)
 		
-		devs = MAIN_OBJ.get_devices()
+		devs = self.main_obj.get_devices()
 		#DEVICE_CFG.get_device_list()
 		pos_keys = list(devs['POSITIONERS'].keys())
 		pos_keys.sort()
@@ -101,7 +102,7 @@ class PositionersPanel(QtWidgets.QWidget):
 				continue
 			
 			usethis = False
-			mtr = MAIN_OBJ.device(dev)
+			mtr = self.main_obj.device(dev)
 
 			if(self.positioner_set.find(POS_TYPE_BL) > -1):
 				if(mtr._pos_set == POS_TYPE_BL):

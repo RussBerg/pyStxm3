@@ -151,12 +151,12 @@ class PointDetectorDevice(BaseCounterInputDevice):
         print('name = %s, type = %s' % (str(self.__class__), self.name))
 
     def configure(self):
-        #self.do_point_config(scan_types.SAMPLE_POINT_SPECTRA, 2.0, 1, 1)
+        #self.do_point_config(scan_types.SAMPLE_POINT_SPECTRUM, 2.0, 1, 1)
         self.do_point_config(self._scan_type, 2.0, 1, 1, self._pnts_per_row)
 
     def stage(self):
         # if (self.mode is 0):
-        #     self.do_point_config(scan_types.SAMPLE_POINT_SPECTRA, 2.0, 1, 1)
+        #     self.do_point_config(scan_types.SAMPLE_POINT_SPECTRUM, 2.0, 1, 1)
         # else:
         #     pass
         self.configure()
@@ -198,7 +198,7 @@ class PointDetectorDevice(BaseCounterInputDevice):
         self.row_mode.put(1)  # 1 point
         self.retriggerable.put(True)
 
-        if (scan_type == scan_types.SAMPLE_POINT_SPECTRA):
+        if (scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
             self.points_per_row.put(numE)  # EV point spectra
         else:
             if(points_per_row):
@@ -290,8 +290,8 @@ class LineDetectorDevice(BaseCounterInputDevice):
             self.num_points,  = self.rawData.shape
             if(self.num_points > 0):
                 (row, data) = self.process_scalar_line_data(self.rawData)
-                if(self._scan_type is scan_types.SAMPLE_LINE_SPECTRA):
-                    #print('LineDetectorDevice: SAMPLE_LINE_SPECTRA: row=%d' % (row))
+                if(self._scan_type is scan_types.SAMPLE_LINE_SPECTRUM):
+                    #print('LineDetectorDevice: SAMPLE_LINE_SPECTRUM: row=%d' % (row))
                     self._plot_dct[CNTR2PLOT_ROW] = 0
                     self._plot_dct[CNTR2PLOT_COL] = int(row)
                 else:
@@ -418,7 +418,7 @@ class LineDetectorFlyerDevice(MonitorFlyerMixin, BaseCounterInputDevice):
         self.signal_src_clock_select.put(3)  # /PFI 3 this is connected to the E712 OUT1
 
         self.sample_mode.put(1)  # DAQmx_Val_ContSamps
-        if (self._scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+        if (self._scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
             # dont need the extra points
             self.max_points.put(self.p_num_points + 1)  #
         else:
@@ -427,7 +427,7 @@ class LineDetectorFlyerDevice(MonitorFlyerMixin, BaseCounterInputDevice):
         self.points_per_row.put(self.p_num_points)
         self.retriggerable.put(False)
 
-        if (self._scan_type == scan_types.SAMPLE_POINT_SPECTRA):
+        if (self._scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
             #self.points_per_row.put(numE)  # EV point spectra
             self.points_per_row.put(self.p_num_points)  # EV point spectra
         else:

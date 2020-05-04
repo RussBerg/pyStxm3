@@ -142,6 +142,12 @@
           </item>
           <item>
            <widget class="QLineEdit" name="dwellFld">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>22</height>
+             </size>
+            </property>
             <property name="maximumSize">
              <size>
               <width>100</width>
@@ -282,6 +288,12 @@
            </item>
            <item row="1" column="1">
             <widget class="QLineEdit" name="startXFld">
+             <property name="minimumSize">
+              <size>
+               <width>80</width>
+               <height>22</height>
+              </size>
+             </property>
              <property name="text">
               <string>-106</string>
              </property>
@@ -289,6 +301,12 @@
            </item>
            <item row="1" column="2">
             <widget class="QLineEdit" name="endXFld">
+             <property name="minimumSize">
+              <size>
+               <width>81</width>
+               <height>22</height>
+              </size>
+             </property>
              <property name="text">
               <string>80</string>
              </property>
@@ -296,6 +314,12 @@
            </item>
            <item row="1" column="3">
             <widget class="QLineEdit" name="npointsXFld">
+             <property name="minimumSize">
+              <size>
+               <width>80</width>
+               <height>22</height>
+              </size>
+             </property>
              <property name="text">
               <string>30</string>
              </property>
@@ -303,6 +327,12 @@
            </item>
            <item row="1" column="4">
             <widget class="QLineEdit" name="stepXFld">
+             <property name="minimumSize">
+              <size>
+               <width>81</width>
+               <height>22</height>
+              </size>
+             </property>
              <property name="text">
               <string>4</string>
              </property>
@@ -323,6 +353,12 @@
            </item>
            <item row="2" column="1">
             <widget class="QLineEdit" name="startYFld">
+             <property name="minimumSize">
+              <size>
+               <width>80</width>
+               <height>22</height>
+              </size>
+             </property>
              <property name="text">
               <string>-496</string>
              </property>
@@ -330,6 +366,12 @@
            </item>
            <item row="2" column="2">
             <widget class="QLineEdit" name="endYFld">
+             <property name="minimumSize">
+              <size>
+               <width>81</width>
+               <height>22</height>
+              </size>
+             </property>
              <property name="text">
               <string>1000</string>
              </property>
@@ -439,6 +481,12 @@
            </item>
            <item row="1" column="1">
             <widget class="QLineEdit" name="centerZPFld">
+             <property name="minimumSize">
+              <size>
+               <width>79</width>
+               <height>22</height>
+              </size>
+             </property>
              <property name="text">
               <string>-2182</string>
              </property>
@@ -446,6 +494,12 @@
            </item>
            <item row="1" column="4">
             <widget class="QLineEdit" name="stepZPFld">
+             <property name="minimumSize">
+              <size>
+               <width>79</width>
+               <height>22</height>
+              </size>
+             </property>
              <property name="text">
               <string>2</string>
              </property>
@@ -453,6 +507,12 @@
            </item>
            <item row="1" column="2">
             <widget class="QLineEdit" name="rangeZPFld">
+             <property name="minimumSize">
+              <size>
+               <width>79</width>
+               <height>22</height>
+              </size>
+             </property>
              <property name="text">
               <string>100</string>
              </property>
@@ -460,6 +520,12 @@
            </item>
            <item row="1" column="3">
             <widget class="QLineEdit" name="npointsZPFld">
+             <property name="minimumSize">
+              <size>
+               <width>79</width>
+               <height>22</height>
+              </size>
+             </property>
              <property name="text">
               <string>50</string>
              </property>

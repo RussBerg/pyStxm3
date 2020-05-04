@@ -5,6 +5,8 @@ from caproto.server import pvproperty, PVGroup, ioc_arg_parser, run
 class RecordMockingIOC(PVGroup):
     # Define three records, an analog input (ai) record:
     A = pvproperty(value=1.0, mock_record='ai')
+    MBBO = pvproperty(value=1.0, mock_record='mbbo')
+    BO = pvproperty(value=0, mock_record='bo')
     # And an analog output (ao) record:
     B = pvproperty(value=2.0, mock_record='ao',
                    precision=3)
@@ -65,6 +67,8 @@ if __name__ == '__main__':
 
     # ... but what you don't see are all of the analog input record fields
     print('Fields of B:', list(ioc.B.fields.keys()))
+    print('Fields of MBBO:', list(ioc.MBBO.fields.keys()))
+    print('Fields of BO:', list(ioc.BO.fields.keys()))
 
     print('Custom field specifications of A:', RecordMockingIOC.A.fields)
     print('Custom field specifications of B:', RecordMockingIOC.B.fields)

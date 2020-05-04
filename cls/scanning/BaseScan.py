@@ -31,9 +31,7 @@ from cls.plotWidgets.utils import (make_counter_to_plotter_com_dct, CNTR2PLOT_TY
 from cls.scanning.BaseScanSignals import BaseScanSignals
 from cls.scanning.dataRecorder import HdrData
 from cls.scanning.scan_cfg_utils import (ensure_valid_values, calc_accRange, make_timestamp_now)
-from cls.types.stxmTypes import scan_types, sample_positioning_modes
 from cls.types.beamline import BEAMLINE_IDS
-from cls.types.stxmTypes import sample_fine_positioning_modes, image_type_scans, spectra_type_scans
 from cls.utils.cfgparser import ConfigClass
 from cls.utils.dict_utils import dct_get, dct_put
 from cls.utils.json_utils import dict_to_json
@@ -47,7 +45,9 @@ from cls.zeromq.epics.epics_api import *
 from cls.scan_engine.bluesky.data_emitters import ImageDataEmitter
 
 from cls.types.stxmTypes import scan_types, scan_sub_types, \
-                                        energy_scan_order_types, sample_positioning_modes, sample_fine_positioning_modes
+                                        energy_scan_order_types, sample_positioning_modes, sample_fine_positioning_modes, \
+                                        image_type_scans, spectra_type_scans, image_type_scans, \
+    spectra_type_scans, data_shape_types, data_shapes, non_zp_scans, focus_scans
 
 
 # from cls.applications.pyStxm import abs_path_to_ini_file
@@ -82,9 +82,24 @@ MODE_MOVETO_SET_CPOS = 6
 
 scan_cfg_status_codes = Enum('NORMAL', 'SCAN_CONFIG_ERROR')
 
-
-
 _logger = get_module_logger(__name__)
+
+
+def get_sequence_nums(first_num, ttl_pnts):
+    return(list(range(first_num, first_num + ttl_pnts)))
+
+def get_rows(row_lst, npnts):
+    return(np.tile(row_lst, npnts))
+
+def get_columns(col_lst, npnts):
+    lst = list(range(0, len(col_lst)))
+    return(np.repeat(lst,  npnts))
+
+def get_ttl_num_pnts(erois):
+    ttl = 0
+    for eroi in erois:
+        ttl += len(eroi)
+    return(ttl)
 
 class BaseScan(BaseObject):
     '''
@@ -113,7 +128,7 @@ class BaseScan(BaseObject):
     new_spatial_start = QtCore.pyqtSignal(object)
     saving_data = QtCore.pyqtSignal(object)
     
-    def __init__(self, scan_prefix, map_section, main_obj=None, cmd_file=None):
+    def __init__(self, scan_prefix='', map_section='', main_obj=None, cmd_file=None):
         """
         __init__(): description
 
@@ -142,7 +157,7 @@ class BaseScan(BaseObject):
             _logger.error('BaseScan needs to be initialized with instance of applications main device object (MAIN_OBJ)')
             exit()
         self.main_obj = main_obj
-        self.script_dir = appConfig.get_value('DEFAULT', 'sscan_script_dir')
+        # self.script_dir = appConfig.get_value('MAIN', 'sscan_script_dir')
         
         self.evidx_mutex = Lock()
         self._current_ev_idx = 0
@@ -238,6 +253,8 @@ class BaseScan(BaseObject):
         #self.scans_list = []
         self.scanlist = []
         self.scan_map = {}
+        # this is a dict that acts as a sequence map, from seq of point to img_idx, y, x for teh plotter
+        self.seq_map_dct = None
 
         #a list that each scan can populate to record data from
         self.counter_dct = []
@@ -263,20 +280,85 @@ class BaseScan(BaseObject):
 
         self._sel_zp_dct = None
         
-        #a single PV to turn off and on the gate and counter tasks, this pv name shoule
-        #prfx = self.main_obj.get_sscan_prefix()
-
-        #self.ttl_progress.changed.connect(self.on_top_level_progress_changed)
-
-        #self.lowlvl_progress.changed.connect(self.on_low_level_progress_changed)
-
         #make sure devices are created before sscans in case the sscans require the devices
         self.init_devices()
 
-        self.init_update_dev_lst()
-        self.init_sscans()
-        self.init_set_scan_levels()
-        self.init_signals()
+        #self.init_update_dev_lst()
+        #self.init_sscans()
+        #self.init_set_scan_levels()
+        #self.init_signals()
+
+
+    def generate_ev_roi_seq_image_map(self, erois, nxpnts):
+        '''
+            used primarily by Linespec scans that can have multiple images per scan where each image represents a
+            different energy range and resolution
+        :param erois:
+        :param nxpnts:
+        :return:
+        '''
+        dct = {}
+        ev_idx = 0
+        seq_num = 0
+        for eroi in erois:
+            # col_lst = [[0,1,2], [3,4,5,6,7,8], [11,22,33,44,55,66,77,88,99]]
+            ev_lst = eroi[SETPOINTS]
+            row_lst = list(range(0, nxpnts))
+            #ttl_ev_npnts = get_ttl_num_pnts(ev_lst)
+            ttl_ev_npnts = int(eroi[NPOINTS])
+
+            seq = get_sequence_nums(seq_num, ttl_ev_npnts * nxpnts)
+            seq_num = seq[-1] + 1
+            #rows = get_rows(row_lst, len(ev_lst[0]))
+            rows = get_rows(row_lst, ttl_ev_npnts)
+            cols = get_columns(eroi, nxpnts)
+
+            ev_idx_arr = np.ones(len(seq)) * ev_idx
+            ttl = zip(seq, ev_idx_arr, rows, cols)
+            for s, img_idx, r, c in ttl:
+                # print('(%d, %d, %d, %d)' % (s, img_idx, r, c))
+                dct[s] = {'img_num': int(img_idx), 'row': r, 'col': c}
+
+            ev_idx += 1
+        return (dct)
+
+    def generate_2d_seq_image_map(self, energies, nypnts, nxpnts, lxl=False):
+        '''
+            used primarily by Linespec scans that can have multiple images per scan where each image represents a
+            different energy range and resolution
+        :param energies: num energies
+        :param nypnts: num rows
+        :param nxpnts: num columns
+        :param lxl: generate map for a line by line scan where each num in sequence is a row,
+            if False then Point by Point scan where each num in sequence is a pixel
+        :return:
+        '''
+        dct = {}
+        seq_num = 0
+        for ev_idx in list(range(0, energies)):
+            row_lst = list(range(0, nypnts))
+            col_lst = list(range(0, nxpnts))
+
+            if (not lxl):
+                seq = get_sequence_nums(seq_num, nypnts * nxpnts)
+                seq_num = seq[-1] + 1
+                rows = np.repeat(row_lst, nxpnts)
+                cols = np.tile(col_lst, nypnts)
+                ev_idx_arr = np.ones(len(seq)) * ev_idx
+            else:
+                seq = get_sequence_nums(seq_num, nypnts)
+                seq_num = seq[-1] + 1
+                rows = row_lst
+                cols = np.zeros(nypnts)
+                ev_idx_arr = np.ones(len(seq)) * ev_idx
+
+            ttl = zip(seq, ev_idx_arr, rows, cols)
+            for s, img_idx, r, c in ttl:
+                # print('(%d, %d, %d, %d)' % (s, img_idx, r, c))
+                dct[s] = {'img_num': int(img_idx), 'row': r, 'col': c}
+
+            ev_idx += 1
+        return (dct)
 
     def gen_spid_seq_map(self, sp_id_lst, points_for_spid):
         '''
@@ -345,6 +427,7 @@ class BaseScan(BaseObject):
         dct['dwell'] = self.dwell
         dct['primary_det'] = primary_det
         dct['zp_def'] = self.get_zoneplate_info_dct()
+        dct['rotation_angle'] = self.main_obj.get_sample_rotation_angle()
         dct['wdg_com'] = dict_to_json(self.wdg_com)
         dct['img_idx_map'] = dict_to_json(self.img_idx_map['%d' % self._current_img_idx])
         dct['rev_lu_dct'] = self.main_obj.get_device_reverse_lu_dct()
@@ -381,22 +464,6 @@ class BaseScan(BaseObject):
 
 
 
-    # def clear_subscriptions(self, ew):
-    #     '''
-    #     to be implemented by inheriting class
-    #     :param ew:
-    #     :return:
-    #     '''
-    #     pass
-    #
-    # def init_subscriptions(self, ew, func):
-    #     '''
-    #     to be implemented by inheriting class
-    #     :param ew:
-    #     :return:
-    #     '''
-    #     pass
-
     def clear_subscriptions(self, ew):
         '''
         clear a subscription from the engine widget
@@ -419,22 +486,12 @@ class BaseScan(BaseObject):
             #self._emitter_cb = ImageDataEmitter('point_det_single_value_rbv', y='mtr_y', x='mtr_x', scan_type=scan_types.DETECTOR_IMAGE, bi_dir=self._bi_dir)
             self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y='mtr_y', x='mtr_x',
                                                 scan_type=self.scan_type, bi_dir=self._bi_dir)
-            self._emitter_cb.set_row_col(rows=self.y_roi[NPOINTS], cols=self.x_roi[NPOINTS])
+            self._emitter_cb.set_row_col(rows=self.y_roi[NPOINTS], cols=self.x_roi[NPOINTS], seq_dct=self.seq_map_dct)
             self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
             self._emitter_cb.new_plot_data.connect(func)
         else:
             _logger.error('Need to implem,ent this for Spectra scans')
 
-
-    # def make_scan_plan(self, detectors, gate=None, md=None, bi_dir=False):
-    #     '''
-    #     to be implemented by inheriting class
-    #     create whatever the scan plan is for your scan and return it
-    #     :param detectors:
-    #     :param bi_dir:
-    #     :return:
-    #     '''
-    #     return(None)
 
     def generate_scan_plan(self, detectors, gate=None, md=None, bi_dir=False):
         '''
@@ -470,20 +527,20 @@ class BaseScan(BaseObject):
         '''
         self.counter_dct = cntr_dct
     
-    def get_scan_config_error(self):
-        '''
-        return the config_error
-        :return:
-        '''
-        return(self.config_error)
+    # def get_scan_config_error(self):
+    #     '''
+    #     return the config_error
+    #     :return:
+    #     '''
+    #     return(self.config_error)
 
-    def set_scan_config_error(self, sts):
-        '''
-        sset the config error status
-        :param sts:
-        :return:
-        '''
-        self.config_error = sts
+    # def set_scan_config_error(self, sts):
+    #     '''
+    #     sset the config error status
+    #     :param sts:
+    #     :return:
+    #     '''
+    #     self.config_error = sts
 
     def set_counter_dct(self, cntr_dct):
         '''
@@ -507,57 +564,57 @@ class BaseScan(BaseObject):
         '''
         self.counter_dct = cntr_dct
 
-    def init_update_dev_lst(self):
-        ''' init_update_dev_lst():  populate the list of devices I want snapshotted on each data_level_done signal,
-        the nxattr_path is the path in the nexus file to the location of that devices data, used to quicly write the
-        snapshotted data to the file during a scan
-        ex:
-            self.update_dev_lst = {}
-            self.update_dev_lst[DNM_ENERGY] = {'nxattr_path': '%s.instrument.monochromator.energy'}
+    # def init_update_dev_lst(self):
+    #     ''' init_update_dev_lst():  populate the list of devices I want snapshotted on each data_level_done signal,
+    #     the nxattr_path is the path in the nexus file to the location of that devices data, used to quicly write the
+    #     snapshotted data to the file during a scan
+    #     ex:
+    #         self.update_dev_lst = {}
+    #         self.update_dev_lst[DNM_ENERGY] = {'nxattr_path': '%s.instrument.monochromator.energy'}
+    #
+    #         self.update_dev_lst[DNM_EPU_POLARIZATION] = {'nxattr_path': '%s.instrument.epu.polarization'}
+    #         self.update_dev_lst[DNM_EPU_ANGLE] = {'nxattr_path': '%s.instrument.monochromator.linear_inclined_angle'}
+    #         self.update_dev_lst[DNM_EPU_GAP] = {'nxattr_path': '%s.instrument.epu.gap'}
+    #         self.update_dev_lst[DNM_EPU_HARMONIC] = {'nxattr_path': '%s.instrument.epu.harmonic'}
+    #         self.update_dev_lst[DNM_EPU_OFFSET] = {'nxattr_path': '%s.instrument.epu.gap_offset'}
+    #
+    #     to be implemented by inheriting class
+    #
+    #     '''
+    #     pass
 
-            self.update_dev_lst[DNM_EPU_POLARIZATION] = {'nxattr_path': '%s.instrument.epu.polarization'}
-            self.update_dev_lst[DNM_EPU_ANGLE] = {'nxattr_path': '%s.instrument.monochromator.linear_inclined_angle'}
-            self.update_dev_lst[DNM_EPU_GAP] = {'nxattr_path': '%s.instrument.epu.gap'}
-            self.update_dev_lst[DNM_EPU_HARMONIC] = {'nxattr_path': '%s.instrument.epu.harmonic'}
-            self.update_dev_lst[DNM_EPU_OFFSET] = {'nxattr_path': '%s.instrument.epu.gap_offset'}
+    # def clear_all(self):
+    #     """
+    #     clear_all(): description
+    #
+    #     :returns: None
+    #     """
+    #     self.clearAll.put(1)
 
-        to be implemented by inheriting class
+    # def reload_base_scan_config(self):
+    #     """
+    #     reload_base_scan_config(): description
+    #
+    #     :returns: None
+    #     """
+    #     from cls.appWidgets.guiWaitLoop import gui_sleep  # https://gist.github.com/niccokunzmann/8673951
+    #
+    #     self.cmd_file_pv.put(self.cmd_file)
+    #     self.clear_all()
+    #     self.reload.put(1)
+    #
+    #     # time.sleep(2.0)
+    #     #gui_sleep(1.0)
+    #     gui_sleep(0.25)
+    #     #print 'done reloading'
 
-        '''
-        pass
-
-    def clear_all(self):
-        """
-        clear_all(): description
-
-        :returns: None
-        """
-        self.clearAll.put(1)
-
-    def reload_base_scan_config(self):
-        """
-        reload_base_scan_config(): description
-
-        :returns: None
-        """
-        from cls.appWidgets.guiWaitLoop import gui_sleep  # https://gist.github.com/niccokunzmann/8673951
-
-        self.cmd_file_pv.put(self.cmd_file)
-        self.clear_all()
-        self.reload.put(1)
-
-        # time.sleep(2.0)
-        #gui_sleep(1.0)
-        gui_sleep(0.25)
-        #print 'done reloading'
-
-    def init_sscans(self):
-        """
-        init_sscans(): to be implemented by inheriting class
-
-        :returns: None
-        """
-        pass
+    # def init_sscans(self):
+    #     """
+    #     init_sscans(): to be implemented by inheriting class
+    #
+    #     :returns: None
+    #     """
+    #     pass
     
     def init_devices(self):
         """
@@ -586,28 +643,28 @@ class BaseScan(BaseObject):
         pass
     
     
-    def set_selected_counters(self, cntr_nm_lst):
-        """"
-        eventually this will take a list of counters to use in scan, for now only support 1
-        currently just roughed in with default
-        """
-        self.selected_counter_nm = DNM_COUNTER_APD
+    # def set_selected_counters(self, cntr_nm_lst):
+    #     """"
+    #     eventually this will take a list of counters to use in scan, for now only support 1
+    #     currently just roughed in with default
+    #     """
+    #     self.selected_counter_nm = DNM_COUNTER_APD
+    #
+    # def set_selected_gate(self, gate_nm):
+    #     """"
+    #     this is the name of the gate device to use
+    #     currently just roughed in with default
+    #     """
+    #     self.selected_gate_nm = DNM_GATE
     
-    def set_selected_gate(self, gate_nm):
-        """"
-        this is the name of the gate device to use
-        currently just roughed in with default
-        """
-        self.selected_gate_nm = DNM_GATE
-    
-    def set_selected_shuter(self, shutter_nm):
-        """"
-        this is the name of the shutter device to use
-        currently just roughed in with default
-        """
-        self.selected_shutter_nm = DNM_SHUTTER
-        
-    
+    # def set_selected_shuter(self, shutter_nm):
+    #     """"
+    #     this is the name of the shutter device to use
+    #     currently just roughed in with default
+    #     """
+    #     self.selected_shutter_nm = DNM_SHUTTER
+    #
+    #
     
     def set_save_all_data(self, val):
         """
@@ -629,49 +686,49 @@ class BaseScan(BaseObject):
         #print 'on_top_level_progress_changed [%.2f]' % val
         self.top_level_progress.emit(val)    
     
-    #def on_top_level_progress_changed(self, val):
-    def on_top_level_progress_changed(self, **kwargs):
-        #print 'on_top_level_progress_changed [%.2f]' % val
-        self.top_level_progress.emit(kwargs['value'])
-            
-    def on_low_level_progress_changed(self, val):
-        sp_id = self.get_spatial_id()
-        #print 'on_low_level_progress_changed sp_id=%d val=%.2f' % (sp_id, val)
-        prog_dct = make_progress_dict(sp_id=sp_id, percent=val)
-        #self.low_level_progress.emit(val)
-        self.low_level_progress.emit(prog_dct)
-        
-    
-    def incr_pnt_spec_spid_idx(self):
-        """
-        incr_pnt_spec_spid_idx(): description
-
-        :returns: None
-        """
-        self.pnt_spec_spid_cntr_mutex.acquire()
-        self._pnt_spec_spid_cntr += 1
-        self.pnt_spec_spid_cntr_mutex.release()
-    
-    def reset_pnt_spec_spid_idx(self):
-        """
-        reset_pnt_spec_spid_idx(): description
-
-        :returns: None
-        """
-        self.pnt_spec_spid_cntr_mutex.acquire()
-        self._pnt_spec_spid_cntr = 0
-        self.pnt_spec_spid_cntr_mutex.release()
-    
-    def get_pnt_spec_spid_idx(self):
-        """
-        get_spec_spid_idx(): description
-
-        :returns: None
-        """
-        self.pnt_spec_spid_cntr_mutex.acquire()
-        val = self._pnt_spec_spid_cntr
-        self.pnt_spec_spid_cntr_mutex.release()
-        return(val)
+    # #def on_top_level_progress_changed(self, val):
+    # def on_top_level_progress_changed(self, **kwargs):
+    #     #print 'on_top_level_progress_changed [%.2f]' % val
+    #     self.top_level_progress.emit(kwargs['value'])
+    #
+    # def on_low_level_progress_changed(self, val):
+    #     sp_id = self.get_spatial_id()
+    #     #print 'on_low_level_progress_changed sp_id=%d val=%.2f' % (sp_id, val)
+    #     prog_dct = make_progress_dict(sp_id=sp_id, percent=val)
+    #     #self.low_level_progress.emit(val)
+    #     self.low_level_progress.emit(prog_dct)
+    #
+    #
+    # def incr_pnt_spec_spid_idx(self):
+    #     """
+    #     incr_pnt_spec_spid_idx(): description
+    #
+    #     :returns: None
+    #     """
+    #     self.pnt_spec_spid_cntr_mutex.acquire()
+    #     self._pnt_spec_spid_cntr += 1
+    #     self.pnt_spec_spid_cntr_mutex.release()
+    #
+    # def reset_pnt_spec_spid_idx(self):
+    #     """
+    #     reset_pnt_spec_spid_idx(): description
+    #
+    #     :returns: None
+    #     """
+    #     self.pnt_spec_spid_cntr_mutex.acquire()
+    #     self._pnt_spec_spid_cntr = 0
+    #     self.pnt_spec_spid_cntr_mutex.release()
+    #
+    # def get_pnt_spec_spid_idx(self):
+    #     """
+    #     get_spec_spid_idx(): description
+    #
+    #     :returns: None
+    #     """
+    #     self.pnt_spec_spid_cntr_mutex.acquire()
+    #     val = self._pnt_spec_spid_cntr
+    #     self.pnt_spec_spid_cntr_mutex.release()
+    #     return(val)
 
 
     def incr_evidx(self):
@@ -1388,7 +1445,8 @@ class BaseScan(BaseObject):
             t += 1
             md = 0
             for m in mtrlist:
-                md += m.get('done_moving')
+                if(m.get('motor_done_move')):
+                    md += 1
             
             if(md == num_mtrs):
                 done = True
@@ -1605,8 +1663,8 @@ class BaseScan(BaseObject):
         this is an API method to initlialize the data recorder module for this scan
         """
 
-        _multi_sp_scans = [scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK, scan_types.TOMOGRAPHY_SCAN]
-        _spectra_scans = [scan_types.SAMPLE_POINT_SPECTRA, scan_types.SAMPLE_LINE_SPECTRA]
+        _multi_sp_scans = [scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK, scan_types.TOMOGRAPHY]
+        _spectra_scans = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM]
 
         self.spid_data = {}
         self.determine_data_shape()
@@ -1636,7 +1694,7 @@ class BaseScan(BaseObject):
 
             #self.hdr = HdrData(data_dir, fname)
 
-            thumb_file_sffx = self.main_obj.get_thumbfile_suffix()
+            #thumb_file_sffx = self.main_obj.get_thumbfile_suffix()
 
             # if(self.scan_type == scan_types.SAMPLE_FOCUS):
             #     self.data = np.zeros((d1, d2, d3), dtype=np.float32)
@@ -1656,7 +1714,7 @@ class BaseScan(BaseObject):
             #     self.data = np.zeros((d1, d2, d3), dtype=np.float32)
             #     #init the zero mq temp file
             #
-            # elif (self.scan_type == scan_types.COARSE_IMAGE_SCAN):
+            # elif (self.scan_type == scan_types.COARSE_IMAGE):
             #     self.data = np.zeros((d1, d2, d3), dtype=np.float32)
             #
             # elif(self.scan_type == scan_types.OSA_IMAGE):
@@ -1665,11 +1723,11 @@ class BaseScan(BaseObject):
             # elif(self.scan_type == scan_types.OSA_FOCUS):
             #     self.data = np.zeros((d1, d2, d3), dtype=np.float32)
             #
-            # elif(self.scan_type == scan_types.SAMPLE_POINT_SPECTRA):
+            # elif(self.scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
             #     self.data = np.zeros((d1, d2, d3), dtype=np.float32)
             #
             #
-            # elif(self.scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+            # elif(self.scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
             #     self.data = np.ones((d1, d2, d3), dtype=np.float32)
             #
             #
@@ -1997,7 +2055,7 @@ class BaseScan(BaseObject):
 
         #check if user has asked for this to be automatic
         appConfig.update()
-        do_autosave = appConfig.get_bool_value('DEFAULT', 'autoSaveData')
+        do_autosave = appConfig.get_bool_value('MAIN', 'autoSaveData')
         if(do_autosave):
             return(True)
 
@@ -2284,422 +2342,422 @@ class BaseScan(BaseObject):
 
 
 
-    def on_save_sample_image(self, _data=None):
-        """
-        on_save_sample_image(): Saves a jpg thumbnail image of current scan and also increments the consecutive_scan_idx counter
-        It is used by:
-            FocusScanClass
-            SampleImageWithEnergySSCAN
-        
-        This is an API slot that gets fired when the data level scan_done signal and it saves a thumbnail image of current data
-        
-        The final data dict should have the main keys of:
-            all_data['SSCANS']      - all fields of each sscan record, this will be a list of sscans
-            all_data['SCAN_CFG']    - all params from the GUI for this scan, center, range etc, also any flags such as XMCD=True that relate to how to execute this scan
-            all_data['DATA']        - counter data collected during scan, for images this will be a 2d array, for point scans this will be a 1d array
+    # def on_save_sample_image(self, _data=None):
+    #     """
+    #     on_save_sample_image(): Saves a jpg thumbnail image of current scan and also increments the consecutive_scan_idx counter
+    #     It is used by:
+    #         FocusScanClass
+    #         SampleImageWithEnergySSCAN
+    #
+    #     This is an API slot that gets fired when the data level scan_done signal and it saves a thumbnail image of current data
+    #
+    #     The final data dict should have the main keys of:
+    #         all_data['SSCANS']      - all fields of each sscan record, this will be a list of sscans
+    #         all_data['SCAN_CFG']    - all params from the GUI for this scan, center, range etc, also any flags such as XMCD=True that relate to how to execute this scan
+    #         all_data['DATA']        - counter data collected during scan, for images this will be a 2d array, for point scans this will be a 1d array
+    #
+    #     The goal of all_data dict is to write the dict out to disk in <data dir>/master.json. Once it has been recorded to disk the data recorder
+    #     module can open it as a json object and export it based on the scan type so that it can pick and choose what to pull out and write to the header file.
+    #
+    #     :returns: None
+    #
+    #     """
+    #     try:
+    #         if(self.file_saved):
+    #             #_logger.debug('on_save_sample_image: returning file already saved')
+    #             return
+    #         #_logger.debug('on_save_sample_image')
+    #         #if(not self.busy_saving):
+    #
+    #         #try:
+    #         if(self.scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
+    #             return
+    #         self.data_obj.set_scan_end_time()
+    #         self.busy_saving = True
+    #         #first copy evidx and increment main evidx so that the on_counter_changed handler will not overwrite
+    #         _ev_idx = self.get_evidx()
+    #         if(self.stack):
+    #             _img_idx = self.get_imgidx()
+    #         else:
+    #             _img_idx = 0
+    #
+    #         _spatial_roi_idx = self.get_spatial_id()
+    #         #self.data_dct = self.data_obj.get_data_dct()
+    #         sp_db = self.sp_rois[_spatial_roi_idx]
+    #
+    #         self.data_dct = self.data_obj.get_data_dct()
+    #
+    #         ado_obj = dct_get(sp_db, SPDB_ACTIVE_DATA_OBJECT)
+    #         data_file_prfx = dct_get(ado_obj, ADO_CFG_PREFIX)
+    # #                thumb_file_ext = dct_get(ado_obj, ADO_CFG_THUMB_EXT)
+    #         datadir = dct_get(ado_obj, ADO_CFG_DATA_DIR)
+    #         datafile_name = dct_get(ado_obj, ADO_CFG_DATA_FILE_NAME)
+    #         hdf_name = dct_get(ado_obj, ADO_CFG_DATA_FILE_NAME)
+    #         thumb_name = dct_get(ado_obj, ADO_CFG_DATA_THUMB_NAME)
+    #         #_img_idx = dct_get(ado_obj, ADO_CFG_DATA_IMG_IDX)
+    #         stack_dir = dct_get(ado_obj, ADO_CFG_STACK_DIR)
+    #
+    #         if(not self.save_jpgs):
+    #             return
+    #
+    #         if(self.stack):
+    #             datadir = stack_dir
+    #             thumb_name = data_file_prfx + '_%03d' % self.get_consecutive_scan_idx()
+    #
+    #         dct = {}
+    #         dct_put(dct, ADO_CFG_DATA_DIR, datadir)
+    #         dct_put(dct, ADO_CFG_DATA_THUMB_NAME, thumb_name)
+    #         dct_put(dct, ADO_CFG_DATA_FILE_NAME, hdf_name)
+    #
+    #         if(_data is None):
+    #             _dct = self.get_img_idx_map(_img_idx)
+    #             sp_id = _dct['sp_id']
+    #             sp_idx = _dct['sp_idx']
+    #             pol_idx = _dct['pol_idx']
+    #
+    #             # for now just use the first counter
+    #             #counter = self.counter_dct.keys()[0]
+    #             counter = DNM_DEFAULT_COUNTER
+    #             #self._data = self.spid_data[counter][sp_idx][pol_idx]
+    #             self._data = np.copy(self.spid_data[counter][sp_id][pol_idx])
+    #             #dct_put(dct, ADO_DATA_POINTS, copy.copy(self.spid_data[counter][sp_id][pol_idx]) )
+    #             dct_put(dct, ADO_DATA_POINTS, self._data)
+    #         else:
+    #             #print 'on_save_sample_image: _data.shape = ', _data.shape
+    #             dct_put(dct, ADO_DATA_POINTS, _data)
+    #
+    #         if(self.is_point_spec):
+    #             #self.hdr.save_image_nxdf(self.data_dct)
+    #             self.hdr.save_image_nxdf(dct)
+    #
+    #         elif(self.is_lxl or self.is_pxp):
+    #             #save a jpg thumbnail
+    #             self.hdr.save_image_thumbnail(dct)
+    #             self.incr_imgidx()
+    #             self.new_spatial_start.emit(_spatial_roi_idx)
+    #
+    #         self.busy_saving = False
+    #
+    #        #     #except:
+    #        #     #    self.busy_saving = False
+    #        # else:
+    #        #     _logger.error('on_save_sample_image: DROP THRU : wanted to save but it was busy')
+    #
+    #     except KeyError:
+    #         _logger.error('on_save_sample_image: How did this happen? _spatial_roi_idx=%d'%_spatial_roi_idx)
             
-        The goal of all_data dict is to write the dict out to disk in <data dir>/master.json. Once it has been recorded to disk the data recorder
-        module can open it as a json object and export it based on the scan type so that it can pick and choose what to pull out and write to the header file.
-        
-        :returns: None   
-        
-        """
-        try:
-            if(self.file_saved):
-                #_logger.debug('on_save_sample_image: returning file already saved')
-                return
-            #_logger.debug('on_save_sample_image')
-            #if(not self.busy_saving):
-
-            #try:
-            if(self.scan_type == scan_types.SAMPLE_POINT_SPECTRA):
-                return
-            self.data_obj.set_scan_end_time()
-            self.busy_saving = True
-            #first copy evidx and increment main evidx so that the on_counter_changed handler will not overwrite
-            _ev_idx = self.get_evidx()
-            if(self.stack):
-                _img_idx = self.get_imgidx()
-            else:
-                _img_idx = 0
-
-            _spatial_roi_idx = self.get_spatial_id()
-            #self.data_dct = self.data_obj.get_data_dct()
-            sp_db = self.sp_rois[_spatial_roi_idx]
-
-            self.data_dct = self.data_obj.get_data_dct()
-
-            ado_obj = dct_get(sp_db, SPDB_ACTIVE_DATA_OBJECT)
-            data_file_prfx = dct_get(ado_obj, ADO_CFG_PREFIX)
-    #                thumb_file_ext = dct_get(ado_obj, ADO_CFG_THUMB_EXT)
-            datadir = dct_get(ado_obj, ADO_CFG_DATA_DIR)
-            datafile_name = dct_get(ado_obj, ADO_CFG_DATA_FILE_NAME)
-            hdf_name = dct_get(ado_obj, ADO_CFG_DATA_FILE_NAME)
-            thumb_name = dct_get(ado_obj, ADO_CFG_DATA_THUMB_NAME)
-            #_img_idx = dct_get(ado_obj, ADO_CFG_DATA_IMG_IDX)
-            stack_dir = dct_get(ado_obj, ADO_CFG_STACK_DIR)
-
-            if(not self.save_jpgs):
-                return
-
-            if(self.stack):
-                datadir = stack_dir
-                thumb_name = data_file_prfx + '_%03d' % self.get_consecutive_scan_idx()
-
-            dct = {}
-            dct_put(dct, ADO_CFG_DATA_DIR, datadir)
-            dct_put(dct, ADO_CFG_DATA_THUMB_NAME, thumb_name)
-            dct_put(dct, ADO_CFG_DATA_FILE_NAME, hdf_name)
-
-            if(_data is None):
-                _dct = self.get_img_idx_map(_img_idx)
-                sp_id = _dct['sp_id']
-                sp_idx = _dct['sp_idx']
-                pol_idx = _dct['pol_idx']
-
-                # for now just use the first counter
-                #counter = self.counter_dct.keys()[0]
-                counter = DNM_DEFAULT_COUNTER
-                #self._data = self.spid_data[counter][sp_idx][pol_idx]
-                self._data = np.copy(self.spid_data[counter][sp_id][pol_idx])
-                #dct_put(dct, ADO_DATA_POINTS, copy.copy(self.spid_data[counter][sp_id][pol_idx]) )
-                dct_put(dct, ADO_DATA_POINTS, self._data)
-            else:
-                #print 'on_save_sample_image: _data.shape = ', _data.shape
-                dct_put(dct, ADO_DATA_POINTS, _data)
-
-            if(self.is_point_spec):
-                #self.hdr.save_image_nxdf(self.data_dct)
-                self.hdr.save_image_nxdf(dct)
-
-            elif(self.is_lxl or self.is_pxp):
-                #save a jpg thumbnail
-                self.hdr.save_image_thumbnail(dct)
-                self.incr_imgidx()
-                self.new_spatial_start.emit(_spatial_roi_idx)
-
-            self.busy_saving = False
-
-           #     #except:
-           #     #    self.busy_saving = False
-           # else:
-           #     _logger.error('on_save_sample_image: DROP THRU : wanted to save but it was busy')
-
-        except KeyError:
-            _logger.error('on_save_sample_image: How did this happen? _spatial_roi_idx=%d'%_spatial_roi_idx)
-            
-    def save_hdr(self, update=False, do_check=True):
-        """
-        save_hdr(): This is the main datafile savinf function, it is called at the end of every completed scan
-        
-        :param update: update is a flag set to True when save_hdr() is first called during the configure() portion of the scan
-                    it allows the data file to be created before data collection has started and then updated as the data is collected, 
-                    when the scan has finished this flag is False which indicates that all final processing of the save should take place
-                    (ie: prompt the user if they want to save this data etc)
-        
-        :returns: None
-
-        If this function takes a long time due to grabbing a snapshot of all 
-        the positioners it should maybe be moved to its own thread and just have the
-        GUI wait until it is finished, that seems reasonable for the user to wait a couple seconds
-        for the file to save as long as the GUI is not hung
-        
-        
-        This function is used by:
-            - sample Image PXP
-            - sample Image LXL
-            - sample Image point Spectra
-        None stack scans should yield the following per scan: 
-            one header file
-            one image thumbnail (jpg)
-            
-        Stack scans should yield:
-            one header file
-            numE * numEpu thumbnail images per stack
-            
-        The image thumbnails are saved in the on_sampleImage_data_done signal handler
-        
-        The header file is saved on the scan_done signal of the top level scan     
-        """
-        #print '\tin save_hdr() update, docheck:', (update, do_check)
-        if(update):
-            _logger.debug('Skipping save_hdr() update = True')
-            return
-        else:
-            if (self.main_obj.device(DNM_SHUTTER).is_auto()):
-                self.main_obj.device(DNM_SHUTTER).close()
-
-        upside_dwn_scans = [scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK]
-
-        #_logger.info('save_hdr: starting')
-
-        if(self.is_point_spec):
-            self.save_point_spec_hdr(update)
-            return
-
-        if(self.is_line_spec):
-            if(self.use_hdw_accel):
-                self.gate.stop()
-                self.counter.stop()
-
-        self.data_obj.set_scan_end_time()    
-
-        upd_list = []
-        for s in self.scanlist:
-            upd_list.append(s.get_name())
-        #self.main_obj.update_zmq_sscan_snapshot(upd_list)
-        
-        _ev_idx = self.get_evidx()
-        _img_idx = self.get_imgidx() - 1 
-        _spatial_roi_idx = self.get_spatial_id()
-        sp_db = self.sp_rois[_spatial_roi_idx]
-        sample_pos = 1
-
-
-        #data_name_dct = master_get_seq_names(datadir, prefix_char=data_file_prfx, thumb_ext=thumb_file_sffx, dat_ext='hdf5', stack_dir=self.stack)
-        #hack
-        if(_img_idx < 0):
-            _img_idx = 0
-        self.data_dct = self.data_obj.get_data_dct()    
-        
-        ado_obj = dct_get(sp_db, SPDB_ACTIVE_DATA_OBJECT)
-#        data_file_prfx = dct_get(ado_obj, ADO_CFG_PREFIX)
-#        thumb_file_ext = dct_get(ado_obj, ADO_CFG_THUMB_EXT)
-        datadir = dct_get(ado_obj, ADO_CFG_DATA_DIR)
-        datafile_name = dct_get(ado_obj, ADO_CFG_DATA_FILE_NAME)
-        datafile_prfx = dct_get(ado_obj, ADO_CFG_PREFIX)
-#        thumb_name = dct_get(ado_obj, ADO_CFG_DATA_THUMB_NAME)
-        stack_dir = dct_get(ado_obj, ADO_CFG_STACK_DIR)
-        
-
-        if(not update):
-            if(do_check):
-                if(not self.check_if_save_all_data(datafile_name)):
-                    return
-            
-        self.saving_data.emit('Saving...')
-        
-        if(self.stack):
-            datadir = stack_dir
-        
-        #alldata = self.main_obj.get_zmq_sscan_snapshot(upd_list)
-        for scan in self.scanlist:
-            sname = scan.get_name()
-            #    #ask each scan to get its data and store it in scan.scan_data
-            if(self.use_hdw_accel):
-                #there wont be any setpoints in the sscan config as the setpoints are done in the waveform generator
-                #so just create them
-                if (scan.section_name == SPDB_X):
-                    dct_put(self.data_dct, 'DATA.SSCANS.X', {'P1RA': self.x_roi[SETPOINTS], 'NPTS': self.x_roi[NPOINTS]})
-
-                if (scan.section_name == SPDB_Y):
-                    dct_put(self.data_dct, 'DATA.SSCANS.Y', {'P1RA': self.y_roi[SETPOINTS], 'NPTS': self.y_roi[NPOINTS]})
-
-                if (scan.section_name == SPDB_XY):
-                    dct_put(self.data_dct, 'DATA.SSCANS.XY',
-                            {'P1RA': self.x_roi[SETPOINTS], 'NPTS': self.x_roi[NPOINTS]})
-                    dct_put(self.data_dct, 'DATA.SSCANS.X',
-                            {'P1RA': self.x_roi[SETPOINTS], 'NPTS': self.x_roi[NPOINTS]})
-                    dct_put(self.data_dct, 'DATA.SSCANS.Y',
-                            {'P1RA': self.y_roi[SETPOINTS], 'NPTS': self.y_roi[NPOINTS]})
-
-
-            elif(scan.section_name == SPDB_XY):
-                #this is a sscan where P1 is X and P2 is Y, separate them such that they look like two separate scans
-                #alldata = self.take_sscan_snapshot(scan.name)
-                alldata = scan.get_all_data()
-
-                p1data = alldata['P1RA']
-                npts = alldata['NPTS']
-                cpt = alldata['CPT']
-                p2data = alldata['P2RA']
-                dct_put(self.data_dct,'DATA.SSCANS.XY', alldata)
-                
-                dct_put(self.data_dct,'DATA.SSCANS.X', {'P1RA':p1data, 'NPTS':npts, 'CPT':cpt})
-                dct_put(self.data_dct,'DATA.SSCANS.Y', {'P1RA':p2data, 'NPTS':npts, 'CPT':cpt})
-            else:
-                dct_put(self.data_dct,'DATA.SSCANS.' + scan.section_name, scan.get_all_data())
-                #dct_put(self.data_dct,'DATA.SSCANS.' + scan.section_name, alldata[sname])
-        
-        
-        # if(self.scan_type in upside_dwn_scans):
-        #     #the data for these scans needs to be flipped upside down
-        #     _data = self.flip_data_upsdown(self.data[_img_idx-1])
-        #     self.data[_img_idx-1] = np.copy(_data)
-        #
-        #_logger.info('grabbing devices snapshot')
-        devices = self.main_obj.get_devices()
-        
-        #get the current spatial roi and put it in the dct as a dict with its sp_id as the key
-        _wdgcom = {}
-        dct_put(_wdgcom, WDGCOM_CMND, self.wdg_com[CMND])
-        _sprois = {}
-        _sprois[_spatial_roi_idx] = self.wdg_com['SPATIAL_ROIS'][_spatial_roi_idx]
-        dct_put(_wdgcom, SPDB_SPATIAL_ROIS,  _sprois )
-        dct_put(self.data_dct, ADO_CFG_WDG_COM, _wdgcom)
-
-        #SEPT 6
-        cur_idx = self.get_consecutive_scan_idx()
-        _dct = self.get_img_idx_map(cur_idx)
-        sp_id = _dct['sp_id']
-        pol_idx = _dct['pol_idx']
-
-        # for now just use the first counter
-        #counter = self.counter_dct.keys()[0]
-        counter = DNM_DEFAULT_COUNTER
-        #self._data = self.spid_data[counter][sp_id][pol_idx]
-        #self._data = np.copy(self.spid_data[counter][sp_id][pol_idx])
-        # end SEPT 6
-
-        testing_polarity_entries=False
-        if(testing_polarity_entries):
-            t_dct = {}
-            
-            # dct_put(t_dct,'POSITIONERS', self.take_positioner_snapshot(devices['POSITIONERS']))
-            # dct_put(t_dct,'DETECTORS', self.take_detectors_snapshot(devices['DETECTORS']))
-            # dct_put(t_dct,'TEMPERATURES', self.take_temps_snapshot(devices['TEMPERATURES']))
-            # dct_put(t_dct, 'PRESSURES', self.take_pressures_snapshot(devices['PRESSURES']))
-            # dct_put(t_dct,'PVS', self.take_pvs_snapshot(devices['PVS']))
-            # #_logger.info('DONE grabbing devices snapshot')
-            # #dct_put(t_dct, ADO_CFG_WDG_COM, self.wdg_com)
-            # dct_put(self.data_dct, ADO_CFG_WDG_COM, _wdgcom)
-            #
-            # dct_put(t_dct, ADO_CFG_SCAN_TYPE, self.scan_type)
-            # dct_put(t_dct, ADO_CFG_CUR_EV_IDX, _ev_idx)
-            # dct_put(t_dct, ADO_CFG_CUR_SPATIAL_ROI_IDX, _spatial_roi_idx)
-            # dct_put(t_dct, ADO_CFG_CUR_SAMPLE_POS, sample_pos)
-            # dct_put(t_dct, ADO_CFG_CUR_SEQ_NUM, 0)
-            # dct_put(t_dct, ADO_CFG_DATA_DIR, datadir)
-            # dct_put(t_dct, ADO_CFG_DATA_FILE_NAME, datafile_prfx)
-            # dct_put(t_dct, ADO_CFG_UNIQUEID, datafile_prfx)
-            # dct_put(t_dct, ADO_CFG_X, self.x_roi)
-            # dct_put(t_dct, ADO_CFG_Y, self.y_roi)
-            # dct_put(t_dct, ADO_CFG_Z, self.z_roi)
-            # dct_put(t_dct, ADO_CFG_EV_ROIS, self.e_rois)
-            # dct_put(t_dct, ADO_DATA_POINTS, self.data )
-            #
-            # images_data = np.zeros((self.numEPU, self.numE, self.numY, self.numX))
-            # image_idxs = []
-            # for i in range(self.numEPU):
-            #     image_idxs.append(np.arange(i, self.numImages, self.numEPU))
-            #
-            # #for idxs in image_idxs:
-            # for i in range(self.numEPU):
-            #     idxs = image_idxs[i]
-            #     y = 0
-            #     for j in idxs:
-            #         images_data[i][y] = self.data[j]
-            #         y += 1
-            #
-            #
-            # new_e_rois = self.turn_e_rois_into_polarity_centric_e_rois(self.e_rois)
-            # pol_rois = []
-            # for e_roi in self.e_rois:
-            #     for pol in range(self.numEPU):
-            #         pol_rois.append(e_roi['POL_ROIS'][pol])
-            #
-            # for pol in range(self.numEPU):
-            #     self.data_dct['entry_%d' % pol] = copy.deepcopy(t_dct)
-            #     dct_put(self.data_dct['entry_%d' % pol], ADO_DATA_POINTS, copy.deepcopy(images_data[pol]) )
-            #     dct_put(self.data_dct['entry_%d' % pol], ADO_DATA_SSCANS, copy.deepcopy(self.data_dct['DATA']['SSCANS']))
-            #     dct_put(self.data_dct['entry_%d' % pol], ADO_CFG_EV_ROIS, [new_e_rois[pol]])
-        else:
-            
-            if((self.data_dct['TIME'] != None) and update):
-                #we already have already set these and its not the end of the scan sp skip
-                pass
-            else:
-                dct_put(self.data_dct,'TIME', make_timestamp_now())
-                dct_put(self.data_dct,'POSITIONERS', self.take_positioner_snapshot(devices['POSITIONERS']))
-                dct_put(self.data_dct,'DETECTORS', self.take_detectors_snapshot(devices['DETECTORS']))
-                dct_put(self.data_dct, 'TEMPERATURES', self.take_temps_snapshot(devices['TEMPERATURES']))
-                dct_put(self.data_dct, 'PRESSURES', self.take_pressures_snapshot(devices['PRESSURES']))
-                dct_put(self.data_dct,'PVS', self.take_pvs_snapshot(devices['PVS']))
-                
-            #_logger.info('DONE grabbing devices snapshot')
-            #dct_put(self.data_dct, ADO_CFG_WDG_COM, self.wdg_com)    
-            dct_put(self.data_dct, ADO_CFG_WDG_COM, _wdgcom)
-            
-            if(update):
-                dct_put(self.data_dct, ADO_CFG_DATA_STATUS, DATA_STATUS_NOT_FINISHED)
-            else:
-                dct_put(self.data_dct, ADO_CFG_DATA_STATUS, DATA_STATUS_FINISHED)
-                
-            dct_put(self.data_dct, ADO_CFG_SCAN_TYPE, self.scan_type)    
-            dct_put(self.data_dct, ADO_CFG_CUR_EV_IDX, _ev_idx)
-            dct_put(self.data_dct, ADO_CFG_CUR_SPATIAL_ROI_IDX, _spatial_roi_idx)
-            dct_put(self.data_dct, ADO_CFG_CUR_SAMPLE_POS, sample_pos)
-            dct_put(self.data_dct, ADO_CFG_CUR_SEQ_NUM, 0)
-            dct_put(self.data_dct, ADO_CFG_DATA_DIR, datadir)
-            dct_put(self.data_dct, ADO_CFG_DATA_FILE_NAME, datafile_prfx)
-            dct_put(self.data_dct, ADO_CFG_UNIQUEID, datafile_prfx)
-            dct_put(self.data_dct, ADO_CFG_X, self.x_roi)
-            dct_put(self.data_dct, ADO_CFG_Y, self.y_roi)
-            dct_put(self.data_dct, ADO_CFG_Z, self.z_roi)
-            dct_put(self.data_dct, ADO_CFG_ZZ, self.zz_roi)
-            dct_put(self.data_dct, ADO_CFG_EV_ROIS, self.e_rois)
-            #dct_put(self.data_dct, ADO_DATA_POINTS, self.data )
-            #dct_put(self.data_dct, ADO_CFG_IMG_IDX_MAP, self.img_idx_map)
-
-            dct_put(self.data_dct, ADO_DATA_POINTS, self._data)
-
-            dct_put(self.data_dct, ADO_STACK_DATA_POINTS, self.spid_data)
-            dct_put(self.data_dct, ADO_STACK_DATA_UPDATE_DEV_POINTS, self.update_dev_data)
-
-            dct_put(self.data_dct, ADO_SP_ROIS, self.sp_rois)
-            
-            
-        if (update):
-            #self.hdr.save(self.data_dct, use_tmpfile=True)
-            pass
-        else:
-            pass
-            # Sept 8
-            # if(self.stack or (len(self.sp_rois) > 1)):
-            #     self.hdr.save(self.data_dct, allow_tmp_rename=True)
-            #     self.clean_up_data()
-            # else:
-            #     self.hdr.save(self.data_dct)
-            # end Sept 8
-
-            #update stop time in tmp file
-            #print '\tsave_hdr: calling self.main_obj.zmq_stoptime_to_tmp_file()'
-            self.main_obj.zmq_stoptime_to_tmp_file()
-
-            #now send the Active Data Object (ADO) to the tmp file under the section 'ADO'
-            dct = {}
-            dct['cmd'] = CMD_SAVE_DICT_TO_TMPFILE
-            wdct = {'WDG_COM':dict_to_json(_wdgcom), 'SCAN_TYPE': self.scan_type}
-            data_dct_str = dict_to_json(self.data_dct)
-            if(self.is_line_spec):
-                dct['dct'] = {'SP_ROIS': dict_to_json(self.sp_rois), 'CFG': wdct, 'numEpu': self.numEPU,
-                              'numSpids': self.numSPIDS, 'numE': 1, \
-                              'DATA_DCT': data_dct_str}
-            else:
-                dct['dct'] = {'SP_ROIS': dict_to_json(self.sp_rois), 'CFG': wdct, 'numEpu': self.numEPU, 'numSpids':self.numSPIDS, 'numE':self.numE, \
-                          'DATA_DCT':data_dct_str}
-
-            self.main_obj.zmq_save_dict_to_tmp_file(dct)
-
-            cur_idx = self.get_consecutive_scan_idx()
-            _dct = self.get_snapshot_dict(cur_idx)
-
-            #print '\tsave_hdr: saving a snapshot -> idx(%d)' % cur_idx
-            self.main_obj.zmq_save_dict_to_tmp_file(_dct)
-
-            dct = {}
-            dct['cmd'] = CMD_EXPORT_TMP_TO_NXSTXMFILE
-            #print '\tsave_hdr: calling for export of tmp to final hdf file'
-            self.main_obj.zmq_save_dict_to_tmp_file(dct)
-
-        #self.on_save_sample_image(_data=self.img_data[_spatial_roi_idx])
-        #self.on_save_sample_image(_data=self.img_data[sp_id])
-        self.on_save_sample_image(_data=self._data)
-
-        if(not SIMULATE_IMAGE_DATA):
-            if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-                self.main_obj.device( DNM_CX_AUTO_DISABLE_POWER ).put(1) #enabled
-                self.main_obj.device( DNM_CY_AUTO_DISABLE_POWER ).put(1) #enabled
+#     def save_hdr(self, update=False, do_check=True):
+#         """
+#         save_hdr(): This is the main datafile savinf function, it is called at the end of every completed scan
+#
+#         :param update: update is a flag set to True when save_hdr() is first called during the configure() portion of the scan
+#                     it allows the data file to be created before data collection has started and then updated as the data is collected,
+#                     when the scan has finished this flag is False which indicates that all final processing of the save should take place
+#                     (ie: prompt the user if they want to save this data etc)
+#
+#         :returns: None
+#
+#         If this function takes a long time due to grabbing a snapshot of all
+#         the positioners it should maybe be moved to its own thread and just have the
+#         GUI wait until it is finished, that seems reasonable for the user to wait a couple seconds
+#         for the file to save as long as the GUI is not hung
+#
+#
+#         This function is used by:
+#             - sample Image PXP
+#             - sample Image LXL
+#             - sample Image point Spectra
+#         None stack scans should yield the following per scan:
+#             one header file
+#             one image thumbnail (jpg)
+#
+#         Stack scans should yield:
+#             one header file
+#             numE * numEpu thumbnail images per stack
+#
+#         The image thumbnails are saved in the on_sampleImage_data_done signal handler
+#
+#         The header file is saved on the scan_done signal of the top level scan
+#         """
+#         #print '\tin save_hdr() update, docheck:', (update, do_check)
+#         if(update):
+#             _logger.debug('Skipping save_hdr() update = True')
+#             return
+#         else:
+#             if (self.main_obj.device(DNM_SHUTTER).is_auto()):
+#                 self.main_obj.device(DNM_SHUTTER).close()
+#
+#         upside_dwn_scans = [scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK]
+#
+#         #_logger.info('save_hdr: starting')
+#
+#         if(self.is_point_spec):
+#             self.save_point_spec_hdr(update)
+#             return
+#
+#         if(self.is_line_spec):
+#             if(self.use_hdw_accel):
+#                 self.gate.stop()
+#                 self.counter.stop()
+#
+#         self.data_obj.set_scan_end_time()
+#
+#         upd_list = []
+#         for s in self.scanlist:
+#             upd_list.append(s.get_name())
+#         #self.main_obj.update_zmq_sscan_snapshot(upd_list)
+#
+#         _ev_idx = self.get_evidx()
+#         _img_idx = self.get_imgidx() - 1
+#         _spatial_roi_idx = self.get_spatial_id()
+#         sp_db = self.sp_rois[_spatial_roi_idx]
+#         sample_pos = 1
+#
+#
+#         #data_name_dct = master_get_seq_names(datadir, prefix_char=data_file_prfx, thumb_ext=thumb_file_sffx, dat_ext='hdf5', stack_dir=self.stack)
+#         #hack
+#         if(_img_idx < 0):
+#             _img_idx = 0
+#         self.data_dct = self.data_obj.get_data_dct()
+#
+#         ado_obj = dct_get(sp_db, SPDB_ACTIVE_DATA_OBJECT)
+# #        data_file_prfx = dct_get(ado_obj, ADO_CFG_PREFIX)
+# #        thumb_file_ext = dct_get(ado_obj, ADO_CFG_THUMB_EXT)
+#         datadir = dct_get(ado_obj, ADO_CFG_DATA_DIR)
+#         datafile_name = dct_get(ado_obj, ADO_CFG_DATA_FILE_NAME)
+#         datafile_prfx = dct_get(ado_obj, ADO_CFG_PREFIX)
+# #        thumb_name = dct_get(ado_obj, ADO_CFG_DATA_THUMB_NAME)
+#         stack_dir = dct_get(ado_obj, ADO_CFG_STACK_DIR)
+#
+#
+#         if(not update):
+#             if(do_check):
+#                 if(not self.check_if_save_all_data(datafile_name)):
+#                     return
+#
+#         self.saving_data.emit('Saving...')
+#
+#         if(self.stack):
+#             datadir = stack_dir
+#
+#         #alldata = self.main_obj.get_zmq_sscan_snapshot(upd_list)
+#         for scan in self.scanlist:
+#             sname = scan.get_name()
+#             #    #ask each scan to get its data and store it in scan.scan_data
+#             if(self.use_hdw_accel):
+#                 #there wont be any setpoints in the sscan config as the setpoints are done in the waveform generator
+#                 #so just create them
+#                 if (scan.section_name == SPDB_X):
+#                     dct_put(self.data_dct, 'DATA.SSCANS.X', {'P1RA': self.x_roi[SETPOINTS], 'NPTS': self.x_roi[NPOINTS]})
+#
+#                 if (scan.section_name == SPDB_Y):
+#                     dct_put(self.data_dct, 'DATA.SSCANS.Y', {'P1RA': self.y_roi[SETPOINTS], 'NPTS': self.y_roi[NPOINTS]})
+#
+#                 if (scan.section_name == SPDB_XY):
+#                     dct_put(self.data_dct, 'DATA.SSCANS.XY',
+#                             {'P1RA': self.x_roi[SETPOINTS], 'NPTS': self.x_roi[NPOINTS]})
+#                     dct_put(self.data_dct, 'DATA.SSCANS.X',
+#                             {'P1RA': self.x_roi[SETPOINTS], 'NPTS': self.x_roi[NPOINTS]})
+#                     dct_put(self.data_dct, 'DATA.SSCANS.Y',
+#                             {'P1RA': self.y_roi[SETPOINTS], 'NPTS': self.y_roi[NPOINTS]})
+#
+#
+#             elif(scan.section_name == SPDB_XY):
+#                 #this is a sscan where P1 is X and P2 is Y, separate them such that they look like two separate scans
+#                 #alldata = self.take_sscan_snapshot(scan.name)
+#                 alldata = scan.get_all_data()
+#
+#                 p1data = alldata['P1RA']
+#                 npts = alldata['NPTS']
+#                 cpt = alldata['CPT']
+#                 p2data = alldata['P2RA']
+#                 dct_put(self.data_dct,'DATA.SSCANS.XY', alldata)
+#
+#                 dct_put(self.data_dct,'DATA.SSCANS.X', {'P1RA':p1data, 'NPTS':npts, 'CPT':cpt})
+#                 dct_put(self.data_dct,'DATA.SSCANS.Y', {'P1RA':p2data, 'NPTS':npts, 'CPT':cpt})
+#             else:
+#                 dct_put(self.data_dct,'DATA.SSCANS.' + scan.section_name, scan.get_all_data())
+#                 #dct_put(self.data_dct,'DATA.SSCANS.' + scan.section_name, alldata[sname])
+#
+#
+#         # if(self.scan_type in upside_dwn_scans):
+#         #     #the data for these scans needs to be flipped upside down
+#         #     _data = self.flip_data_upsdown(self.data[_img_idx-1])
+#         #     self.data[_img_idx-1] = np.copy(_data)
+#         #
+#         #_logger.info('grabbing devices snapshot')
+#         devices = self.main_obj.get_devices()
+#
+#         #get the current spatial roi and put it in the dct as a dict with its sp_id as the key
+#         _wdgcom = {}
+#         dct_put(_wdgcom, WDGCOM_CMND, self.wdg_com[CMND])
+#         _sprois = {}
+#         _sprois[_spatial_roi_idx] = self.wdg_com['SPATIAL_ROIS'][_spatial_roi_idx]
+#         dct_put(_wdgcom, SPDB_SPATIAL_ROIS,  _sprois )
+#         dct_put(self.data_dct, ADO_CFG_WDG_COM, _wdgcom)
+#
+#         #SEPT 6
+#         cur_idx = self.get_consecutive_scan_idx()
+#         _dct = self.get_img_idx_map(cur_idx)
+#         sp_id = _dct['sp_id']
+#         pol_idx = _dct['pol_idx']
+#
+#         # for now just use the first counter
+#         #counter = self.counter_dct.keys()[0]
+#         counter = DNM_DEFAULT_COUNTER
+#         #self._data = self.spid_data[counter][sp_id][pol_idx]
+#         #self._data = np.copy(self.spid_data[counter][sp_id][pol_idx])
+#         # end SEPT 6
+#
+#         testing_polarity_entries=False
+#         if(testing_polarity_entries):
+#             t_dct = {}
+#
+#             # dct_put(t_dct,'POSITIONERS', self.take_positioner_snapshot(devices['POSITIONERS']))
+#             # dct_put(t_dct,'DETECTORS', self.take_detectors_snapshot(devices['DETECTORS']))
+#             # dct_put(t_dct,'TEMPERATURES', self.take_temps_snapshot(devices['TEMPERATURES']))
+#             # dct_put(t_dct, 'PRESSURES', self.take_pressures_snapshot(devices['PRESSURES']))
+#             # dct_put(t_dct,'PVS', self.take_pvs_snapshot(devices['PVS']))
+#             # #_logger.info('DONE grabbing devices snapshot')
+#             # #dct_put(t_dct, ADO_CFG_WDG_COM, self.wdg_com)
+#             # dct_put(self.data_dct, ADO_CFG_WDG_COM, _wdgcom)
+#             #
+#             # dct_put(t_dct, ADO_CFG_SCAN_TYPE, self.scan_type)
+#             # dct_put(t_dct, ADO_CFG_CUR_EV_IDX, _ev_idx)
+#             # dct_put(t_dct, ADO_CFG_CUR_SPATIAL_ROI_IDX, _spatial_roi_idx)
+#             # dct_put(t_dct, ADO_CFG_CUR_SAMPLE_POS, sample_pos)
+#             # dct_put(t_dct, ADO_CFG_CUR_SEQ_NUM, 0)
+#             # dct_put(t_dct, ADO_CFG_DATA_DIR, datadir)
+#             # dct_put(t_dct, ADO_CFG_DATA_FILE_NAME, datafile_prfx)
+#             # dct_put(t_dct, ADO_CFG_UNIQUEID, datafile_prfx)
+#             # dct_put(t_dct, ADO_CFG_X, self.x_roi)
+#             # dct_put(t_dct, ADO_CFG_Y, self.y_roi)
+#             # dct_put(t_dct, ADO_CFG_Z, self.z_roi)
+#             # dct_put(t_dct, ADO_CFG_EV_ROIS, self.e_rois)
+#             # dct_put(t_dct, ADO_DATA_POINTS, self.data )
+#             #
+#             # images_data = np.zeros((self.numEPU, self.numE, self.numY, self.numX))
+#             # image_idxs = []
+#             # for i in range(self.numEPU):
+#             #     image_idxs.append(np.arange(i, self.numImages, self.numEPU))
+#             #
+#             # #for idxs in image_idxs:
+#             # for i in range(self.numEPU):
+#             #     idxs = image_idxs[i]
+#             #     y = 0
+#             #     for j in idxs:
+#             #         images_data[i][y] = self.data[j]
+#             #         y += 1
+#             #
+#             #
+#             # new_e_rois = self.turn_e_rois_into_polarity_centric_e_rois(self.e_rois)
+#             # pol_rois = []
+#             # for e_roi in self.e_rois:
+#             #     for pol in range(self.numEPU):
+#             #         pol_rois.append(e_roi['POL_ROIS'][pol])
+#             #
+#             # for pol in range(self.numEPU):
+#             #     self.data_dct['entry_%d' % pol] = copy.deepcopy(t_dct)
+#             #     dct_put(self.data_dct['entry_%d' % pol], ADO_DATA_POINTS, copy.deepcopy(images_data[pol]) )
+#             #     dct_put(self.data_dct['entry_%d' % pol], ADO_DATA_SSCANS, copy.deepcopy(self.data_dct['DATA']['SSCANS']))
+#             #     dct_put(self.data_dct['entry_%d' % pol], ADO_CFG_EV_ROIS, [new_e_rois[pol]])
+#         else:
+#
+#             if((self.data_dct['TIME'] != None) and update):
+#                 #we already have already set these and its not the end of the scan sp skip
+#                 pass
+#             else:
+#                 dct_put(self.data_dct,'TIME', make_timestamp_now())
+#                 dct_put(self.data_dct,'POSITIONERS', self.take_positioner_snapshot(devices['POSITIONERS']))
+#                 dct_put(self.data_dct,'DETECTORS', self.take_detectors_snapshot(devices['DETECTORS']))
+#                 dct_put(self.data_dct, 'TEMPERATURES', self.take_temps_snapshot(devices['TEMPERATURES']))
+#                 dct_put(self.data_dct, 'PRESSURES', self.take_pressures_snapshot(devices['PRESSURES']))
+#                 dct_put(self.data_dct,'PVS', self.take_pvs_snapshot(devices['PVS']))
+#
+#             #_logger.info('DONE grabbing devices snapshot')
+#             #dct_put(self.data_dct, ADO_CFG_WDG_COM, self.wdg_com)
+#             dct_put(self.data_dct, ADO_CFG_WDG_COM, _wdgcom)
+#
+#             if(update):
+#                 dct_put(self.data_dct, ADO_CFG_DATA_STATUS, DATA_STATUS_NOT_FINISHED)
+#             else:
+#                 dct_put(self.data_dct, ADO_CFG_DATA_STATUS, DATA_STATUS_FINISHED)
+#
+#             dct_put(self.data_dct, ADO_CFG_SCAN_TYPE, self.scan_type)
+#             dct_put(self.data_dct, ADO_CFG_CUR_EV_IDX, _ev_idx)
+#             dct_put(self.data_dct, ADO_CFG_CUR_SPATIAL_ROI_IDX, _spatial_roi_idx)
+#             dct_put(self.data_dct, ADO_CFG_CUR_SAMPLE_POS, sample_pos)
+#             dct_put(self.data_dct, ADO_CFG_CUR_SEQ_NUM, 0)
+#             dct_put(self.data_dct, ADO_CFG_DATA_DIR, datadir)
+#             dct_put(self.data_dct, ADO_CFG_DATA_FILE_NAME, datafile_prfx)
+#             dct_put(self.data_dct, ADO_CFG_UNIQUEID, datafile_prfx)
+#             dct_put(self.data_dct, ADO_CFG_X, self.x_roi)
+#             dct_put(self.data_dct, ADO_CFG_Y, self.y_roi)
+#             dct_put(self.data_dct, ADO_CFG_Z, self.z_roi)
+#             dct_put(self.data_dct, ADO_CFG_ZZ, self.zz_roi)
+#             dct_put(self.data_dct, ADO_CFG_EV_ROIS, self.e_rois)
+#             #dct_put(self.data_dct, ADO_DATA_POINTS, self.data )
+#             #dct_put(self.data_dct, ADO_CFG_IMG_IDX_MAP, self.img_idx_map)
+#
+#             dct_put(self.data_dct, ADO_DATA_POINTS, self._data)
+#
+#             dct_put(self.data_dct, ADO_STACK_DATA_POINTS, self.spid_data)
+#             dct_put(self.data_dct, ADO_STACK_DATA_UPDATE_DEV_POINTS, self.update_dev_data)
+#
+#             dct_put(self.data_dct, ADO_SP_ROIS, self.sp_rois)
+#
+#
+#         if (update):
+#             #self.hdr.save(self.data_dct, use_tmpfile=True)
+#             pass
+#         else:
+#             pass
+#             # Sept 8
+#             # if(self.stack or (len(self.sp_rois) > 1)):
+#             #     self.hdr.save(self.data_dct, allow_tmp_rename=True)
+#             #     self.clean_up_data()
+#             # else:
+#             #     self.hdr.save(self.data_dct)
+#             # end Sept 8
+#
+#             #update stop time in tmp file
+#             #print '\tsave_hdr: calling self.main_obj.zmq_stoptime_to_tmp_file()'
+#             self.main_obj.zmq_stoptime_to_tmp_file()
+#
+#             #now send the Active Data Object (ADO) to the tmp file under the section 'ADO'
+#             dct = {}
+#             dct['cmd'] = CMD_SAVE_DICT_TO_TMPFILE
+#             wdct = {'WDG_COM':dict_to_json(_wdgcom), 'SCAN_TYPE': self.scan_type}
+#             data_dct_str = dict_to_json(self.data_dct)
+#             if(self.is_line_spec):
+#                 dct['dct'] = {'SP_ROIS': dict_to_json(self.sp_rois), 'CFG': wdct, 'numEpu': self.numEPU,
+#                               'numSpids': self.numSPIDS, 'numE': 1, \
+#                               'DATA_DCT': data_dct_str}
+#             else:
+#                 dct['dct'] = {'SP_ROIS': dict_to_json(self.sp_rois), 'CFG': wdct, 'numEpu': self.numEPU, 'numSpids':self.numSPIDS, 'numE':self.numE, \
+#                           'DATA_DCT':data_dct_str}
+#
+#             self.main_obj.zmq_save_dict_to_tmp_file(dct)
+#
+#             cur_idx = self.get_consecutive_scan_idx()
+#             _dct = self.get_snapshot_dict(cur_idx)
+#
+#             #print '\tsave_hdr: saving a snapshot -> idx(%d)' % cur_idx
+#             self.main_obj.zmq_save_dict_to_tmp_file(_dct)
+#
+#             dct = {}
+#             dct['cmd'] = CMD_EXPORT_TMP_TO_NXSTXMFILE
+#             #print '\tsave_hdr: calling for export of tmp to final hdf file'
+#             self.main_obj.zmq_save_dict_to_tmp_file(dct)
+#
+#         #self.on_save_sample_image(_data=self.img_data[_spatial_roi_idx])
+#         #self.on_save_sample_image(_data=self.img_data[sp_id])
+#         self.on_save_sample_image(_data=self._data)
+#
+#         if(not SIMULATE_IMAGE_DATA):
+#             if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+#                 self.main_obj.device( DNM_CX_AUTO_DISABLE_POWER ).put(1) #enabled
+#                 self.main_obj.device( DNM_CY_AUTO_DISABLE_POWER ).put(1) #enabled
     
     def update_data(self, stack=False):
         
@@ -2723,228 +2781,228 @@ class BaseScan(BaseObject):
         
         
         
-    def save_point_spec_hdr(self, update=False):
-        """
-        save_point_spec_hdr(): This is the main datafile saving function, it is called at the end of every completed scan
-
-        :returns: None
-        
-        I separated this out for point spectra scans because it is increasingly harder to make a one size fits all
-        save routine and adding more and more configuration makes the problem worse.
-        
-        This function is called on the completion of the point spectra scan, it will save in a single data file an nxstxm 'entry' for
-        each spatial point.
-
-        This function is used by:
-            - sample point Spectra
-        None stack scans should yield the following per scan: 
-            one header file
-            one image thumbnail (jpg)
+#     def save_point_spec_hdr(self, update=False):
+#         """
+#         save_point_spec_hdr(): This is the main datafile saving function, it is called at the end of every completed scan
+#
+#         :returns: None
+#
+#         I separated this out for point spectra scans because it is increasingly harder to make a one size fits all
+#         save routine and adding more and more configuration makes the problem worse.
+#
+#         This function is called on the completion of the point spectra scan, it will save in a single data file an nxstxm 'entry' for
+#         each spatial point.
+#
+#         This function is used by:
+#             - sample point Spectra
+#         None stack scans should yield the following per scan:
+#             one header file
+#             one image thumbnail (jpg)
+#
+#         Stack scans should yield:
+#             one header file
+#             numE * numEpu thumbnail images per stack
+#
+#         The image thumbnails are saved in the on_sampleImage_data_done signal handler
+#
+#         The header file is saved on the scan_done signal of the top level scan
+#         """
+#         #_logger.info('save_hdr: starting')
+#         #if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+#         #    self.gate.stop()
+#         #DEC 13 self.counter.stop()
+#         self.data_obj.set_scan_end_time()
+#
+#         upd_list = []
+#         for s in self.scanlist:
+#             upd_list.append(s.get_name())
+#
+#         _ev_idx = self.get_evidx()
+#         _img_idx = self.get_imgidx() - 1
+#         _spatial_roi_idx = self.get_spatial_id()
+#         sp_db = self.sp_rois[_spatial_roi_idx]
+#         sample_pos = 1
+#
+#         #data_name_dct = master_get_seq_names(datadir, prefix_char=data_file_prfx, thumb_ext=thumb_file_sffx, dat_ext='hdf5', stack_dir=self.stack)
+#         #hack
+#         if(_img_idx < 0):
+#             _img_idx = 0
+#         self.data_dct = self.data_obj.get_data_dct()
+#
+#         ado_obj = dct_get(sp_db, SPDB_ACTIVE_DATA_OBJECT)
+# #        data_file_prfx = dct_get(ado_obj, ADO_CFG_PREFIX)
+# #        thumb_file_ext = dct_get(ado_obj, ADO_CFG_THUMB_EXT)
+#         datadir = dct_get(ado_obj, ADO_CFG_DATA_DIR)
+#         datafile_name = dct_get(ado_obj, ADO_CFG_DATA_FILE_NAME)
+#         datafile_prfx = dct_get(ado_obj, ADO_CFG_PREFIX)
+# #        thumb_name = dct_get(ado_obj, ADO_CFG_DATA_THUMB_NAME)
+#         stack_dir = dct_get(ado_obj, ADO_CFG_STACK_DIR)
+#
+#         if(not update):
+#             if(not self.check_if_save_all_data(datafile_name)):
+#                 return
+#
+#         self.saving_data.emit('Saving...')
+#
+#         if(self.stack):
+#             datadir = stack_dir
+#
+#         #alldata = self.main_obj.get_zmq_sscan_snapshot(upd_list)
+#         for scan in self.scanlist:
+#             sname = scan.get_name()
+#             #    #ask each scan to get its data and store it in scan.scan_data
+#             if(scan.section_name == SPDB_XY):
+#                 #this is a sscan where P1 is X and P2 is Y, separate them such that they look like two separate scans
+#                 #alldata = self.take_sscan_snapshot(scan.name)
+#                 alldata = scan.get_all_data()
+#
+#                 p1data = alldata['P1RA']
+#                 npts = alldata['NPTS']
+#                 cpt = alldata['CPT']
+#                 p2data = alldata['P2RA']
+#                 dct_put(self.data_dct,'DATA.SSCANS.XY', alldata)
+#
+#                 dct_put(self.data_dct,'DATA.SSCANS.X', {'P1RA':p1data, 'NPTS':npts, 'CPT':cpt})
+#                 dct_put(self.data_dct,'DATA.SSCANS.Y', {'P1RA':p2data, 'NPTS':npts, 'CPT':cpt})
+#             else:
+#                 dct_put(self.data_dct,'DATA.SSCANS.' + scan.section_name, scan.get_all_data())
+#                 #dct_put(self.data_dct,'DATA.SSCANS.' + scan.section_name, alldata[sname])
+# #        unique_id = 'm%s' % (hdf_name)
+#
+#         # if(self.scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
+#         #     #_data = np.flipud(self.data[_img_idx-1]).copy()
+#         #     _data = self.flip_data_upsdown(self.data[_img_idx-1])
+#         #     self.data[_img_idx-1] = _data
+#
+#         #_logger.info('grabbing devices snapshot')
+#         devices = self.main_obj.get_devices()
+#
+#         #get the current spatial roi and put it in the dct as a dict with its sp_id as the key
+#         _wdgcom = {}
+#         dct_put(_wdgcom, WDGCOM_CMND, self.wdg_com[CMND])
+#         _sprois = {}
+#         _sprois[_spatial_roi_idx] = self.wdg_com['SPATIAL_ROIS'][_spatial_roi_idx]
+#         dct_put(_wdgcom, SPDB_SPATIAL_ROIS,  _sprois )
+#         dct_put(self.data_dct, ADO_CFG_WDG_COM, _wdgcom)
+#
+#         if((self.data_dct['TIME'] != None) and update):
+#             #we already have already set these and its not the end of the scan sp skip
+#             pass
+#         else:
+#             dct_put(self.data_dct,'TIME', make_timestamp_now())
+#             dct_put(self.data_dct,'POSITIONERS', self.take_positioner_snapshot(devices['POSITIONERS']))
+#             dct_put(self.data_dct,'DETECTORS', self.take_detectors_snapshot(devices['DETECTORS']))
+#             dct_put(self.data_dct, 'TEMPERATURES', self.take_temps_snapshot(devices['TEMPERATURES']))
+#             dct_put(self.data_dct, 'PRESSURES', self.take_pressures_snapshot(devices['PRESSURES']))
+#             dct_put(self.data_dct,'PVS', self.take_pvs_snapshot(devices['PVS']))
+#         #_logger.info('DONE grabbing devices snapshot')
+#         #dct_put(self.data_dct, ADO_CFG_WDG_COM, self.wdg_com)
+#         if(update):
+#             dct_put(self.data_dct, ADO_CFG_DATA_STATUS, DATA_STATUS_NOT_FINISHED)
+#         else:
+#             dct_put(self.data_dct, ADO_CFG_DATA_STATUS, DATA_STATUS_FINISHED)
+#
+#         dct_put(self.data_dct, ADO_CFG_WDG_COM, _wdgcom)
+#
+#         dct_put(self.data_dct, ADO_CFG_SCAN_TYPE, self.scan_type)
+#         dct_put(self.data_dct, ADO_CFG_CUR_EV_IDX, _ev_idx)
+#
+#         dct_put(self.data_dct, ADO_CFG_CUR_SAMPLE_POS, sample_pos)
+#         dct_put(self.data_dct, ADO_CFG_CUR_SEQ_NUM, 0)
+#         dct_put(self.data_dct, ADO_CFG_DATA_DIR, datadir)
+#         dct_put(self.data_dct, ADO_CFG_DATA_FILE_NAME, datafile_prfx)
+#         dct_put(self.data_dct, ADO_CFG_UNIQUEID, datafile_prfx)
+#         dct_put(self.data_dct, ADO_CFG_EV_ROIS, self.e_rois)
+#         #dct_put(self.data_dct, ADO_CFG_IMG_IDX_MAP, self.img_idx_map)
+#
+#         i = 0
+#         for sp_id in list(self.sp_rois.keys()):
+#
+#             #_sprois[_spatial_roi_idx] = self.wdg_com['SPATIAL_ROIS'][_spatial_roi_idx]
+#             #dct_put(_wdgcom, SPDB_SPATIAL_ROIS,  _sprois )
+#             #dct_put(self.data_dct, ADO_CFG_WDG_COM, _wdgcom)
+#
+#             _wdgcom = {}
+#             dct_put(_wdgcom, WDGCOM_CMND, self.wdg_com[CMND])
+#             _sproi = self.wdg_com['SPATIAL_ROIS'][sp_id]
+#             #SPDB_SPATIAL_ROIS must be a dict with the sp_id as the key
+#             dct_put(_wdgcom, SPDB_SPATIAL_ROIS,  {sp_id: _sproi} )
+#             dct_put(self.data_dct, ADO_CFG_WDG_COM, _wdgcom)
+#
+#             self.update_roi_member_vars(_sproi)
+#             dct_put(self.data_dct, ADO_CFG_CUR_SPATIAL_ROI_IDX, i)
+#             dct_put(self.data_dct, ADO_CFG_X, self.x_roi)
+#             dct_put(self.data_dct, ADO_CFG_Y, self.y_roi)
+#             dct_put(self.data_dct, ADO_CFG_Z, self.z_roi)
+#             dct_put(self.data_dct, ADO_CFG_ZZ, self.zz_roi)
+#             dct_put(self.data_dct, ADO_DATA_POINTS, self.data[0][i] )
+#
+#             #commented out may 18 2018
+#             #I need to loop through all the point spatial ids creating an entry for each then at the end rename the .tmp file to the final .hdf5 file
+#             #    otherwise thumbnailviewer will try to read a partial file
+#             # if(update):
+#             #     self.hdr.save_entry(sp_id, self.data_dct, use_tmpfile=True)
+#             # else:
+#             #     self.hdr.save_entry(sp_id, self.data_dct)
+#             #write to the temp file
+#             self.hdr.save_entry(sp_id, self.data_dct, use_tmpfile=True)
+#             i += 1
+#
+#         #now rename tmp file to final filename
+#         self.main_obj.zmq_rename_tmp_to_final()
+#
+#         #_logger.info('save_hdr: done')
+#         if(not SIMULATE_IMAGE_DATA):
+#             if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+#                 self.main_obj.device( DNM_CX_AUTO_DISABLE_POWER ).put(1) #enabled
+#                 self.main_obj.device( DNM_CY_AUTO_DISABLE_POWER ).put(1) #enabled
+#
+#
             
-        Stack scans should yield:
-            one header file
-            numE * numEpu thumbnail images per stack
-            
-        The image thumbnails are saved in the on_sampleImage_data_done signal handler
-        
-        The header file is saved on the scan_done signal of the top level scan     
-        """
-        #_logger.info('save_hdr: starting')
-        #if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-        #    self.gate.stop()
-        #DEC 13 self.counter.stop()
-        self.data_obj.set_scan_end_time()    
-        
-        upd_list = []
-        for s in self.scanlist:
-            upd_list.append(s.get_name())
-        
-        _ev_idx = self.get_evidx()
-        _img_idx = self.get_imgidx() - 1 
-        _spatial_roi_idx = self.get_spatial_id()
-        sp_db = self.sp_rois[_spatial_roi_idx]
-        sample_pos = 1
-        
-        #data_name_dct = master_get_seq_names(datadir, prefix_char=data_file_prfx, thumb_ext=thumb_file_sffx, dat_ext='hdf5', stack_dir=self.stack)
-        #hack
-        if(_img_idx < 0):
-            _img_idx = 0
-        self.data_dct = self.data_obj.get_data_dct()    
-        
-        ado_obj = dct_get(sp_db, SPDB_ACTIVE_DATA_OBJECT)
-#        data_file_prfx = dct_get(ado_obj, ADO_CFG_PREFIX)
-#        thumb_file_ext = dct_get(ado_obj, ADO_CFG_THUMB_EXT)
-        datadir = dct_get(ado_obj, ADO_CFG_DATA_DIR)
-        datafile_name = dct_get(ado_obj, ADO_CFG_DATA_FILE_NAME)
-        datafile_prfx = dct_get(ado_obj, ADO_CFG_PREFIX)
-#        thumb_name = dct_get(ado_obj, ADO_CFG_DATA_THUMB_NAME)
-        stack_dir = dct_get(ado_obj, ADO_CFG_STACK_DIR)
-        
-        if(not update):
-            if(not self.check_if_save_all_data(datafile_name)):
-                return
-        
-        self.saving_data.emit('Saving...')
-        
-        if(self.stack):
-            datadir = stack_dir
-        
-        #alldata = self.main_obj.get_zmq_sscan_snapshot(upd_list)
-        for scan in self.scanlist:
-            sname = scan.get_name()
-            #    #ask each scan to get its data and store it in scan.scan_data
-            if(scan.section_name == SPDB_XY):
-                #this is a sscan where P1 is X and P2 is Y, separate them such that they look like two separate scans
-                #alldata = self.take_sscan_snapshot(scan.name)
-                alldata = scan.get_all_data()
-                
-                p1data = alldata['P1RA']
-                npts = alldata['NPTS']
-                cpt = alldata['CPT']
-                p2data = alldata['P2RA']
-                dct_put(self.data_dct,'DATA.SSCANS.XY', alldata)
-                
-                dct_put(self.data_dct,'DATA.SSCANS.X', {'P1RA':p1data, 'NPTS':npts, 'CPT':cpt})
-                dct_put(self.data_dct,'DATA.SSCANS.Y', {'P1RA':p2data, 'NPTS':npts, 'CPT':cpt})
-            else:    
-                dct_put(self.data_dct,'DATA.SSCANS.' + scan.section_name, scan.get_all_data())
-                #dct_put(self.data_dct,'DATA.SSCANS.' + scan.section_name, alldata[sname])
-#        unique_id = 'm%s' % (hdf_name)
-        
-        # if(self.scan_type == scan_types.SAMPLE_LINE_SPECTRA):
-        #     #_data = np.flipud(self.data[_img_idx-1]).copy()
-        #     _data = self.flip_data_upsdown(self.data[_img_idx-1])
-        #     self.data[_img_idx-1] = _data
-            
-        #_logger.info('grabbing devices snapshot')
-        devices = self.main_obj.get_devices()
-        
-        #get the current spatial roi and put it in the dct as a dict with its sp_id as the key
-        _wdgcom = {}
-        dct_put(_wdgcom, WDGCOM_CMND, self.wdg_com[CMND])
-        _sprois = {}
-        _sprois[_spatial_roi_idx] = self.wdg_com['SPATIAL_ROIS'][_spatial_roi_idx]
-        dct_put(_wdgcom, SPDB_SPATIAL_ROIS,  _sprois )
-        dct_put(self.data_dct, ADO_CFG_WDG_COM, _wdgcom)
-        
-        if((self.data_dct['TIME'] != None) and update):
-            #we already have already set these and its not the end of the scan sp skip
-            pass
-        else:
-            dct_put(self.data_dct,'TIME', make_timestamp_now())
-            dct_put(self.data_dct,'POSITIONERS', self.take_positioner_snapshot(devices['POSITIONERS']))
-            dct_put(self.data_dct,'DETECTORS', self.take_detectors_snapshot(devices['DETECTORS']))
-            dct_put(self.data_dct, 'TEMPERATURES', self.take_temps_snapshot(devices['TEMPERATURES']))
-            dct_put(self.data_dct, 'PRESSURES', self.take_pressures_snapshot(devices['PRESSURES']))
-            dct_put(self.data_dct,'PVS', self.take_pvs_snapshot(devices['PVS']))
-        #_logger.info('DONE grabbing devices snapshot')
-        #dct_put(self.data_dct, ADO_CFG_WDG_COM, self.wdg_com)    
-        if(update):
-            dct_put(self.data_dct, ADO_CFG_DATA_STATUS, DATA_STATUS_NOT_FINISHED)
-        else:
-            dct_put(self.data_dct, ADO_CFG_DATA_STATUS, DATA_STATUS_FINISHED)
-                
-        dct_put(self.data_dct, ADO_CFG_WDG_COM, _wdgcom)
-            
-        dct_put(self.data_dct, ADO_CFG_SCAN_TYPE, self.scan_type)    
-        dct_put(self.data_dct, ADO_CFG_CUR_EV_IDX, _ev_idx)
-        
-        dct_put(self.data_dct, ADO_CFG_CUR_SAMPLE_POS, sample_pos)
-        dct_put(self.data_dct, ADO_CFG_CUR_SEQ_NUM, 0)
-        dct_put(self.data_dct, ADO_CFG_DATA_DIR, datadir)
-        dct_put(self.data_dct, ADO_CFG_DATA_FILE_NAME, datafile_prfx)
-        dct_put(self.data_dct, ADO_CFG_UNIQUEID, datafile_prfx)
-        dct_put(self.data_dct, ADO_CFG_EV_ROIS, self.e_rois)
-        #dct_put(self.data_dct, ADO_CFG_IMG_IDX_MAP, self.img_idx_map)
-        
-        i = 0
-        for sp_id in list(self.sp_rois.keys()):
-            
-            #_sprois[_spatial_roi_idx] = self.wdg_com['SPATIAL_ROIS'][_spatial_roi_idx]
-            #dct_put(_wdgcom, SPDB_SPATIAL_ROIS,  _sprois )
-            #dct_put(self.data_dct, ADO_CFG_WDG_COM, _wdgcom)
-            
-            _wdgcom = {}
-            dct_put(_wdgcom, WDGCOM_CMND, self.wdg_com[CMND])
-            _sproi = self.wdg_com['SPATIAL_ROIS'][sp_id]
-            #SPDB_SPATIAL_ROIS must be a dict with the sp_id as the key
-            dct_put(_wdgcom, SPDB_SPATIAL_ROIS,  {sp_id: _sproi} )
-            dct_put(self.data_dct, ADO_CFG_WDG_COM, _wdgcom)
-            
-            self.update_roi_member_vars(_sproi)
-            dct_put(self.data_dct, ADO_CFG_CUR_SPATIAL_ROI_IDX, i)
-            dct_put(self.data_dct, ADO_CFG_X, self.x_roi)
-            dct_put(self.data_dct, ADO_CFG_Y, self.y_roi)
-            dct_put(self.data_dct, ADO_CFG_Z, self.z_roi)
-            dct_put(self.data_dct, ADO_CFG_ZZ, self.zz_roi)
-            dct_put(self.data_dct, ADO_DATA_POINTS, self.data[0][i] )
-
-            #commented out may 18 2018
-            #I need to loop through all the point spatial ids creating an entry for each then at the end rename the .tmp file to the final .hdf5 file
-            #    otherwise thumbnailviewer will try to read a partial file
-            # if(update):
-            #     self.hdr.save_entry(sp_id, self.data_dct, use_tmpfile=True)
-            # else:
-            #     self.hdr.save_entry(sp_id, self.data_dct)
-            #write to the temp file
-            self.hdr.save_entry(sp_id, self.data_dct, use_tmpfile=True)
-            i += 1
-
-        #now rename tmp file to final filename
-        self.main_obj.zmq_rename_tmp_to_final()
-
-        #_logger.info('save_hdr: done')
-        if(not SIMULATE_IMAGE_DATA):
-            if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-                self.main_obj.device( DNM_CX_AUTO_DISABLE_POWER ).put(1) #enabled
-                self.main_obj.device( DNM_CY_AUTO_DISABLE_POWER ).put(1) #enabled
-   
-    
-            
-    def modify_for_polarities_as_indiv_entries(self):
-        '''
-        modifys self.data_dct so that there are "entry_" keys used for creating axis2000 happy nexus files 
-        '''
-        pass
-        
-    
-    def turn_e_rois_into_polarity_centric_e_rois(self, e_rois):
-        '''
-        for every polarity it makes a copy of the e_roi and replaces the POL_ROIS with a single POL_ROI
-        so instead of 
-            e_rois[0] POL_ROIS[1, 2, 3, 4]
-            
-            e_rois[0] POL_ROIS[1]
-            e_rois[1] POL_ROIS[2]
-            e_rois[3] POL_ROIS[3]
-            e_rois[4] POL_ROIS[4]
-            
-        '''
-        new_e_rois = []
-        num_pols = 0
-        for e_roi in e_rois:
-                
-            pol_rois = []
-            pols = [] 
-            for pol_roi in e_roi['POL_ROIS']:
-                num_pols += 1
-                pol_rois.append(pol_roi)
-                pols.append((pol_roi['POL'], pol_roi['ANGLE'], pol_roi['OFF']))
-                
-            #make num_pol copies of each e_roi
-            idx = 0
-            for pol in pols:
-                new_e_roi = copy.deepcopy(e_roi)
-                pol['POL'] = [pol_rois[idx]['POL']]
-                pol['ANGLE'] = [pol_rois[idx]['ANGLE']]
-                pol['OFF'] = [pol_rois[idx]['OFF']]
-                new_e_roi['POL_ROIS'] = [pol]
-                idx += 1
-                
-                new_e_rois.append(new_e_roi)
-        
-        return(new_e_rois)
-    
+    # def modify_for_polarities_as_indiv_entries(self):
+    #     '''
+    #     modifys self.data_dct so that there are "entry_" keys used for creating axis2000 happy nexus files
+    #     '''
+    #     pass
+    #
+    #
+    # def turn_e_rois_into_polarity_centric_e_rois(self, e_rois):
+    #     '''
+    #     for every polarity it makes a copy of the e_roi and replaces the POL_ROIS with a single POL_ROI
+    #     so instead of
+    #         e_rois[0] POL_ROIS[1, 2, 3, 4]
+    #
+    #         e_rois[0] POL_ROIS[1]
+    #         e_rois[1] POL_ROIS[2]
+    #         e_rois[3] POL_ROIS[3]
+    #         e_rois[4] POL_ROIS[4]
+    #
+    #     '''
+    #     new_e_rois = []
+    #     num_pols = 0
+    #     for e_roi in e_rois:
+    #
+    #         pol_rois = []
+    #         pols = []
+    #         for pol_roi in e_roi['POL_ROIS']:
+    #             num_pols += 1
+    #             pol_rois.append(pol_roi)
+    #             pols.append((pol_roi['POL'], pol_roi['ANGLE'], pol_roi['OFF']))
+    #
+    #         #make num_pol copies of each e_roi
+    #         idx = 0
+    #         for pol in pols:
+    #             new_e_roi = copy.deepcopy(e_roi)
+    #             pol['POL'] = [pol_rois[idx]['POL']]
+    #             pol['ANGLE'] = [pol_rois[idx]['ANGLE']]
+    #             pol['OFF'] = [pol_rois[idx]['OFF']]
+    #             new_e_roi['POL_ROIS'] = [pol]
+    #             idx += 1
+    #
+    #             new_e_rois.append(new_e_roi)
+    #
+    #     return(new_e_rois)
+    #
     
     def take_sscan_snapshot(self, sscan_name):
         dct = self.main_obj.take_zmq_sscan_snapshot(sscan_name)
@@ -3000,8 +3058,8 @@ class BaseScan(BaseObject):
         C - Single Image Stack
         D - Multi C
         E - Point spectra (N spatial, multi ev regions)
-        
-        
+
+
         shapes for the above:
         A = (1, Y, X)
         B = (N, 1, Y, X)
@@ -3009,145 +3067,121 @@ class BaseScan(BaseObject):
         D = (N, nEv, 1, Y, X)
         #E = (N, Y, X, nEv)
         E = (1, N, nEv)
-        
-        
+
+
         if ev region data is to be kept each in there own level for a stack then the data must be concatenated back into a single
         dimension when written out to disk.
-        
-        Also the on_counter_changed() handlers will need to keep track of the index's they use, this gets cumbersome because the 
+
+        Also the on_counter_changed() handlers will need to keep track of the index's they use, this gets cumbersome because the
         index's likely need to be changed in signals handlers which makes it more difficult to ensure that a sequence occusr in the right order
         may need to rethiunk all this, the counter on_changed returns only with row, col and data
 
         NOTE: ZZ refers to Zonplate Z
-        
+
         """
-        
-        if(self.scan_type == scan_types.DETECTOR_IMAGE):
-            #single spatial
+        if(self.scan_type in data_shape_types[data_shapes.NUME_NUMY_NUMX]):
+            # single spatial
             self.data_shape = ('numE', 'numY', 'numX')
-            
-        elif(self.scan_type == scan_types.OSA_IMAGE):
-            #single spatial
-            self.data_shape = ('numE', 'numY', 'numX')
-        
-        elif(self.scan_type == scan_types.OSA_FOCUS):
-            #single spatial
+
+        elif(self.scan_type in data_shape_types[data_shapes.NUME_NUMZZ_NUMX]):
+            # single spatial
             self.data_shape = ('numE', 'numZZ', 'numX')
-        
-        elif(self.scan_type == scan_types.SAMPLE_FOCUS):
-            #single spatial
-            self.data_shape = ('numE', 'numZZ', 'numX')
-        
-        elif(self.scan_type == scan_types.SAMPLE_POINT_SPECTRA):
-            #numE should hold the total number of points from all ev_rois for this spatial region
+
+        elif (self.scan_type in data_shape_types[data_shapes.ONE_NUMSPIDS_NUME]):
+            # numE should hold the total number of points from all ev_rois for this spatial region
             self.data_shape = (1, 'numSPIDS', 'numE')
-            
-        elif(self.scan_type == scan_types.SAMPLE_IMAGE):
-            self.data_shape = ('numImages', 'numY', 'numX') 
-            
-        elif(self.scan_type == scan_types.SAMPLE_IMAGE_STACK):
+
+        elif (self.scan_type in data_shape_types[data_shapes.NUMIMAGES_NUMY_NUMX]):
             self.data_shape = ('numImages', 'numY', 'numX')
 
-        elif (self.scan_type == scan_types.TOMOGRAPHY_SCAN):
-            self.data_shape = ('numImages', 'numY', 'numX')
 
-        elif(self.scan_type == scan_types.GENERIC_SCAN):
-            #single spatial
+        elif (self.scan_type in data_shape_types[data_shapes.NUMX_ONE_ONE]):
+            # single spatial
             self.data_shape = ('numX', 1, 1)
-        
-        elif(self.scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+
+        elif (self.scan_type in data_shape_types[data_shapes.NUMIMAGES_NUMY_NUME]):
             self.data_shape = ('numImages', 'numY', 'numE')
-        
-        elif(self.scan_type == scan_types.COARSE_IMAGE_SCAN):
-            self.data_shape = ('numImages', 'numY', 'numX')
-
-        elif(self.scan_type == scan_types.COARSE_GONI_SCAN):
-            #single spatial
-            self.data_shape = ('numE', 'numY', 'numX')
-
-        elif (self.scan_type == scan_types.PATTERN_GEN_SCAN):
-            self.data_shape = ('numImages', 'numY', 'numX')
 
         else:
             _logger.error('unsupported scan type [%d]' % self.scan_type)
             self.data_shape = (None, None, None)
             
             
-    def on_x_y_counter_changed(self, row, xxx_todo_changeme):
-        
-        """
-        on_x_y_counter_changed():
-        Used by:
-            DetectorSSCAN
-            OsaScanClass,
-            OsaFocusScanClass,
-            FocusScanClass,
-
-        :param row: row description
-        :type row: row type
-
-        :param (point: (point description
-        :type (point: (point type
-
-        :param val): val) description
-        :type val): val) type
-
-        :returns: None
-        """
-        (point, val) = xxx_todo_changeme
-        """
-        This is a slot that is connected to the counters changed signal        
-        """
-        global SIMULATE_IMAGE_DATA, SIM_DATA
-
-        if(SIMULATE_IMAGE_DATA):
-            val = SIM_DATA[row][point]
-
-        top_lvl_npts = self.top_level_scan.get('NPTS')
-        #print 'on_x_y_counter_changed: [%d] row=%d point=%d val=%d' % (top_lvl_npts, row, point, val)
-        if((self.scan_type ==  scan_types.OSA_FOCUS) or (self.scan_type ==  scan_types.SAMPLE_FOCUS)):
-            #nptsy = self.numZ
-            nptsy = self.numZZ
-        else:
-            nptsy = self.numY
-
-        _evidx = self.get_evidx()
-        if(point >= self.numX):
-            #this is the row switch extra point so drop it
-            #print 'scan_counter_changed: SKIPPED [%d, %d] = %d' % (row, point, val)
-            return
-        if(point > -1):
-            if(row < top_lvl_npts):
-                # only one counter is expected to have been configured for this type of scan so ...[0]
-                #counter = self.counter_dct.keys()[0]
-                #print 'on_x_y_counter_changed: counter was [%s] is now %s' % (self.counter_dct.keys()[0], DNM_DEFAULT_COUNTER)
-                #counter = DNM_DEFAULT_COUNTER
-                counter = DNM_DEFAULT_COUNTER
-                _sp_id = list(self.spid_data[counter].keys())[0]
-
-                #pol_idx=0
-                # now assign the data
-                self.spid_data[counter][_sp_id][0][_evidx, row, point] = int(val)
-                #print 'on_x_y_counter_changed: sp_id=', _sp_id
-                #print self.spid_data[counter][_sp_id][0][_evidx, row]
-
-                dct = self.init_counter_to_plotter_com_dct(make_counter_to_plotter_com_dct())
-                dct[CNTR2PLOT_ROW] = int(row)
-                dct[CNTR2PLOT_COL] = int(point) 
-                dct[CNTR2PLOT_VAL] = int(val)
-                #self.sigs.changed.emit(row, (point, val))
-                self.sigs.changed.emit(dct)
-
-                ttl = self.numX * nptsy
-                cur_ttl = float(((float(row) + 0.5) * float(self.numX))) + point
-                prog = (float(cur_ttl) / float(ttl)) * 100.0
-                prog_dct = make_progress_dict(sp_id=self.get_spatial_id(), percent=prog)
-
-                self.low_level_progress.emit(prog_dct)
-
-
-            if(row >= nptsy):
-                self.incr_evidx()
+    # def on_x_y_counter_changed(self, row, xxx_todo_changeme):
+    #
+    #     """
+    #     on_x_y_counter_changed():
+    #     Used by:
+    #         DetectorSSCAN
+    #         OsaScanClass,
+    #         OsaFocusScanClass,
+    #         FocusScanClass,
+    #
+    #     :param row: row description
+    #     :type row: row type
+    #
+    #     :param (point: (point description
+    #     :type (point: (point type
+    #
+    #     :param val): val) description
+    #     :type val): val) type
+    #
+    #     :returns: None
+    #     """
+    #     (point, val) = xxx_todo_changeme
+    #     """
+    #     This is a slot that is connected to the counters changed signal
+    #     """
+    #     global SIMULATE_IMAGE_DATA, SIM_DATA
+    #
+    #     if(SIMULATE_IMAGE_DATA):
+    #         val = SIM_DATA[row][point]
+    #
+    #     top_lvl_npts = self.top_level_scan.get('NPTS')
+    #     #print 'on_x_y_counter_changed: [%d] row=%d point=%d val=%d' % (top_lvl_npts, row, point, val)
+    #     if((self.scan_type ==  scan_types.OSA_FOCUS) or (self.scan_type ==  scan_types.SAMPLE_FOCUS)):
+    #         #nptsy = self.numZ
+    #         nptsy = self.numZZ
+    #     else:
+    #         nptsy = self.numY
+    #
+    #     _evidx = self.get_evidx()
+    #     if(point >= self.numX):
+    #         #this is the row switch extra point so drop it
+    #         #print 'scan_counter_changed: SKIPPED [%d, %d] = %d' % (row, point, val)
+    #         return
+    #     if(point > -1):
+    #         if(row < top_lvl_npts):
+    #             # only one counter is expected to have been configured for this type of scan so ...[0]
+    #             #counter = self.counter_dct.keys()[0]
+    #             #print 'on_x_y_counter_changed: counter was [%s] is now %s' % (self.counter_dct.keys()[0], DNM_DEFAULT_COUNTER)
+    #             #counter = DNM_DEFAULT_COUNTER
+    #             counter = DNM_DEFAULT_COUNTER
+    #             _sp_id = list(self.spid_data[counter].keys())[0]
+    #
+    #             #pol_idx=0
+    #             # now assign the data
+    #             self.spid_data[counter][_sp_id][0][_evidx, row, point] = int(val)
+    #             #print 'on_x_y_counter_changed: sp_id=', _sp_id
+    #             #print self.spid_data[counter][_sp_id][0][_evidx, row]
+    #
+    #             dct = self.init_counter_to_plotter_com_dct(make_counter_to_plotter_com_dct())
+    #             dct[CNTR2PLOT_ROW] = int(row)
+    #             dct[CNTR2PLOT_COL] = int(point)
+    #             dct[CNTR2PLOT_VAL] = int(val)
+    #             #self.sigs.changed.emit(row, (point, val))
+    #             self.sigs.changed.emit(dct)
+    #
+    #             ttl = self.numX * nptsy
+    #             cur_ttl = float(((float(row) + 0.5) * float(self.numX))) + point
+    #             prog = (float(cur_ttl) / float(ttl)) * 100.0
+    #             prog_dct = make_progress_dict(sp_id=self.get_spatial_id(), percent=prog)
+    #
+    #             self.low_level_progress.emit(prog_dct)
+    #
+    #
+    #         if(row >= nptsy):
+    #             self.incr_evidx()
                 
     
     # def on_sample_scan_counter_changed(self, row, data, counter_name='counter0'):
@@ -3268,120 +3302,120 @@ class BaseScan(BaseObject):
     #     except :
     #         _logger.error('on_sample_scan_counter_changed: [counter_name=%s][sp_id=%d][pol_idx=%d][e_idx=%d]' % (counter_name,sp_id,pol_idx,e_idx))
 
-    def on_sample_scan_counter_changed(self, row, data, counter_name='counter0'):
-        """
-        on_sample_scan_counter_changed(): Used by SampleImageWithEnergySSCAN
-
-        :param row: row description
-        :type row: row type
-
-        :param data: data description
-        :type data: data type
-
-        :returns: None
-        """
-        """
-        The on counter_changed slot will take data cquired by line and point scans but it must treat each differently.
-        The point scan still arrives as a one demensiotnal array but there are only 3 elements, data[row, point, value].
-        The point scan has been programmed to acquire num_x_points + 1 so that the counter can increment the row value, thus this
-        slot during a point scan will receive a point+1 and in that case it should be ignored.
-
-        LIne scan data arrives in the form data[row, < number of x points of values >]
-
-        This slot has to handle 
-
-        """
-        global SIMULATE_IMAGE_DATA, SIM_DATA
-
-        sp_id = int(self.main_obj.device('e712_current_sp_id').get_position())
-        self.set_spatial_id(sp_id)
-
-        if (SIMULATE_IMAGE_DATA):
-            data = SIM_DATA[row]
-            point = self.sim_point
-
-        if ((self.scan_type == scan_types.OSA_FOCUS) or (self.scan_type == scan_types.SAMPLE_FOCUS)):
-            nptsy = self.numZZ
-        else:
-            nptsy = self.numY
-
-        if (SIMULATE_IMAGE_DATA and (self.sim_point >= nptsy)):
-            self.sim_point = 0
-            point = self.sim_point
-
-        _evidx = self.get_evidx()
-        # make imgidx zero based
-
-        _imgidx = self.base_zero(self.get_imgidx())
-        # _dct = self.img_idx_map['%d' % _imgidx]
-        _dct = self.get_img_idx_map(_imgidx)
-        pol_idx = _dct['pol_idx']
-        e_idx = _dct['e_idx']
-
-        if (self.is_pxp and (not self.use_hdw_accel)):
-            # Image point by point
-            if (SIMULATE_IMAGE_DATA):
-                val = data[self.sim_point]
-            else:
-                point = int(data[0])
-                val = data[1]
-
-            if (MARK_DATA_FOR_TESTING):
-                val = val * point * _imgidx
-
-            if (row >= self.numY):
-                self.incr_imgidx()
-                # make sure a new image is requested
-                row = 0
-
-            # print 'SampleImageWithEnergySSCAN: on_counter_changed: _imgidx=%d row=%d point=%d, data = %d' % (_imgidx, row, point, val)
-            # self.data[_imgidx, row, point] = val
-            # pol_idx=0
-            # now assign the data
-            self.spid_data[counter_name][sp_id][pol_idx][e_idx, int(row), point] = int(val)
-
-
-
-        else:
-            # print 'SampleImageWithEnergySSCAN: LXL on_counter_changed: _imgidx, row and data[0:10]=', (_imgidx, row, data[0:10])
-            # print self.data.shape
-            point = 0
-            val = data[0:int(self.numX)]
-
-            if (MARK_DATA_FOR_TESTING):
-                val = data[0:self.numX] * row
-
-            if (row < self.numY):
-                # _logger.info('on_sample_scan_counter_changed: saving to self.data[%d, %d]' % (_imgidx, row))
-                # self.data[_imgidx, row,:] = val
-                self.spid_data[counter_name][sp_id][pol_idx][_evidx, row, :] = val
-                pass
-
-        if (SIMULATE_IMAGE_DATA):
-            self.sigs.changed.emit(row, (point, val))
-            self.sim_point = self.sim_point + 1
-        else:
-
-            dct = self.init_counter_to_plotter_com_dct(make_counter_to_plotter_com_dct())
-            dct[CNTR2PLOT_ROW] = int(row)
-            dct[CNTR2PLOT_COL] = int(point)
-            dct[CNTR2PLOT_VAL] = val
-            # print dct
-            # self.sigs.changed.emit(row, data)
-            self.sigs.changed.emit(dct)
-
-            prog = float(float(row + 0.75) / float(nptsy)) * 100.0
-            # print 'progress = %.2f' % prog
-            # self.low_level_progress.emit(prog)
-
-            if (self.stack):
-                prog_dct = make_progress_dict(sp_id=dct[CNTR2PLOT_IMG_CNTR], percent=prog)
-            else:
-                prog_dct = make_progress_dict(sp_id=dct[CNTR2PLOT_SP_ID], percent=prog)
-
-            self.low_level_progress.emit(prog_dct)
-
-            # top_level_progress
+    # def on_sample_scan_counter_changed(self, row, data, counter_name='counter0'):
+    #     """
+    #     on_sample_scan_counter_changed(): Used by SampleImageWithEnergySSCAN
+    #
+    #     :param row: row description
+    #     :type row: row type
+    #
+    #     :param data: data description
+    #     :type data: data type
+    #
+    #     :returns: None
+    #     """
+    #     """
+    #     The on counter_changed slot will take data cquired by line and point scans but it must treat each differently.
+    #     The point scan still arrives as a one demensiotnal array but there are only 3 elements, data[row, point, value].
+    #     The point scan has been programmed to acquire num_x_points + 1 so that the counter can increment the row value, thus this
+    #     slot during a point scan will receive a point+1 and in that case it should be ignored.
+    #
+    #     LIne scan data arrives in the form data[row, < number of x points of values >]
+    #
+    #     This slot has to handle
+    #
+    #     """
+    #     global SIMULATE_IMAGE_DATA, SIM_DATA
+    #
+    #     sp_id = int(self.main_obj.device('e712_current_sp_id').get_position())
+    #     self.set_spatial_id(sp_id)
+    #
+    #     if (SIMULATE_IMAGE_DATA):
+    #         data = SIM_DATA[row]
+    #         point = self.sim_point
+    #
+    #     if ((self.scan_type == scan_types.OSA_FOCUS) or (self.scan_type == scan_types.SAMPLE_FOCUS)):
+    #         nptsy = self.numZZ
+    #     else:
+    #         nptsy = self.numY
+    #
+    #     if (SIMULATE_IMAGE_DATA and (self.sim_point >= nptsy)):
+    #         self.sim_point = 0
+    #         point = self.sim_point
+    #
+    #     _evidx = self.get_evidx()
+    #     # make imgidx zero based
+    #
+    #     _imgidx = self.base_zero(self.get_imgidx())
+    #     # _dct = self.img_idx_map['%d' % _imgidx]
+    #     _dct = self.get_img_idx_map(_imgidx)
+    #     pol_idx = _dct['pol_idx']
+    #     e_idx = _dct['e_idx']
+    #
+    #     if (self.is_pxp and (not self.use_hdw_accel)):
+    #         # Image point by point
+    #         if (SIMULATE_IMAGE_DATA):
+    #             val = data[self.sim_point]
+    #         else:
+    #             point = int(data[0])
+    #             val = data[1]
+    #
+    #         if (MARK_DATA_FOR_TESTING):
+    #             val = val * point * _imgidx
+    #
+    #         if (row >= self.numY):
+    #             self.incr_imgidx()
+    #             # make sure a new image is requested
+    #             row = 0
+    #
+    #         # print 'SampleImageWithEnergySSCAN: on_counter_changed: _imgidx=%d row=%d point=%d, data = %d' % (_imgidx, row, point, val)
+    #         # self.data[_imgidx, row, point] = val
+    #         # pol_idx=0
+    #         # now assign the data
+    #         self.spid_data[counter_name][sp_id][pol_idx][e_idx, int(row), point] = int(val)
+    #
+    #
+    #
+    #     else:
+    #         # print 'SampleImageWithEnergySSCAN: LXL on_counter_changed: _imgidx, row and data[0:10]=', (_imgidx, row, data[0:10])
+    #         # print self.data.shape
+    #         point = 0
+    #         val = data[0:int(self.numX)]
+    #
+    #         if (MARK_DATA_FOR_TESTING):
+    #             val = data[0:self.numX] * row
+    #
+    #         if (row < self.numY):
+    #             # _logger.info('on_sample_scan_counter_changed: saving to self.data[%d, %d]' % (_imgidx, row))
+    #             # self.data[_imgidx, row,:] = val
+    #             self.spid_data[counter_name][sp_id][pol_idx][_evidx, row, :] = val
+    #             pass
+    #
+    #     if (SIMULATE_IMAGE_DATA):
+    #         self.sigs.changed.emit(row, (point, val))
+    #         self.sim_point = self.sim_point + 1
+    #     else:
+    #
+    #         dct = self.init_counter_to_plotter_com_dct(make_counter_to_plotter_com_dct())
+    #         dct[CNTR2PLOT_ROW] = int(row)
+    #         dct[CNTR2PLOT_COL] = int(point)
+    #         dct[CNTR2PLOT_VAL] = val
+    #         # print dct
+    #         # self.sigs.changed.emit(row, data)
+    #         self.sigs.changed.emit(dct)
+    #
+    #         prog = float(float(row + 0.75) / float(nptsy)) * 100.0
+    #         # print 'progress = %.2f' % prog
+    #         # self.low_level_progress.emit(prog)
+    #
+    #         if (self.stack):
+    #             prog_dct = make_progress_dict(sp_id=dct[CNTR2PLOT_IMG_CNTR], percent=prog)
+    #         else:
+    #             prog_dct = make_progress_dict(sp_id=dct[CNTR2PLOT_SP_ID], percent=prog)
+    #
+    #         self.low_level_progress.emit(prog_dct)
+    #
+    #         # top_level_progress
 
     def init_counter_to_plotter_com_dct(self, dct):
         dct[CNTR2PLOT_TYPE_ID] = self.scan_type
@@ -3421,18 +3455,19 @@ class BaseScan(BaseObject):
         this is an API function that is called at the end of an inheriting scans initialization,
         calling this function ensures that all BaseScan descendants  contain the required configuration functions
         """
+
         self.config_osa_tracking()
         
         #we need these time stamps in order for the inital file to be saved
         self.data_obj.set_scan_start_time()
 
-        if(TEST_SAVE_INITIAL_FILE):
-            # testing roughing in a datafile before collection
-            self.save_hdr(update=True)
+        # if(TEST_SAVE_INITIAL_FILE):
+        #     # testing roughing in a datafile before collection
+        #     self.save_hdr(update=True)
 
-        # the spectra scan does not need a tmp file as it create entries for each spatial point when scan is done
-        if(self.scan_type != scan_types.SAMPLE_POINT_SPECTRA):
-            self.init_tmp_file()
+        # # the spectra scan does not need a tmp file as it create entries for each spatial point when scan is done
+        # if(self.scan_type != scan_types.SAMPLE_POINT_SPECTRUM):
+        #     self.init_tmp_file()
 
         self.config_devices()
         
@@ -3446,196 +3481,190 @@ class BaseScan(BaseObject):
 
         #self.dump_scan_levels()
 
-        if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-            #if using hdw_accel then the gate and counter are controlled by an EPICS application
-            #if(not self.use_hdw_accel or (self.scan_type == scan_types.SAMPLE_FOCUS)):
-            # if(self.start_gate_and_cntr):
-            #     self.gate.start()
-            #     self.counter.start()
-            #now open the shutter
-            if (self.main_obj.device(DNM_SHUTTER).is_auto()):
-                self.main_obj.device(DNM_SHUTTER).open()
+
+        if (self.main_obj.device(DNM_SHUTTER).is_auto()):
+            self.main_obj.device(DNM_SHUTTER).open()
 
 
     
-    def chk_for_more_evregions(self):
-        """
-        chk_for_more_evregions(): description
+    # def chk_for_more_evregions(self):
+    #     """
+    #     chk_for_more_evregions(): description
+    #
+    #     :returns: None
+    #     """
+    #     """
+    #     this slot handles the end of scan, when the default on_scan_done() is called in the
+    #     base scan class it will check for an installed child on_scan_done slot (this one)
+    #     once this has been called it returns True or False
+    #         return True if there are no more ev regions and you want the default on_scan_done(0) to finish and clean everything up
+    #
+    #         return False if there are more ev Regions and you dont want everything stopped and cleaned up
+    #     """
+    #     multi_ev_single_image_scans = [scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_POINT_SPECTRUM]
+    #
+    #     #Sept 6 if(TEST_SAVE_INITIAL_FILE):
+    #     #Sept 6     self.save_hdr(update=True)
+    #     _logger.info('chk_for_more_evregions: checking')
+    #
+    #     if(self._abort):
+    #         _logger.info('chk_for_more_evregions: abort has been set, scan aborting')
+    #         #make sure to save current scan
+    #         if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+    #             self.gate.stop()
+    #             self.counter.stop()
+    #
+    #         self.disconnect_signals()
+    #         self.save_hdr()
+    #         self.hdr.remove_tmp_file()
+    #
+    #         return(True)
+    #
+    #     #increment the index into ev regions
+    #     self.incr_evidx()
+    #
+    #     if(self.get_evidx() < len(self.e_rois)):
+    #         _logger.info('chk_for_more_evregions: yes there is, loading and starting')
+    #         if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+    #             # if point or line spec, ONLY THE FIRST dwell value is used, to allow different dwell values
+    #             # does not make sense, Jian and I talked about this
+    #             # so do NOT stop the gate and counter, leave as previously configured for dwell for rest of ev regions
+    #             if(not (self.is_point_spec or self.is_line_spec)):
+    #                 self.gate.stop()
+    #                 self.counter.stop()
+    #                 self.counter.wait_till_stopped()
+    #
+    #         if(self.scan_type not in multi_ev_single_image_scans):
+    #             #signal plotter to start a new image
+    #             self.new_spatial_start.emit(self.sp_db[SPDB_ID_VAL])
+    #
+    #         e_roi = self.e_rois[self._current_ev_idx]
+    #         #configure next ev sscan record with next ev region start/stop
+    #         self._config_start_stop(self.evScan, 1, e_roi[START], e_roi[STOP], e_roi[NPOINTS])
+    #         self.dwell = e_roi[DWELL]
+    #
+    #         if(self.use_hdw_accel):
+    #             #need to check to see if dwell changed, if it did we need to re-configure the wavetables
+    #             #if(prev_dwell != self.dwell):
+    #             #_logger.debug('dwell changed [%.2f] so reconfiguring the hardware accel' % self.dwell)
+    #             self.modify_config()
+    #             # wait for gate and counter to start
+    #             time.sleep(2.0)
+    #
+    #         #need to determine the scan velocity if there is a change in Dwell for this next ev region
+    #         elif(not self.is_point_spec):
+    #             #the dwell ime for the new ev region could have changed so determine the scan velo and accRange
+    #             #need to determine the scan velocity if there is a change in Dwell for this next ev region
+    #             if(self.is_line_spec and self.is_pxp):
+    #                 scan_velo = self.get_mtr_max_velo(self.xyScan.P1)
+    #                 #vmax = self.get_mtr_max_velo(self.xyScan.P1)
+    #             else:
+    #                 vmax = self.get_mtr_max_velo(self.xScan.P1)
+    #                 (scan_velo , npts, dwell) = ensure_valid_values(self.x_roi[START],  self.x_roi[STOP],  self.dwell,  self.numX, vmax, do_points=True)
+    #                 #need the range of scan to be passed to calc_accRange()
+    #                 rng = self.x_roi[STOP] - self.x_roi[START]
+    #                 accRange = calc_accRange('SampleX', 'Fine', rng, scan_velo , dwell, accTime=0.04)
+    #                 #reassign dwell because it ay have changed on return from ensure_valid_values()
+    #                 self.dwell = dwell
+    #                 _logger.debug('set_sample_scan_velocity Image scan: scan_velo=%.2f um/s accRange=%.2f um' % (scan_velo, accRange))
+    #
+    #             self.set_x_scan_velo(scan_velo)
+    #             # ok now finish configuration and start it
+    #             self.on_this_dev_cfg()
+    #             if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+    #                 self.gate.start()
+    #                 self.counter.start()
+    #                 # sept 11
+    #                 self.counter.wait_till_running()
+    #
+    #
+    #         elif(self.is_point_spec):
+    #             if(self.counter.isRunning):
+    #                 #leave it running
+    #                 pass
+    #             else:
+    #                 #ok now finish configuration and start it
+    #                 self.on_this_dev_cfg()
+    #                 if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+    #                     if (not self.is_point_spec):
+    #                         self.gate.start()
+    #                         self.counter.start()
+    #                         #sept 11
+    #                         self.counter.wait_till_running()
+    #
+    #         self.start()
+    #         #let caller know were not done
+    #         return(False)
+    #     else:
+    #         _logger.info('chk_for_more_evregions: Nope no more')
+    #         if((not self.is_point_spec) and self.chk_for_more_spatial_regions()):
+    #             #were not done
+    #             return(False)
+    #         else:
+    #             if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+    #                 self.gate.stop()
+    #                 self.counter.stop()
+    #
+    #
+    #             #ok scan is all done now, so save final header file
+    #             if(not self.file_saved):
+    #                 _logger.debug('chk_for_more_evregions: calling on_save_sample_image()')
+    #                 self.on_save_sample_image()
+    #             self.save_hdr()
+    #
+    #             #ok there are no more spatial regions to execute
+    #             self.disconnect_signals()
+    #             return(True)
+    #
 
-        :returns: None
-        """
-        """
-        this slot handles the end of scan, when the default on_scan_done() is called in the 
-        base scan class it will check for an installed child on_scan_done slot (this one)
-        once this has been called it returns True or False
-            return True if there are no more ev regions and you want the default on_scan_done(0) to finish and clean everything up
-            
-            return False if there are more ev Regions and you dont want everything stopped and cleaned up 
-        """
-        multi_ev_single_image_scans = [scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_POINT_SPECTRA]
-
-        #Sept 6 if(TEST_SAVE_INITIAL_FILE):
-        #Sept 6     self.save_hdr(update=True)
-        _logger.info('chk_for_more_evregions: checking')
-
-        if(self._abort):
-            _logger.info('chk_for_more_evregions: abort has been set, scan aborting')
-            #make sure to save current scan
-            if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-                self.gate.stop()
-                self.counter.stop()
-
-            self.disconnect_signals()
-            self.save_hdr()
-            self.hdr.remove_tmp_file()
-
-            return(True)
-
-        #increment the index into ev regions
-        self.incr_evidx()
-
-        if(self.get_evidx() < len(self.e_rois)):
-            _logger.info('chk_for_more_evregions: yes there is, loading and starting')
-            if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-                # if point or line spec, ONLY THE FIRST dwell value is used, to allow different dwell values
-                # does not make sense, Jian and I talked about this
-                # so do NOT stop the gate and counter, leave as previously configured for dwell for rest of ev regions
-                if(not (self.is_point_spec or self.is_line_spec)):
-                    self.gate.stop()
-                    self.counter.stop()
-                    self.counter.wait_till_stopped()
-
-            if(self.scan_type not in multi_ev_single_image_scans):
-                #signal plotter to start a new image
-                self.new_spatial_start.emit(self.sp_db[SPDB_ID_VAL])
-
-            e_roi = self.e_rois[self._current_ev_idx]
-            #configure next ev sscan record with next ev region start/stop
-            self._config_start_stop(self.evScan, 1, e_roi[START], e_roi[STOP], e_roi[NPOINTS])
-            self.dwell = e_roi[DWELL]
-
-            if(self.use_hdw_accel):
-                #need to check to see if dwell changed, if it did we need to re-configure the wavetables
-                #if(prev_dwell != self.dwell):
-                #_logger.debug('dwell changed [%.2f] so reconfiguring the hardware accel' % self.dwell)
-                self.modify_config()
-                # wait for gate and counter to start
-                time.sleep(2.0)
-
-            #need to determine the scan velocity if there is a change in Dwell for this next ev region
-            elif(not self.is_point_spec):
-                #the dwell ime for the new ev region could have changed so determine the scan velo and accRange
-                #need to determine the scan velocity if there is a change in Dwell for this next ev region
-                if(self.is_line_spec and self.is_pxp):
-                    scan_velo = self.get_mtr_max_velo(self.xyScan.P1)
-                    #vmax = self.get_mtr_max_velo(self.xyScan.P1)
-                else:
-                    vmax = self.get_mtr_max_velo(self.xScan.P1)
-                    (scan_velo , npts, dwell) = ensure_valid_values(self.x_roi[START],  self.x_roi[STOP],  self.dwell,  self.numX, vmax, do_points=True)
-                    #need the range of scan to be passed to calc_accRange()
-                    rng = self.x_roi[STOP] - self.x_roi[START]
-                    accRange = calc_accRange('SampleX', 'Fine', rng, scan_velo , dwell, accTime=0.04)
-                    #reassign dwell because it ay have changed on return from ensure_valid_values()
-                    self.dwell = dwell
-                    _logger.debug('set_sample_scan_velocity Image scan: scan_velo=%.2f um/s accRange=%.2f um' % (scan_velo, accRange))
-
-                self.set_x_scan_velo(scan_velo)
-                # ok now finish configuration and start it
-                self.on_this_dev_cfg()
-                if (self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-                    self.gate.start()
-                    self.counter.start()
-                    # sept 11
-                    self.counter.wait_till_running()
-
-
-            elif(self.is_point_spec):
-                if(self.counter.isRunning):
-                    #leave it running
-                    pass
-                else:
-                    #ok now finish configuration and start it
-                    self.on_this_dev_cfg()
-                    if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-                        if (not self.is_point_spec):
-                            self.gate.start()
-                            self.counter.start()
-                            #sept 11
-                            self.counter.wait_till_running()
-
-            self.start()
-            #let caller know were not done
-            return(False)
-        else:
-            _logger.info('chk_for_more_evregions: Nope no more')
-            if((not self.is_point_spec) and self.chk_for_more_spatial_regions()):
-                #were not done
-                return(False)
-            else:
-                if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
-                    self.gate.stop()
-                    self.counter.stop()
-
-
-                #ok scan is all done now, so save final header file
-                if(not self.file_saved):
-                    _logger.debug('chk_for_more_evregions: calling on_save_sample_image()')
-                    self.on_save_sample_image()
-                self.save_hdr()
-
-                #ok there are no more spatial regions to execute
-                self.disconnect_signals()
-                return(True)
-
-
-    def chk_for_more_spatial_regions(self):
-        """
-        chk_for_more_spatial_regions(): this slot handles the end of scan, when the default on_scan_done() is called in the 
-            base scan class it will check for an installed child on_scan_done slot (this one)
-            once this has been called it returns True or False
-            
-            return True if there are more spatial Regions and you dont want everything stopped and cleaned up
-            
-            return False if there are no more spatial regions and you want the default on_scan_done(0 to finish and clean everything up
-
-        :returns: True if there are more spatial Regions and you dont want everything stopped and cleaned up
-                return False if there are no more spatial regions and you want the default on_scan_done(0 to finish and clean everything up
-                         
-        """
-        _logger.info('chk_for_more_spatial_regions: checking')
-
-        if(self._abort):
-            _logger.info('chk_for_more_spatial_regions: scan aborting')
-            self.save_hdr()
-            self.hdr.remove_tmp_file()
-            return(True)
-        
-        #get the next spatial ID in the list of spatial regions we are to scan
-        sp_id = self.get_next_spatial_id()
-        if(sp_id is not None):
-            #save the current one and then go again
-            self.save_hdr()
-            
-            _logger.info('chk_for_more_spatial_regions: found sp_id=%d, loading and starting' % sp_id)
-            
-            #because we will be starting a new scan that will have new self.data created we need to reinit the index to the data
-            #because imgidx is what is used as the first dimension of the data
-            _logger.info('chk_for_more_spatial_regions: resetting the data image index')
-            self.reset_imgidx()
-            
-            if(self.is_lxl):
-                self.configure(self.wdg_com, sp_id, ev_idx=0, line=True, block_disconnect_emit=True)
-            else:
-                if(self.is_point_spec):
-                    self.configure(self.wdg_com, sp_id, ev_idx=0, line=False, block_disconnect_emit=True)
-                else:
-                    self.configure(self.wdg_com, sp_id, ev_idx=0, line=False, block_disconnect_emit=True)
-            self.start()
-            return(True)
-        else:
-            _logger.info('chk_for_more_spatial_regions: nope all done')
-            return(False)
-        
+    # def chk_for_more_spatial_regions(self):
+    #     """
+    #     chk_for_more_spatial_regions(): this slot handles the end of scan, when the default on_scan_done() is called in the
+    #         base scan class it will check for an installed child on_scan_done slot (this one)
+    #         once this has been called it returns True or False
+    #
+    #         return True if there are more spatial Regions and you dont want everything stopped and cleaned up
+    #
+    #         return False if there are no more spatial regions and you want the default on_scan_done(0 to finish and clean everything up
+    #
+    #     :returns: True if there are more spatial Regions and you dont want everything stopped and cleaned up
+    #             return False if there are no more spatial regions and you want the default on_scan_done(0 to finish and clean everything up
+    #
+    #     """
+    #     _logger.info('chk_for_more_spatial_regions: checking')
+    #
+    #     if(self._abort):
+    #         _logger.info('chk_for_more_spatial_regions: scan aborting')
+    #         self.save_hdr()
+    #         self.hdr.remove_tmp_file()
+    #         return(True)
+    #
+    #     #get the next spatial ID in the list of spatial regions we are to scan
+    #     sp_id = self.get_next_spatial_id()
+    #     if(sp_id is not None):
+    #         #save the current one and then go again
+    #         self.save_hdr()
+    #
+    #         _logger.info('chk_for_more_spatial_regions: found sp_id=%d, loading and starting' % sp_id)
+    #
+    #         #because we will be starting a new scan that will have new self.data created we need to reinit the index to the data
+    #         #because imgidx is what is used as the first dimension of the data
+    #         _logger.info('chk_for_more_spatial_regions: resetting the data image index')
+    #         self.reset_imgidx()
+    #
+    #         if(self.is_lxl):
+    #             self.configure(self.wdg_com, sp_id, ev_idx=0, line=True, block_disconnect_emit=True)
+    #         else:
+    #             if(self.is_point_spec):
+    #                 self.configure(self.wdg_com, sp_id, ev_idx=0, line=False, block_disconnect_emit=True)
+    #             else:
+    #                 self.configure(self.wdg_com, sp_id, ev_idx=0, line=False, block_disconnect_emit=True)
+    #         self.start()
+    #         return(True)
+    #     else:
+    #         _logger.info('chk_for_more_spatial_regions: nope all done')
+    #         return(False)
+    #
     
     
     def set_sample_posner_mode(self, smplx, finex, mode):
@@ -3827,35 +3856,22 @@ class BaseScan(BaseObject):
 
         :returns: None
         """
-        # x_posnum = 1
-        # self.numX = npts
-        #
-        # if(self.xyScan is not None):
-        #     xscan = self.xyScan
-        # elif(self.xScan is not None):
-        #     xscan = self.xScan
-        # else:
-        #     _logger.error('config_samplex_start_stop: no required xScan or xyScan')
-        #     return
-        #
-        # xscan.put('P%dPV' % x_posnum, pos_pv + '.VAL') #positioner pv
-        # xscan.put('R%dPV' % x_posnum, pos_pv + '.RBV') #positioner pv
         if(line):
             lstart = start-accRange
             lstop = stop + deccRange
             #start
             #self._config_start_stop(xscan, x_posnum, lstart, lstop, 2)
-            self.sample_mtrx.put('ScanStart', lstart)
-            self.sample_mtrx.put('ScanStop', lstop)
-            self.sample_mtrx.put('MarkerStart', start)
-            self.sample_mtrx.put('MarkerStop', stop)
-            self.sample_mtrx.put('SetMarker', 1000000)
+            self.sample_mtrx.scan_start.put(lstart)
+            self.sample_mtrx.scan_stop.put(lstop)
+            self.sample_mtrx.marker_start.put(start)
+            self.sample_mtrx.marker_stop.put(stop)
+            self.sample_mtrx.set_marker.put(1000000)
         else:
-            self.sample_mtrx.put('ScanStart', 1000000)
-            self.sample_mtrx.put('ScanStop', 1000000)
-            self.sample_mtrx.put('MarkerStart', 1000000)
-            self.sample_mtrx.put('MarkerStop', 1000000)
-            self.sample_mtrx.put('SetMarker', 1000000)
+            self.sample_mtrx.scan_start.put(1000000)
+            self.sample_mtrx.scan_stop.put(1000000)
+            self.sample_mtrx.marker_start.put(1000000)
+            self.sample_mtrx.marker_stop.put(1000000)
+            self.sample_mtrx.set_marker.put(1000000)
             
     def toggle_psuedomotor_start_stop(self, mtr):
         '''
@@ -3874,11 +3890,11 @@ class BaseScan(BaseObject):
     #     '''
     #
     #     if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
-    #         MAX_SCAN_RANGE_FINEX = self.main_obj.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
-    #         MAX_SCAN_RANGE_FINEY = self.main_obj.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
+    #         MAX_SCAN_RANGE_FINEX = self.main_obj.get_preset_as_float('max_fine_x')
+    #         MAX_SCAN_RANGE_FINEY = self.main_obj.get_preset_as_float('max_fine_y')
     #     else:
-    #         MAX_SCAN_RANGE_FINEX = self.main_obj.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
-    #         MAX_SCAN_RANGE_FINEY = self.main_obj.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
+    #         MAX_SCAN_RANGE_FINEX = self.main_obj.get_preset_as_float('max_fine_x')
+    #         MAX_SCAN_RANGE_FINEY = self.main_obj.get_preset_as_float('max_fine_y')
     #
     #     if(self.sample_fine_positioning_mode == sample_positioning_modes.COARSE):
     #         #force the scan to be a COARSE scan
@@ -3903,8 +3919,8 @@ class BaseScan(BaseObject):
         :return:
         '''
 
-        MAX_SCAN_RANGE_FINEX = self.main_obj.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
-        MAX_SCAN_RANGE_FINEY = self.main_obj.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
+        MAX_SCAN_RANGE_FINEX = self.main_obj.get_preset_as_float('max_fine_x')
+        MAX_SCAN_RANGE_FINEY = self.main_obj.get_preset_as_float('max_fine_y')
 
         if (self.x_roi[RANGE] > MAX_SCAN_RANGE_FINEX):
             self.x_roi[SCAN_RES] = COARSE
@@ -3928,31 +3944,42 @@ class BaseScan(BaseObject):
             roi_def[START] = t    
             
     def configure_sample_motors_for_scan(self):
-        global SIMULATE_SPEC_DATA
+        '''
+        This function is dependant on 2 devices that must exist in the device configuration
+            self.main_obj.device( DNM_CX_AUTO_DISABLE_POWER ).put(1)
+            self.main_obj.device( DNM_CY_AUTO_DISABLE_POWER ).put(1)
+        they control the Coarse X and Y power, which will turn off the Coarse motor power at the end of a move
+        making it more stable for fine scans as well as it will generate less heat which is the main idea here
+        :return:
+        '''
+        #set the resolution fields of teh X and Y regions of interest
         self.set_scan_resolution()
-        #disable the coarse motors Auto power off mode
-        if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
-            #enable auto power off
-            self.main_obj.device( DNM_CX_AUTO_DISABLE_POWER ).put(1) 
-            self.main_obj.device( DNM_CY_AUTO_DISABLE_POWER ).put(1)   
-        else:
-            if(not SIMULATE_SPEC_DATA):
+
+        cx_pwr = self.main_obj.device(DNM_CX_AUTO_DISABLE_POWER, do_warn=False)
+        cy_pwr = self.main_obj.device(DNM_CY_AUTO_DISABLE_POWER, do_warn=False)
+        if(cx_pwr and cy_pwr):
+
+            #disable the coarse motors Auto power off mode
+            if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
+                #enable auto power off
+                cx_pwr.put(1)
+                cy_pwr.put(1)
+            else:
+
                 if(self.x_roi[SCAN_RES] == 'FINE'):
                     #enable auto power off
-                    self.main_obj.device( DNM_CX_AUTO_DISABLE_POWER ).put(1)
+                    cx_pwr.put(1)
                 else:
                     #disable auto power off
-                    self.main_obj.device( DNM_CX_AUTO_DISABLE_POWER ).put(0)     
-                    
+                    cx_pwr.put(0)
+
                 if(self.y_roi[SCAN_RES] == 'FINE'):
                     #enable auto power off
-                    self.main_obj.device( DNM_CY_AUTO_DISABLE_POWER ).put(1)
+                    cy_pwr.put(1)
                 else:
                     #disable auto power off
-                    self.main_obj.device( DNM_CY_AUTO_DISABLE_POWER ).put(0)    
-            else:
-                #data is being simulated            
-                pass    
+                    cy_pwr.put(0)
+
             
     ##############################################################
     # methods for manipulating the OSA XYZ tracking for Zoneplate Scanning only
@@ -4000,13 +4027,16 @@ class BaseScan(BaseObject):
         self.main_obj.set_fine_sample_positioning_mode(sample_fine_positioning_modes.ZONEPLATE)
     
         '''
-        #for now try it as interactive from GUI
+        #first find out if tracking is enabled or not and eecute accordingly
+        if(not self.main_obj.get_preset_as_bool('OSA_TRACKING_ENABLED')):
+            return
+
         self.set_osa_xy_lock_positions()
         return
         if(self.main_obj.get_beamline_id() is not BEAMLINE_IDS.STXM):
             return
 
-        do_types = [scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_POINT_SPECTRA, scan_types.SAMPLE_FOCUS, scan_types.SAMPLE_IMAGE_STACK]
+        do_types = [scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_FOCUS, scan_types.SAMPLE_IMAGE_STACK]
         
         if(self.scan_type not in do_types):
             self.enable_osa_x_tracking(False)
@@ -4350,15 +4380,15 @@ class BaseScan(BaseObject):
         sy.put('Mode', modey)
 
     def move_zpxy_to_its_center(self):
-        if(self.main_obj.get_beamline_id() is BEAMLINE_IDS.STXM):
+        zxmtr = self.main_obj.device(DNM_ZONEPLATE_X, do_warn=False)
+        zymtr = self.main_obj.device(DNM_ZONEPLATE_Y, do_warn=False)
+        if(zxmtr and zymtr):
             sample_positioning_mode = self.main_obj.get_sample_positioning_mode()
             fine_sample_positioning_mode = self.main_obj.get_fine_sample_positioning_mode()
             if(fine_sample_positioning_mode == sample_fine_positioning_modes.ZONEPLATE):
                 #only set zx zy to 0.0, 0.0 if we are NOT in COARSE_ZONEPLATE scanning mode
                 #because the coordinates for zoneplate scanning in COARSE_ZONEPLATE are +-7000 instead of +-50
                 if(sample_positioning_mode != sample_positioning_modes.COARSE):
-                    zxmtr = self.main_obj.device(DNM_ZONEPLATE_X)
-                    zymtr = self.main_obj.device(DNM_ZONEPLATE_Y)
                     zxmtr.put('user_setpoint', 0.0)
                     zymtr.put('user_setpoint', 0.0)
             
@@ -4494,182 +4524,173 @@ class BaseScan(BaseObject):
         #     #force it to toggle, not sure why this doesnt just work
         #     self.sample_mtrx.put('Mode', MODE_LINE_UNIDIR)
         #    self.xScan.put('BSPV', dct['fine_pv_nm']['X'] + '.VELO')
-                
-        
+
     def config_for_sample_holder_scan(self, dct):
-        """
-        configure for using 
-        """
-        #set the X Y positioners for the scan
-        #if(hasattr(self,'xyScan')):
-        #if(self.is_pxp and hasattr(self,'xyScan')):
-        if((self.is_point_spec or self.is_pxp) and (self.xyScan is not None)):
-            self.xyScan.set_positioner(1,  self.main_obj.device(dct['sx_name']))
-            self.xyScan.set_positioner(2,  self.main_obj.device(dct['sy_name']))
-                
-        else:
-            
-            self.xScan.set_positioner(1,  self.main_obj.device(dct['sx_name']))
-            self.yScan.set_positioner(1,  self.main_obj.device(dct['sy_name']))
-        
-        self.set_config_devices_func(self.on_this_dev_cfg)
-        
-        self.sample_mtrx = self.main_obj.device(DNM_SAMPLE_X)
-        self.sample_mtry = self.main_obj.device(DNM_SAMPLE_Y)
-        fine_sample_positioning_mode = self.main_obj.get_fine_sample_positioning_mode()
-        if (fine_sample_positioning_mode == sample_fine_positioning_modes.ZONEPLATE):
-            self.sample_finex = self.main_obj.device(DNM_ZONEPLATE_X)
-            self.sample_finey = self.main_obj.device(DNM_ZONEPLATE_Y)
-        else:
-            self.sample_finex = self.main_obj.device(DNM_SAMPLE_FINE_X)
-            self.sample_finey = self.main_obj.device(DNM_SAMPLE_FINE_Y)
-        
-        #setup X positioner
-        self.sample_mtrx.put('Mode', MODE_SCAN_START)
-        self.main_obj.device( dct['sx_name'] ).put('user_setpoint', dct['xstart'], wait=0.0)
-        _logger.info('Waiting for SampleX to move to start')
-        self.confirm_stopped([self.sample_mtrx])
-        
-        #setup Y positioner
-        self.sample_mtry.put('Mode', MODE_SCAN_START)
-        self.main_obj.device( dct['sy_name'] ).put('user_setpoint', dct['ystart'], wait=0.0)
-        _logger.info('Waiting for SampleY to move to start')
-        self.confirm_stopped([self.sample_mtry])
-        
-        #setup X
-        if( self.is_pxp or self.is_point_spec):
-            if(self.x_roi[SCAN_RES] == COARSE):
-                scan_velo = self.get_mtr_max_velo(self.xScan.P1)
-            else:
-                scan_velo = self.get_mtr_max_velo(self.main_obj.device( DNM_SAMPLE_FINE_X ))
-                
-            #x needs one extra to switch the row
-            npts = self.numX
-            dwell = self.dwell
-            accRange = 0
-            deccRange = 0
-            line = False
-        else:
-            _ev_idx = self.get_evidx()
-            e_roi = self.e_rois[_ev_idx]
-            vmax = self.get_mtr_max_velo(self.xScan.P1)
-            #its not a point scan so determine the scan velo and accRange
-            if (self.scan_type == scan_types.SAMPLE_LINE_SPECTRA):
-                #for line spec scans the number of points is saved in self.numY
-                (scan_velo, npts, dwell) = ensure_valid_values(self.x_roi[START], self.x_roi[STOP], self.dwell,
-                                                               self.numY, vmax, do_points=True)
-            else:
-                (scan_velo , npts, dwell) = ensure_valid_values(self.x_roi[START],  self.x_roi[STOP],  self.dwell,  self.numX, vmax, do_points=True)
-
-            if(self.x_roi[SCAN_RES] == COARSE):
-                accRange = calc_accRange(dct['sx_name'], self.x_roi[SCAN_RES], self.x_roi[RANGE], scan_velo , dwell, accTime=0.04)
-                deccRange = accRange
-            else:
-                appConfig.update()
-                if(self.is_lxl):
-                    section = 'SAMPLE_IMAGE_LXL'
-                else:
-                    section = 'SAMPLE_IMAGE_PXP'
-                
-                
-                    
-                accRange = float(appConfig.get_value(section, 'f_acc_rng'))
-                deccRange = float(appConfig.get_value(section, 'f_decc_rng'))
-                
-            #the number of points may have changed in order to satisfy the dwell the user wants
-            # so update the number of X points and dwell
-            #self.numX = npts
-            #self.x_roi[NPOINTS] = npts
-            
-            line = True
-            e_roi[DWELL] = dwell
-            self.dwell = dwell
-            
-        print('accRange=%.2f um' % (accRange))
-        print('deccRange=%.2f um' % (deccRange))
-        
-        #move X to start
-        #self.sample_mtrx.put('Mode', MODE_SCAN_START)
-        #self.sample_mtrx.put('Mode', MODE_NORMAL)
-        if(self.is_lxl):
-            #self.config_samplex_start_stop(dct['xpv'], self.x_roi[START], self.x_roi[STOP], self.numX, accRange=accRange, line=line)
-            if(self.x_roi[SCAN_RES] == COARSE):
-                self.config_samplex_start_stop(dct['sample_pv_nm']['X'], self.x_roi[START], self.x_roi[STOP], self.numX, accRange=accRange, deccRange=deccRange, line=line)
-            else:     
-                #if it is a fine scan then dont use the abstract motor for the actual scanning
-                #because the status fbk timing is currently not stable
-                self.config_samplex_start_stop(dct['fine_pv_nm']['X'], self.x_roi[START], self.x_roi[STOP], self.numX, accRange=accRange, deccRange=deccRange, line=line)
-
-        
-        #testing   
-        #self.sample_mtrx.put('Mode', MODE_MOVETO_SET_CPOS)
-        #self.sample_mtrx.put('Mode', MODE_NORMAL)
+        pass
+#     def config_for_sample_holder_scan(self, dct):
+#         """
+#         configure for using
+#         """
+#         #set the X Y positioners for the scan
+#         #if(hasattr(self,'xyScan')):
+#         #if(self.is_pxp and hasattr(self,'xyScan')):
+#         # if((self.is_point_spec or self.is_pxp) and (self.xyScan is not None)):
+#         #     self.xyScan.set_positioner(1,  self.main_obj.device(dct['sx_name']))
+#         #     self.xyScan.set_positioner(2,  self.main_obj.device(dct['sy_name']))
+#         #
+#         # else:
+#         #
+#         #     self.xScan.set_positioner(1,  self.main_obj.device(dct['sx_name']))
+#         #     self.yScan.set_positioner(1,  self.main_obj.device(dct['sy_name']))
+#         #
+#         # self.set_config_devices_func(self.on_this_dev_cfg)
+#
+#         self.sample_mtrx = self.main_obj.device(DNM_SAMPLE_X)
+#         self.sample_mtry = self.main_obj.device(DNM_SAMPLE_Y)
+#         fine_sample_positioning_mode = self.main_obj.get_fine_sample_positioning_mode()
+#         if (fine_sample_positioning_mode == sample_fine_positioning_modes.ZONEPLATE):
+#             self.sample_finex = self.main_obj.device(DNM_ZONEPLATE_X)
+#             self.sample_finey = self.main_obj.device(DNM_ZONEPLATE_Y)
+#         else:
+#             self.sample_finex = self.main_obj.device(DNM_SAMPLE_FINE_X)
+#             self.sample_finey = self.main_obj.device(DNM_SAMPLE_FINE_Y)
+#
+#         #setup X positioner
 #         self.sample_mtrx.put('Mode', MODE_SCAN_START)
-#         #endtesting
-#         self.main_obj.device( dct['sx_name'] ).put('user_setpoint', dct['xstart'])
-        
-        self.set_x_scan_velo(scan_velo)
-        #self.confirm_stopped([self.sample_mtrx, self.sample_mtry])
-        
-        self.num_points = self.numY
-        
-        #self.confirm_stopped(self.mtr_list)
-        #set teh velocity in teh sscan rec for X
-        if(self.is_pxp or self.is_point_spec):
-            #force it to toggle, not sure why this doesnt just work
-            if(self.x_roi[SCAN_RES] == COARSE):
-                self.sample_mtrx.put('Mode', MODE_COARSE)
-
-            else:
-                self.sample_mtrx.put('Mode', MODE_POINT)
-                self.sample_finex.put('ServoPower', 1)
-
-            if(self.y_roi[SCAN_RES] == COARSE):
-                self.sample_mtry.put('Mode', MODE_COARSE)
-            else:
-                self.sample_mtry.put('Mode', MODE_LINE_UNIDIR)
-                self.sample_finey.put('ServoPower', 1)
-                
-        else:
-            #force it to toggle, not sure why this doesnt just work
-            if(self.x_roi[SCAN_RES] == COARSE):
-                self.sample_mtrx.put('Mode', MODE_COARSE)
-                self.xScan.put('P1PV', dct['coarse_pv_nm']['X'] + '.VAL')
-                self.xScan.put('R1PV', dct['coarse_pv_nm']['X'] + '.RBV')
-#                self.xScan.put('BSPV', dct['sample_pv_nm']['X'] + '.VELO')
-                #self.main_obj.device( DNM_CX_AUTO_DISABLE_POWER ).put(0) #disabled
-                #self.set_sample_posner_mode(self.sample_mtrx, self.sample_finex, MODE_COARSE)
-            else:
-                self.sample_mtrx.put('Mode', MODE_LINE_UNIDIR)
-                self.xScan.put('P1PV', dct['fine_pv_nm']['X'] + '.VAL')
-                self.xScan.put('R1PV', dct['fine_pv_nm']['X'] + '.RBV')
-                self.sample_finex.put('ServoPower', 1)
-                #self.xScan.put('BSPV', dct['fine_pv_nm']['X'] + '.VELO')
-#                self.xScan.put('BSPV', dct['sample_pv_nm']['X'] + '.VELO')
-                #self.xScan.put('BSPV', dct['fine_pv_nm']['X'] + '.VELO')
-                
-                #self.main_obj.device( DNM_CX_AUTO_DISABLE_POWER ).put(1) #enabled
-                #self.set_sample_posner_mode(self.sample_mtrx, self.sample_finex, MODE_LINE_UNIDIR)
-        
-            #set Y's scan mode
-            if(self.y_roi[SCAN_RES] == COARSE):
-                #self.set_sample_posner_mode(self.sample_mtrx, self.sample_finex, MODE_COARSE)
-                self.sample_mtry.put('Mode', MODE_COARSE)
-                #self.sample_mtry.put('Mode', 6)
-                #self.main_obj.device( DNM_CY_AUTO_DISABLE_POWER ).put(0) #disabled
-                self.yScan.put('P1PV', dct['coarse_pv_nm']['Y'] + '.VAL')
-                self.yScan.put('R1PV', dct['coarse_pv_nm']['Y'] + '.RBV')
-                            
-            else:
-                
-                #self.set_sample_posner_mode(self.sample_mtrx, self.sample_finex, MODE_LINE_UNIDIR)
-                #self.sample_mtry.put('Mode', MODE_NORMAL)
-                self.sample_mtry.put('Mode', MODE_LINE_UNIDIR)
-                self.yScan.put('P1PV', dct['fine_pv_nm']['Y'] + '.VAL')
-                self.yScan.put('R1PV', dct['fine_pv_nm']['Y'] + '.RBV')
-                self.sample_finey.put('ServoPower', 1)
-
-            #self.main_obj.device( DNM_CY_AUTO_DISABLE_POWER ).put(1) #enabled 
+#         self.main_obj.device( dct['sx_name'] ).put('user_setpoint', dct['xstart'], wait=0.0)
+#         _logger.info('Waiting for SampleX to move to start')
+#         self.confirm_stopped([self.sample_mtrx])
+#
+#         #setup Y positioner
+#         self.sample_mtry.put('Mode', MODE_SCAN_START)
+#         self.main_obj.device( dct['sy_name'] ).put('user_setpoint', dct['ystart'], wait=0.0)
+#         _logger.info('Waiting for SampleY to move to start')
+#         self.confirm_stopped([self.sample_mtry])
+#
+#         #setup X
+#         if( self.is_pxp or self.is_point_spec):
+#             if(self.x_roi[SCAN_RES] == COARSE):
+#                 scan_velo = self.get_mtr_max_velo(self.xScan.P1)
+#             else:
+#                 scan_velo = self.get_mtr_max_velo(self.main_obj.device( DNM_SAMPLE_FINE_X ))
+#
+#             #x needs one extra to switch the row
+#             npts = self.numX
+#             dwell = self.dwell
+#             accRange = 0
+#             deccRange = 0
+#             line = False
+#         else:
+#             _ev_idx = self.get_evidx()
+#             e_roi = self.e_rois[_ev_idx]
+#             vmax = self.get_mtr_max_velo(self.xScan.P1)
+#             #its not a point scan so determine the scan velo and accRange
+#             if (self.scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
+#                 #for line spec scans the number of points is saved in self.numY
+#                 (scan_velo, npts, dwell) = ensure_valid_values(self.x_roi[START], self.x_roi[STOP], self.dwell,
+#                                                                self.numY, vmax, do_points=True)
+#             else:
+#                 (scan_velo , npts, dwell) = ensure_valid_values(self.x_roi[START],  self.x_roi[STOP],  self.dwell,  self.numX, vmax, do_points=True)
+#
+#             if(self.x_roi[SCAN_RES] == COARSE):
+#                 accRange = calc_accRange(dct['sx_name'], self.x_roi[SCAN_RES], self.x_roi[RANGE], scan_velo , dwell, accTime=0.04)
+#                 deccRange = accRange
+#             else:
+#                 appConfig.update()
+#                 if(self.is_lxl):
+#                     section = 'SAMPLE_IMAGE_LXL'
+#                 else:
+#                     section = 'SAMPLE_IMAGE_PXP'
+#
+#                 accRange = float(appConfig.get_value(section, 'f_acc_rng'))
+#                 deccRange = float(appConfig.get_value(section, 'f_decc_rng'))
+#
+#             #the number of points may have changed in order to satisfy the dwell the user wants
+#             # so update the number of X points and dwell
+#             #self.numX = npts
+#             #self.x_roi[NPOINTS] = npts
+#
+#             line = True
+#             e_roi[DWELL] = dwell
+#             self.dwell = dwell
+#
+#         print('accRange=%.2f um' % (accRange))
+#         print('deccRange=%.2f um' % (deccRange))
+#
+#         #move X to start
+#         #self.sample_mtrx.put('Mode', MODE_SCAN_START)
+#         #self.sample_mtrx.put('Mode', MODE_NORMAL)
+#         if(self.is_lxl):
+#             #self.config_samplex_start_stop(dct['xpv'], self.x_roi[START], self.x_roi[STOP], self.numX, accRange=accRange, line=line)
+#             if(self.x_roi[SCAN_RES] == COARSE):
+#                 self.config_samplex_start_stop(dct['sample_pv_nm']['X'], self.x_roi[START], self.x_roi[STOP], self.numX, accRange=accRange, deccRange=deccRange, line=line)
+#             else:
+#                 #if it is a fine scan then dont use the abstract motor for the actual scanning
+#                 #because the status fbk timing is currently not stable
+#                 self.config_samplex_start_stop(dct['fine_pv_nm']['X'], self.x_roi[START], self.x_roi[STOP], self.numX, accRange=accRange, deccRange=deccRange, line=line)
+#
+#         self.set_x_scan_velo(scan_velo)
+#         #self.confirm_stopped([self.sample_mtrx, self.sample_mtry])
+#
+#         self.num_points = self.numY
+#
+#         #self.confirm_stopped(self.mtr_list)
+#         #set teh velocity in teh sscan rec for X
+#         if(self.is_pxp or self.is_point_spec):
+#             #force it to toggle, not sure why this doesnt just work
+#             if(self.x_roi[SCAN_RES] == COARSE):
+#                 self.sample_mtrx.put('Mode', MODE_COARSE)
+#
+#             else:
+#                 self.sample_mtrx.put('Mode', MODE_POINT)
+#                 self.sample_finex.set_power( 1)
+#
+#             if(self.y_roi[SCAN_RES] == COARSE):
+#                 self.sample_mtry.put('Mode', MODE_COARSE)
+#             else:
+#                 self.sample_mtry.put('Mode', MODE_LINE_UNIDIR)
+#                 self.sample_finey.set_power( 1)
+#
+#         else:
+#             #force it to toggle, not sure why this doesnt just work
+#             if(self.x_roi[SCAN_RES] == COARSE):
+#                 self.sample_mtrx.put('Mode', MODE_COARSE)
+#                 self.xScan.put('P1PV', dct['coarse_pv_nm']['X'] + '.VAL')
+#                 self.xScan.put('R1PV', dct['coarse_pv_nm']['X'] + '.RBV')
+# #                self.xScan.put('BSPV', dct['sample_pv_nm']['X'] + '.VELO')
+#                 #self.main_obj.device( DNM_CX_AUTO_DISABLE_POWER ).put(0) #disabled
+#                 #self.set_sample_posner_mode(self.sample_mtrx, self.sample_finex, MODE_COARSE)
+#             else:
+#                 self.sample_mtrx.put('Mode', MODE_LINE_UNIDIR)
+#                 self.xScan.put('P1PV', dct['fine_pv_nm']['X'] + '.VAL')
+#                 self.xScan.put('R1PV', dct['fine_pv_nm']['X'] + '.RBV')
+#                 self.sample_finex.set_power( 1)
+#                 #self.xScan.put('BSPV', dct['fine_pv_nm']['X'] + '.VELO')
+# #                self.xScan.put('BSPV', dct['sample_pv_nm']['X'] + '.VELO')
+#                 #self.xScan.put('BSPV', dct['fine_pv_nm']['X'] + '.VELO')
+#
+#                 #self.main_obj.device( DNM_CX_AUTO_DISABLE_POWER ).put(1) #enabled
+#                 #self.set_sample_posner_mode(self.sample_mtrx, self.sample_finex, MODE_LINE_UNIDIR)
+#
+#             #set Y's scan mode
+#             if(self.y_roi[SCAN_RES] == COARSE):
+#                 #self.set_sample_posner_mode(self.sample_mtrx, self.sample_finex, MODE_COARSE)
+#                 self.sample_mtry.put('Mode', MODE_COARSE)
+#                 #self.sample_mtry.put('Mode', 6)
+#                 #self.main_obj.device( DNM_CY_AUTO_DISABLE_POWER ).put(0) #disabled
+#                 self.yScan.put('P1PV', dct['coarse_pv_nm']['Y'] + '.VAL')
+#                 self.yScan.put('R1PV', dct['coarse_pv_nm']['Y'] + '.RBV')
+#
+#             else:
+#
+#                 #self.set_sample_posner_mode(self.sample_mtrx, self.sample_finex, MODE_LINE_UNIDIR)
+#                 #self.sample_mtry.put('Mode', MODE_NORMAL)
+#                 self.sample_mtry.put('Mode', MODE_LINE_UNIDIR)
+#                 self.yScan.put('P1PV', dct['fine_pv_nm']['Y'] + '.VAL')
+#                 self.yScan.put('R1PV', dct['fine_pv_nm']['Y'] + '.RBV')
+#                 self.sample_finey.set_power( 1)
+#
+#             #self.main_obj.device( DNM_CY_AUTO_DISABLE_POWER ).put(1) #enabled
     
     def set_cmdfile_params(self, parms):
         """
@@ -4769,7 +4790,7 @@ class BaseScan(BaseObject):
         '''
         sample_positioning_mode = self.main_obj.get_sample_positioning_mode()
         fine_sample_positioning_mode = self.main_obj.get_fine_sample_positioning_mode()
-        non_zp_scans = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.OSA_FOCUS, scan_types.SAMPLE_FOCUS, scan_types.GENERIC_SCAN, scan_types.COARSE_IMAGE_SCAN, scan_types.COARSE_GONI_SCAN]
+        non_zp_scans = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.OSA_FOCUS, scan_types.SAMPLE_FOCUS, scan_types.GENERIC_SCAN, scan_types.COARSE_IMAGE, scan_types.COARSE_GONI]
         focus_scans = [scan_types.OSA_FOCUS, scan_types.SAMPLE_FOCUS]
 
         #x_npnts_lst = []
@@ -5326,8 +5347,8 @@ class BaseScan(BaseObject):
 
         """
         ### VERY IMPORTANT the current PID tune for ZX is based on a velo (SLew Rate) of 1,000,000
-        self.main_obj.device(DNM_ZONEPLATE_X).put('velocity', 1000000.0)
-        self.main_obj.device(DNM_ZONEPLATE_Y).put('velocity', 1000000.0)
+        self.main_obj.device(DNM_ZONEPLATE_X).set_velo(1000000.0)
+        self.main_obj.device(DNM_ZONEPLATE_Y).set_velo(1000000.0)
         #
         self.sample_mtrx = self.sample_finex = self.main_obj.device(DNM_ZONEPLATE_X)
         self.sample_mtry = self.sample_finey = self.main_obj.device(DNM_ZONEPLATE_Y)

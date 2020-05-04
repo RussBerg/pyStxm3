@@ -15,7 +15,7 @@ from sm.stxm_control.plotters.color_def import get_normal_clr, get_warn_clr, get
     get_warn_fill_pattern, get_alarm_fill_pattern
 from sm.stxm_control.plotters.shape_restrictions import ROILimitObj, ROILimitDef
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 from bcm.devices.device_names import *
 from cls.types.stxmTypes import scan_types, scan_panel_order, spatial_type_prefix
 from cls.utils.dict_utils import dct_get, dct_put
@@ -33,7 +33,7 @@ _logger = get_module_logger(__name__)
 class PointScanParam(ScanParamWidget):
     name = "Point Scan"
     idx = scan_panel_order.POINT_SCAN
-    type = scan_types.SAMPLE_POINT_SPECTRA
+    type = scan_types.SAMPLE_POINT_SPECTRUM
     data = {}
     section_id = 'POINT'
     axis_strings = ['counts', 'eV', '', '']
@@ -206,7 +206,7 @@ class PointScanParam(ScanParamWidget):
         if(wdg_com[CMND] == widget_com_cmnd_types.LOAD_SCAN):
             sp_db = sp_db = get_first_sp_db_from_wdg_com(wdg_com)
 
-            if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_POINT_SPECTRA):
+            if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_POINT_SPECTRUM):
                 return
                 
             self.multi_region_widget.load_scan(wdg_com)

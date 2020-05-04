@@ -389,7 +389,7 @@ class caPushBtnWithFbk(QtWidgets.QPushButton):
         :param kw:
         :return:
         '''
-        print()
+        print('caPushBtnWithFbk: _signal_change')
         #print kw[self.sig_change_kw]
         dct = {}
         dct[self.sig_change_kw] = kw[self.sig_change_kw]

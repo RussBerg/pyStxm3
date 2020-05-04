@@ -135,9 +135,9 @@ def modify_single_image_nxdata_group(parent, data_nxgrp, doc, scan_type):
     det_nm = parent.get_primary_det_nm(doc['run_start'])
 
     # three_d_scans = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.OSA_FOCUS, scan_types.SAMPLE_FOCUS, scan_types.SAMPLE_IMAGE_STACK, \
-    #                  scan_types.COARSE_IMAGE_SCAN, scan_types.COARSE_GONI_SCAN, scan_types.TOMOGRAPHY_SCAN]
+    #                  scan_types.COARSE_IMAGE, scan_types.COARSE_GONI, scan_types.TOMOGRAPHY]
     three_d_scans = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.OSA_FOCUS, scan_types.SAMPLE_FOCUS, \
-                     scan_types.COARSE_IMAGE_SCAN, scan_types.COARSE_GONI_SCAN, scan_types.TOMOGRAPHY_SCAN]
+                     scan_types.COARSE_IMAGE, scan_types.COARSE_GONI, scan_types.TOMOGRAPHY]
 
     if(scan_type in three_d_scans):
         # det_data = np.array(parent._data['primary'][det_nm]['data'], dtype=np.float32).reshape((1, ynpoints, xnpoints))

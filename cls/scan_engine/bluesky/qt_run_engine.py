@@ -451,6 +451,8 @@ class EngineWidget(QGroupBox):
 
         #self.db = Broker.named('temp')
         self.db = Broker.named('mongo_databroker')
+        #import databroker
+        #databroker.assets.utils.install_sentinels(self.db.reg.config, version=1)
         #self.db = Broker.named('my_databroker')
         #list_configs()
         # Insert all metadata/data captured into db.

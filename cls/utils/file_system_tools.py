@@ -100,7 +100,8 @@ def get_next_dir_in_seq_num(path, prefix_char='C', extension='hdf5'):
             seq_num = int(seq_num_str) + 1
             return(seq_num)
         else:
-            return(generate_new_seq_num(path, prefix_char, extension))
+            #return(generate_new_seq_num(path, prefix_char, extension))
+            return(0)
         
     return(generate_new_seq_num(path, prefix_char))    
 
@@ -112,6 +113,10 @@ def get_next_file_num_in_seq(path, prefix_char='C',extension='hdf5'):
         _files = get_filenames_in_dir(path, extension + '.idx')
     if (len(_files) is 0):
         _files = get_filenames_in_dir(path, extension + '.err')
+    if (len(_files) is 0):
+        _files = get_cur_data_dir(path)
+    if(len(_files) is 0):
+        _files = [get_next_dir_in_seq(path, prefix_char=prefix_char)]
 
     if(len(_files) > 0):
         seq_num_str = _files[-1].replace(prefix_char,'').replace('.%s'%extension,'')
@@ -142,7 +147,16 @@ def get_next_dir_in_seq(path, prefix_char='C'):
         else:
             return(generate_new_seq_name(path, prefix_char))
     return(generate_new_seq_name(path, prefix_char))
-    
+
+def get_cur_data_dir(path):
+
+    if (os.path.isdir(path)):
+        _dirs = sorted(next(os.walk(path))[1])
+    if(len(_dirs) is 0):
+        return([])
+    return(_dirs)
+
+
 def get_next_file_in_seq(path, prefix_char='C',extension='hdf5'):
     return(get_next_file_num_in_seq(path, prefix_char=prefix_char, extension=extension))
     # _files = get_filenames_in_dir(path, extension)
@@ -171,7 +185,9 @@ def generate_new_seq_num(path, prefix_char='C', extension='hdf5'):
         files = get_filenames_in_dir(path, extension)
         seq_num = len(files)  
         if(seq_num == 0):
-            return(get_directory_number(path, prefix_char='C'))
+            #return(get_directory_number(path, prefix_char='C'))
+            return(get_next_seq_num(path, prefix_char=prefix_char, extension=extension))
+
         fname = '%s%s%03d' % (prefix_char, t.strftime("%y%m%d"), seq_num)
         full_seq_num  = '%s%03d' % (t.strftime("%y%m%d"), seq_num)
         while fname in _dirs:
@@ -479,11 +495,12 @@ if __name__ == '__main__':
     #print ' what about %s' % path + '\\' + new_stack_dirname
     #os.mkdir(path + '\\' + new_stack_dirname)
 
-    # d = master_get_seq_names(path , prefix_char='C', thumb_ext='jpg', dat_ext='hdf5', stack_dir=False, num_desired_datafiles=5, new_stack_dir=False)
-    # if(d is None):
-    #     print('the directory %s does not exist yet' % (path))
-    # else:
-    #     for k in list(d.keys()):
-    #         print(d[k])
-    path = r'C:\controls\stxm-data\guest\0110'
-    check_if_tmp_or_final_exist(path, 200110041, prefix_char='C', extension='hdf5')
+    path = r'C:\controls\stxm-data\2020\guest\0406'
+    d = master_get_seq_names(path , prefix_char='C', thumb_ext='jpg', dat_ext='hdf5', stack_dir=False, num_desired_datafiles=5, new_stack_dir=False)
+    if(d is None):
+        print('the directory %s does not exist yet' % (path))
+    else:
+        for k in list(d.keys()):
+            print(d[k])
+    # path = r'C:\controls\stxm-data\guest\0110'
+    # check_if_tmp_or_final_exist(path, 200110041, prefix_char='C', extension='hdf5')

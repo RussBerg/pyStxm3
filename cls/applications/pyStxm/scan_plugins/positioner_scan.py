@@ -5,7 +5,7 @@ Created on Aug 25, 2014
 '''
 from PyQt5 import uic
 import os
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, DEFAULTS
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ, DEFAULTS
 from cls.scanning.paramLineEdit import intLineEditParamObj, dblLineEditParamObj
 #from cls.applications.pyStxm.scan_plugins.base import ScanParamWidget, zp_focus_modes
 from cls.scanning.base import ScanParamWidget, zp_focus_modes
@@ -45,6 +45,7 @@ class PositionerScanParam(ScanParamWidget):
         self.sp_db = None
         self.load_from_defaults()
         self.init_sp_db()
+        self.connect_paramfield_signals()
         self.on_single_spatial_npoints_changed()
         self.init_loadscan_menu()
 
@@ -73,9 +74,10 @@ class PositionerScanParam(ScanParamWidget):
         :return:
         '''
         if (self.isEnabled()):
-            #make sure that the OSA vertical tracking is off if it is on
-            self.osay_trcking_was = self.main_obj.device(DNM_OSAY_TRACKING).get_position()
-            self.main_obj.device(DNM_OSAY_TRACKING).put(0) #off
+            if(self.main_obj.device(DNM_OSAY_TRACKING)):
+                #make sure that the OSA vertical tracking is off if it is on
+                self.osay_trcking_was = self.main_obj.device(DNM_OSAY_TRACKING).get_position()
+                self.main_obj.device(DNM_OSAY_TRACKING).put(0) #off
 
 
     def on_plugin_defocus(self):
@@ -84,8 +86,9 @@ class PositionerScanParam(ScanParamWidget):
         :return:
         '''
         if (self.isEnabled()):
-            #put the OSA vertical tracking back to its previous state
-            self.main_obj.device(DNM_OSAY_TRACKING).put(self.osay_trcking_was)
+            if(self.main_obj.device(DNM_OSAY_TRACKING)):
+                #put the OSA vertical tracking back to its previous state
+                self.main_obj.device(DNM_OSAY_TRACKING).put(self.osay_trcking_was)
 
         # call the base class defocus
         super(PositionerScanParam, self).on_plugin_defocus()

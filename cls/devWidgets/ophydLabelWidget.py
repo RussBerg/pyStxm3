@@ -29,6 +29,9 @@ class BaseLabel(QtWidgets.QLabel):
 
     def __init__(self, signal, hdrText=None, format='%5.2f', egu='um', warn=None, alarm=None, title_color='black', var_clr='blue', sig_change_kw='value'):
         super(BaseLabel, self).__init__()
+        if(signal is None):
+            _logger.error('Error: BaseLabel was passed device object set to [None]')
+            return
         self.enum_strs = []
         self.setAutoFillBackground(True)
         self.fbk_enabled = False
@@ -40,7 +43,9 @@ class BaseLabel(QtWidgets.QLabel):
         self.var_clr = var_clr
         self.sig_change_kw = sig_change_kw
         self.updateQueue = queue.Queue()
-        self.prefix = signal.get_name()
+        if(not hasattr(signal, 'name')):
+            print()
+        self.prefix = signal.name
         self.hdrText = hdrText
         self.signal = signal
 
@@ -48,7 +53,7 @@ class BaseLabel(QtWidgets.QLabel):
         self.changed.connect(self.on_val_change)
         self.disconnected.connect(self.discon_fbk)
         self.connected.connect(self.init_fbk)
-        self.signal.on_connect.connect(self.on_connect)
+        #self.signal.on_connect.connect(self.on_connect)
 
         #self.discon_fbk()
 
@@ -107,7 +112,7 @@ class BaseLabel(QtWidgets.QLabel):
 def format_text(title, var, title_color='black', var_color='black', alarm=None):
     bgcolor = 'transparent'
     if(var_color is None):
-        print()
+        print('ophydLabelWidget: format_text')
     if (alarm is not None):
         if (alarm == 'WARN'):
             # warn background color
@@ -354,8 +359,8 @@ class ophyd_mbbiLabelWidget(BaseLabel):
             if (sig.is_connected()):
                 self.enum_strs.append(sig.get())
             i += 1
-
-        self.set_text(self.signal.get())
+        val = self.signal.get('VAL')
+        self.set_text(self.signal.get(self.fields[val]))
 
     def set_text(self, val):
         # print 'set_text: %s' % txt
@@ -425,16 +430,14 @@ class ophyd_biLabelWidget(BaseLabel):
         for fname in self.fields:
             sig = self.sigs[i]
             if (sig.is_connected()):
+                # L = sig.get()
+                # LL = ''.join(chr(i) for i in L)
+                # self.enum_strs.append(LL)
                 self.enum_strs.append(sig.get())
             i += 1
         if(do_set_text):
-            self.set_text(self.signal.get())
-
-    # def on_new_val(self, val):
-    #     if(type(val) is dict):
-    #         val = val[self.sig_change_kw]
-    #     #print('on_new_val=%.3f'% val)
-    #     self.set_text(val)
+            val = self.signal.get_position()
+            self.set_text(val)
 
     def set_text(self, val):
         if(type(val) is dict):
@@ -512,7 +515,7 @@ class test(QtWidgets.QWidget):
         self.modelabel = ophyd_mbbiLabelWidget(mode_fbk_sig, hdrText='SR Mode', title_color=title_color, var_clr=fbk_color)
 
         # self.modelabel = ophyd_biLabelWidget(MAIN_OBJ.device('SYSTEM:mode:fbk').get_name(), hdrText='SR Mode', title_color=title_color, var_clr=fbk_color)
-        #self.evFbkLbl = ophyd_aiLabelWidget(MAIN_OBJ.device('ENERGY_RBV'), hdrText='Energy', egu='eV',
+        #self.evFbkLbl = ophyd_aiLabelWidget(MAIN_OBJ.device(DNM_ENERGY_RBV), hdrText='Energy', egu='eV',
         #                                    title_color=title_color, var_clr=fbk_color, alarm=5, warn=50)
         ev_fbk_sig = BaseDevice('IOC:m914.RBV', val_only=True, val_kw='value')
         self.evFbkLbl = ophyd_aiLabelWidget(ev_fbk_sig, hdrText='Energy', egu='eV',

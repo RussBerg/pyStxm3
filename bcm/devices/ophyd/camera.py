@@ -28,8 +28,8 @@ class camera(BaseObject):
         
      """
 
-    def __init__(self, base_signal_name, width=640, ht=480):
-        super(camera, self).__init__(base_signal_name)
+    def __init__(self, name, width=640, ht=480):
+        super(camera, self).__init__(name)
 
         self.cb_idx = []
         self.width = width
@@ -40,8 +40,8 @@ class camera(BaseObject):
         # the opposite is true if we are the client
         # self.data_pv = PV(self.p_prefix + ':calib_cam:wv:fbk')#, auto_monitor=True, verbose=True)
 
-        self.data_pv = self.add_device(self.base_signal_name + ':calib_cam:wv:fbk')  # , auto_monitor=True, verbose=True)
-        self.start_cap_pv = self.add_device(self.base_signal_name + ':start_cap')
+        self.data_pv = self.add_device(self.name + ':calib_cam:wv:fbk')  # , auto_monitor=True, verbose=True)
+        self.start_cap_pv = self.add_device(self.name + ':start_cap')
 
         # self.cb_idx.append(self.data_pv.add_callback(self.on_new_data))
         self.data_pv.changed.connect(self.on_changed)

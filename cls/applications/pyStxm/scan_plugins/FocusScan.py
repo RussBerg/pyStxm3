@@ -9,7 +9,7 @@ import bluesky.preprocessors as bpp
 from cycler import cycler
 #from bluesky.plan_stubs import pause, open_run, close_run, sleep, mv
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 from bcm.devices.device_names import *
 from cls.scanning.BaseScan import BaseScan, MODE_SCAN_START
 from cls.scanning.SScanClass import SScanClass
@@ -20,9 +20,10 @@ from cls.utils.log import get_module_logger
 from cls.utils.roi_dict_defs import *
 from cls.utils.json_utils import dict_to_json
 from cls.scan_engine.bluesky.data_emitters import ImageDataEmitter
+
+USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_bool('USE_E712_HDW_ACCEL', 'BL_CFG_MAIN')
+
 _logger = get_module_logger(__name__)
-
-
 
 class FocusScanClass(BaseScan):
     '''
@@ -36,7 +37,7 @@ class FocusScanClass(BaseScan):
 
         :returns: None
         """
-        super(FocusScanClass, self).__init__('%sstxm' % MAIN_OBJ.get_sscan_prefix(), 'FOCUS', main_obj=main_obj)
+        super(FocusScanClass, self).__init__(main_obj=main_obj)
 
     def init_subscriptions(self, ew, func):
         '''
@@ -50,14 +51,14 @@ class FocusScanClass(BaseScan):
         if(self.is_pxp):
             self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE, x=DNM_SAMPLE_X,
                                                     scan_type=self.scan_type, bi_dir=self._bi_dir)
-            self._emitter_cb.set_row_col(rows=self.zz_roi[NPOINTS], cols=self.x_roi[NPOINTS])
+            self._emitter_cb.set_row_col(rows=self.zz_roi[NPOINTS], cols=self.x_roi[NPOINTS], seq_dct=self.seq_map_dct)
             self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
             self._emitter_cb.new_plot_data.connect(func)
         else:
             self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE,
                                                 x=DNM_SAMPLE_X,
                                                 scan_type=self.scan_type, bi_dir=self._bi_dir)
-            self._emitter_cb.set_row_col(rows=self.zz_roi[NPOINTS], cols=self.x_roi[NPOINTS])
+            self._emitter_cb.set_row_col(rows=self.zz_roi[NPOINTS], cols=self.x_roi[NPOINTS], seq_dct=self.seq_map_dct)
             self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
             self._emitter_cb.new_plot_data.connect(func)
 
@@ -71,13 +72,6 @@ class FocusScanClass(BaseScan):
         '''
         dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
         self._bi_dir = bi_dir
-        # zp_def = self.get_zoneplate_info_dct()
-        # md = {'entry_name': 'entry0', 'scan_type': self.scan_type,
-        #       'rois': {SPDB_X: self.x_roi, SPDB_Y: self.y_roi, SPDB_Z: self.zz_roi},
-        #       'dwell': self.dwell,
-        #       'primary_det': DNM_DEFAULT_COUNTER,
-        #       'zp_def': zp_def,
-        #       'wdg_com': dict_to_json(self.wdg_com)}
         if (md is None):
             md = {'metadata': dict_to_json(
                 self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
@@ -197,50 +191,11 @@ class FocusScanClass(BaseScan):
         :returns: None
         """
         """ here if line == True then it is a line scan else config for point by point """
+        super(FocusScanClass, self).configure(wdg_com, sp_id=sp_id, line=line, z_enabled=True)
         
-        self.wdg_com = wdg_com
-        self.sp_rois = wdg_com[WDGCOM_SPATIAL_ROIS]
-        self.sp_db = self.sp_rois[sp_id]
-        self.set_spatial_id(sp_id)
-        self.scan_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_TYPE)
-        self.scan_sub_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE)
-        self.numX = dct_get(self.sp_db, SPDB_XNPOINTS)
-        self.numY = dct_get(self.sp_db, SPDB_YNPOINTS)
-        self.numZZ = dct_get(self.sp_db, SPDB_ZZNPOINTS)
-        self.numE = dct_get(self.sp_db, SPDB_EV_NPOINTS)
-        self.numSPIDS = len(self.sp_rois)
-        self.e_rois = dct_get(self.sp_db, SPDB_EV_ROIS)
-        e_roi = self.e_rois[0]
-        self.numEPU = len(dct_get(e_roi, EPU_POL_PNTS))
+        if(USE_E712_HDW_ACCEL):
+            self.main_obj.device('e712_current_sp_id').put(sp_id)
 
-        self.main_obj.device('e712_current_sp_id').put(sp_id)
-        
-        #if(self.scan_sub_type == scan_sub_types.LINE_UNIDIR):
-        #    self.is_lxl = True
-        
-        if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
-            zp_scan = True
-        else:
-            zp_scan = False  
-        
-        if(self.scan_sub_type == scan_sub_types.LINE_UNIDIR):
-            #LINE_UNIDIR
-            self.is_lxl = True
-            self.is_pxp = False
-            #self.pdlys = {}
-        else:
-            #POINT_BY_POINT
-            self.is_pxp = True
-            self.is_lxl = False
-            #self.pdlys = {}    
-            
-        self.update_roi_member_vars(self.sp_db)
-
-        self.ensure_left_to_right(self.x_roi)
-        self.ensure_left_to_right(self.y_roi)
-        self.ensure_left_to_right(self.zz_roi)
-
-        #dct_put(self.sp_db, SPDB_RECT, (self.x_roi[START], self.z_roi[START], self.x_roi[STOP], self.z_roi[STOP]))
         dct_put(self.sp_db, SPDB_RECT,
                 (self.x_roi[START], self.zz_roi[START], self.x_roi[STOP], self.zz_roi[STOP]))
         
@@ -253,50 +208,17 @@ class FocusScanClass(BaseScan):
         
         self.reset_evidx()
         self.reset_imgidx()
-        self.init_set_scan_levels()
-
-        # x_posnum = 1
-        # y_posnum = 2
-        # z_posnum = 1
-        
-        dct = self.determine_samplexy_posner_pvs()
-
         self.stack = False
                 
-        # if(self.is_lxl):
-        #     self.xScan.put('BSPV', dct['sample_pv_nm']['X'] + '.VELO')
-        #     self.set_on_counter_changed_func(self.on_sample_scan_counter_changed)
-        #     self.set_FocusImageLineScan_sscan_rec(self.sp_db, zp_scan=zp_scan)
-        #
-        # else:
-        #     self.set_on_counter_changed_func(self.on_x_y_counter_changed)
-        #     self.set_FocusImagePointScan_sscan_rec(self.sp_db, zp_scan=zp_scan)
-        #
-        # #self.scanlist = [ self.xScan , self.yScan]
-        # #self.mtr_list = [ self.xScan.P1 , self.yScan.P1]
-            
-        # if(zp_scan):
-        #     self.config_for_goniometer_scan(dct, is_focus=True)
-        #     zx = self.main_obj.device(dct['fx_name'])
-        #     zx.put('user_setpoint', self.zx_roi[START] - 5)
-        #
-        #
-        # else:
-        #     self.config_for_sample_holder_scan(dct)
-        #
-        # #Zpz
-        # self._config_start_stop(self.zScan, 1, self.zz_roi[START], self.zz_roi[STOP], self.zz_roi[NPOINTS])
-        # #_config_start_stop(self, sscan, posnum, start, stop, npts):
-        
-        #self._assign_positioner_setpoints(self.zScan, z_posnum, self.z_roi[SETPOINTS], self.z_roi[NPOINTS])    
-
         #make sure OSA XY is in its center
         self.move_osaxy_to_its_center()
         
         #self.data_shape = ('numE', 'numZ', 'numX')
         self.config_hdr_datarecorder(self.stack)
         #self.stack_scan = stack
-        
+
+        self.seq_map_dct = self.generate_2d_seq_image_map(1, self.zz_roi[NPOINTS], self.x_roi[NPOINTS], lxl=self.is_lxl)
+
         #THIS must be the last call
         self.finish_setup()
 

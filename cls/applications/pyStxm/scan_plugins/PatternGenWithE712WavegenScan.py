@@ -16,7 +16,7 @@ from cls.scan_engine.bluesky.bluesky_defs import bs_dev_modes
 from cls.scan_engine.bluesky.test_gate import trig_src_types
 
 from cls.applications.pyStxm import abs_path_to_ini_file
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 from cls.scanning.BaseScan import BaseScan, SIM_SPEC_DATA, SIMULATE_SPEC_DATA
 from cls.scanning.SScanClass import SScanClass
 from cls.scanning.scan_cfg_utils import set_devices_for_point_scan, set_devices_for_line_scan, \
@@ -73,8 +73,7 @@ class PatternGenWithE712WavegenScanClass(BaseScan):
 
         :returns: None
         """
-        super(PatternGenWithE712WavegenScanClass, self).__init__('%sstxm' % MAIN_OBJ.get_sscan_prefix(), 'SAMPLEXY_EV_WG',
-                                                                      main_obj=MAIN_OBJ)
+        super(PatternGenWithE712WavegenScanClass, self).__init__(main_obj=MAIN_OBJ)
         self.x_use_reinit_ddl = False
         # self.x_use_ddl = False
         # self.x_use_reinit_ddl = False
@@ -354,106 +353,107 @@ class PatternGenWithE712WavegenScanClass(BaseScan):
         :returns: None
 
         """
+        super(PatternGenWithE712WavegenScanClass, self).configure(wdg_com, sp_id=sp_id, line=line, z_enabled=False)
         _logger.info('\n\nSampleImageWithE712Wavegen: configuring sp_id [%d]' % sp_id)
         self.new_spatial_start_sent = False
         # initial setup and retrieval of common scan information
-        self.set_spatial_id(sp_id)
-        self.wdg_com = wdg_com
-        self.sp_rois = wdg_com[WDGCOM_SPATIAL_ROIS]
-        self.sp_ids = list(self.sp_rois.keys())
-        self.sp_id = sp_id
-        self.sp_db = self.sp_rois[sp_id]
-        self.scan_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_TYPE)
-        self.scan_sub_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE)
-        self.sample_positioning_mode = MAIN_OBJ.get_sample_positioning_mode()
-        self.sample_fine_positioning_mode = MAIN_OBJ.get_fine_sample_positioning_mode()
+#         self.set_spatial_id(sp_id)
+#         self.wdg_com = wdg_com
+#         self.sp_rois = wdg_com[WDGCOM_SPATIAL_ROIS]
+#         self.sp_ids = list(self.sp_rois.keys())
+#         self.sp_id = sp_id
+#         self.sp_db = self.sp_rois[sp_id]
+#         self.scan_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_TYPE)
+#         self.scan_sub_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE)
+#         self.sample_positioning_mode = MAIN_OBJ.get_sample_positioning_mode()
+#         self.sample_fine_positioning_mode = MAIN_OBJ.get_fine_sample_positioning_mode()
+#
+#         self.update_roi_member_vars(self.sp_db)
+#
+#         #the wavegenerator does both axis in one sscan record by calling the wavegenerator to execute,
+#         # this is done in sscan2
+#         # self.xyScan = self._scan2
+#
+#         self.determine_scan_res()
+#
+#         # dct_put(self.sp_db, SPDB_RECT, (self.x_roi[START], self.y_roi[START], self.x_roi[STOP], self.y_roi[STOP]))
+#         # the sample motors have different modes, make a call to handle that they are setup correctly for this scan
+# #        self.configure_sample_motors_for_scan()
+#
+#         if (ev_idx == 0):
+#             self.reset_evidx()
+#             self.reset_imgidx()
+#             self.reset_pnt_spec_spid_idx()
+#             self.final_data_dir = None
+#             self.update_dev_data = []
+#
+#         if(len(self.sp_ids) > 1):
+#             self.is_multi_spatial = True
+#             #if multi spatial then just save everything without prompting
+#             self.set_save_all_data(True)
+#         else:
+#             self.is_multi_spatial = False
+#             self.set_save_all_data(False)
+#
+#         # get the energy and EOU related setpoints
+#         e_roi = self.e_rois[ev_idx]
+#         self.setpointsDwell = dct_get(e_roi, DWELL)
+#         # self.setpointsPol = self.convert_polarity_points(dct_get(e_roi, 'EPU_POL_PNTS'))
+#         self.setpointsPol = dct_get(e_roi, EPU_POL_PNTS)
+#         self.setpointsOff = dct_get(e_roi, EPU_OFF_PNTS)
+#         self.setpointsAngle = dct_get(e_roi, EPU_ANG_PNTS)
+#         self.ev_pol_order = dct_get(e_roi, EV_POL_ORDER)
+#
+#         sps = dct_get(self.wdg_com, SPDB_SINGLE_LST_SP_ROIS)
+#         evs = dct_get(self.wdg_com, SPDB_SINGLE_LST_EV_ROIS)
+#         pols = dct_get(self.wdg_com, SPDB_SINGLE_LST_POL_ROIS)
+#         dwells = dct_get(self.wdg_com, SPDB_SINGLE_LST_DWELLS)
+#         sub_type = dct_get(self.wdg_com, SPDB_SCAN_PLUGIN_SUBTYPE)
+#         if(sub_type is scan_sub_types.POINT_BY_POINT):
+#             self.is_pxp = True
+#             self.is_lxl = False
+#         else:
+#             self.is_pxp = False
+#             self.is_lxl = True
+#
+#         self.use_hdw_accel = dct_get(self.sp_db, SPDB_HDW_ACCEL_USE)
+#         if (self.use_hdw_accel is None):
+#             self.use_hdw_accel = False
+#             self.e712_enabled = False
+#             #force the wave table rate to be 10 so that all pattern pads will be calc to use same rate
+#             #self.e712_wg.set_forced_rate(10)
+#
+#         self.is_fine_scan = True
+#         #override
+#         if(not self.is_fine_scan):
+#             #coarse scan so turn hdw accel flag off
+#             self.use_hdw_accel = False
+#
+#         if(self.use_hdw_accel):
+#             self.e712_enabled = True
+#             # self.save_hdr = self.hdw_accel_save_hdr
+#
+#             #set the DDL flags
+#             if(dct_get(self.sp_db, SPDB_HDW_ACCEL_AUTO_DDL)):
+#                 self.x_auto_ddl = True
+#                 self.x_use_reinit_ddl = False
+#             else:
+#                 #Reinit DDL for the current scan
+#                 self.x_auto_ddl = False
+#                 self.x_use_reinit_ddl = True
+#
+#         # setup some convienience member variables
+#         self.dwell = e_roi[DWELL]
+#         self.numX = int(self.x_roi[NPOINTS])
+#         self.numY = int(self.y_roi[NPOINTS])
+#         self.numZX = int(self.zx_roi[NPOINTS])
+#         self.numZY = int(self.zy_roi[NPOINTS])
+#         self.numEPU = len(self.setpointsPol)
+#         self.numE = int(self.sp_db[SPDB_EV_NPOINTS])
+#
+#         self.numSPIDS = len(self.sp_rois)
 
-        self.update_roi_member_vars(self.sp_db)
-
-        #the wavegenerator does both axis in one sscan record by calling the wavegenerator to execute,
-        # this is done in sscan2
-        # self.xyScan = self._scan2
-
-        self.determine_scan_res()
-
-        # dct_put(self.sp_db, SPDB_RECT, (self.x_roi[START], self.y_roi[START], self.x_roi[STOP], self.y_roi[STOP]))
-        # the sample motors have different modes, make a call to handle that they are setup correctly for this scan
-#        self.configure_sample_motors_for_scan()
-
-        if (ev_idx == 0):
-            self.reset_evidx()
-            self.reset_imgidx()
-            self.reset_pnt_spec_spid_idx()
-            self.final_data_dir = None
-            self.update_dev_data = []
-
-        if(len(self.sp_ids) > 1):
-            self.is_multi_spatial = True
-            #if multi spatial then just save everything without prompting
-            self.set_save_all_data(True)
-        else:
-            self.is_multi_spatial = False
-            self.set_save_all_data(False)
-
-        # get the energy and EOU related setpoints
-        e_roi = self.e_rois[ev_idx]
-        self.setpointsDwell = dct_get(e_roi, DWELL)
-        # self.setpointsPol = self.convert_polarity_points(dct_get(e_roi, 'EPU_POL_PNTS'))
-        self.setpointsPol = dct_get(e_roi, EPU_POL_PNTS)
-        self.setpointsOff = dct_get(e_roi, EPU_OFF_PNTS)
-        self.setpointsAngle = dct_get(e_roi, EPU_ANG_PNTS)
-        self.ev_pol_order = dct_get(e_roi, EV_POL_ORDER)
-
-        sps = dct_get(self.wdg_com, SPDB_SINGLE_LST_SP_ROIS)
-        evs = dct_get(self.wdg_com, SPDB_SINGLE_LST_EV_ROIS)
-        pols = dct_get(self.wdg_com, SPDB_SINGLE_LST_POL_ROIS)
-        dwells = dct_get(self.wdg_com, SPDB_SINGLE_LST_DWELLS)
-        sub_type = dct_get(self.wdg_com, SPDB_SCAN_PLUGIN_SUBTYPE)
-        if(sub_type is scan_sub_types.POINT_BY_POINT):
-            self.is_pxp = True
-            self.is_lxl = False
-        else:
-            self.is_pxp = False
-            self.is_lxl = True
-
-        self.use_hdw_accel = dct_get(self.sp_db, SPDB_HDW_ACCEL_USE)
-        if (self.use_hdw_accel is None):
-            self.use_hdw_accel = False
-            self.e712_enabled = False
-            #force the wave table rate to be 10 so that all pattern pads will be calc to use same rate
-            #self.e712_wg.set_forced_rate(10)
-
-        self.is_fine_scan = True
-        #override
-        if(not self.is_fine_scan):
-            #coarse scan so turn hdw accel flag off
-            self.use_hdw_accel = False
-
-        if(self.use_hdw_accel):
-            self.e712_enabled = True
-            # self.save_hdr = self.hdw_accel_save_hdr
-
-            #set the DDL flags
-            if(dct_get(self.sp_db, SPDB_HDW_ACCEL_AUTO_DDL)):
-                self.x_auto_ddl = True
-                self.x_use_reinit_ddl = False
-            else:
-                #Reinit DDL for the current scan
-                self.x_auto_ddl = False
-                self.x_use_reinit_ddl = True
-
-        # setup some convienience member variables
-        self.dwell = e_roi[DWELL]
-        self.numX = int(self.x_roi[NPOINTS])
-        self.numY = int(self.y_roi[NPOINTS])
-        self.numZX = int(self.zx_roi[NPOINTS])
-        self.numZY = int(self.zy_roi[NPOINTS])
-        self.numEPU = len(self.setpointsPol)
-        self.numE = int(self.sp_db[SPDB_EV_NPOINTS])
-
-        self.numSPIDS = len(self.sp_rois)
-
-        if (self.scan_type != scan_types.SAMPLE_POINT_SPECTRA):
+        if (self.scan_type != scan_types.SAMPLE_POINT_SPECTRUM):
             self.numImages = int(self.sp_db[SPDB_EV_NPOINTS] * self.numEPU * self.numSPIDS)
         else:
             # is a sample point spectrum
@@ -516,6 +516,8 @@ class PatternGenWithE712WavegenScanClass(BaseScan):
         # make sure OSA XY is in its center
         self.move_osaxy_to_its_center()
 
+        self.seq_map_dct = self.generate_2d_seq_image_map(1, self.y_roi[NPOINTS], self.x_roi[NPOINTS], lxl=self.is_lxl)
+
         # THIS must be the last call
         self.finish_setup()
 
@@ -548,8 +550,8 @@ class PatternGenWithE712WavegenScanClass(BaseScan):
 
         """
         ### VERY IMPORTANT the current PID tune for ZX is based on a velo (SLew Rate) of 1,000,000
-        self.main_obj.device(DNM_ZONEPLATE_X).put('velocity', 1000000.0)
-        self.main_obj.device(DNM_ZONEPLATE_Y).put('velocity', 1000000.0)
+        self.main_obj.device(DNM_ZONEPLATE_X).set_velo(1000000.0)
+        self.main_obj.device(DNM_ZONEPLATE_Y).set_velo(1000000.0)
 
         self.set_config_devices_func(self.on_this_dev_cfg)
 
@@ -601,11 +603,11 @@ class PatternGenWithE712WavegenScanClass(BaseScan):
                 """
         ### VERY IMPORTANT the current PID tune for ZX is based on a velo (SLew Rate) of 1,000,000
         # must be FxFy
-        self.main_obj.device(DNM_SAMPLE_FINE_X).put('ServoPower', 1)
-        self.main_obj.device(DNM_SAMPLE_FINE_Y).put('ServoPower', 1)
+        self.main_obj.device(DNM_SAMPLE_FINE_X).set_power( 1)
+        self.main_obj.device(DNM_SAMPLE_FINE_Y).set_power( 1)
 
-        self.main_obj.device(DNM_SAMPLE_FINE_X).put('velocity', 100000.0)
-        self.main_obj.device(DNM_SAMPLE_FINE_Y).put('velocity', 100000.0)
+        self.main_obj.device(DNM_SAMPLE_FINE_X).set_velo(100000.0)
+        self.main_obj.device(DNM_SAMPLE_FINE_Y).set_velo(100000.0)
 
         #this scan is used with and without the goniometer so setupScan maybe None
         # if(self.setupScan):
@@ -663,11 +665,11 @@ class PatternGenWithE712WavegenScanClass(BaseScan):
                 """
         ### VERY IMPORTANT the current PID tune for ZX is based on a velo (SLew Rate) of 1,000,000
         # must be FxFy
-        self.main_obj.device(DNM_ZONEPLATE_X).put('ServoPower', 1)
-        self.main_obj.device(DNM_ZONEPLATE_Y).put('ServoPower', 1)
+        self.main_obj.device(DNM_ZONEPLATE_X).set_power( 1)
+        self.main_obj.device(DNM_ZONEPLATE_Y).set_power( 1)
 
-        self.main_obj.device(DNM_ZONEPLATE_X).put('velocity', 1000000.0)
-        self.main_obj.device(DNM_ZONEPLATE_Y).put('velocity', 1000000.0)
+        self.main_obj.device(DNM_ZONEPLATE_X).set_velo(1000000.0)
+        self.main_obj.device(DNM_ZONEPLATE_Y).set_velo(1000000.0)
 
         #this scan is used with and without the goniometer so setupScan maybe None
         # if(self.setupScan):

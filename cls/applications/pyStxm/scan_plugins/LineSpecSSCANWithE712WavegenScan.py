@@ -22,7 +22,7 @@ from cls.scan_engine.decorators import conditional_decorator
 
 
 from cls.applications.pyStxm import abs_path_to_ini_file
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 from cls.scanning.BaseScan import BaseScan, SIMULATE_SPEC_DATA
 from cls.scanning.SScanClass import SScanClass
 from cls.utils.prog_dict_utils import make_progress_dict
@@ -57,7 +57,7 @@ class LineSpecScanWithE712WavegenClass(BaseScan):
 
         :returns: None
         """
-        super(LineSpecScanWithE712WavegenClass, self).__init__('%sstxm'% MAIN_OBJ.get_sscan_prefix(),'LINESPEC', main_obj=MAIN_OBJ)
+        super(LineSpecScanWithE712WavegenClass, self).__init__(main_obj=MAIN_OBJ)
         self.e712_wg = MAIN_OBJ.device('E712ControlWidget')
         self.use_hdw_accel = True
         self.x_auto_ddl = True
@@ -476,7 +476,7 @@ class LineSpecScanWithE712WavegenClass(BaseScan):
         self.numX = self.numE
         self.numY = self.x_roi[NPOINTS]
         
-        if(self.scan_type ==  scan_types.SAMPLE_LINE_SPECTRA):
+        if(self.scan_type ==  scan_types.SAMPLE_LINE_SPECTRUM):
             self.is_line_spec = True    
         else:
             _logger.error('LineSpecSSCAN: unable to determine scan type [%d]' % self.scan_type)
@@ -501,6 +501,8 @@ class LineSpecScanWithE712WavegenClass(BaseScan):
                 self.configure_for_samplefxfy_fine_scan_hdw_accel(dct)
 
         self.config_hdr_datarecorder(self.stack)
+
+        self.seq_map_dct = self.generate_ev_roi_seq_image_map(self.e_rois, self.x_roi[NPOINTS])
 
         #THIS must be the last call
         self.finish_setup()
@@ -527,11 +529,11 @@ class LineSpecScanWithE712WavegenClass(BaseScan):
                 """
         ### VERY IMPORTANT the current PID tune for ZX is based on a velo (SLew Rate) of 1,000,000
         # must be FxFy
-        self.main_obj.device(DNM_ZONEPLATE_X).put('ServoPower', 1)
-        self.main_obj.device(DNM_ZONEPLATE_Y).put('ServoPower', 1)
+        self.main_obj.device(DNM_ZONEPLATE_X).set_power( 1)
+        self.main_obj.device(DNM_ZONEPLATE_Y).set_power( 1)
 
-        self.main_obj.device(DNM_ZONEPLATE_X).put('velocity', 1000000.0)
-        self.main_obj.device(DNM_ZONEPLATE_Y).put('velocity', 1000000.0)
+        self.main_obj.device(DNM_ZONEPLATE_X).set_velo(1000000.0)
+        self.main_obj.device(DNM_ZONEPLATE_Y).set_velo(1000000.0)
 
         #this scan is used with and without the goniometer so setupScan maybe None
         self.set_config_devices_func(self.on_this_dev_cfg)

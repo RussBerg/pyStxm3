@@ -126,6 +126,7 @@ class Dialog(QtWidgets.QDialog):
 		directory = QtWidgets.QFileDialog.getExistingDirectory(self,
 				title,
 				init_dir, options)
+
 		return str(directory)
 		#if directory:
 		#	self.directoryLabel.setText(directory)

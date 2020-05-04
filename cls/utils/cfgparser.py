@@ -74,10 +74,10 @@ class ConfigClass(object):
     # 				f.close()
     #
 
-    # 		self.cfgDict ['DEFAULT'] = self.config.defaults()
+    # 		self.cfgDict ['MAIN'] = self.config.defaults()
     # 		self.sections = self.config.sections()
     # for section in self.sections:
-    #	if(section.find('DEFAULT') == -1):
+    #	if(section.find('MAIN') == -1):
     #		for opt in self.config.options(section):
     #			self.cfgDict[section][opt] = self.get_value(section, opt)
 
@@ -92,12 +92,12 @@ class ConfigClass(object):
                 f = open(self.filename, 'w+')
                 f.write('')
                 f.close()
-        self.cfgDict['DEFAULT'] = self.config.defaults()
+        self.cfgDict['MAIN'] = self.config.defaults()
         self.sections = self.config.sections()
 
     def get_value(self, section, option):
         # use the configParser that will perform substitutions 0, 1 is for raw
-        if ((section == 'DEFAULT') or self.config.has_section(section)):
+        if ((section == 'MAIN') or self.config.has_section(section)):
 
             if (self.config.has_option(section, option)):
 
@@ -112,6 +112,23 @@ class ConfigClass(object):
         # print self.config.get(section, item, 0)
         return (val)
 
+    def get_all(self):
+        '''
+        return the configuration as a dict
+        :return:
+        '''
+        dct = {}
+        #print('config has:')
+        sections = self.config.sections()
+        for sec in sections:
+            #print('\t [%s] = ' % (sec))
+            dct[sec] = {}
+            for opt in self.config.options(sec):
+                v = self.config.get(sec, opt)
+                #print('\t\t [%s] = %s' % (opt,v))
+                dct[sec][opt] = v
+        return(dct)
+
     def set_value(self, section, option, value):
         # use the configParser that will perform substitutions 0, 1 is for raw
         self.config.set(section, option, value)
@@ -119,7 +136,7 @@ class ConfigClass(object):
     # print self.config.set(section, item, value)
 
     def get_bool_value(self, section, option):
-        if ((section == 'DEFAULT') or self.config.has_section(section)):
+        if ((section == 'MAIN') or self.config.has_section(section)):
             if (self.config.has_option(section, option)):
                 val = self.config.getboolean(section, option)
             else:
@@ -157,43 +174,20 @@ class ConfigClass(object):
         config.read(fname)
 
         # Set the third, optional argument of get to 1 if you wish to use raw mode.
-        print(config.get('DEFAULT', 'top', 0))
-        print(config.get('DEFAULT', 'appDir', 0))
-        print(config.get('DEFAULT', 'dataDir', 0))
-        print(config.get('DEFAULT', 'uiDir', 0))
-        print(config.get('DEFAULT', 'cfgDir', 0))
-        print(config.get('DEFAULT', 'autoSaveData', 0))
-        print(config.get('ScanCfgFiles', 'scan0', 0))
-        print(config.get('ScanCfgFiles', 'scan1', 0))
-        print(config.get('ScanCfgFiles', 'scan2', 0))
-        print(config.get('ScanCfgFiles', 'scan3', 0))
+        print(config.get('MAIN', 'top', 0))
+        print(config.get('MAIN', 'appDir', 0))
+        print(config.get('MAIN', 'dataDir', 0))
+        print(config.get('MAIN', 'uiDir', 0))
+        print(config.get('MAIN', 'cfgDir', 0))
+        print(config.get('MAIN', 'autoSaveData', 0))
 
-
-# [Directories]
-# top = /home/sylmand/pyWScanner
-# appDir = %(top)/app
-# dataDir = %(top)/data
-# uiDir = %(appDir)/ui
-# cfgDir = %(top)/cfgs
-#
-# [Defaults]
-# autoSaveData = true
-#
-#
-#
-# [ScanCfgFiles]
-# scan0 = %(cfgDir)/HEntContBiDirV123.cfg
-# scan1 = %(cfgDir)/VEntContBiDirV123.cfg
-# scan2 = %(cfgDir)/HExitContBiDirV123.cfg
-# scan3 = %(cfgDir)/VExitContBiDirV123.cfg
 
 
 if __name__ == "__main__":
-    # app = QtWidgets.QApplication(sys.argv)
-    cfgObj = ConfigClass(r'/home/bergr/python/python26Workspace/sylmandWirescanViewer/src/wirescan.ini')
-    print(cfgObj.get_value('DEFAULT', 'uiDir'))
-# window._gen_cfg_file()
-# window._read_cfg_file('example.cfg')
-# window.show()
 
-# sys.exit(app.exec_())
+    cfgObj = ConfigClass(r'C:\controls\github\pyStxm3\cls\applications\pyStxm\app.ini')
+    #print(cfgObj.get_value('MAIN', 'uiDir'))
+
+    cfg = cfgObj.get_all()
+    print(cfg)
+

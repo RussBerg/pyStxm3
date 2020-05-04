@@ -9,7 +9,7 @@ import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 from cycler import cycler
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 from bcm.devices.device_names import *
 from bcm.devices import E712WGDevice
 from cls.scanning.BaseScan import BaseScan, MODE_SCAN_START
@@ -42,7 +42,7 @@ class FocusE712ScanClass(BaseScan):
 
         :returns: None
         """
-        super(FocusE712ScanClass, self).__init__('%sstxm' % MAIN_OBJ.get_sscan_prefix(), 'FOCUSE712WG', main_obj=main_obj)
+        super(FocusE712ScanClass, self).__init__(main_obj=main_obj)
         self.x_auto_ddl = True
         self.x_use_reinit_ddl = False
         self.use_hdw_accel = True
@@ -63,7 +63,7 @@ class FocusE712ScanClass(BaseScan):
         if(self.is_pxp):
             self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE, x=DNM_SAMPLE_X,
                                                     scan_type=self.scan_type, bi_dir=self._bi_dir)
-            self._emitter_cb.set_row_col(rows=self.zz_roi[NPOINTS], cols=self.x_roi[NPOINTS])
+            self._emitter_cb.set_row_col(rows=self.zz_roi[NPOINTS], cols=self.x_roi[NPOINTS], seq_dct=self.seq_map_dct)
             self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
             self._emitter_cb.new_plot_data.connect(func)
         else:
@@ -271,7 +271,7 @@ class FocusE712ScanClass(BaseScan):
             finemtry = self.main_obj.get_sample_fine_positioner('Y')
             mtr_z = self.main_obj.device(DNM_ZONEPLATE_Z_BASE)
             #make sure the servo for zpz is on
-            mtr_z.put('ServoPower', 1)
+            mtr_z.set_power( 1)
 
             shutter = self.main_obj.device(DNM_SHUTTER)
             if (self.is_zp_scan):
@@ -329,63 +329,9 @@ class FocusE712ScanClass(BaseScan):
         # call the base class configure so that all member vars can be initialized
         super(FocusE712ScanClass, self).configure(wdg_com, sp_id=sp_id, line=line)
 
-        # self.e712_wg = MAIN_OBJ.device('E712ControlWidget')
-        # self.set_spatial_id(sp_id)
-        # self.wdg_com = wdg_com
-        # self.sp_rois = wdg_com[WDGCOM_SPATIAL_ROIS]
-        # self.sp_ids = list(self.sp_rois.keys())
-        # self.sp_db = self.sp_rois[sp_id]
-        # self.scan_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_TYPE)
-        # self.scan_sub_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE)
-        # self.sample_positioning_mode = MAIN_OBJ.get_sample_positioning_mode()
-        # self.sample_fine_positioning_mode = MAIN_OBJ.get_fine_sample_positioning_mode()
-
-        # self.numX = dct_get(self.sp_db, SPDB_XNPOINTS)
-        # self.numY = dct_get(self.sp_db, SPDB_YNPOINTS)
-        # self.numZ = dct_get(self.sp_db, SPDB_ZNPOINTS)
-        # self.numZZ = dct_get(self.sp_db, SPDB_ZZNPOINTS)
-        # self.numE = dct_get(self.sp_db, SPDB_EV_NPOINTS)
-        # self.numSPIDS = len(self.sp_rois)
-        # self.e_rois = dct_get(self.sp_db, SPDB_EV_ROIS)
-        # e_roi = self.e_rois[0]
-        # self.numEPU = len(dct_get(e_roi, EPU_POL_PNTS))
-
         self.main_obj.device('e712_current_sp_id').put(sp_id)
 
-        # if (self.fine_sample_positioning_mode == sample_fine_positioning_modes.ZONEPLATE):
-        #     #ZONEPLATE
-        #     self.is_zp_scan = True
-        # else:
-        #     #SAMPLEFINE
-        #     self.is_zp_scan = False
-        #
-        # if (self.scan_sub_type == scan_sub_types.LINE_UNIDIR):
-        #     # LINE_UNIDIR
-        #     self.is_lxl = True
-        #     self.is_pxp = False
-        #     # self.pdlys = {}
-        # else:
-        #     # POINT_BY_POINT
-        #     self.is_pxp = True
-        #     self.is_lxl = False
-        #     # self.pdlys = {}
-
-        self.update_roi_member_vars(self.sp_db)
-
-        # self.ensure_left_to_right(self.x_roi)
-        # self.ensure_left_to_right(self.y_roi)
-        # self.ensure_left_to_right(self.z_roi)
-
         dct_put(self.sp_db, SPDB_RECT,(self.x_roi[START], self.zz_roi[START], self.x_roi[STOP], self.zz_roi[STOP]))
-
-        # also sets the scan res for x and y as well as turns off AutoDisable
-        #self.configure_sample_motors_for_scan()
-
-        # self.e_rois = dct_get(self.sp_db, SPDB_EV_ROIS)
-        # self.dwell = self.e_rois[0][DWELL]
-        # self.numZX = self.zx_roi[NPOINTS]
-        # self.numZY = self.zy_roi[NPOINTS]
-        # self.numZZ = self.zz_roi[NPOINTS]
 
         self.reset_evidx()
         self.reset_imgidx()
@@ -407,6 +353,8 @@ class FocusE712ScanClass(BaseScan):
             self.modify_config_for_hdw_accel()
 
         #if pxp it is done without hardware but scan_nd instead
+
+        self.seq_map_dct = self.generate_2d_seq_image_map(1, self.zz_roi[NPOINTS], self.x_roi[NPOINTS], lxl=self.is_lxl)
 
         # THIS must be the last call
         self.finish_setup()

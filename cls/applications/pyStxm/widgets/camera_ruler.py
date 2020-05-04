@@ -35,7 +35,7 @@ camruler_mode = Enum('LOCAL', 'SERVER', 'CLIENT')
 
 #read the ini file and load the default directories
 appConfig = ConfigClass(abs_path_to_ini_file)
-#widgetsUiDir = appConfig.get_value('DEFAULT', 'widgetsUiDir')
+#widgetsUiDir = appConfig.get_value('MAIN', 'widgetsUiDir')
 widgetsUiDir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ui')
 CAMERA_WAVEFORM_PV_STR = appConfig.get_value('CAMERA', 'camera_waveform')
 IMAGE_WIDTH = appConfig.get_value('CAMERA', 'frame_wd')

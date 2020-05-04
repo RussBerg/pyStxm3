@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import os
 from caproto.server import pvproperty, PVGroup, template_arg_parser, run
-
 from cls.utils.dirlist import dirlist
-from cls.utils.json_utils import json_to_dict, file_to_json
+from cls.utils.json_utils import json_to_dict, file_to_json, dict_to_json, json_to_file
 import json
+from epics import PV, dbr
+import time
+
 
 
 def get_populated_motor_dict(field_path=None):
@@ -22,31 +24,97 @@ def get_populated_motor_dict(field_path=None):
     return(dct)
 
 def get_rec_type(_type):
-    if(_type.find('ChannelType.ENUM') > -1):
-        return('bo')
-    elif(_type.find('ChannelType.DOUBLE') > -1):
-        return('ao')
-    elif (_type.find('ChannelType.FLOAT') > -1):
-        return ('ao')
-    elif(_type.find('ChannelType.LONG') > -1):
-        return ('ao')
-    elif (_type.find('ChannelType.INT') > -1):
-        return ('ao')
-    elif (_type.find('ChannelType.STRING') > -1):
+    '''
+    must return a valid EPICS record type such as ai, ao, stringin etc
+    _type:
+        STRING = 0
+        INT    = 1
+        SHORT  = 1
+        FLOAT  = 2
+        ENUM   = 3
+        CHAR   = 4
+        LONG   = 5
+        DOUBLE = 6
+
+        TIME_STRING  = 14
+        TIME_INT     = 15
+        TIME_SHORT   = 15
+        TIME_FLOAT   = 16
+        TIME_ENUM    = 17
+        TIME_CHAR    = 18
+        TIME_LONG    = 19
+        TIME_DOUBLE  = 20
+
+        CTRL_STRING  = 28
+        CTRL_INT     = 29
+        CTRL_SHORT   = 29
+        CTRL_FLOAT   = 30
+        CTRL_ENUM    = 31
+        CTRL_CHAR    = 32
+        CTRL_LONG    = 33
+        CTRL_DOUBLE  = 34
+
+    :param _type:
+    :return:
+    '''
+    # _flt = [dbr.FLOAT, dbr.TIME_FLOAT, dbr.CTRL_FLOAT]
+    # _dbl = [dbr.DOUBLE, dbr.TIME_DOUBLE, dbr.CTRL_DOUBLE]
+    # _int = [dbr.INT, dbr.TIME_INT, dbr.CTRL_INT]
+    # _shrt = [dbr.SHORT, dbr.TIME_SHORT, dbr.CTRL_SHORT]
+    # _lng = [dbr.LONG, dbr.TIME_LONG, dbr.CTRL_LONG]
+    # _str = [dbr.STRING, dbr.TIME_STRING, dbr.CTRL_STRING, \
+    #         dbr.CHAR, dbr.TIME_CHAR, dbr.CTRL_CHAR]
+    # _enum = [dbr.ENUM, dbr.TIME_ENUM, dbr.CTRL_ENUM]
+    _flt = [float]
+    _dbl = [float]
+    _int = [int]
+    _shrt = [int]
+    _lng = [int]
+    _str = [str]
+    _enum = [int]
+
+    if(_type in _flt):
+        return ('ai')
+    elif(_type in _dbl):
+        return ('ai')
+    elif(_type in _enum):
+        return ('bo')
+    elif (_type in _lng):
+        return ('ai')
+    elif (_type in _shrt):
+        return ('ai')
+    elif (_type in _str):
         return ('stringin')
-    elif (_type.find('ChannelType.CHAR') > -1):
-        return ('stringin')
-    elif (_type.find('DoubleMotor') > -1):
-        return ('motor')
     else:
         print('what is this type [%s]' %_type)
-        return('stringin')
+        return('ai')
+    #
+    # if(_type.find('ChannelType.ENUM') > -1):
+    #     return('bo')
+    # elif(_type.find('ChannelType.DOUBLE') > -1):
+    #     return('ao')
+    # elif (_type.find('ChannelType.FLOAT') > -1):
+    #     return ('ao')
+    # elif(_type.find('ChannelType.LONG') > -1):
+    #     return ('ao')
+    # elif (_type.find('ChannelType.INT') > -1):
+    #     return ('ao')
+    # elif (_type.find('ChannelType.STRING') > -1):
+    #     return ('stringin')
+    # elif (_type.find('ChannelType.CHAR') > -1):
+    #     return ('stringin')
+    # elif (_type.find('DoubleMotor') > -1):
+    #     return ('motor')
+    # else:
+    #     print('what is this type [%s]' %_type)
+    #     return('stringin')
 
 
 
 def ingest_pv_dict(inp):
-    type_map = {'float': float,'int': int, 'ChannelType.ENUM': int, 'ChannelType.DOUBLE': float ,'ChannelType.LONG': int, 'ChannelType.STRING': str, \
-                'ChannelType.CHAR': str, 'ChannelType.FLOAT': float, 'ChannelType.INT': int, 'DoubleMotor': float}
+    # type_map = {'float': float,'int': int, 'ChannelType.ENUM': int, 'ChannelType.DOUBLE': float ,'ChannelType.LONG': int, 'ChannelType.STRING': str, \
+    #             'ChannelType.CHAR': str, 'ChannelType.FLOAT': float, 'ChannelType.INT': int, 'DoubleMotor': float}
+    type_map = {'ai': float, 'bo': int, 'stringin': str}
 
     body = {}
     # for (i, (k, (dtype, rec_type))) in enumerate(inp.items()):
@@ -55,9 +123,12 @@ def ingest_pv_dict(inp):
     #                               mock_record=rec_type)
     i = 0
     for k, dct in inp.items():
-        #print('ingesting [%d][%s]' % (i, k))
+        print('ingesting [%d][%s]' % (i, k))
         if(type(dct) is dict):
             try:
+                if('type' not in dct.keys()):
+
+                    continue
                 rec_type = get_rec_type(dct['type'])
                 if(type(dct['value']) is str):
                     if(dct['value'].find('array[') > -1):
@@ -70,9 +141,13 @@ def ingest_pv_dict(inp):
                             else:
                                 val = type_map[dct['type']](dct['value'])
                         else:
-                            val = 0
+                            if(dct['type'].find('stringin') > -1):
+                                val = '0'
+                            else:
+                                val = 0
                 else:
-                    val = type_map[dct['type']](dct['value'])
+                    #val = type_map[dct['ftype']](dct['value'])
+                    val = dct['value']
 
 
                 if(k.find('SIM_IOC:m100.DESC') > -1):
@@ -81,6 +156,7 @@ def ingest_pv_dict(inp):
                                           dtype=type_map[dct['type']],
                                           mock_record=rec_type,
                                           value=val)
+                print('serving : [%s]' % (k))
                 i += 1
             except TypeError:
                 print('what is this type:' , dct['type'])
@@ -158,45 +234,52 @@ def load_json_files():
         f = open(_fpath, 'r')
         js = json.load(f)
         jdct = json_to_dict(js)
-        for fname in list(jdct.keys()):
-            for pv_nm in list(jdct[fname].keys()):
-                if (pv_nm in list(mtr_dct.keys())):
-                    dct['SIM_' + pv_nm] = jdct[fname][pv_nm]
-                    dct['SIM_' + pv_nm]['type'] = 'DoubleMotor'
-                    for fld in list(mtr_dct[pv_nm].keys()):
-                        if(len(fld) > 0):
-                            dct['SIM_' + pv_nm + '.%s' % fld] = {}
+        #fname = ffname.replace('.json', '')
+        for pv_nm in list(jdct.keys()):
+            if (pv_nm in list(mtr_dct.keys())):
+                dct[pv_nm] = jdct[pv_nm]
+                dct[pv_nm]['type'] = 'DoubleMotor'
+                for fld in list(mtr_dct[pv_nm].keys()):
+                    if(len(fld) > 0):
+                        dct['SIM_' + pv_nm + '.%s' % fld] = {}
 
-                            if (fld in none_str_flds):
-                                dct['SIM_' + pv_nm + '.%s' % fld]['type'] = 'ChannelType.STRING'
-                                mtr_dct[pv_nm][fld] = '0'
-                            elif(fld in str_flds):
-                                dct['SIM_' + pv_nm + '.%s' % fld]['type'] = 'ChannelType.STRING'
-                            else:
-                                dct['SIM_' + pv_nm + '.%s' % fld]['type'] = 'ChannelType.FLOAT'
+                        if (fld in none_str_flds):
+                            dct['SIM_' + pv_nm + '.%s' % fld]['type'] = 'ChannelType.STRING'
+                            mtr_dct[pv_nm][fld] = '0'
+                        elif(fld in str_flds):
+                            dct['SIM_' + pv_nm + '.%s' % fld]['type'] = 'ChannelType.STRING'
+                        else:
+                            dct['SIM_' + pv_nm + '.%s' % fld]['type'] = 'ChannelType.FLOAT'
 
-                            if (mtr_dct[pv_nm][fld] is ''):
-                                mtr_dct[pv_nm][fld] = '0'
+                        if (mtr_dct[pv_nm][fld] is ''):
+                            mtr_dct[pv_nm][fld] = '0'
 
-                            if(fld.find('MSTA') > -1):
-                                #force it to be a good status value
-                                dct['SIM_' + pv_nm + '.%s' % fld]['value'] = 18690
-                            else:
-                                dct['SIM_' + pv_nm + '.%s' % fld]['value'] = mtr_dct[pv_nm][fld]
-                            print('serving MOTOR: [%s], value=[%s]' % ('SIM_' + pv_nm + '.%s' % fld, dct['SIM_' + pv_nm + '.%s' % fld]['value']))
-                else:
-                    dct['SIM_' + pv_nm] = jdct[fname][pv_nm]
+                        if(fld.find('MSTA') > -1):
+                            #force it to be a good status value
+                            dct['SIM_' + pv_nm + '.%s' % fld]['value'] = 18690
+                        else:
+                            dct['SIM_' + pv_nm + '.%s' % fld]['value'] = mtr_dct[pv_nm][fld]
+                        print('serving MOTOR: [%s], value=[%s]' % (pv_nm + '.%s' % fld, dct['SIM_' + pv_nm + '.%s' % fld]['value']))
+            else:
+                if(len(jdct[pv_nm]) == 0):
+                    continue
+                if('value' not in jdct[pv_nm].keys()):
+                    jdct[pv_nm]['value'] = 0
+                jdct[pv_nm]['type'] = get_rec_type(type(jdct[pv_nm]['value']))
+                dct['SIM_' + pv_nm] = jdct[pv_nm]
 
-                #fout.write('caput %s %s\n' % ('SIM_' + pv_nm, jdct[fname][pv_nm]['value']))
+
+            #fout.write('caput %s %s\n' % (pv_nm, jdct[fname][pv_nm]['value']))
     #fout.close()
     return(dct)
 
 
 
 
-
-
 if __name__ == '__main__':
+    from bcm.sim.caproto.txt_to_json import rd_txt_gen_json_files
+    #rd_txt_gen_json_files()
+
     parser, split_args = template_arg_parser(
         default_prefix='',
         desc='An IOC that servers a bucket of disconnected PVs.')
@@ -216,3 +299,5 @@ if __name__ == '__main__':
 
     ioc = klass(**ioc_options)
     run(ioc.pvdb, **run_options)
+
+

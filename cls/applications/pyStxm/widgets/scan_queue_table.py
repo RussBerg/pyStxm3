@@ -712,7 +712,7 @@ class ScanQueueTableWidget(QtWidgets.QWidget):
             val = len(choices)
         #self.table_view.set_pixmap(0, val)
         if(val == 2):
-            print()
+            print('set_pixmap 715')
         scan_q_model_class.set_data(row, self.pmap_col, val)
         # always change focus off of widget
         #self.dirLabel.setFocus()
@@ -830,7 +830,7 @@ class ScanQueueTableWidget(QtWidgets.QWidget):
 
 
         if(len(spdb_lst) > 1):
-            if (scan_type == scan_types.TOMOGRAPHY_SCAN):
+            if (scan_type == scan_types.TOMOGRAPHY):
                 scan_queue_list = []
                 for i in range(len(spdb_lst)):
                     sp = spdb_lst[i]
@@ -876,19 +876,19 @@ class ScanQueueTableWidget(QtWidgets.QWidget):
         elif(scan_type == scan_types.SAMPLE_IMAGE_STACK):
             self.set_delegates_multi_ev()
 
-        elif(scan_type == scan_types.TOMOGRAPHY_SCAN):
+        elif(scan_type == scan_types.TOMOGRAPHY):
             self.set_delegates_tomo()
 
-        elif(scan_type == scan_types.SAMPLE_POINT_SPECTRA):
+        elif(scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
             self.set_delegates_point_spec()
 
-        elif(scan_type == scan_types.COARSE_IMAGE_SCAN):
+        elif(scan_type == scan_types.COARSE_IMAGE):
             self.set_delegates_ev()
 
-        elif (scan_type == scan_types.COARSE_GONI_SCAN):
+        elif (scan_type == scan_types.COARSE_GONI):
             self.set_delegates_ev()
 
-        elif(scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+        elif(scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
             self.set_delegates_line_spec()
 
         elif(scan_type == scan_types.GENERIC_SCAN):
@@ -934,19 +934,19 @@ class ScanQueueTableWidget(QtWidgets.QWidget):
         elif(scan_type == scan_types.SAMPLE_IMAGE_STACK):
             rows = self.make_multi_ev_row_entries(sp_db, stack_dir=True)
 
-        elif (scan_type == scan_types.TOMOGRAPHY_SCAN):
+        elif (scan_type == scan_types.TOMOGRAPHY):
             rows = self.make_multi_ev_with_theta_row_entries(sp_db, stack_dir=True)
 
-        elif(scan_type == scan_types.COARSE_IMAGE_SCAN):
+        elif(scan_type == scan_types.COARSE_IMAGE):
             rows = self.make_single_ev_row_entries(sp_db)
 
-        elif (scan_type == scan_types.COARSE_GONI_SCAN):
+        elif (scan_type == scan_types.COARSE_GONI):
             rows = self.make_single_ev_row_entries(sp_db)
 
-        elif(scan_type == scan_types.SAMPLE_POINT_SPECTRA):
+        elif(scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
             rows = self.make_point_scan_row_entries(sp_db)
 
-        elif(scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+        elif(scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
             rows = self.make_single_ev_row_entries(sp_db, show_ev_range=True)
             #return None, scan_type
 

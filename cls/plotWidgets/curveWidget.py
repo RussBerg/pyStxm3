@@ -140,7 +140,7 @@ def dump_curve_styles():
     for s in CURVESTYLE_CHOICES:
         print('Curve styles [%d] = %s' % (i, s[0])) 
         i += 1
-    print()
+    
 
 def dump_curve_types():
     """
@@ -153,7 +153,7 @@ def dump_curve_types():
     for s in CURVETYPE_CHOICES:
         print('Curve types [%d] = %s' % (i, s[0])) 
         i += 1
-    print()
+    
  
 def dump_line_styles():
     """
@@ -170,7 +170,7 @@ def dump_line_styles():
     for s in LINESTYLE_CHOICES:
         print('Line styles [%d] = %s' % (i, s[0])) 
         i += 1
-    print()
+   
 
 def dump_marker_choices():
     """
@@ -193,7 +193,7 @@ def dump_marker_choices():
     for s in MARKER_CHOICES:
         print('Marker Choices [%d] = %s' % (i, s[0])) 
         i += 1
-    print()
+    
     
 def dump_marker_style_choices():
     """
@@ -219,7 +219,7 @@ def dump_marker_style_choices():
     for s in MARKERSTYLE_CHOICES:
         print('Marker Style Choices [%d] = %s' % (i, s[0])) 
         i += 1
-    print()
+    
     
 def dump_brushstyle_choices():
     """
@@ -234,7 +234,7 @@ def dump_brushstyle_choices():
     for s in BRUSHSTYLE_CHOICES:
         print('Brush style Choices [%d] = %s' % (i, s[0])) 
         i += 1
-    print()
+    
         
 def dump_style_options(self):
     self.dump_curve_styles()
@@ -495,7 +495,7 @@ class CurveViewerWidget(CurveDialog):
                 self.openfile(dct['file'], scan_type=dct['scan_type_num'])
                 self.blockSignals(False)
             elif mimeData.hasUrls():
-                #self.setText("\n".join([url.path() for url in mimeData.urls()])){"polarity": "CircLeft", "angle": 0.0, "center": [-419.172, 5624.301], "energy": 1029.0, "step": [110.86591666666668, 114.90791666666667], "scan_type": "coarse_image_scan Line_Unidir", "range": [2660.782, 2757.79], "file": "S:\\STXM-data\\Cryo-STXM\\2017\\guest\\1207\\C171207014.hdf5", "offset": 0.0, "npoints": [25, 25], "dwell": 30.408937142857148, "scan_panel_idx": 8}
+                #self.setText("\n".join([url.path() for url in mimeData.urls()])){"polarity": "CircLeft", "angle": 0.0, "center": [-419.172, 5624.301], "energy": 1029.0, "step": [110.86591666666668, 114.90791666666667], "scan_type": "coarse_image Line_Unidir", "range": [2660.782, 2757.79], "file": "S:\\STXM-data\\Cryo-STXM\\2017\\guest\\1207\\C171207014.hdf5", "offset": 0.0, "npoints": [25, 25], "dwell": 30.408937142857148, "scan_panel_idx": 8}
                 #print 'dropEvent: mime data has URLs'
                 pass
             else:
@@ -760,7 +760,7 @@ class CurveViewerWidget(CurveDialog):
     def install_data_io_handler(self, data_io_hndlr):
         self.data_io = data_io_hndlr
     
-    def openfile(self, fname, scan_type=scan_types.SAMPLE_POINT_SPECTRA):
+    def openfile(self, fname, scan_type=scan_types.SAMPLE_POINT_SPECTRUM):
         """
         openfile(): currently only supports 1 counter per entry
 

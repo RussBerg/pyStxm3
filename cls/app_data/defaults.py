@@ -67,7 +67,7 @@ def key_val_to_dct(lines):
     return(dct)
 
 
-def get_style(styledir):
+def get_style(styledir, skip_lst=[]):
     baseDir = os.path.join(base_style_sheet_dir,styledir)
     sheets = dirlist(baseDir , '.qss', fname = None)
     master_colors = dirlist(baseDir , 'master_color_def.txt', fname = None)
@@ -83,6 +83,8 @@ def get_style(styledir):
         
     ssheet_str = ''
     for f in sheets:
+        if(f in skip_lst):
+            continue
         #sshFile=baseDir + f
         sshFile = os.path.join(baseDir, f)
         fh = open(sshFile,"r")
@@ -181,7 +183,11 @@ class Defaults(QtCore.QObject):
         super(Defaults, self).__init__()
         self.defdct = {}
         self.fname = os.path.join(defaultsDir, fname)
-        self.new = new
+        if(os.path.exists(self.fname)):
+            new = False
+        else:
+            new = True
+
         self.init_defaults(fname, new)
             
     

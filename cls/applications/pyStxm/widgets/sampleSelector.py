@@ -21,14 +21,14 @@ from cls.applications.pyStxm import abs_path_to_ini_file
 from cls.utils.cfgparser import ConfigClass
 from bcm.epics_devices_MOVED.motor_v2 import Motor_V2
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 
 #read the ini file and load the default directories
 appConfig = ConfigClass(abs_path_to_ini_file)
-uiDir = appConfig.get_value('DEFAULT', 'uiDir')
-dataDir = appConfig.get_value('DEFAULT', 'dataDir')
-mtrcfg = appConfig.get_value('DEFAULT', 'mtrcfg')
-SLASH = appConfig.get_value('DEFAULT', 'dirslash')
+uiDir = appConfig.get_value('MAIN', 'uiDir')
+dataDir = appConfig.get_value('MAIN', 'dataDir')
+mtrcfg = appConfig.get_value('MAIN', 'mtrcfg')
+SLASH = appConfig.get_value('MAIN', 'dirslash')
 
 _sample_positions = {}
 

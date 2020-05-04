@@ -37,7 +37,8 @@ class OphydQt_AIDevice(ophyd.Device):
 
     def trigger(self):
         st = DeviceStatus(self)
-        st.done = True
+        #st.done = True
+        st._finished()
         st.success = True
         return st
 

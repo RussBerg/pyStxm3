@@ -32,11 +32,11 @@ _logger = get_module_logger(__name__)
 
 #read the ini file and load the default directories
 appConfig = ConfigClass(r'./striptool.ini')
-uiDir = appConfig.get_value('DEFAULT', 'uiDir')
-dataDir = appConfig.get_value('DEFAULT', 'dataDir')
-cfgDir = appConfig.get_value('DEFAULT', 'cfgDir')
+uiDir = appConfig.get_value('MAIN', 'uiDir')
+dataDir = appConfig.get_value('MAIN', 'dataDir')
+cfgDir = appConfig.get_value('MAIN', 'cfgDir')
 pvList = appConfig.get_value('PV', 'pvList')
-SLASH = appConfig.get_value('DEFAULT', 'dirslash')
+SLASH = appConfig.get_value('MAIN', 'dirslash')
 
 
 from guidata.dataset.datatypes import DataSet

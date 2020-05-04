@@ -588,8 +588,9 @@ class ImageWidget(ImageDialog):
         self.param_cross_marker.attach(self.plot)
 
     def update_contrast(self, img_idx=0):
-        if(self.item[img_idx] is not None):
-            self._select_this_item(self.item[img_idx], False)
+        if(len(self.item) > 0):
+            if(self.item[img_idx] is not None):
+                self._select_this_item(self.item[img_idx], False)
 
     def set_enable_drop_events(self, en):
         self.drop_enabled = en
@@ -628,7 +629,7 @@ class ImageWidget(ImageDialog):
                 self.openfile([dct['file']], addimages=True, dropped=True)
                 self.blockSignals(False)
             elif mimeData.hasUrls():
-                #self.setText("\n{"energy": 1078.7, "xpositioner": "GoniX", "file": "S:\\STXM-data\\Cryo-STXM\\2019\\guest\\0516\\C190516001.hdf5", "estop": 1078.7, "estart": 1078.7, "angle": 0.0, "ypositioner": "GoniY", "polarization": "CircLeft", "start": [356.531656880734, -102.98874617737003], "dwell": 1.0, "stop": [406.531656880734, -52.98874617737003], "scan_type": "sample_image Line_Unidir", "step": [0.33557046979865773, 0.33557046979865773], "goni_theta_cntr": 0.0, "offset": 0.0, "date": "2019-05-16", "center": [374.1234, -72.66], "scan_type_num": 6, "range": [50.0, 50.0], "end_time": "09:10:55", "npoints": [150, 150], "scan_panel_idx": 5, "goni_z_cntr": 200.00643000000002}".join([url.path() for url in mimeData.urls()])){"polarity": "CircLeft", "angle": 0.0, "center": [-419.172, 5624.301], "energy": 1029.0, "step": [110.86591666666668, 114.90791666666667], "scan_type": "coarse_image_scan Line_Unidir", "range": [2660.782, 2757.79], "file": "S:\\STXM-data\\Cryo-STXM\\2017\\guest\\1207\\C171207014.hdf5", "offset": 0.0, "npoints": [25, 25], "dwell": 30.408937142857148, "scan_panel_idx": 8}
+                #self.setText("\n{"energy": 1078.7, "xpositioner": "GoniX", "file": "S:\\STXM-data\\Cryo-STXM\\2019\\guest\\0516\\C190516001.hdf5", "estop": 1078.7, "estart": 1078.7, "angle": 0.0, "ypositioner": "GoniY", "polarization": "CircLeft", "start": [356.531656880734, -102.98874617737003], "dwell": 1.0, "stop": [406.531656880734, -52.98874617737003], "scan_type": "sample_image Line_Unidir", "step": [0.33557046979865773, 0.33557046979865773], "goni_theta_cntr": 0.0, "offset": 0.0, "date": "2019-05-16", "center": [374.1234, -72.66], "scan_type_num": 6, "range": [50.0, 50.0], "end_time": "09:10:55", "npoints": [150, 150], "scan_panel_idx": 5, "goni_z_cntr": 200.00643000000002}".join([url.path() for url in mimeData.urls()])){"polarity": "CircLeft", "angle": 0.0, "center": [-419.172, 5624.301], "energy": 1029.0, "step": [110.86591666666668, 114.90791666666667], "scan_type": "coarse_image Line_Unidir", "range": [2660.782, 2757.79], "file": "S:\\STXM-data\\Cryo-STXM\\2017\\guest\\1207\\C171207014.hdf5", "offset": 0.0, "npoints": [25, 25], "dwell": 30.408937142857148, "scan_panel_idx": 8}
                 #print 'dropEvent: mime data has URLs'
                 pass
             else:
@@ -668,17 +669,18 @@ class ImageWidget(ImageDialog):
                     #text = " ".join(["%02X" % ord(datum)
                     #                 for datum in mimeData.data(format)])
                     #text = " ".join(["%02X" % ord(datum) for datum in str(mimeData.data(format))])
-                    # if(str(mimeData.data(format)).find('8f') > -1):
-                    #     text = " ".join(["%02X" % ord(datum) for datum in str(mimeData.data(format))])
-                    # else:
-                    #     text = " ".join(["%02X" % ord(datum) for datum in str(mimeData.data(format), encoding='cp1252')])
-                    text = " ".join(["%02X" % ord(datum) for datum in str(mimeData.data(format), encoding='cp1252')])
+                    if(str(mimeData.data(format)).find('8f') > -1):
+                        text = " ".join(["%02X" % ord(datum) for datum in str(mimeData.data(format))])
+                    else:
+                        text = " ".join(["%02X" % ord(datum) for datum in str(mimeData.data(format), encoding='cp1252')])
+                    #print(" ".join(["%02X" % ord(datum) for datum in str(mimeData.data(format), encoding='cp1252')]))
+                    #text = " ".join(["%02X" % ord(datum) for datum in str(mimeData.data(format), encoding='cp1252')])
 
 
     def on_sig_axes_changed(self, obj):
         """
         on_sig_axes_changed(): description
-{"file": "S:\\STXM-data\\Cryo-STXM\\2019\\guest\\0613\\C190613003.hdf5", "scan_type_num": 10, "scan_type": "coarse_goni_scan Point_by_Point", "scan_panel_idx": 4, "energy": 815.4, "estart": 815.4, "estop": 815.4, "e_npnts": 1, "polarization": "CircLeft", "offset": 0.0, "angle": 0.0, "dwell": 1.0, "npoints": [5, 5], "date": "2019-06-13", "end_time": "09:48:44", "center": [800.0, 64.0], "range": [50.0, 50.0], "step": [10.0, 10.0], "start": [775.0, 39.0], "stop": [825.0, 89.0], "xpositioner": "GoniX", "ypositioner": "GoniY"}
+{"file": "S:\\STXM-data\\Cryo-STXM\\2019\\guest\\0613\\C190613003.hdf5", "scan_type_num": 10, "scan_type": "coarse_goni Point_by_Point", "scan_panel_idx": 4, "energy": 815.4, "estart": 815.4, "estop": 815.4, "e_npnts": 1, "polarization": "CircLeft", "offset": 0.0, "angle": 0.0, "dwell": 1.0, "npoints": [5, 5], "date": "2019-06-13", "end_time": "09:48:44", "center": [800.0, 64.0], "range": [50.0, 50.0], "step": [10.0, 10.0], "start": [775.0, 39.0], "stop": [825.0, 89.0], "xpositioner": "GoniX", "ypositioner": "GoniY"}
         :param obj: obj description
         :type obj: obj type
 
@@ -884,6 +886,37 @@ class ImageWidget(ImageDialog):
         #ap.TITLE = _("selecting")
 
 
+
+        self.set_default_tool(self.selectTool)
+        self.get_default_tool().activate()
+
+    def register_camera_tools(self):
+        """
+        register_camera_tools(): description
+
+        :returns: None
+        """
+        self.opentool = self.add_tool(
+            tools.clsOpenFileTool, formats=FILTER_STRING)
+        self.opentool.set_directory(self._data_dir)
+        self.opentool.openfile.connect(self.openfile)
+        self.selectTool = self.add_tool(tools.clsSelectTool)
+        self.selectTool.changed.connect(self.on_select_tool_changed)
+        self.add_tool(BasePlotMenuTool, "item")
+        self.add_tool(ColormapTool)
+        self.add_tool(SnapshotTool)
+
+        self.add_separator_tool()
+
+        self.add_tool(PrintTool)
+
+        self.addTool('tools.clsHorizMeasureTool')
+        self.add_separator_tool()
+        self.plot = self.get_plot()
+        clr_ac = self.get_clear_images_action()
+
+        # clr_ac.setChecked(self._auto_contrast)
+        add_actions(self.plot.manager.toolbar, [clr_ac])
 
         self.set_default_tool(self.selectTool)
         self.get_default_tool().activate()
@@ -1105,33 +1138,7 @@ class ImageWidget(ImageDialog):
 
         return(clr_ac)
 
-    def register_camera_tools(self):
-        """
-        register_camera_tools(): description
 
-        :returns: None
-        """
-                #self.selectTool = self.add_tool(SelectTool)
-        self.selectTool = self.add_tool(tools.clsSelectTool)
-        self.selectTool.changed.connect(self.on_select_tool_changed)
-        self.add_tool(BasePlotMenuTool, "item")
-        self.add_tool(ColormapTool)
-        self.add_tool(SnapshotTool)
-
-        self.add_separator_tool()
-
-        self.add_tool(PrintTool)
-
-        self.addTool('tools.clsHorizMeasureTool')
-        self.add_separator_tool()
-        self.plot = self.get_plot()
-        clr_ac = self.get_clear_images_action()
-
-        # clr_ac.setChecked(self._auto_contrast)
-        add_actions(self.plot.manager.toolbar, [clr_ac])
-
-        self.set_default_tool(self.selectTool)
-        self.get_default_tool().activate()
 
     def enable_beam_spot(self, chkd):
         if(chkd):
@@ -1264,6 +1271,9 @@ class ImageWidget(ImageDialog):
                 tools.clsSegmentTool,
                 handle_final_shape_cb=self._handle_final_horiz_segment_shape)
             hls.TITLE = _("%s %d" % (types.spatial_type_prefix.SEG, self.segNum))
+
+        elif (toolstr == 'tools.clsPointTool'):
+            self.add_tool(tools.clsPointTool)
 
         elif(toolstr == 'tools.clsSquareAspectRatioTool'):
             #at = self.add_tool(tools.SquareAspectRatioTool, self.get_plot())
@@ -1734,7 +1744,9 @@ class ImageWidget(ImageDialog):
 
         :returns: None
         """
-
+        if(len(self.item) < 1):
+            _logger.debug('on_set_aspect_ratio: there are no  items in the items list, leaving')
+            return
         if(hasattr(self, 'data')):
             if(hasattr(self.data[img_idx], 'shape')):
                 h, w = self.data[img_idx].shape
@@ -4006,7 +4018,8 @@ class ImageWidget(ImageDialog):
             self.set_lock_aspect_ratio(True)
             plot.do_autoscale()
 
-    def show_data(self, img_idx, init=False, ):
+    def \
+            show_data(self, img_idx, init=False, ):
         """
         show_data(): description
 
@@ -5101,7 +5114,12 @@ class ImageWidget(ImageDialog):
         if(self.show_image_params):
             self.openfile_mod(fnames, addimages=True, counter='counter0', dropped=dropped)
         elif (len(fnames) is 1):
-            self.openfile_mod(fnames, addimages=True, counter='counter0', dropped=dropped)
+            if((len(self.item) is 0) and (fnames[0].find('.png') > -1)):
+                #most likely calib camera
+                self.openfile_mod(fnames, addimages=True, counter='counter0', dropped=dropped, alpha=1.0)
+            else:
+                #most likely adding a VLM image to several data images
+                self.openfile_mod(fnames, addimages=True, counter='counter0', dropped=dropped)
         else:
             num_fnames = len(fnames)
             self.progbar = self.get_file_loading_progbar(num_fnames)
@@ -5149,13 +5167,13 @@ class ImageWidget(ImageDialog):
         tpnts = npts[0] * npts[1]
         trngs = rngs[0] * rngs[1]
         score = float(tpnts / float(0.2 * trngs))
-        #print 'calc_z_score: %d = R(%.1f, %.1f) , P(%d, %d)' % (score, rngs[0], rngs[1], npts[0], npts[1])
+        #print('calc_z_score: %d = R(%.1f, %.1f) , P(%d, %d)' % (score, rngs[0], rngs[1], npts[0], npts[1]))
         return (score)
 
     # def record_image_z_dpeth(self, item, npts, rngs):
     #     self.add_images_z_depth_dct
 
-    def add_image_from_file(self, fname):
+    def add_image_from_file(self, fname, alpha=0.4):
         '''
         mainly used to load png and jpg files
         :param fname:
@@ -5169,7 +5187,8 @@ class ImageWidget(ImageDialog):
         plot = self.get_plot()
         #add it to the top of the plot items (z=0)
         #plot.add_item(image, z=0)
-        item = make.trimage(image.data, dx=.1, dy=.1, alpha=0.4, colormap='gist_gray')
+
+        item = make.trimage(image.data, dx=.1, dy=.1, alpha=alpha, colormap='gist_gray')
         item.set_selectable(True)
         item.set_movable(True)
         item.set_resizable(True)
@@ -5177,7 +5196,7 @@ class ImageWidget(ImageDialog):
         plot.add_item(item, z=MAX_IMAGE_Z-1)
 
 
-    def openfile_mod(self, fnames, addimages=True, counter='counter0', dropped=False):
+    def openfile_mod(self, fnames, addimages=True, counter='counter0', dropped=False, alpha=0.4):
         """
         openfile(): description
 
@@ -5203,11 +5222,11 @@ class ImageWidget(ImageDialog):
 
             if (fsuffix.find('jpg') > -1):
                 # trying to load a jpg
-                self.add_image_from_file(fname)
+                self.add_image_from_file(fname, alpha)
                 continue
             elif (fsuffix.find('png') > -1):
                 # trying to load a png
-                self.add_image_from_file(fname)
+                self.add_image_from_file(fname, alpha)
                 continue
 
             if (not isinstance(self.data_io, DataIo)):
@@ -5228,6 +5247,8 @@ class ImageWidget(ImageDialog):
             scan_type = entry_dct[ekey]['WDG_COM']['SPATIAL_ROIS'][sp_id[0]]['SCAN_PLUGIN']['SCAN_TYPE']
             rng_x = entry_dct[ekey]['WDG_COM']['SPATIAL_ROIS'][sp_id[0]]['X'][RANGE]
             rng_y = entry_dct[ekey]['WDG_COM']['SPATIAL_ROIS'][sp_id[0]]['Y'][RANGE]
+            npts_x = entry_dct[ekey]['WDG_COM']['SPATIAL_ROIS'][sp_id[0]]['X'][NPOINTS]
+            npts_y = entry_dct[ekey]['WDG_COM']['SPATIAL_ROIS'][sp_id[0]]['Y'][NPOINTS]
 
             idx += 1
             iidx += 1
@@ -5246,6 +5267,8 @@ class ImageWidget(ImageDialog):
             else:
                 item_z = rng_y
 
+            item_z = self.calc_z_score((npts_x,npts_y),(rng_x,rng_y))
+
             if(not (scan_type is types.scan_types.SAMPLE_IMAGE) and (num_files > 1)):
                 continue
 
@@ -5263,7 +5286,7 @@ class ImageWidget(ImageDialog):
             else:
 
                 wdg_com = data_io.get_wdg_com_from_entry(entry_dct, ekey)
-                if(scan_type is not types.scan_types.SAMPLE_LINE_SPECTRA):
+                if(scan_type is not types.scan_types.SAMPLE_LINE_SPECTRUM):
                     self.load_image_data(fname, wdg_com, data, addimages, flipud=False, name_lbl=False, item_z=item_z, show=False, dropped=dropped)
                 else:
                     self.do_load_linespec_file(fname, wdg_com, data, dropped=True)
@@ -5419,7 +5442,7 @@ class ImageWidget(ImageDialog):
             wdg_com[WDGCOM_CMND] = widget_com_cmnd_types.LOAD_SCAN
             sp_db[WDGCOM_CMND] = widget_com_cmnd_types.LOAD_SCAN
 
-            if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != types.scan_types.SAMPLE_POINT_SPECTRA):
+            if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != types.scan_types.SAMPLE_POINT_SPECTRUM):
                 # self.on_set_aspect_ratio(True)
                 pass
 
@@ -5728,7 +5751,7 @@ class ImageWidget(ImageDialog):
         """
         self.tstTimer.stop()
 
-    def determine_num_images(self, ev_npts_stpts_lst):
+    def determine_num_images(self, ev_npts_stpts_lst, num_spatial_pnts):
         '''
         looking at the setpoints, determine how many images will be required dividing between the delta boundaries
         between the setpoints.
@@ -5747,10 +5770,13 @@ class ImageWidget(ImageDialog):
         dct['srtstop'] = {}
         ttl_npts = 0
         for npts, strt, stp in ev_npts_stpts_lst:
-            ttl_npts += npts
-            arr = np.ones(npts, dtype=int)
+            #ttl_npts += npts
+            ttl_npts += npts * num_spatial_pnts
+            #arr = np.ones(npts, dtype=int)
+            arr = np.ones(npts * num_spatial_pnts, dtype=int)
             arr *= img_idx
             l = l + list(arr)
+            #indiv_col_idx = indiv_col_idx + list(range(0, npts))
             indiv_col_idx = indiv_col_idx + list(range(0, npts))
             dct['srtstop'][img_idx] = (strt, stp)
             img_idx += 1
@@ -5791,7 +5817,7 @@ def get_percentage_of_qrect(qrect, p):
 #def make_default_stand_alone_stxm_imagewidget(parent=None, data_io=None, _type=None, sample_positioning_mode=types.sample_positioning_modes):
 def make_default_stand_alone_stxm_imagewidget(parent=None, data_io=None, _type=None, bndg_rect=None):
     #from cls.applications.pyStxm.widgets.beam_spot_fbk import BeamSpotFeedbackObjStandAlone
-    #from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+    from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 
     # def on_new_beamspot_fbk(cx, cy):
     #     '''
@@ -5805,8 +5831,8 @@ def make_default_stand_alone_stxm_imagewidget(parent=None, data_io=None, _type=N
     #     win.move_beam_spot(cx, cy)
     from cls.utils.cfgparser import ConfigClass
     from cls.applications.pyStxm import abs_path_to_ini_file
-    appConfig = ConfigClass(abs_path_to_ini_file)
-    scan_mode = appConfig.get_value('DEFAULT', 'scanning_mode')
+    #appConfig = ConfigClass(abs_path_to_ini_file)
+    scan_mode = MAIN_OBJ.get_sample_scanning_mode_string()
     sample_pos_mode = types.scanning_mode.get_value_by_name(scan_mode)
 
     if(data_io is None):
@@ -5879,7 +5905,9 @@ def make_default_stand_alone_stxm_imagewidget(parent=None, data_io=None, _type=N
     win.enable_tool_by_name('tools.clsOpenFileTool', True)
     win.addTool('tools.clsHorizMeasureTool')
     win.addTool('tools.clsMeasureTool')
+    win.addTool('tools.clsPointTool')
     win.enable_tool_by_name('tools.clsSquareAspectRatioTool', True)
+    win.enable_tool_by_name('tools.clsPointTool', True)
 
     win.addTool('DummySeparatorTool')
     win.register_samplehldr_tool(sample_pos_mode=sample_pos_mode)
@@ -6065,7 +6093,7 @@ def go():
     app = guidata.qapplication()
     sys.excepthook = excepthook
 
-    qobj = qobj_OBJ()
+    #qobj = qobj_OBJ()
 
     # win = make_default_stand_alone_stxm_imagewidget()
     # win = make_default_stand_alone_stxm_imagewidget(_type='analyze')

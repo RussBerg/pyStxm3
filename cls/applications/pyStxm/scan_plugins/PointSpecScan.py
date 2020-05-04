@@ -11,7 +11,7 @@ from bluesky.plans import scan
 import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 from bcm.devices.device_names import *
 from cls.scanning.BaseScan import BaseScan, SIMULATE_IMAGE_DATA, SIM_DATA
 from cls.scanning.SScanClass import SScanClass
@@ -26,6 +26,8 @@ from cls.utils.json_utils import dict_to_json
 from cls.scan_engine.bluesky.bluesky_defs import bs_dev_modes
 from cls.scan_engine.bluesky.test_gate import trig_src_types
 from cls.plotWidgets.utils import *
+
+USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_bool('USE_E712_HDW_ACCEL', 'BL_CFG_MAIN')
 
 _logger = get_module_logger(__name__)
 
@@ -166,6 +168,7 @@ class PointSpecScanClass(BaseScan):
 
         :returns: None
         """
+        super(PointSpecScanClass, self).configure(wdg_com, sp_id=sp_id, line=line, z_enabled=False)
         # use base configure x y motor scan
         self.stack = False
         self.is_point_spec = True
@@ -173,27 +176,28 @@ class PointSpecScanClass(BaseScan):
         self.is_lxl = False
         self.sp_id = sp_id
 
-        #self.main_obj.device('e712_current_sp_id').put(sp_id)
+        if(USE_E712_HDW_ACCEL):
+            self.main_obj.device('e712_current_sp_id').put(sp_id)
 
-        self.wdg_com = wdg_com
-        self.sp_rois = wdg_com[WDGCOM_SPATIAL_ROIS]
-        self.sp_db = self.sp_rois[sp_id]
-        self.set_spatial_id(sp_id)
-        self.scan_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_TYPE)
-        self.scan_sub_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE)
-        self.numX = int(dct_get(self.sp_db, SPDB_XNPOINTS))
-        self.numY = int(dct_get(self.sp_db, SPDB_YNPOINTS))
-        self.numZ = int(dct_get(self.sp_db, SPDB_ZNPOINTS))
-        self.numE = int(dct_get(self.sp_db, SPDB_EV_NPOINTS))
-        self.numSPIDS = len(self.sp_rois)
-        self.e_rois = dct_get(self.sp_db, SPDB_EV_ROIS)
-        self.ev_setpoints = dct_get(wdg_com, SPDB_SINGLE_LST_EV_ROIS)
-        e_roi = self.e_rois[0]
-        self.numEPU = len(dct_get(e_roi, EPU_POL_PNTS))
-        if (self.numEPU < 1):
-            self.numEPU = 1
-
-        self.update_roi_member_vars(self.sp_db)
+        # self.wdg_com = wdg_com
+        # self.sp_rois = wdg_com[WDGCOM_SPATIAL_ROIS]
+        # self.sp_db = self.sp_rois[sp_id]
+        # self.set_spatial_id(sp_id)
+        # self.scan_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_TYPE)
+        # self.scan_sub_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE)
+        # self.numX = int(dct_get(self.sp_db, SPDB_XNPOINTS))
+        # self.numY = int(dct_get(self.sp_db, SPDB_YNPOINTS))
+        # self.numZ = int(dct_get(self.sp_db, SPDB_ZNPOINTS))
+        # self.numE = int(dct_get(self.sp_db, SPDB_EV_NPOINTS))
+        # self.numSPIDS = len(self.sp_rois)
+        # self.e_rois = dct_get(self.sp_db, SPDB_EV_ROIS)
+        # self.ev_setpoints = dct_get(wdg_com, SPDB_SINGLE_LST_EV_ROIS)
+        # e_roi = self.e_rois[0]
+        # self.numEPU = len(dct_get(e_roi, EPU_POL_PNTS))
+        # if (self.numEPU < 1):
+        #     self.numEPU = 1
+        #
+        # self.update_roi_member_vars(self.sp_db)
 
         dct_put(self.sp_db, SPDB_RECT, (self.x_roi[START], self.y_roi[START], self.x_roi[STOP], self.y_roi[STOP]))
 
@@ -210,6 +214,9 @@ class PointSpecScanClass(BaseScan):
         # self.stack_scan = False
         self.config_hdr_datarecorder(stack=self.stack)
         self.move_zpxy_to_its_center()
+
+        self.seq_map_dct = self.generate_2d_seq_image_map(1, self.y_roi[NPOINTS], self.x_roi[NPOINTS], lxl=False)
+
         # THIS must be the last call
         self.finish_setup()
 

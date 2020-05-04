@@ -9,6 +9,7 @@ class Mbbi(BaseObject):
 
 	def __init__(self, base_signal_name=None, write_pv=None, desc=None, egu='', cb=None, ret_kwarg='value', **cb_kwargs):
 		super(Mbbi, self).__init__(base_signal_name, **cb_kwargs)
+
 		self.attrs = ('VAL', 'INP', 'NAME', 'DESC',
 				 'ZRVL', 'ONVL', 'TWVL', 'THVL', 'FRVL', 'FVVL', 'SXVL', 'SVVL', 'EIVL', 'NIVL', 'TEVL', 'ELVL', 'TVVL',
 				 'TTVL', 'FTVL', 'FFVL',
@@ -23,6 +24,8 @@ class Mbbi(BaseObject):
 
 		self.main_dev = self.add_device(base_signal_name)
 		self.changed = self.main_dev.changed
+		self.on_connect = self.main_dev.on_connect
+		self.is_connected = self.main_dev.is_connected
 
 		for _attr in self.attrs:
 			#sig_name = self.base_signal_name + self._delim + '%s' % _attr

@@ -17,7 +17,7 @@ class AppConfigWidget(QtWidgets.QWidget):
         self.app_config = ConfigClass(abs_path_to_ini_file + '.ini')
         self.data = {}
         self.defs = {}
-        self.dflt_dct = self.app_def.cfgDict['DEFAULT']
+        self.dflt_dct = self.app_def.cfgDict['MAIN']
         self.sect_dct = self.app_def.config._sections
         self.tab_widget = QtWidgets.QTabWidget()
         #self.tab_widget.setTabPosition(QtWidgets.QTabWidget.West)
@@ -133,8 +133,8 @@ class AppConfigWidget(QtWidgets.QWidget):
             self.section_data = self.app_config.config._sections
             self.default_data = self.app_config.cfgDict
             tab = QtWidgets.QWidget()
-            self.tab_widget.addTab(tab, 'DEFAULT')
-            gridlayout = self.populate_tab('DEFAULT', self.default_data)
+            self.tab_widget.addTab(tab, 'MAIN')
+            gridlayout = self.populate_tab('MAIN', self.default_data)
             tab.setLayout(gridlayout)
             for k in list(self.section_data.keys()):
                 tab = QtWidgets.QWidget()

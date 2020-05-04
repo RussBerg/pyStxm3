@@ -46,6 +46,7 @@ elif(USE_OPHYD_EPICS):
     from .ophyd.motor import Motor_Qt
     from .ophyd.stxm_sample_mtr import sample_abstract_motor, sample_motor, e712_sample_motor
     from .ophyd.pi_e712 import E712WGDevice
+    from .ophyd.area_detectors import GreatEyesCCD, SimGreatEyesCCD
 
 elif(USE_OPHYD_SIM):
 

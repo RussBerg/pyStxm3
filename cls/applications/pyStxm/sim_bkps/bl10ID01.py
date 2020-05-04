@@ -101,7 +101,7 @@ class dev_config_sim_ambient(dev_config_base):
         self.devices['PRESETS']['MAX_SCAN_RANGE_Y'] = 200
         self.devices['PRESETS']['USE_E712_HDW_ACCEL'] = True
 
-        self.devices['PVS']['Energy_enable'].put(0)
+        self.devices['PVS'][DNM_ENERGY_ENABLE].put(0)
 
 
     def init_devices(self):
@@ -149,9 +149,9 @@ class dev_config_amb(dev_config_base):
         self.devices['PRESETS']['MAX_SCAN_RANGE_X'] = 350
         self.devices['PRESETS']['MAX_SCAN_RANGE_Y'] = 200
         self.devices['PRESETS']['USE_E712_HDW_ACCEL'] = True
-        use_laser = appConfig.get_value('DEFAULT', 'use_laser')
+        use_laser = appConfig.get_value('MAIN', 'use_laser')
 
-        self.devices['PVS']['Energy_enable'].put(0)
+        self.devices['PVS'][DNM_ENERGY_ENABLE].put(0)
 
         self.devices['PRESETS']['USE_LASER'] = use_laser
 
@@ -297,7 +297,7 @@ class dev_config_uhv(dev_config_base):
         maxCY = appConfig.get_value('SCAN_RANGES', 'coarse_y')
         maxFX = appConfig.get_value('SCAN_RANGES', 'fine_x')
         maxFY = appConfig.get_value('SCAN_RANGES', 'fine_y')
-        use_laser = appConfig.get_value('DEFAULT', 'use_laser')
+        use_laser = appConfig.get_value('MAIN', 'use_laser')
         self.devices['PRESETS']['USE_E712_HDW_ACCEL'] = True
 
 
@@ -322,7 +322,7 @@ class dev_config_uhv(dev_config_base):
        # self.devices['PRESETS']['MAX_ZP_SUBSCAN_RANGE_X'] = maxFX
        # self.devices['PRESETS']['MAX_ZP_SUBSCAN_RANGE_Y'] = maxFY
 
-        #self.devices['PVS']['Energy_enable'].put(0)
+        #self.devices['PVS'][DNM_ENERGY_ENABLE].put(0)
         self.devices['PRESETS']['USE_LASER'] = use_laser
 
 
@@ -473,11 +473,11 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
     devcfg.msg_splash("connecting to: [%s]" % DNM_PMT)
     dev_dct['DETECTORS'][DNM_PMT] = BaseDevice('%sPMT:ctr:SingleValue_RBV' % prfx)
 
-    dev_dct['DETECTORS']['POINT_DET'] = PointDetectorDevice('uhvCI:counter:', name=DNM_DEFAULT_COUNTER)
-    dev_dct['DIO']['POINT_GATE'] = GateDevice('uhvCO:gate:', name='gate_control')
+    dev_dct['DETECTORS'][DNM_POINT_DET] = PointDetectorDevice('uhvCI:counter:', name=DNM_DEFAULT_COUNTER)
+    dev_dct['DIO'][DNM_POINT_GATE] = GateDevice('uhvCO:gate:', name='gate_control')
 
-    dev_dct['DETECTORS']['LINE_DET'] = LineDetectorDevice('uhvCI:counter:', name=DNM_DEFAULT_COUNTER)
-    dev_dct['DETECTORS']['LINE_DET_FLYER'] = LineDetectorFlyerDevice('uhvCI:counter:', name=DNM_DEFAULT_COUNTER,
+    dev_dct['DETECTORS'][DNM_LINE_DET] = LineDetectorDevice('uhvCI:counter:', name=DNM_DEFAULT_COUNTER)
+    dev_dct['DETECTORS'][DNM_LINE_DET_FLYER] = LineDetectorFlyerDevice('uhvCI:counter:', name=DNM_DEFAULT_COUNTER,
                                                   stream_names={'line_det_strm': 'primary'},
                                                   monitor_attrs=['waveform_rbv'], pivot=False)
 
@@ -491,9 +491,9 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
     #dev_dct['DETECTORS']['Ax1InterferVolts'] = EpicsPvCounter('%sAi:ai:ai0_RBV' % prfx)
     #dev_dct['DETECTORS']['Ax2InterferVolts'] = EpicsPvCounter('%sAi:ai:ai1_RBV' % prfx)
 
-    dev_dct['PVS']['Ideal_A0'] = BaseDevice('BL1610-I10:ENERGY:%s:zp:fbk:tr.K' % prfx)
-    #dev_dct['PVS']['Calcd_Zpz'] = BaseDevice('BL1610-I10:ENERGY:%s:zp:fbk:tr.L' % prfx)
-    dev_dct['PVS']['Calcd_Zpz'] = BaseDevice('BL1610-I10:ENERGY:%s:zp:fbk:tr.I' % prfx)
+    dev_dct['PVS'][DNM_IDEAL_A0] = BaseDevice('BL1610-I10:ENERGY:%s:zp:fbk:tr.K' % prfx)
+    #dev_dct['PVS'][DNM_CALCD_ZPZ] = BaseDevice('BL1610-I10:ENERGY:%s:zp:fbk:tr.L' % prfx)
+    dev_dct['PVS'][DNM_CALCD_ZPZ] = BaseDevice('BL1610-I10:ENERGY:%s:zp:fbk:tr.I' % prfx)
 
     dev_dct['PVS'][DNM_ZONEPLATE_Z_ADJUST] = BaseDevice('BL1610-I10:ENERGY:%s:zp:adjust_zpz' % prfx)
 
@@ -503,33 +503,33 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
     dev_dct['PVS'][DNM_ZONEPLATE_INOUT] = Bo('BL1610-I10:%s:zp_inout' % prfx, val_only=False, val_kw='value')  # used to convieniently move zp z in and out
     dev_dct['PVS'][DNM_ZONEPLATE_INOUT_FBK] = Mbbi('BL1610-I10:%s:zp_inout:fbk' % prfx)  # used to convieniently move zp z in and out
     #used to adjust the current focus value, the delta represents the relative microns for zpz to move to new focus position
-    dev_dct['PVS']['Delta_A0'] = BaseDevice('BL1610-I10:ENERGY:%s:delta_A0' % prfx)
-    dev_dct['PVS']['Focal_Length'] = BaseDevice('BL1610-I10:ENERGY:%s:zp:FL' % prfx, units='um')
-    dev_dct['PVS']['A0'] = BaseDevice('BL1610-I10:ENERGY:%s:A0' % prfx)
-    dev_dct['PVS']['A0Max'] = BaseDevice('BL1610-I10:ENERGY:%s:A0Max' % prfx)
-    dev_dct['PVS']['A0ForCalc'] = BaseDevice('BL1610-I10:ENERGY:%s:A0:for_calc' % prfx)
+    dev_dct['PVS'][DNM_DELTA_A0] = BaseDevice('BL1610-I10:ENERGY:%s:delta_A0' % prfx)
+    dev_dct['PVS'][DNM_FOCAL_LEN] = BaseDevice('BL1610-I10:ENERGY:%s:zp:FL' % prfx, units='um')
+    dev_dct['PVS'][DNM_A0] = BaseDevice('BL1610-I10:ENERGY:%s:A0' % prfx)
+    dev_dct['PVS'][DNM_A0MAX] = BaseDevice('BL1610-I10:ENERGY:%s:A0Max' % prfx)
+    dev_dct['PVS'][DNM_A0_FOR_CALC] = BaseDevice('BL1610-I10:ENERGY:%s:A0:for_calc' % prfx)
 
     devcfg.msg_splash("connecting to: [%s]" % 'zoneplate definitions')
-    dev_dct['PVS']['Zpz_pos'] = BaseDevice('BL1610-I10:ENERGY:%s:zp:zpz_pos' % prfx)
+    dev_dct['PVS'][DNM_ZPZ_POS] = BaseDevice('BL1610-I10:ENERGY:%s:zp:zpz_pos' % prfx)
     dev_dct['PVS']['Zp_def'] = Transform('BL1610-I10:ENERGY:%s:zp:def' % prfx)
     dev_dct['PVS']['OSA_def'] = Transform('BL1610-I10:ENERGY:%s:osa:def' % prfx)
 
-    dev_dct['PVS']['Zp_select'] = Mbbo('BL1610-I10:ENERGY:%s:zp' % prfx)
-    dev_dct['PVS']['OSA_select'] = Mbbo('BL1610-I10:ENERGY:%s:osa' % prfx)
+    dev_dct['PVS'][DNM_ZP_SELECT] = Mbbo('BL1610-I10:ENERGY:%s:zp' % prfx)
+    dev_dct['PVS'][DNM_OSA_SELECT] = Mbbo('BL1610-I10:ENERGY:%s:osa' % prfx)
 
     devcfg.msg_splash("connecting to: [%s]" % 'Energy_enable')
-    #dev_dct['PVS']['Energy_enable'] = Bo('BL1610-I10:ENERGY:%s:enabled' % prfx)
-    dev_dct['PVS']['Energy_enable'] = Bo('BL1610-I10:ENERGY:%s:enabled' % prfx, val_only=False, val_kw='value')
-    dev_dct['PVS']['ENERGY_RBV'] = BaseDevice('BL1610-I10:ENERGY.RBV', egu='um')
-    dev_dct['PVS']['ZPZ_RBV'] = BaseDevice('IOC:m111C.RBV', egu='um')
-    dev_dct['PVS']['Zp_def.A'] = BaseDevice('BL1610-I10:ENERGY:%s:zp:def.A' % prfx)
+    #dev_dct['PVS'][DNM_ENERGY_ENABLE] = Bo('BL1610-I10:ENERGY:%s:enabled' % prfx)
+    dev_dct['PVS'][DNM_ENERGY_ENABLE] = Bo('BL1610-I10:ENERGY:%s:enabled' % prfx, val_only=False, val_kw='value')
+    dev_dct['PVS'][DNM_ENERGY_RBV] = BaseDevice('BL1610-I10:ENERGY.RBV', egu='um')
+    dev_dct['PVS'][DNM_ZPZ_RBV] = BaseDevice('IOC:m111C.RBV', egu='um')
+    dev_dct['PVS'][DNM_ZP_DEF_A] = BaseDevice('BL1610-I10:ENERGY:%s:zp:def.A' % prfx)
 
     devcfg.msg_splash("connecting to: [%s]" % 'Zp_def1 -> 7')
-    dev_dct['PVS']['Zp_def1_A'] = BaseDevice('BL1610-I10:ENERGY:%s:zp1:def.A' % prfx)
-    dev_dct['PVS']['Zp_def2_A'] = BaseDevice('BL1610-I10:ENERGY:%s:zp2:def.A' % prfx)
-    dev_dct['PVS']['Zp_def3_A'] = BaseDevice('BL1610-I10:ENERGY:%s:zp3:def.A' % prfx)
-    dev_dct['PVS']['Zp_def4_A'] = BaseDevice('BL1610-I10:ENERGY:%s:zp4:def.A' % prfx)
-    dev_dct['PVS']['Zp_def5_A'] = BaseDevice('BL1610-I10:ENERGY:%s:zp5:def.A' % prfx)
+    dev_dct['PVS'][DNM_ZP_DEF1_A] = BaseDevice('BL1610-I10:ENERGY:%s:zp1:def.A' % prfx)
+    dev_dct['PVS'][DNM_ZP_DEF2_A] = BaseDevice('BL1610-I10:ENERGY:%s:zp2:def.A' % prfx)
+    dev_dct['PVS'][DNM_ZP_DEF3_A] = BaseDevice('BL1610-I10:ENERGY:%s:zp3:def.A' % prfx)
+    dev_dct['PVS'][DNM_ZP_DEF4_A] = BaseDevice('BL1610-I10:ENERGY:%s:zp4:def.A' % prfx)
+    dev_dct['PVS'][DNM_ZP_DEF5_A] = BaseDevice('BL1610-I10:ENERGY:%s:zp5:def.A' % prfx)
     dev_dct['PVS']['Zp_def6_A'] = BaseDevice('BL1610-I10:ENERGY:%s:zp6:def.A' % prfx)
     dev_dct['PVS']['Zp_def7_A'] = BaseDevice('BL1610-I10:ENERGY:%s:zp7:def.A' % prfx)
 
@@ -826,7 +826,7 @@ if(AMBIENT_STXM):
     DEFAULTS = Defaults('ambstxm_dflts.json', new=False)
 
     #MAIN_OBJ.device_report()
-    #scanning_mode = appConfig.get_value('DEFAULT', 'scanning_mode')
+    #scanning_mode = appConfig.get_value('MAIN', 'scanning_mode')
 else:
 
     MAIN_OBJ = main_object_base('CLS SM 10ID1','UHV STXM', BEAMLINE_IDS.STXM)
@@ -837,9 +837,9 @@ else:
     ver_str = 'Version %s.%s' % (MAIN_OBJ.get('APP.MAJOR_VER'), MAIN_OBJ.get('APP.MINOR_VER'))
     splash = get_splash(img_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pyStxmSplash.png'),
                         ver_str=ver_str)
-    #sample_positioning_mode = appConfig.get_value('DEFAULT', 'sample_positioning_mode')
-    #fine_sample_positioning_mode = appConfig.get_value('DEFAULT', 'fine_sample_positioning_mode')
-    scanning_mode = appConfig.get_value('DEFAULT', 'scanning_mode')
+    #sample_positioning_mode = appConfig.get_value('MAIN', 'sample_positioning_mode')
+    #fine_sample_positioning_mode = appConfig.get_value('MAIN', 'fine_sample_positioning_mode')
+    scanning_mode = appConfig.get_value('MAIN', 'scanning_mode')
 
     # sample_mode = None
     # fine_sample_mode = None

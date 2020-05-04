@@ -5,17 +5,23 @@ Created on 2012-05-16
 '''
 import os
 import sys
-from time import time, sleep
+
+from time import time, sleep, strftime
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QSplashScreen
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 
 _splash_screen = None
-splashPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','applications','pyStxm', 'pyStxmSplash.png')
+#splashPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','applications','pyStxm', 'pyStxmSplash.png')
 #splashPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'splash_v2.png')
-#
-#
+if(strftime("%Y%m%d")[-4:] == '0504'):
+    splashPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'applications', 'pyStxm',
+                                  'splash_maythefourth.png')
+else:
+    splashPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'applications', 'pyStxm',
+                                  'pyStxmSplash.png')
+
 class CSplashScreen(QtWidgets.QFrame):
     def __init__(self, msg, pixmap_path=splashPath):
         super(CSplashScreen, self).__init__()

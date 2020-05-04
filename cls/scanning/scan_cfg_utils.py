@@ -105,7 +105,7 @@ def set_devices_for_point_scan(scan_type, dwell, numE, numX, gate, counter, shut
     counter.sample_mode.put(2)  # DAQmx_HWTimedSinglePoint
     # counter.max_points.put(roi['X'][NPOINTS]) #X points
     # counter.max_points.put(2)  # X points, so that the waveform returns <row> <point> <value> <pad>
-    if (scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+    if (scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
         counter.max_points.put(1)  # X points, so that the waveform returns <row> <point> <value> <pad>
     else:
         counter.max_points.put(2)  # X points, so that the waveform returns <row> <point> <value> <pad>
@@ -113,7 +113,7 @@ def set_devices_for_point_scan(scan_type, dwell, numE, numX, gate, counter, shut
     counter.retriggerable.put(True)
 
 
-    if (scan_type == scan_types.SAMPLE_POINT_SPECTRA):
+    if (scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
         counter.points_per_row.put(numE)  # EV point spectra
     else:
         counter.points_per_row.put(numX)  # X points
@@ -165,7 +165,7 @@ def set_devices_for_e712_wavegen_point_scan(scan_type, dwell, numX, counter, num
     counter.signal_src_clock_select.put(3)  # /PFI 3 this is connected to the E712 OUT1
 
     counter.sample_mode.put(1)  # DAQmx_Val_ContSamps
-    if(scan_type == scan_types.SAMPLE_LINE_SPECTRA):
+    if(scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
         #dont need the extra points
         counter.max_points.put(numX + 1)  #
     else:
@@ -174,7 +174,7 @@ def set_devices_for_e712_wavegen_point_scan(scan_type, dwell, numX, counter, num
     counter.points_per_row.put(numX)
     counter.retriggerable.put(False)
 
-    if (scan_type == scan_types.SAMPLE_POINT_SPECTRA):
+    if (scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
         counter.points_per_row.put(numE)  # EV point spectra
     else:
         counter.points_per_row.put(numX)  # X points

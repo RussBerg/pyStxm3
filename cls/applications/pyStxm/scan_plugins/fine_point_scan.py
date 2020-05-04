@@ -13,7 +13,7 @@ from PyQt5 import QtCore, QtGui
 
 import os
 from cls.app_data.defaults import get_style
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, DEFAULTS
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ, DEFAULTS
 from bcm.devices.device_names import *
 from cls.scanning.base import ScanParamWidget, zp_focus_modes
 from cls.applications.pyStxm.scan_plugins import plugin_dir
@@ -37,8 +37,8 @@ from cls.plotWidgets.color_def import get_normal_clr, get_warn_clr, get_alarm_cl
 from cls.utils.roi_dict_defs import *
 from cls.utils.log import get_module_logger
 
-MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_X')
-MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('MAX_FINE_SCAN_RANGE_Y')
+MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('max_fine_x')
+MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('max_fine_y')
 
 _logger = get_module_logger(__name__)
 
@@ -60,7 +60,8 @@ class FinePointScanParam(ScanParamWidget):
         self.scan_class = PointSpecScanClass(main_obj=self.main_obj)
 
         #instead of using centerx etc use startX
-        self.multi_region_widget = MultiRegionWidget(use_center=False, is_point=True, enable_multi_spatial=self.enable_multi_region,  single_ev_model=True, max_range=MAX_SCAN_RANGE_FINEX, main_obj=self.main_obj)
+        self.multi_region_widget = MultiRegionWidget(use_center=False, is_point=True, enable_multi_spatial=self.enable_multi_region,
+                                                     single_ev_model=True, max_range=MAX_SCAN_RANGE_FINEX, main_obj=self.main_obj)
 
         if (not self.main_obj.is_device_supported(DNM_EPU_POLARIZATION)):
             self.multi_region_widget.deslect_all_polarizations()
@@ -97,7 +98,7 @@ class FinePointScanParam(ScanParamWidget):
         '''
         self.name = "Fine Point Scan"
         self.idx = scan_panel_order.POINT_SCAN
-        self.type = scan_types.SAMPLE_POINT_SPECTRA
+        self.type = scan_types.SAMPLE_POINT_SPECTRUM
         self.data = {}
         self.section_id = 'POINT'
         self.axis_strings = ['counts', 'eV', '', '']
@@ -328,7 +329,7 @@ class FinePointScanParam(ScanParamWidget):
         if(wdg_com[CMND] == widget_com_cmnd_types.LOAD_SCAN):
             sp_db = get_first_sp_db_from_wdg_com(wdg_com)
 
-            if(not ev_only and (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_POINT_SPECTRA)):
+            if(not ev_only and (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) != scan_types.SAMPLE_POINT_SPECTRUM)):
                 return
                 
             self.multi_region_widget.load_scan(wdg_com, append, ev_only=ev_only, sp_only=sp_only)

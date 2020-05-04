@@ -16,7 +16,8 @@ import queue
 import atexit
 
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, POS_TYPE_BL, POS_TYPE_ES
+#from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, POS_TYPE_BL, POS_TYPE_ES
+from cls.appWidgets.main_object import  POS_TYPE_BL, POS_TYPE_ES
 from cls.applications.pyStxm.widgets.fbk import fbkClass
 from cls.app_data.defaults import rgb_as_hex, master_colors, get_style
 from cls.utils.log import get_module_logger, log_to_qt
@@ -32,8 +33,9 @@ class DevsPanel(QtWidgets.QWidget):
 	
 	:returns:  None
 	'''
-	def __init__(self, dev_dict, egu='', engineering_notation=False, parent=None):
+	def __init__(self, dev_dict, egu='', engineering_notation=False, main_obj=None, parent=None):
 		super(DevsPanel, self).__init__(parent)
+		self.main_obj = main_obj
 		self.dev_dct = None
 		self.dev_lst = None
 
@@ -107,7 +109,7 @@ class DevsPanel(QtWidgets.QWidget):
 		
 def go():
 	app = QtWidgets.QApplication(sys.argv)
-	dev_obj = MAIN_OBJ.get_device_obj()
+	dev_obj = self.main_obj.get_device_obj()
 	temps = dev_obj.get_all_temperatures(POS_TYPE_ES)
 	window2 = DevsPanel(temps, egu='deg C')
 	prssrs = dev_obj.get_all_pressures(POS_TYPE_ES)

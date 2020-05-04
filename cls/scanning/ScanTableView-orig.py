@@ -9,7 +9,7 @@ import numpy as np
 from PyQt5 import QtCore, QtGui
 
 from bcm.devices.device_names import *
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 from cls.types.stxmTypes import scan_types, spatial_type_prefix, IMAGE_LXL, IMAGE_PXP, energy_scan_order_types
 from cls.utils.dict_utils import dct_put, dct_get
 from cls.utils.log import get_module_logger, log_to_qt
@@ -2678,7 +2678,7 @@ class SpatialSelWidget(BaseSelectionWidget):
         dct_put(sp_db, SPDB_ID_VAL, sp_model_id)
 
         if(scan[SPDB_X][NPOINTS] == 1):
-            scan_type = scan_types.SAMPLE_POINT_SPECTRA
+            scan_type = scan_types.SAMPLE_POINT_SPECTRUM
             #sp_db['SCAN_PLUGGIN']['ITEM']['TYPE'] = spatial_type_prefix.PNT
             dct_put(sp_db, SPDB_PLOT_SHAPE_TYPE, spatial_type_prefix.PNT)
         else:
@@ -3595,7 +3595,7 @@ class MultiRegionWidget(BaseSelectionWidget):
         tables
         scan_types = Enum('Detector_Image','OSA_Image','OSA_Focus','Sample_Focus','Sample_Point_Spectrum', 'Sample_Line_Spectrum', 'Sample_Image', 'Sample_Image_Stack', 'Generic_Scan')
         """
-        multi_scan_types = [scan_types.SAMPLE_POINT_SPECTRA, scan_types.SAMPLE_LINE_SPECTRA, scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK, scan_types.SAMPLE_IMAGE + IMAGE_LXL, scan_types.SAMPLE_IMAGE + IMAGE_PXP]
+        multi_scan_types = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_IMAGE_STACK, scan_types.SAMPLE_IMAGE + IMAGE_LXL, scan_types.SAMPLE_IMAGE + IMAGE_PXP]
         
         sp_roi_dct = dct_get(wdg_com, WDGCOM_SPATIAL_ROIS)
         sp_ids = list(sp_roi_dct.keys())

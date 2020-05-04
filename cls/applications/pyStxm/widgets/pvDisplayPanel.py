@@ -21,7 +21,7 @@ import queue
 import atexit
 
 from cls.applications.pyStxm.widgets.fbk import fbkClass
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, POS_TYPE_BL, POS_TYPE_ES 
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ, POS_TYPE_BL, POS_TYPE_ES
 
 from cls.app_data.defaults import rgb_as_hex, master_colors, get_style
 from cls.utils.log import get_module_logger, log_to_qt

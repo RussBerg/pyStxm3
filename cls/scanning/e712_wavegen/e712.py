@@ -36,25 +36,25 @@ from cls.utils.roi_dict_defs import *
 
 from cls.appWidgets.dialogs import getOpenFileName
 
-from cls.scanning.e712_wavegen.e712_errors import e712_errors
+#from cls.scanning.e712_wavegen.e712_errors import e712_errors
 from cls.scanning.e712_wavegen.e712_utils import *
 from cls.scanning.e712_wavegen.e712_com_cmnds import e712_cmds, make_base_e712_com_dict
 from cls.scanning.e712_wavegen.e712_datarecorder import PI_E712_DataRecorder
 
-from cls.utils.cfgparser import ConfigClass
-from cls.utils.file_system_tools import get_next_file_in_seq
-from cls.utils.json_threadsave import ThreadJsonSave
-from cls.utils.image_threadsave import ThreadImageSave
+#from cls.utils.cfgparser import ConfigClass
+#from cls.utils.file_system_tools import get_next_file_in_seq
+#from cls.utils.json_threadsave import ThreadJsonSave
+#from cls.utils.image_threadsave import ThreadImageSave
 from cls.utils.save_settings import SaveSettings
 
 from cls.scanning.e712_wavegen.e712_com_thread import E712ComThread
 from cls.scanning.e712_wavegen.ddl_store import DDL_Store, gen_ddl_database_key
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
+#from bcm.devices import e712_sample_motor
 
-from bcm.devices import e712_sample_motor
-
-appConfig = ConfigClass(abs_path_to_ini_file)
-#dataDir = os.path.join(appConfig.get_value('DEFAULT', 'dataDir') ,'e712Testing','ddlTesting')
-#dataDir = os.path.join(appConfig.get_value('DEFAULT', 'dataDir') ,'e712Testing','ddl_testing_apr24')
+#appConfig = ConfigClass(abs_path_to_ini_file)
+#dataDir = os.path.join(appConfig.get_value('MAIN', 'dataDir') ,'e712Testing','ddlTesting')
+#dataDir = os.path.join(appConfig.get_value('MAIN', 'dataDir') ,'e712Testing','ddl_testing_apr24')
 _logger = get_module_logger(__name__)
 
 # COARSE_SAMPLEFINE (formerly 'conventional') scanning mode = Sample_pos_mode=COARSE, sample_fine_pos_mode=SAMPLE_FINE
@@ -68,7 +68,9 @@ _logger = get_module_logger(__name__)
 
 DATARECORDER_ENABLED = True
 
-scan_mode = appConfig.get_value('DEFAULT', 'scanning_mode')
+#scan_mode = appConfig.get_value('MAIN', 'scanning_mode')
+scan_mode = MAIN_OBJ.get_sample_scanning_mode_string()
+
 if(scan_mode == types.scanning_mode.get_str_by_num(types.scanning_mode.COARSE_SAMPLEFINE)):
     from bcm.devices.device_names import (DNM_SAMPLE_FINE_X, DNM_SAMPLE_FINE_Y, DNM_ENERGY)
     # SAMPLE
@@ -108,8 +110,8 @@ elif(scan_mode == types.scanning_mode.get_str_by_num(types.scanning_mode.COARSE_
     ZONEPLATE_SCANNING = True
     SCAN_MODE = types.scanning_mode.COARSE_ZONEPLATE
 else:
-    _logger.error('E712: could not determine scanning mode')
-    exit()
+    raise Exception('E712: could not determine scanning mode')
+
 
 WAVEFORM_GEN_CYCLE_TIME = 0.00005 # in seconds
 
@@ -1741,11 +1743,13 @@ class E712ControlWidget(QtWidgets.QWidget):
         self.e712.wg3.status_rbv.changed.connect(lambda: self.on_wgStatus(lbl=self.wvgen3StsLbl, wvgen=3))
         self.e712.wg4.status_rbv.changed.connect(lambda: self.on_wgStatus(lbl=self.wvgen4StsLbl, wvgen=4))
 
-        #this needs to be fixed so its not hard coded
-        print('e712.py: 1675: !!!!!!!!!!!!! this needs to be fixed so its not hard coded !!!!!!!!!!!!!!!!!!!!!')
-        self.xmtr = e712_sample_motor('IOC:m102', name='IOC:m102')
-        self.ymtr = e712_sample_motor('IOC:m103', name='IOC:m103')
-        #############################################
+        # #this needs to be fixed so its not hard coded
+        # print('e712.py: 1675: !!!!!!!!!!!!! this needs to be fixed so its not hard coded !!!!!!!!!!!!!!!!!!!!!')
+        # self.xmtr = self.main_obj.get_sample_fine_positioner(axis='X')
+        # self.ymtr = self.main_obj.get_sample_fine_positioner(axis='Y')
+        # # self.xmtr = e712_sample_motor('IOC:m102', name='IOC:m102')
+        # # self.ymtr = e712_sample_motor('IOC:m103', name='IOC:m103')
+        # #############################################
 
         self.data_q = queue.Queue()
         self.job_q = queue.Queue()
@@ -1761,8 +1765,10 @@ class E712ControlWidget(QtWidgets.QWidget):
         self.y_roi = None
         self.e_roi = None
         self.plotter_busy = False
+        self.main_obj = None #this needs to be set by the scan plugin
         self.x_scan_reset_pos = 0.0
-
+        self.xmtr = None
+        self.ymtr = None
 
         self.wavgen_table_map = {}
 
@@ -1831,6 +1837,16 @@ class E712ControlWidget(QtWidgets.QWidget):
 
         self.reload_settings()
         self.idx = 0
+
+    def set_main_obj(self, main_obj):
+        self.main_obj = main_obj
+        # this needs to be fixed so its not hard coded
+        #print('e712.py: 1675: !!!!!!!!!!!!! this needs to be fixed so its not hard coded !!!!!!!!!!!!!!!!!!!!!')
+        self.xmtr = self.main_obj.get_sample_fine_positioner(axis='X')
+        self.ymtr = self.main_obj.get_sample_fine_positioner(axis='Y')
+        # self.xmtr = e712_sample_motor('IOC:m102', name='IOC:m102')
+        # self.ymtr = e712_sample_motor('IOC:m103', name='IOC:m103')
+        #############################################
 
     def set_forced_rate(self, rate=None):
         '''
@@ -3124,9 +3140,12 @@ class E712ControlWidget(QtWidgets.QWidget):
         #     #errorMessage("Invalid scan definition, The scan you are attempting to configure requires more points than are available")
 
         #get the x stage parameters
-        xdct = self.xmtr.get_stage_params()
-
-        final_dct = dct_merge(dct, xdct)
+        if(self.xmtr):
+           xdct = self.xmtr.get_stage_params()
+           final_dct = dct_merge(dct, xdct)
+        else:
+            _logger.error('get_tuning_params: cannot get the motor parameters because the motors are not connected, see set_main_obj()')
+            final_dct = None
 
         self.ss.update()
         return (final_dct)

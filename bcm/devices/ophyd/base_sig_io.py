@@ -121,7 +121,7 @@ if __name__ == "__main__":
     #
     app = QtWidgets.QApplication(sys.argv)
 
-    from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+    from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
     from bcm.devices import BaseDevice
 
     MAIN_OBJ.device('test')

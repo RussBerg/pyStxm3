@@ -22,7 +22,12 @@ from cls.utils.dict_utils import dct_get, dct_put
 from cls.utils.time_utils import make_timestamp_now
 from cls.utils.json_threadsave import dict_to_json_string
 from cls.utils.log import get_module_logger
-from cls.types.stxmTypes import scan_types, single_entry_scans, multi_entry_scans, two_posner_scans, three_posner_scans
+from cls.types.stxmTypes import scan_types, single_entry_scans, multi_entry_scans, two_posner_scans, three_posner_scans, \
+    focus_scans, single_2d_scans, single_image_scans, stack_type_scans, spectra_type_scans, line_spec_scans
+
+
+
+
 from bcm.devices.device_names import *
 from suitcase.nxstxm.nxstxm_utils import (make_signal, _dataset, _string_attr, _group, make_1d_array, \
                                           get_nx_standard_epu_mode, get_nx_standard_epu_harmonic_new, translate_pol_id_to_stokes_vector, \
@@ -344,10 +349,10 @@ class Serializer(event_model.DocumentRouter):
         self._cur_sp_id = self._sp_id_lst[0]
         self._cur_uid = doc['uid']
 
-        if(self._scan_type is scan_types.SAMPLE_POINT_SPECTRA):
+        if(self._scan_type is scan_types.SAMPLE_POINT_SPECTRUM):
             #we willl potentially dict of img_idx_maps indexed by str(sequence number) so
             # for setting the defalt member vars use the first index, but these are likely to be ignored
-            # thoughout the code for processing SAMPLE_POINT_SPECTRA
+            # thoughout the code for processing SAMPLE_POINT_SPECTRUM
             img_idx_map = self._kwargs['img_idx_map']['0']
         else:
 
@@ -504,9 +509,9 @@ class Serializer(event_model.DocumentRouter):
 				'sample_image', \
 				'sample_image_stack', \
 				'generic_scan', \
-				'coarse_image_scan', \
-				'coarse_goni_scan', \
-				'tomography_scan')
+				'coarse_image', \
+				'coarse_goni', \
+				'tomography')
         :param doc:
         :param scan_type:
         :return:
@@ -515,7 +520,7 @@ class Serializer(event_model.DocumentRouter):
         print('creating [%s]' % self.entry_nm)
         if(scan_type in single_entry_scans):
             self.save_single_entry_scan(doc, scan_type)
-        elif(scan_type is scan_types.SAMPLE_POINT_SPECTRA):
+        elif(scan_type is scan_types.SAMPLE_POINT_SPECTRUM):
             self.save_point_spec_entry_scan(doc, scan_type)
         else:
             self.save_multi_entry_scan(doc, scan_type)
@@ -708,24 +713,24 @@ class Serializer(event_model.DocumentRouter):
 				'sample_image', \
 				'sample_image_stack', \
 				'generic_scan', \
-				'coarse_image_scan', \
-				'coarse_goni_scan', \
-				'tomography_scan'
+				'coarse_image', \
+				'coarse_goni', \
+				'tomography'
 
         :param scan_type:
         :return:
         '''
-        single_2d_scans = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.COARSE_IMAGE_SCAN, \
-                           scan_types.COARSE_GONI_SCAN]
-        focus_scans = [ scan_types.SAMPLE_FOCUS, scan_types.OSA_FOCUS]
-
-        single_image_scans = [scan_types.SAMPLE_IMAGE]
-
-        stack_type_scans = [scan_types.SAMPLE_IMAGE_STACK, scan_types.TOMOGRAPHY_SCAN]
-
-        spectra_type_scans = [scan_types.SAMPLE_POINT_SPECTRA, scan_types.GENERIC_SCAN]
-
-        line_spec_scans = [scan_types.SAMPLE_LINE_SPECTRA]
+        # single_2d_scans = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.COARSE_IMAGE, \
+        #                    scan_types.COARSE_GONI]
+        # focus_scans = [ scan_types.SAMPLE_FOCUS, scan_types.OSA_FOCUS]
+        #
+        # single_image_scans = [scan_types.SAMPLE_IMAGE]
+        #
+        # stack_type_scans = [scan_types.SAMPLE_IMAGE_STACK, scan_types.TOMOGRAPHY]
+        #
+        # spectra_type_scans = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.GENERIC_SCAN]
+        #
+        # line_spec_scans = [scan_types.SAMPLE_LINE_SPECTRUM]
 
         dct = {}
         if(scan_type is scan_types.GENERIC_SCAN):
@@ -777,12 +782,12 @@ class Serializer(event_model.DocumentRouter):
         :param scan_type:
         :return:
         '''
-        single_2d_scans = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.COARSE_IMAGE_SCAN, \
-                           scan_types.COARSE_GONI_SCAN]
+        single_2d_scans = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.COARSE_IMAGE, \
+                           scan_types.COARSE_GONI]
 
         three_d_scans = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.OSA_FOCUS, scan_types.SAMPLE_FOCUS,
-                         scan_types.SAMPLE_IMAGE_STACK, scan_types.COARSE_IMAGE_SCAN, scan_types.COARSE_GONI_SCAN, \
-                         scan_types.TOMOGRAPHY_SCAN]
+                         scan_types.SAMPLE_IMAGE_STACK, scan_types.COARSE_IMAGE, scan_types.COARSE_GONI, \
+                         scan_types.TOMOGRAPHY]
 
         if(scan_type is scan_types.GENERIC_SCAN):
             create_generic_scan_nxdata_group(entry_nxgrp, cntr_nm, doc)
@@ -847,7 +852,7 @@ class Serializer(event_model.DocumentRouter):
         '''
         inst_nxgrp = _group(nxgrp, 'instrument', 'NXinstrument')
         self.make_source(inst_nxgrp, doc)
-        self.make_monochromator(inst_nxgrp, doc)
+        self.make_monochromator(inst_nxgrp, doc, scan_type=scan_type)
         self.make_epu(inst_nxgrp, doc)
         self.make_zoneplate(inst_nxgrp, doc)
 
@@ -874,7 +879,7 @@ class Serializer(event_model.DocumentRouter):
         _dataset(grp, 'unit', units, 'NX_CHAR')
 
 
-    def make_monochromator(self, nxgrp, doc, modify=False):
+    def make_monochromator(self, nxgrp, doc, modify=False, scan_type=None):
         '''
 
         :param data_dct:
@@ -882,6 +887,10 @@ class Serializer(event_model.DocumentRouter):
         :return:
         '''
         rois = self.get_rois_from_current_md(doc['run_start'])
+
+        if (scan_type is in focus_scans):
+            # print('processing a detector scan')
+            pass
         xnpoints = rois['X']['NPOINTS']
         ynpoints = rois['Y']['NPOINTS']
 
@@ -1322,9 +1331,9 @@ class Serializer(event_model.DocumentRouter):
                 'sample_image', \
                 'sample_image_stack', \
                 'generic_scan', \
-                'coarse_image_scan', \
-                'coarse_goni_scan', \
-                'tomography_scan'
+                'coarse_image', \
+                'coarse_goni', \
+                'tomography'
 
 
                 '''
@@ -1336,7 +1345,7 @@ class Serializer(event_model.DocumentRouter):
         if (scan_type is scan_types.DETECTOR_IMAGE):
             # print('processing a detector scan')
             pass
-        elif (scan_type is scan_types.COARSE_GONI_SCAN):
+        elif (scan_type is scan_types.COARSE_GONI):
             # print('processing a Coarse Goniometer scan')
             pass
 

@@ -124,7 +124,7 @@ if __name__ == '__main__':
     # sample_focus
     #uids = ['224df41b-94f7-487f-9327-b8a4e06a6de2']
 
-    # SAMPLE_POINT_SPECTRA
+    # SAMPLE_POINT_SPECTRUM
     #uids = ['343a0683-04fa-4391-a854-cb19672be6e6']
 
     #line scan

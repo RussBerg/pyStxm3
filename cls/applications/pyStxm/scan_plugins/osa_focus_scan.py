@@ -13,7 +13,7 @@ from PyQt5 import uic, QtCore
 import os
 from cls.scanning.base import ScanParamWidget, zp_focus_modes
 from cls.applications.pyStxm.scan_plugins import plugin_dir
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, DEFAULTS
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ, DEFAULTS
 from cls.applications.pyStxm.scan_plugins.OsaFocusScan import OsaFocusScanClass
 from bcm.devices.device_names import *
 from cls.scanning.paramLineEdit import intLineEditParamObj, dblLineEditParamObj
@@ -78,9 +78,10 @@ class OsaFocusScanParam(ScanParamWidget):
         :return:
         '''
         if (self.isEnabled()):
-            #make sure that the OSA vertical tracking is off if it is on
-            self.osay_trcking_was = self.main_obj.device(DNM_OSAY_TRACKING).get_position()
-            self.main_obj.device(DNM_OSAY_TRACKING).put(0) #off
+            if (self.main_obj.device(DNM_OSAY_TRACKING, do_warn=False)):
+                #make sure that the OSA vertical tracking is off if it is on
+                self.osay_trcking_was = self.main_obj.device(DNM_OSAY_TRACKING).get_position()
+                self.main_obj.device(DNM_OSAY_TRACKING).put(0) #off
 
 
     def on_plugin_defocus(self):
@@ -89,8 +90,9 @@ class OsaFocusScanParam(ScanParamWidget):
         :return:
         '''
         if (self.isEnabled()):
-            #put the OSA vertical tracking back to its previous state
-            self.main_obj.device(DNM_OSAY_TRACKING).put(self.osay_trcking_was)
+            if (self.main_obj.device(DNM_OSAY_TRACKING, do_warn=False)):
+                #put the OSA vertical tracking back to its previous state
+                self.main_obj.device(DNM_OSAY_TRACKING).put(self.osay_trcking_was)
 
         # call the base class defocus
         super(OsaFocusScanParam, self).on_plugin_defocus()
@@ -210,7 +212,7 @@ class OsaFocusScanParam(ScanParamWidget):
         mtrz.move(zp_cent)
         mtrz.confirm_stopped()
         
-        fl = self.main_obj.device('Focal_Length').get_position()
+        fl = self.main_obj.device(DNM_FOCAL_LEN).get_position()
         mtrz.set_position(fl)
         mtrx.move(0.0)
         mtry.move(0.0)

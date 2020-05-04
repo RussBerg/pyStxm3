@@ -2,7 +2,7 @@
 
 import os
 from PyQt5 import QtCore, QtGui, QtWidgets
-from cls.applications.pyStxm.bl10ID01 import DEFAULTS
+from cls.applications.pyStxm.main_obj_init import DEFAULTS
 from cls.utils.log import get_module_logger
 from cls.utils.dict_utils import dct_put, dct_get
 

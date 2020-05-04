@@ -6,6 +6,7 @@ Created on Dec 2, 2016
 import simplejson as json
 import numpy as np
 import datetime
+import ctypes
 
 from cls.appWidgets.user_account.user_object import user_obj
 
@@ -32,6 +33,8 @@ class NumpyAwareJSONEncoder(json.JSONEncoder):
         elif isinstance(obj, user_obj):
             #return(obj.__dict__) 
             return("USER_OBJ_NOT_SAVED")
+        elif isinstance(obj, ctypes.c_longlong):
+            return(obj.value)
         #elif isinstance(obj, dev_config_sim_v2):
         #    #return(obj.__dict__) 
         #    return("DEVICE_OBJ_NOT_SAVED")

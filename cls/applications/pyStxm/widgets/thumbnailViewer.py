@@ -346,7 +346,7 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
         dct['scan_sub_type'] = type_tpl[1]
         dct['data_dir'] = self.data_dir
 
-        if (dct['scan_type'] == scan_types[scan_types.SAMPLE_POINT_SPECTRA]):
+        if (dct['scan_type'] == scan_types[scan_types.SAMPLE_POINT_SPECTRUM]):
             dct['data_min'] = self.data.min()
             dct['data_max'] = self.data.max()
         else:
@@ -500,7 +500,7 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
         else:
             if(self.scan_type is scan_types.SAMPLE_IMAGE_STACK):
                 image_fname = 'stack.bmp'
-            elif(self.scan_type is scan_types.TOMOGRAPHY_SCAN):
+            elif(self.scan_type is scan_types.TOMOGRAPHY):
                 #image_fname = 'tomo.png'
                 image_fname = 'folder_bw_tomo.png'
             else:
@@ -798,7 +798,7 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
             self.launch_viewer.emit(dct)
 
 
-        elif (self.scan_type is scan_types.SAMPLE_POINT_SPECTRA):
+        elif (self.scan_type is scan_types.SAMPLE_POINT_SPECTRUM):
             ekey = get_first_entry_key(self.dct)
             entry_dct = self.dct['entries'][ekey]
             xdata = get_point_spec_energy_data_from_entry(entry_dct, counter=self.counter)
@@ -1285,6 +1285,10 @@ class ContactSheet(QtWidgets.QWidget):
                 sp_db_lst.append(_sp_db)
                 data_lst.append(_data)
         else:
+            if(num_entries == 0):
+                #there is a problem,
+                _logger.error('get_sp_db_and_data: there is aproblem with the file [%s]' % fprefix)
+                return([],[])
             ekey = list(entry_dct)[0]
             wdg_com = self.data_io.get_wdg_com_from_entry(entry_dct, ekey)
             sp_db = get_first_sp_db_from_wdg_com(wdg_com)
@@ -1450,25 +1454,25 @@ class ContactSheet(QtWidgets.QWidget):
 				'sample_image', \
 				'sample_image_stack', \
 				'generic_scan', \
-				'coarse_image_scan')
+				'coarse_image')
 
 
         """
         if (sp_db is None):
             return (None, None)
         focus_scans = [scan_types.OSA_FOCUS, scan_types.SAMPLE_FOCUS]
-        spectra_scans = [scan_types.SAMPLE_POINT_SPECTRA, scan_types.SAMPLE_LINE_SPECTRA]
+        spectra_scans = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM]
         stack_scans = [scan_types.SAMPLE_IMAGE_STACK]
         _scan_type = dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE)
 
         if (data is None):
-            if (_scan_type is scan_types.SAMPLE_POINT_SPECTRA):
+            if (_scan_type is scan_types.SAMPLE_POINT_SPECTRUM):
                 data = np.ones((2, 2))
             else:
                 return (None, None)
 
         if (data.size == 0):
-            if (_scan_type is scan_types.SAMPLE_POINT_SPECTRA):
+            if (_scan_type is scan_types.SAMPLE_POINT_SPECTRUM):
                 data = np.ones((2, 2))
             else:
                 return (None, None)
@@ -1749,6 +1753,10 @@ class ContactSheet(QtWidgets.QWidget):
                 sp_db, data = self.get_sp_db_and_data(fstr)
                 # we dont support stack or multi spatials yet so just load it as a single
                 if (type(sp_db) is list):
+                    if(len(sp_db) == 0):
+                        _logger.error('on_dir_changed: problem with [%s]' % fname)
+                        return
+
                     sp_db = sp_db[0]
                     data = data[0]
 
@@ -1899,7 +1907,7 @@ class ContactSheet(QtWidgets.QWidget):
                 pass
 
     def make_thumbWidget(self, data_dir, fname, info_dct, title=None, sp_db=None, data=None,
-                         stype=scan_types.SAMPLE_POINT_SPECTRA, is_folder=False):
+                         stype=scan_types.SAMPLE_POINT_SPECTRUM, is_folder=False):
         """
         make_thumbWidget(): description
 
@@ -2075,7 +2083,7 @@ class ContactSheet(QtWidgets.QWidget):
         # rows, cols = data.shape
 
         if ((sp_db is not None) and (data is not None)):
-            # if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in [scan_types.GENERIC_SCAN, scan_types.SAMPLE_POINT_SPECTRA]):
+            # if(dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in [scan_types.GENERIC_SCAN, scan_types.SAMPLE_POINT_SPECTRUM]):
             # if (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in [scan_types.GENERIC_SCAN]):
             #     fstr = os.path.join(self.data_dir, fname)
             #     info_str, info_jstr = self.build_image_params(fstr, sp_db, data, ev_idx=ev_idx, ev_pnt=ev_pnt, pol_idx=pol_idx, pol_pnt=0)
@@ -2343,7 +2351,7 @@ class ContactSheet(QtWidgets.QWidget):
             sp_db, data = self.get_sp_db_and_data(fstr)
             is_spec = False
             if ((sp_db is not None) and (data is not None)):
-                # if (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in [scan_types.GENERIC_SCAN,scan_types.SAMPLE_POINT_SPECTRA]):
+                # if (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in [scan_types.GENERIC_SCAN,scan_types.SAMPLE_POINT_SPECTRUM]):
                 if (dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE) not in spectra_type_scans):
                     info_str, info_jstr = self.build_image_params(fstr, sp_db, data, ev_idx=0, pol_idx=0)
                     info_dct = {'info_str': info_str, 'info_jstr': info_jstr}
@@ -2644,7 +2652,7 @@ class ContactSheet(QtWidgets.QWidget):
             self.spec_win.raise_()
 
     # def get_image_data(self, dct):
-    #     if(dct['scan_type'] is scan_types.SAMPLE_LINE_SPECTRA):
+    #     if(dct['scan_type'] is scan_types.SAMPLE_LINE_SPECTRUM):
     #         ev_rois = dct['sp_db']['EV_ROIS']
     #     else:
     #         data = dct['data']
@@ -2679,7 +2687,7 @@ class ContactSheet(QtWidgets.QWidget):
             data = dct['data']
             sp_db = dct['sp_db']
             title = dct['title']
-            if (dct['scan_type'] is scan_types.SAMPLE_LINE_SPECTRA):
+            if (dct['scan_type'] is scan_types.SAMPLE_LINE_SPECTRUM):
                 # sample line spec data may have different ev region resolutions so its special
                 wdg_com = make_base_wdg_com()
                 dct_put(wdg_com, WDGCOM_CMND, widget_com_cmnd_types.LOAD_SCAN)
@@ -2738,7 +2746,7 @@ if __name__ == "__main__":
     dir = r'S:\STXM-data\Cryo-STXM\2018\guest\1214'
     dir = r'S:\STXM-data\Cryo-STXM\2019\guest\test\0215'
     dir = r'C:\controls\stxm-data\guest\0515'
-    dir = r'C:\controls\stxm-data\guest\0110'
+    dir = r'C:\controls\stxm-data\2020\guest\0110'
     # dir = r'/home/bergr/git/testing/py27_qt5/py2.7/cls/data/guest'
     # main = ContactSheet(r'S:\STXM-data\Cryo-STXM\2016\guest\test')
     # main = ContactSheet(dir, BioxasDataIo)

@@ -16,7 +16,7 @@ from cls.scan_engine.bluesky.bluesky_defs import bs_dev_modes
 from cls.scan_engine.bluesky.test_gate import trig_src_types
 
 from cls.applications.pyStxm import abs_path_to_ini_file
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 from cls.scanning.BaseScan import BaseScan, SIM_SPEC_DATA, SIMULATE_SPEC_DATA
 from cls.scanning.scan_cfg_utils import set_devices_for_point_scan, set_devices_for_line_scan, make_timestamp_now
 from cls.types.stxmTypes import scan_types, scan_sub_types, \
@@ -63,8 +63,7 @@ class PatternGenScanClass(BaseScan):
 
         :returns: None
         """
-        super(PatternGenScanClass, self).__init__('%sstxm' % MAIN_OBJ.get_sscan_prefix(), 'SAMPLEXY_EV',
-                                                                      main_obj=MAIN_OBJ)
+        super(PatternGenScanClass, self).__init__(main_obj=MAIN_OBJ)
         #self.spid_data = None
         self.img_idx_map = {}
         self.spid_data = {}
@@ -217,28 +216,29 @@ class PatternGenScanClass(BaseScan):
         :returns: None
 
         """
+        super(PatternGenScanClass, self).configure(wdg_com, sp_id=sp_id, line=line, z_enabled=False)
         _logger.info('\n\nPatternGenScanClass: configuring sp_id [%d]' % sp_id)
         self.new_spatial_start_sent = False
         # initial setup and retrieval of common scan information
-        self.set_spatial_id(sp_id)
-        self.wdg_com = wdg_com
-        self.sp_rois = wdg_com[WDGCOM_SPATIAL_ROIS]
-        self.sp_ids = list(self.sp_rois.keys())
-        self.sp_id = sp_id
-        self.sp_db = self.sp_rois[sp_id]
-        self.scan_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_TYPE)
-        self.scan_sub_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE)
-        self.sample_positioning_mode = MAIN_OBJ.get_sample_positioning_mode()
-        self.sample_fine_positioning_mode = MAIN_OBJ.get_fine_sample_positioning_mode()
-
-        self.update_roi_member_vars(self.sp_db)
-
-        self.determine_scan_res()
+        # self.set_spatial_id(sp_id)
+        # self.wdg_com = wdg_com
+        # self.sp_rois = wdg_com[WDGCOM_SPATIAL_ROIS]
+        # self.sp_ids = list(self.sp_rois.keys())
+        # self.sp_id = sp_id
+        # self.sp_db = self.sp_rois[sp_id]
+        # self.scan_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_TYPE)
+        # self.scan_sub_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE)
+        # self.sample_positioning_mode = MAIN_OBJ.get_sample_positioning_mode()
+        # self.sample_fine_positioning_mode = MAIN_OBJ.get_fine_sample_positioning_mode()
+        #
+        # self.update_roi_member_vars(self.sp_db)
+        #
+        # self.determine_scan_res()
 
         if (ev_idx == 0):
             self.reset_evidx()
             self.reset_imgidx()
-            self.reset_pnt_spec_spid_idx()
+            #self.reset_pnt_spec_spid_idx()
             self.final_data_dir = None
             self.update_dev_data = []
 
@@ -250,26 +250,26 @@ class PatternGenScanClass(BaseScan):
             self.is_multi_spatial = False
             self.set_save_all_data(False)
 
-        # get the energy and EOU related setpoints
-        e_roi = self.e_rois[ev_idx]
-        self.setpointsDwell = dct_get(e_roi, DWELL)
-        # self.setpointsPol = self.convert_polarity_points(dct_get(e_roi, 'EPU_POL_PNTS'))
-        self.setpointsPol = dct_get(e_roi, EPU_POL_PNTS)
-        self.setpointsOff = dct_get(e_roi, EPU_OFF_PNTS)
-        self.setpointsAngle = dct_get(e_roi, EPU_ANG_PNTS)
-        self.ev_pol_order = dct_get(e_roi, EV_POL_ORDER)
-
-        sps = dct_get(self.wdg_com, SPDB_SINGLE_LST_SP_ROIS)
-        evs = dct_get(self.wdg_com, SPDB_SINGLE_LST_EV_ROIS)
-        pols = dct_get(self.wdg_com, SPDB_SINGLE_LST_POL_ROIS)
-        dwells = dct_get(self.wdg_com, SPDB_SINGLE_LST_DWELLS)
-        sub_type = dct_get(self.wdg_com, SPDB_SCAN_PLUGIN_SUBTYPE)
-        if(sub_type is scan_sub_types.POINT_BY_POINT):
-            self.is_pxp = True
-            self.is_lxl = False
-        else:
-            self.is_pxp = False
-            self.is_lxl = True
+        # # get the energy and EOU related setpoints
+        # e_roi = self.e_rois[ev_idx]
+        # self.setpointsDwell = dct_get(e_roi, DWELL)
+        # # self.setpointsPol = self.convert_polarity_points(dct_get(e_roi, 'EPU_POL_PNTS'))
+        # self.setpointsPol = dct_get(e_roi, EPU_POL_PNTS)
+        # self.setpointsOff = dct_get(e_roi, EPU_OFF_PNTS)
+        # self.setpointsAngle = dct_get(e_roi, EPU_ANG_PNTS)
+        # self.ev_pol_order = dct_get(e_roi, EV_POL_ORDER)
+        #
+        # sps = dct_get(self.wdg_com, SPDB_SINGLE_LST_SP_ROIS)
+        # evs = dct_get(self.wdg_com, SPDB_SINGLE_LST_EV_ROIS)
+        # pols = dct_get(self.wdg_com, SPDB_SINGLE_LST_POL_ROIS)
+        # dwells = dct_get(self.wdg_com, SPDB_SINGLE_LST_DWELLS)
+        # sub_type = dct_get(self.wdg_com, SPDB_SCAN_PLUGIN_SUBTYPE)
+        # if(sub_type is scan_sub_types.POINT_BY_POINT):
+        #     self.is_pxp = True
+        #     self.is_lxl = False
+        # else:
+        #     self.is_pxp = False
+        #     self.is_lxl = True
 
         self.use_hdw_accel = dct_get(self.sp_db, SPDB_HDW_ACCEL_USE)
         if (self.use_hdw_accel is None):
@@ -297,18 +297,18 @@ class PatternGenScanClass(BaseScan):
         #         self.x_auto_ddl = False
         #         self.x_use_reinit_ddl = True
 
-        # setup some convienience member variables
-        self.dwell = e_roi[DWELL]
-        self.numX = int(self.x_roi[NPOINTS])
-        self.numY = int(self.y_roi[NPOINTS])
-        self.numZX = int(self.zx_roi[NPOINTS])
-        self.numZY = int(self.zy_roi[NPOINTS])
-        self.numEPU = len(self.setpointsPol)
-        self.numE = int(self.sp_db[SPDB_EV_NPOINTS])
+        # # setup some convienience member variables
+        # self.dwell = e_roi[DWELL]
+        # self.numX = int(self.x_roi[NPOINTS])
+        # self.numY = int(self.y_roi[NPOINTS])
+        # self.numZX = int(self.zx_roi[NPOINTS])
+        # self.numZY = int(self.zy_roi[NPOINTS])
+        # self.numEPU = len(self.setpointsPol)
+        # self.numE = int(self.sp_db[SPDB_EV_NPOINTS])
+        #
+        # self.numSPIDS = len(self.sp_rois)
 
-        self.numSPIDS = len(self.sp_rois)
-
-        if (self.scan_type != scan_types.SAMPLE_POINT_SPECTRA):
+        if (self.scan_type != scan_types.SAMPLE_POINT_SPECTRUM):
             self.numImages = int(self.sp_db[SPDB_EV_NPOINTS] * self.numEPU * self.numSPIDS)
         else:
             # is a sample point spectrum
@@ -321,25 +321,25 @@ class PatternGenScanClass(BaseScan):
         else:
             self.stack = False
 
-        self.is_lxl = False
-        self.is_pxp = False
-        self.is_point_spec = False
-        self.file_saved = False
-        self.sim_point = 0
-
-        if (self.scan_sub_type == scan_sub_types.LINE_UNIDIR):
-            # LINE_UNIDIR
-            self.is_lxl = True
-        else:
-            # POINT_BY_POINT
-            self.is_pxp = True
-
-        if (self.fine_sample_positioning_mode == sample_fine_positioning_modes.ZONEPLATE):
-            self.is_zp_scan = True
-        else:
-            self.is_zp_scan = False
-            # determine and setup for line or point by point
-        self.ttl_pnts = 0
+        # self.is_lxl = False
+        # self.is_pxp = False
+        # self.is_point_spec = False
+        # self.file_saved = False
+        # self.sim_point = 0
+        #
+        # if (self.scan_sub_type == scan_sub_types.LINE_UNIDIR):
+        #     # LINE_UNIDIR
+        #     self.is_lxl = True
+        # else:
+        #     # POINT_BY_POINT
+        #     self.is_pxp = True
+        #
+        # if (self.fine_sample_positioning_mode == sample_fine_positioning_modes.ZONEPLATE):
+        #     self.is_zp_scan = True
+        # else:
+        #     self.is_zp_scan = False
+        #     # determine and setup for line or point by point
+        # self.ttl_pnts = 0
 
         # depending on the scan size the positioners used in the scan will be different, use a singe
         # function to find out which we are to use and return those names in a dct
@@ -355,12 +355,25 @@ class PatternGenScanClass(BaseScan):
         else:
             if (self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
                 # goniometer_zoneplate mode
-                self.configure_for_zxzy_fine_scan_hdw_accel(dct)
+                if (self.use_hdw_accel):
+                    self.configure_for_zxzy_fine_scan_hdw_accel(dct)
+                else:
+                    raise Exception('configure_for_zxzy_fine_scan()  This needs to be implemented!!!')
+
+
             elif((self.sample_positioning_mode == sample_positioning_modes.COARSE) and (self.fine_sample_positioning_mode == sample_fine_positioning_modes.ZONEPLATE)):
-                self.configure_for_coarse_zoneplate_fine_scan_hdw_accel(dct)
+                if (self.use_hdw_accel):
+                    self.configure_for_coarse_zoneplate_fine_scan_hdw_accel(dct)
+                else:
+                    raise Exception('configure_for_coarse_zoneplate_fine_scan()  This needs to be implemented!!!')
+
             else:
                 # coarse_samplefine mode
-                self.configure_for_samplefxfy_fine_scan_hdw_accel(dct)
+                if (self.use_hdw_accel):
+                    self.configure_for_samplefxfy_fine_scan_hdw_accel(dct)
+                else:
+                    raise Exception('configure_for_samplefxfy_fine_scan() does not exist, This needs to be implemented!!!')
+
         # move Gx and Gy to center of scan, is it within a um?
 
         self.final_data_dir = self.config_hdr_datarecorder(self.stack, self.final_data_dir)
@@ -368,6 +381,8 @@ class PatternGenScanClass(BaseScan):
 
         # make sure OSA XY is in its center
         self.move_osaxy_to_its_center()
+
+        self.seq_map_dct = self.generate_2d_seq_image_map(1, self.y_roi[NPOINTS], self.x_roi[NPOINTS], lxl=False)
 
         # THIS must be the last call
         self.finish_setup()
@@ -401,8 +416,8 @@ class PatternGenScanClass(BaseScan):
 
         """
         ### VERY IMPORTANT the current PID tune for ZX is based on a velo (SLew Rate) of 1,000,000
-        self.main_obj.device(DNM_ZONEPLATE_X).put('velocity', 1000000.0)
-        self.main_obj.device(DNM_ZONEPLATE_Y).put('velocity', 1000000.0)
+        self.main_obj.device(DNM_ZONEPLATE_X).set_velo(1000000.0)
+        self.main_obj.device(DNM_ZONEPLATE_Y).set_velo(1000000.0)
 
         self.set_config_devices_func(self.on_this_dev_cfg)
 
@@ -454,11 +469,11 @@ class PatternGenScanClass(BaseScan):
                 """
         ### VERY IMPORTANT the current PID tune for ZX is based on a velo (SLew Rate) of 1,000,000
         # must be FxFy
-        self.main_obj.device(DNM_SAMPLE_FINE_X).put('ServoPower', 1)
-        self.main_obj.device(DNM_SAMPLE_FINE_Y).put('ServoPower', 1)
+        self.main_obj.device(DNM_SAMPLE_FINE_X).set_power(1)
+        self.main_obj.device(DNM_SAMPLE_FINE_Y).set_power(1)
 
-        self.main_obj.device(DNM_SAMPLE_FINE_X).put('velocity', 100000.0)
-        self.main_obj.device(DNM_SAMPLE_FINE_Y).put('velocity', 100000.0)
+        self.main_obj.device(DNM_SAMPLE_FINE_X).set_velo(100000.0)
+        self.main_obj.device(DNM_SAMPLE_FINE_Y).set_velo(100000.0)
 
         #this scan is used with and without the goniometer so setupScan maybe None
         # if(self.setupScan):
@@ -516,11 +531,11 @@ class PatternGenScanClass(BaseScan):
                 """
         ### VERY IMPORTANT the current PID tune for ZX is based on a velo (SLew Rate) of 1,000,000
         # must be FxFy
-        self.main_obj.device(DNM_ZONEPLATE_X).put('ServoPower', 1)
-        self.main_obj.device(DNM_ZONEPLATE_Y).put('ServoPower', 1)
+        self.main_obj.device(DNM_ZONEPLATE_X).set_power( 1)
+        self.main_obj.device(DNM_ZONEPLATE_Y).set_power( 1)
 
-        self.main_obj.device(DNM_ZONEPLATE_X).put('velocity', 1000000.0)
-        self.main_obj.device(DNM_ZONEPLATE_Y).put('velocity', 1000000.0)
+        self.main_obj.device(DNM_ZONEPLATE_X).set_velo(1000000.0)
+        self.main_obj.device(DNM_ZONEPLATE_Y).set_velo(1000000.0)
 
         #this scan is used with and without the goniometer so setupScan maybe None
         # if(self.setupScan):

@@ -44,11 +44,11 @@ class IOCAppsPanel(BaseContentPanel):
     def make_app_sts_lbl(self, dev, hdr_txt):
 
         app_ltgreen = master_colors['app_ltgreen']
-        app_red = master_colors['app_red']
+        app_red = master_colors['app_yellow']
         white = master_colors['white']
-
+        print('IOCAppsPanel: make_app_sts_lbl: setting up [%s]' % hdr_txt)
         stsLbl = ophyd_biLabelWidget(dev,
-                                  hdrText=hdr_txt, title_color=white,
+                                  hdrText=hdr_txt, title_color=white, var_clr='blue',
                                   options=dict(state_clrs=[app_red, app_ltgreen]))
         stsLbl.binary_change.connect(self.on_binary_changed)
 

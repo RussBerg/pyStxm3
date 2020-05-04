@@ -170,7 +170,7 @@ def modify_line_spectra_nxdata_group(parent, data_nxgrp, doc, scan_type):
 
     det_nm = parent.get_primary_det_nm(doc['run_start'])
 
-    three_d_scans = [scan_types.SAMPLE_LINE_SPECTRA]
+    three_d_scans = [scan_types.SAMPLE_LINE_SPECTRUM]
     if(scan_type in three_d_scans):
         # det_data = np.array(parent._data['primary'][det_nm]['data'], dtype=np.float32).reshape((1, ynpoints, xnpoints))
         det_data = np.array(parent._data['primary'][det_nm][uid]['data'], dtype=np.float32)

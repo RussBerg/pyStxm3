@@ -1,17 +1,19 @@
-'''
+"""
 Created on Sep 26, 2016
 
 @author: bergr
-'''
+"""
 import os
 from bcm.devices.device_names import *
 
 from bluesky.plans import count, scan, grid_scan
+import bluesky.plans as bp
 import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 from cls.scanning.BaseScan import BaseScan
+from cls.scan_engine.decorators import conditional_decorator
 from cls.scanning.SScanClass import SScanClass
 from cls.scanning.scan_cfg_utils import set_devices_for_point_scan
 from cls.utils.roi_dict_defs import *
@@ -27,13 +29,18 @@ _logger = get_module_logger(__name__)
 class PtychographyScanClass(BaseScan):
     """ a scan for executing a detector point scan in X and Y, it takes an existing instance of an XYZScan class"""
     
-    def __init__(self):
+    def __init__(self, main_obj=None):
         """
         __init__(): description
 
         :returns: None
         """
-        super(PtychographyScanClass, self).__init__('%sstxm' % MAIN_OBJ.get_sscan_prefix(), SPDB_XY, main_obj=MAIN_OBJ)
+        super(PtychographyScanClass, self).__init__(main_obj=MAIN_OBJ)
+        self.inner_pts = []
+        self.outer_pnts = []
+        self.inner_posner = None
+        self.outer_posner = None
+        self.ev_first_flg = True # a flag so that the user can decide if they want the polarization to change every ev or vice versa
 
     def configure_devs(self, dets, gate):
         gate.set_dwell(self.dwell)
@@ -43,32 +50,294 @@ class PtychographyScanClass(BaseScan):
         #need to handle this better for multiple detectors, in the future todo
         dets[0].set_dwell(self.dwell)
 
+    def set_ev_first_flg(self, val):
+        '''
+        set the flag, 0 == EV then Pol, 1 == Pol then EV
+        :param val:
+        :return:
+        '''
+        self.ev_first_flg = val
+
+
+    # def make_single_pxp_image_plan(self, dets, gate, md=None, bi_dir=False, do_baseline=True):
+    #     '''
+    #     self explanatory
+    #     :param dets:
+    #     :param gate:
+    #     :param md:
+    #     :param bi_dir:
+    #     :param do_baseline:
+    #     :return:
+    #     '''
+    #     dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
+    #     self._bi_dir = bi_dir
+    #     if (md is None):
+    #         md = {'metadata': dict_to_json(
+    #             self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+    #
+    #
+    #     @conditional_decorator(bpp.baseline_decorator(dev_list), do_baseline)
+    #     #@bpp.stage_decorator(dets)
+    #     #@bpp.run_decorator(md=md)
+    #     def do_scan():
+    #         # Declare the end of the run.
+    #         mtr_x = self.main_obj.get_sample_fine_positioner('X')
+    #         mtr_y = self.main_obj.get_sample_fine_positioner('Y')
+    #         shutter = self.main_obj.device(DNM_SHUTTER)
+    #         ccd = self.main_obj.device(DNM_GREATEYES_CCD)
+    #
+    #         #yield from bps.stage(gate)
+    #
+    #         #shutter.open()
+    #
+    #         #yield from bps.open_run(md)
+    #         #start a new event document
+    #         #yield from bps.create()
+    #         for y in self.y_roi[SETPOINTS]:
+    #             yield from bps.mv(mtr_y, y)
+    #             #print('PtychographyScanClass: moving Y to [%.3f]' % y)
+    #             for x in self.x_roi[SETPOINTS]:
+    #                 #print('PtychographyScanClass: moving X to [%.3f]' % x)
+    #                 yield from bps.mv(mtr_x, x)
+    #                 #print('PtychographyScanClass: calling ccd.acquire()')
+    #
+    #
+    #                 img_dct = self.img_idx_map['%d' % self._current_img_idx]
+    #                 _meta = self.make_standard_metadata(entry_name=img_dct['entry'], scan_type=self.scan_type)
+    #                 _meta['det_fname'] = ccd.file_plugin.file_name
+    #                 # md = {'metadata': dict_to_json(
+    #                 #     self.make_standard_metadata(entry_name=img_dct['entry'], scan_type=self.scan_type))}
+    #                 md = {'metadata': dict_to_json( _meta )}
+    #
+    #                 yield from bps.open_run(md)
+    #                 yield from bps.trigger_and_read(dets)
+    #                 yield from bps.close_run()
+    #                 print('PtychographyScanClass: img_counter = [%d]' % self._current_img_idx)
+    #                 self._current_img_idx += 1
+    #
+    #         #closes current event document
+    #         #yield from bps.save()
+    #         #shutter.close()
+    #         # yield from bps.wait(group='e712_wavgen')
+    #         #yield from bps.unstage(gate)
+    #         #print('BaseScan: make_pxp_scan_plan: Leaving')
+    #
+    #     return (yield from do_scan())
+    #
+    # def make_pxp_scan_plan(self, dets, gate, md=None, bi_dir=False):
+    #     self._bi_dir = bi_dir
+    #
+    #     def do_scan():
+    #         cntr = 0
+    #         dwell_sec = self.dwell * 0.001
+    #         outer_posner = self.main_obj.device(self.outer_posner)
+    #         inner_posner = self.main_obj.device(self.inner_posner)
+    #         mtr_x = self.main_obj.get_sample_fine_positioner('X')
+    #         mtr_y = self.main_obj.get_sample_fine_positioner('Y')
+    #         shutter = self.main_obj.device(DNM_SHUTTER)
+    #         ccd = self.main_obj.device(DNM_GREATEYES_CCD)
+    #         #set the output file path and configure ccd
+    #         ccd.file_plugin.file_path.put('/home/bergr/SM/test_data/')
+    #         ccd.file_plugin.file_name.put('Ctest_')
+    #         ccd.file_plugin.file_number.put(0)
+    #
+    #         ccd.cam.image_mode.put(0) # single
+    #         ccd.cam.trigger_mode.put(0)  # internal
+    #         ccd.cam.acquire_time.put(dwell_sec)
+    #         #Ru says the acquire period should be a tad longer than exposer time
+    #         ccd.cam.acquire_period.put(dwell_sec + 0.002)
+    #
+    #         dets = [ccd, mtr_x, mtr_y]
+    #         yield from bps.stage(gate)
+    #         yield from bps.stage(ccd)
+    #
+    #         shutter.open()
+    #
+    #         for op in self.outer_pnts:
+    #             #print('PtychographyScanClass: moving outter posner [%s] to [%.2f]' % (outer_posner.get_name(), op))
+    #             yield from bps.mv(outer_posner, op)
+    #
+    #             for ip in self.inner_pts:
+    #                 #print('PtychographyScanClass: moving inner posner [%s] to [%.2f]' % (inner_posner.get_name(), ip))
+    #                 yield from bps.mv(inner_posner, ip)
+    #
+    #                 img_dct = self.img_idx_map['%d' % self._current_img_idx]
+    #                 md = {'metadata': dict_to_json(
+    #                     self.make_standard_metadata(entry_name=img_dct['entry'], scan_type=self.scan_type))}
+    #
+    #                 if(self._current_img_idx == 0):
+    #                     do_baseline = True
+    #                 else:
+    #                     do_baseline = False
+    #
+    #                 yield from self.make_single_pxp_image_plan(dets, gate, do_baseline=do_baseline)
+    #
+    #         print('PtychographyScanClass: done closing shutter')
+    #         shutter.close()
+    #         # yield from bps.wait(group='e712_wavgen')
+    #         yield from bps.unstage(gate)
+    #         yield from bps.unstage(ccd)
+    #         print('PtychographyScanClass: make_scan_plan Leaving')
+    #
+    #     return (yield from do_scan())
+
+    # def make_pxp_scan_plan(self, dets, gate, md=None, bi_dir=False):
+    #     dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
+    #     self._bi_dir = bi_dir
+    #     num_ttl_imgs = len(self.inner_pts) * len(self.outer_pnts) * self.y_roi[NPOINTS] * self.x_roi[NPOINTS]
+    #
+    #     if (md is None):
+    #         _meta = self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type)
+    #         _meta['num_ttl_imgs'] = num_ttl_imgs
+    #         _meta['img_idx_map'] = dict_to_json(self.img_idx_map)
+    #         md = {'metadata': dict_to_json(_meta)}
+    #
+    #         # md = {'metadata': dict_to_json(
+    #         #     self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+    #
+    #     @bpp.run_decorator(md=md)
+    #     @bpp.baseline_decorator(dev_list)
+    #     #@bpp.stage_decorator(dets)
+    #     def do_scan():
+    #         img_cntr = 0
+    #         dwell_sec = self.dwell * 0.001
+    #         outer_posner = self.main_obj.device(self.outer_posner)
+    #         inner_posner = self.main_obj.device(self.inner_posner)
+    #         mtr_x = self.main_obj.get_sample_fine_positioner('X')
+    #         mtr_y = self.main_obj.get_sample_fine_positioner('Y')
+    #         shutter = self.main_obj.device(DNM_SHUTTER)
+    #         ccd = self.main_obj.device(DNM_GREATEYES_CCD)
+    #         #set the output file path and configure ccd
+    #         ccd.file_plugin.file_path.put('/home/bergr/SM/test_data/')
+    #         ccd.file_plugin.file_name.put('Ctest_')
+    #         ccd.file_plugin.file_number.put(img_cntr)
+    #
+    #         ccd.cam.image_mode.put(0) # single
+    #         ccd.cam.trigger_mode.put(0)  # internal
+    #         ccd.cam.acquire_time.put(dwell_sec)
+    #         #Ru says the acquire period should be a tad longer than exposer time
+    #         ccd.cam.acquire_period.put(dwell_sec + 0.002)
+    #
+    #         yield from bps.stage(gate)
+    #         yield from bps.stage(ccd)
+    #
+    #         shutter.open()
+    #
+    #         for op in self.outer_pnts:
+    #             #print('PtychographyScanClass: moving outter posner [%s] to [%.2f]' % (outer_posner.get_name(), op))
+    #             yield from bps.mv(outer_posner, op)
+    #
+    #             for ip in self.inner_pts:
+    #                 #print('PtychographyScanClass: moving inner posner [%s] to [%.2f]' % (inner_posner.get_name(), ip))
+    #                 yield from bps.mv(inner_posner, ip)
+    #
+    #                 for y in self.y_roi[SETPOINTS]:
+    #                     yield from bps.mv(mtr_y, y)
+    #                     #print('PtychographyScanClass: moving Y to [%.3f]' % y)
+    #                     for x in self.x_roi[SETPOINTS]:
+    #                         #print('PtychographyScanClass: moving X to [%.3f]' % x)
+    #                         yield from bps.mv(mtr_x, x)
+    #                         #print('PtychographyScanClass: calling ccd.acquire()')
+    #                         yield from bps.trigger_and_read([ccd, mtr_y, mtr_x])
+    #                         img_cntr += 1
+    #                         print('PtychographyScanClass: img_counter = [%d]' % img_cntr)
+    #
+    #
+    #         print('PtychographyScanClass: done closing shutter')
+    #         shutter.close()
+    #         # yield from bps.wait(group='e712_wavgen')
+    #         yield from bps.unstage(gate)
+    #         yield from bps.unstage(ccd)
+    #
+    #         print('PtychographyScanClass: make_scan_plan Leaving')
+    #
+    #     return (yield from do_scan())
+
     def make_pxp_scan_plan(self, dets, gate, md=None, bi_dir=False):
         dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
-        self._bi_dir = bi_dir
-        if (md is None):
-            md = {'metadata': dict_to_json(
-                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
-        #@bpp.run_decorator(md={'entry_name': 'entry0', 'scan_type': scan_types.DETECTOR_IMAGE})
-        @bpp.baseline_decorator(dev_list)
-        @bpp.stage_decorator(dets)
-        def do_scan():
 
+        dwell_sec = self.dwell * 0.001
+        self._bi_dir = bi_dir
+        num_ttl_imgs = len(self.inner_pts) * len(self.outer_pnts) * self.y_roi[NPOINTS] * self.x_roi[NPOINTS]
+        ccd = self.main_obj.device(DNM_GREATEYES_CCD)
+        # set the output file path and configure ccd
+        ccd.file_plugin.file_path.put('/home/bergr/SM/test_data/')
+        # ccd.file_plugin.file_name.put('Ctest_')
+        ccd.file_plugin.file_number.put(0)
+
+        ccd.cam.image_mode.put(0)  # single
+        ccd.cam.trigger_mode.put(0)  # internal
+        ccd.cam.acquire_time.put(dwell_sec)
+        # Ru says the acquire period should be a tad longer than exposer time
+        ccd.cam.acquire_period.put(dwell_sec + 0.002)
+
+        ccd.stage()
+
+
+        if (md is None):
+            _meta = self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type)
+            _meta['num_ttl_imgs'] = num_ttl_imgs
+            _meta['img_idx_map'] = dict_to_json(self.img_idx_map)
+            _meta['det_filepath'] = ccd.file_plugin.file_path.get() + ccd.file_plugin.file_name.get() + '_000000.h5'
+            md = {'metadata': dict_to_json(_meta)}
+
+            # md = {'metadata': dict_to_json(
+            #     self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+
+
+        @bpp.baseline_decorator(dev_list)
+        #@bpp.stage_decorator(dets)
+        @bpp.run_decorator(md=md)
+        def do_scan():
+            # img_cntr = 0
+            # dwell_sec = self.dwell * 0.001
+            outer_posner = self.main_obj.device(self.outer_posner)
+            inner_posner = self.main_obj.device(self.inner_posner)
             mtr_x = self.main_obj.get_sample_fine_positioner('X')
             mtr_y = self.main_obj.get_sample_fine_positioner('Y')
             shutter = self.main_obj.device(DNM_SHUTTER)
+            # ccd = self.main_obj.device(DNM_GREATEYES_CCD)
+            # #set the output file path and configure ccd
+            # ccd.file_plugin.file_path.put('/home/bergr/SM/test_data/')
+            # #ccd.file_plugin.file_name.put('Ctest_')
+            # ccd.file_plugin.file_number.put(img_cntr)
+            #
+            # ccd.cam.image_mode.put(0) # single
+            # ccd.cam.trigger_mode.put(0)  # internal
+            # ccd.cam.acquire_time.put(dwell_sec)
+            # #Ru says the acquire period should be a tad longer than exposer time
+            # ccd.cam.acquire_period.put(dwell_sec + 0.002)
 
             yield from bps.stage(gate)
-            shutter.open()
-            yield from grid_scan(dets,
-                          mtr_y, self.y_roi[START], self.y_roi[STOP], self.y_roi[NPOINTS],
-                          mtr_x, self.x_roi[START], self.x_roi[STOP], self.x_roi[NPOINTS],
-                                 bi_dir,
-                                 md=md)
+            #yield from bps.stage(ccd)
 
+            shutter.open()
+            img_cntr = 0
+            for op in self.outer_pnts:
+                #print('PtychographyScanClass: moving outter posner [%s] to [%.2f]' % (outer_posner.get_name(), op))
+                yield from bps.mv(outer_posner, op)
+
+                for ip in self.inner_pts:
+                    #print('PtychographyScanClass: moving inner posner [%s] to [%.2f]' % (inner_posner.get_name(), ip))
+                    yield from bps.mv(inner_posner, ip)
+
+                    for y in self.y_roi[SETPOINTS]:
+                        yield from bps.mv(mtr_y, y)
+                        #print('PtychographyScanClass: moving Y to [%.3f]' % y)
+                        for x in self.x_roi[SETPOINTS]:
+                            #print('PtychographyScanClass: moving X to [%.3f]' % x)
+                            yield from bps.mv(mtr_x, x)
+                            #print('PtychographyScanClass: calling ccd.acquire()')
+                            yield from bps.trigger_and_read([ccd, mtr_y, mtr_x])
+                            img_cntr += 1
+                            print('PtychographyScanClass: img_counter = [%d]' % img_cntr)
+
+
+            print('PtychographyScanClass: done closing shutter')
             shutter.close()
             # yield from bps.wait(group='e712_wavgen')
             yield from bps.unstage(gate)
+            yield from bps.unstage(ccd)
 
             print('PtychographyScanClass: make_scan_plan Leaving')
 
@@ -117,7 +386,88 @@ class PtychographyScanClass(BaseScan):
         self.is_pxp = True
 
         self.config_basic_2d(wdg_com, sp_id=sp_id, z_enabled=False)
-        
+
+        ######################## NEW ######################################################################
+        # this img_idx_map is used in teh on_counter_changed handler to put the data in the correct array
+        self.inner_pts = []
+        self.outer_pnts = []
+
+        if (self.ev_first_flg == 0):
+            # ev is on the outer loop
+            outer_nm = 'e_idx'
+            inner_nm = 'pol_idx'
+            self.outer_pnts = []
+            for ev_roi in self.e_rois:
+                for ev_sp in ev_roi[SETPOINTS]:
+                    self.outer_pnts.append(ev_sp)
+            pol_setpoints = self.e_rois[0][EPU_POL_PNTS]
+            self.dwell = self.e_rois[0][DWELL]
+            for pol in pol_setpoints:
+                self.inner_pts.append(pol)
+            self.outer_posner = DNM_ENERGY
+            self.inner_posner = DNM_EPU_POLARIZATION
+        else:
+            # polarization is on the outer loop
+            inner_nm = 'e_idx'
+            outer_nm = 'pol_idx'
+            for ev_roi in self.e_rois:
+                for ev_sp in ev_roi[SETPOINTS]:
+                    self.inner_pts.append(ev_sp)
+
+            pol_setpoints = self.e_rois[0][EPU_POL_PNTS]
+            self.dwell = self.e_rois[0][DWELL]
+            for pol in pol_setpoints:
+                self.outer_pnts.append(pol)
+            self.outer_posner = DNM_EPU_POLARIZATION
+            self.inner_posner = DNM_ENERGY
+
+        self.img_idx_map = {}
+        indiv_img_idx = 0
+        spid = list(self.sp_rois.keys())[0]
+        sp_idx = 0
+        offset = 0
+        gt_mtr = self.main_obj.device(DNM_GONI_THETA)
+        if (gt_mtr):
+            gt_sp = gt_mtr.get_position()
+        else:
+            gt_sp = 0.0
+
+        # for future Ptycho/Tomo
+        # for gt_sp in self.gt_roi[SETPOINTS]:
+        #     for i in range(len(self.outer_pnts)):
+        #         for j in range(self.inner_pts):
+        #             for y in self.y_roi[SETPOINTS]:
+        #                 for x in self.x_roi[SETPOINTS]:
+        #                     self.img_idx_map['%d' % indiv_img_idx] = {outer_nm: i, inner_nm: j, 'sp_idx': sp_idx, 'sp_id': spid,
+        #                                                               'entry': 'entry%d' % (sp_idx),
+        #                                                               'rotation_angle': gt_sp}
+        #
+        #                     indiv_img_idx += 1
+
+        finex_nm = self.main_obj.get_sample_fine_positioner('X').get_name()
+        finey_nm = self.main_obj.get_sample_fine_positioner('Y').get_name()
+        self.x_roi[POSITIONER] = finex_nm
+        self.y_roi[POSITIONER] = finey_nm
+
+
+        for i in range(len(self.outer_pnts)):
+            for j in range(len(self.inner_pts)):
+                for y in self.y_roi[SETPOINTS]:
+                    for x in self.x_roi[SETPOINTS]:
+                        self.img_idx_map['%d' % indiv_img_idx] = {outer_nm: i, inner_nm: j, 'sp_idx': sp_idx, 'sp_id': spid,
+                                                                  'entry': 'entry%d' % (sp_idx),
+                                                                  'rotation_angle': gt_sp}
+
+                        indiv_img_idx += 1
+            # if (self.numEPU is 1):
+            #     offset += 1
+            # else:
+            #     offset += 2
+
+        #####################################################################################
+
+        self.seq_map_dct = self.generate_2d_seq_image_map(1, self.y_roi[NPOINTS], self.x_roi[NPOINTS], lxl=False)
+
         self.move_zpxy_to_its_center()
         
         

@@ -5,5 +5,5 @@ Module = tomography_scan
 [Documentation]
 Author = Russ Berg
 Version = 0.1
-Website = http://lateral.netmanagers.com.ar
+Website = http://
 Description = Params for an Zoneplate Tomography scan by Image line or Image Point by Point scan

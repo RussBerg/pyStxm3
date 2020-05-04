@@ -114,7 +114,7 @@ def main():
             report_progress(path, report=print, quiet=args.quiet)
         else:
             print('%s isn\'t a directory' % (path))
-        print()
+        
 
 if __name__ == "__main__":
     main()

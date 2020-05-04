@@ -19,7 +19,7 @@ from PyQt5 import QtCore, QtGui
 import time
 import zmq
 import simplejson as json
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 from bcm.devices.device_names import *
 from cls.utils.json_threadsave import dict_to_json_string
 

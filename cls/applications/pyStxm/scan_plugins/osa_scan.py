@@ -13,7 +13,7 @@ from PyQt5 import uic
 
 import copy
 import os
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ, DEFAULTS
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ, DEFAULTS
 from cls.scanning.base import ScanParamWidget, zp_focus_modes
 from cls.applications.pyStxm.scan_plugins import plugin_dir
 from cls.applications.pyStxm.scan_plugins.OsaScan import OsaScanClass
@@ -57,8 +57,14 @@ class OsaScanParam(ScanParamWidget):
         self.osaInBtn.clicked.connect(self.on_osa_in)
         self.setCenterBtn.clicked.connect(self.on_set_center)
         self.loadScanBtn.clicked.connect(self.load_scan)
+        self.osa_tracking_enabled = False
+        if(self.main_obj.device(DNM_OSAY_TRACKING, do_warn=False)):
+            self.osay_trcking_was = self.main_obj.device(DNM_OSAY_TRACKING).get_position()
+            self.osa_tracking_enabled
+        else:
+            self.osay_trcking_was = None
+            self.osa_tracking_enabled = False
 
-        self.osay_trcking_was = self.main_obj.device(DNM_OSAY_TRACKING).get_position()
         self.sp_db = None
         self.load_from_defaults()
         self.init_sp_db()
@@ -90,8 +96,9 @@ class OsaScanParam(ScanParamWidget):
         '''
         if (self.isEnabled()):
             #make sure that the OSA vertical tracking is off if it is on
-            self.osay_trcking_was = self.main_obj.device(DNM_OSAY_TRACKING).get_position()
-            self.main_obj.device(DNM_OSAY_TRACKING).put(0) #off
+            if(self.osa_tracking_enabled):
+                self.osay_trcking_was = self.main_obj.device(DNM_OSAY_TRACKING).get_position()
+                self.main_obj.device(DNM_OSAY_TRACKING).put(0) #off
 
     def on_plugin_defocus(self):
         '''
@@ -100,8 +107,9 @@ class OsaScanParam(ScanParamWidget):
         '''
 
         if (self.isEnabled()):
-            # put the OSA vertical tracking back to its previous state
-            self.main_obj.device(DNM_OSAY_TRACKING).put(self.osay_trcking_was)
+            if (self.osa_tracking_enabled):
+                # put the OSA vertical tracking back to its previous state
+                self.main_obj.device(DNM_OSAY_TRACKING).put(self.osay_trcking_was)
 
         # call the base class defocus
         super(OsaScanParam, self).on_plugin_defocus()

@@ -6,6 +6,7 @@ from collections import deque
 from bluesky.callbacks.core import CallbackBase, get_obj_fields
 from cls.plotWidgets.utils import *
 
+SIMULATE = True
 
 class QtDataEmitter(CallbackBase, QtCore.QObject):
     new_data = QtCore.pyqtSignal(object)
@@ -323,30 +324,47 @@ class ImageDataEmitter(BaseQtImageDataEmitter):
         self.cols = 0
         self.x_idx = 0
         self.y_idx = 0
+        self.img_idx = 0 #linespec scans can be made up of multiple images (ev regions) side by side in a single scan
         self.factor_list = []
         self._seq_dct = None
 
     def update_idxs(self, seq_num):
         '''
         The doc only contains a single sequence number so generate row column indexs
+        The sequence number is used as an index into teh sequence_map dict which is constructed like this:
+            {<seq num (int)>: {'img_num': <img_num> (int), 'row': <row_num> (int), 'col': <column_num> (int)},
+            ...
+            }
+
         :param seq_num:
         :return:
         '''
         if(seq_num in self._seq_dct.keys()):
-            #increment y
-            self.y_idx = self._seq_dct[seq_num][0]
-            #reset x
-            self.x_idx = self._seq_dct[seq_num][1]
+            self.img_idx = self._seq_dct[seq_num]['img_num']
+            #self.y_idx = self._seq_dct[seq_num][self.img_idx][0]
+            self.y_idx = self._seq_dct[seq_num]['row']
+            #self.x_idx = self._seq_dct[seq_num][self.img_idx][1]
+            self.x_idx = self._seq_dct[seq_num]['col']
         else:
             # increment x
             if(seq_num is not 1):
                 self.x_idx += 1
 
-    def set_row_col(self, rows, cols):
-        self.rows = rows
-        self.cols = cols
+    def set_row_col(self, rows, cols, seq_dct=None):
+        '''
+        if seq_dct is None then generate a new sequence dictionary map, otherwise install teh one that is passed in
+        :param rows:
+        :param cols:
+        :param seq_dct:
+        :return:
+        '''
+        self.rows = int(rows)
+        self.cols = int(cols)
         #self.gen_factor_list(cols)
-        self._seq_dct = gen_seq_num_to_x_y_dict(rows, cols, bi_dir=self._bi_dir)
+        if(seq_dct is None):
+            self._seq_dct = gen_seq_num_to_x_y_dict(self.rows, self.cols, bi_dir=self._bi_dir)
+        else:
+            self._seq_dct = seq_dct
 
     def start(self, doc):
         # print('ImageDataEmitter: start')
@@ -396,7 +414,10 @@ class ImageDataEmitter(BaseQtImageDataEmitter):
                 self.update_idxs(seq_num)
                 # print(doc['data'].keys())
                 if(self.det in doc['data'].keys()):
-                    new_det = doc['data'][self.det]
+                    if(SIMULATE):
+                        new_det = np.random.randint(65535)
+                    else:
+                        new_det = doc['data'][self.det]
                     new_x = self.x_idx
                     new_y = self.y_idx
                     #print('ImageDataEmitter: event: seq_num[%d] [%d, %d, %d]' % (seq_num, self.x_idx, self.y_idx, new_det))
@@ -428,6 +449,7 @@ class ImageDataEmitter(BaseQtImageDataEmitter):
             self._plot_dct[CNTR2PLOT_ROW] = int(new_y)
             self._plot_dct[CNTR2PLOT_COL] = int(new_x)
             self._plot_dct[CNTR2PLOT_VAL] = int(new_det)
+            self._plot_dct[CNTR2PLOT_IMG_CNTR] = int(self.img_idx)
             self._plot_dct[CNTR2PLOT_SCAN_TYPE] = self._scan_type
             self.new_plot_data.emit(self._plot_dct)
             # self.update_plot()

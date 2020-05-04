@@ -75,9 +75,10 @@ class Motor_Qt(EpicsMotor):
     use_torque = Cpt(EpicsSignal, '.CNEN', kind='omitted')
     ctrlr_status = Cpt(EpicsSignal, '.MSTA', kind='omitted')
 
+    max_velo = Cpt(EpicsSignal, '.VMAX', kind='omitted')
+
     #todo: this needs to be standardized so that all attrs are lower case
     #the following is here for compatability with e712_sample_motor
-    ServoPower = Cpt(EpicsSignal, '.CNEN', kind='omitted')
 
     def __init__(self, *args, **kwargs):
 
@@ -155,6 +156,34 @@ class Motor_Qt(EpicsMotor):
 
     #def limits(self):
     #    return (self.get_low_limit(), self.get_high_limit())
+    def config_start_stop(self, start=0.0, stop=0.0, npts=1, accRange=0.0, deccRange=1.0, line=True):
+        """
+                config_samplex_start_stop(): to be implemented by the inheriting class, the main reason for this
+                function is that if the driver needs to setup a trigger position etc that that driver call would be done here
+                by teh inheriting driver class
+
+                :param start: start description
+                :type start: start type
+
+                :param stop: stop description
+                :type stop: stop type
+
+                :param npts: npts description
+                :type npts: npts type
+
+                :param accRange=0.0: accRange=0.0 description
+                :type accRange=0.0: accRange=0.0 type
+
+                :param deccRange=0.0: accRange=0.0 description
+                :type deccRange=0.0: accRange=0.0 type
+
+                :param line=True: line=True description
+                :type line=True: line=True type
+
+                :returns: None
+                """
+        pass
+
 
     #@required_for_connection
     @ctrlr_status.sub_value
@@ -332,6 +361,22 @@ class Motor_Qt(EpicsMotor):
     # def set_calibrated_position(self, pos):
     #     self.put('calibPosn', pos)
     #
+
+    def get_max_velo(self):
+        '''
+        return max velocity
+        '''
+        vmax = self.max_velo.get()
+        if(vmax == 0.0):
+            vmax = self.velocity.get()
+        return(vmax)
+
+    def set_velo(self, velo):
+        '''
+        set the velocity
+        '''
+        self.velocity.put(velo)
+
     def set_position(self, position, dial=False, step=False, raw=False):
         """
       Sets the motor position in user, dial or step coordinates.

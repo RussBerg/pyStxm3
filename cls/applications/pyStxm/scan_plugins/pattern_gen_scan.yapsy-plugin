@@ -5,5 +5,5 @@ Module = pattern_gen_scan
 [Documentation]
 Author = Russ Berg
 Version = 0.1
-Website = http://lateral.netmanagers.com.ar
+Website = http://
 Description = Params for pattern generator scan

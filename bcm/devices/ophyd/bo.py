@@ -16,6 +16,8 @@ class Bo(BaseObject):
                       'ZNAM', 'ONAM')
         self.main_dev = self.add_device(base_signal_name)
         self.changed = self.main_dev.changed
+        self.on_connect = self.main_dev.on_connect
+        self.is_connected = self.main_dev.is_connected
 
         for _attr in self.attrs:
             # sig_name = self.base_signal_name + self._delim + '%s' % _attr

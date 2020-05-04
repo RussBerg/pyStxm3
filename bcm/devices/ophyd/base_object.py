@@ -5,21 +5,21 @@ from bcm.devices import BaseDevice
 
 class BaseObject(QtCore.QObject):
 
-    def __init__(self, base_signal_name, write_pv=None, val_only=False, val_kw='value', backend='epics'):
+    def __init__(self, name, write_pv=None, val_only=False, val_kw='value', backend='epics'):
         super(BaseObject, self).__init__()
-        self.base_signal_name = base_signal_name
+        self.name = name
         self.backend = backend
         self.devs = {}
 
     def report(self):
-        print('name = %s, type = %s' % (str(self.__class__), self.name))
+        print('\tname = %s, type = %s' % (str(self.__class__), self.name))
 
     def get_name(self):
         '''
 
         :return:
         '''
-        return (self.base_signal_name)
+        return (self.name)
 
     def on_change(self, val):
         self.changed.emit(val)
@@ -32,14 +32,14 @@ class BaseObject(QtCore.QObject):
         :param val_kw:
         :param backend:
         :param is_dev_attr: basically all this means is that if the device is an attr to the main object then use the
-        base_signal_name + sig_name, otherwise just use sig_name, makes it cleaner when adding addrs such as for an
+        name + sig_name, otherwise just use sig_name, makes it cleaner when adding addrs such as for an
         Mbbi object definition, then the attrs are stored in the self.devs by attr not the fully qualified name, so gets
         and puts become self.dev.put('VAL') as opposed to self.dev.put('BL1610-I10:ScanSelflag.A')
         :return:
         '''
         if(is_dev_attr):
             # construct the full name and store using just the attr name
-            complete_sig_name = self.base_signal_name + _delim + sig_name
+            complete_sig_name = self.name + _delim + sig_name
             self.devs[sig_name] = BaseDevice(complete_sig_name, write_pv=complete_sig_name, val_only=val_only, val_kw=val_kw,
                                              backend=self.backend)
         else:

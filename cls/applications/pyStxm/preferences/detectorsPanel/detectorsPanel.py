@@ -8,7 +8,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5 import uic
 
 from cls.appWidgets.basePreference import BasePreference
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 from cls.app_data.defaults import get_style
 from cls.utils.log import get_module_logger
 from cls.utils.dict_utils import dct_get, dct_put

@@ -4,11 +4,11 @@ Created on Apr 26, 2017
 
 @author: bergr
 '''
-import os
+#import os
 import copy
-import atexit
-import numpy as np
-import time
+#import atexit
+#import numpy as np
+#import time
 
 from bluesky.plans import count, scan, grid_scan
 import bluesky.plan_stubs as bps
@@ -17,32 +17,33 @@ import bluesky.preprocessors as bpp
 from bcm.devices.device_names import *
 
 from cls.applications.pyStxm import abs_path_to_ini_file
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 
 from cls.scanning.BaseScan import BaseScan, SIM_SPEC_DATA, SIMULATE_SPEC_DATA
-from cls.scanning.SScanClass import SScanClass
-from cls.scanning.scan_cfg_utils import set_devices_for_point_scan, set_devices_for_line_scan, \
-    set_devices_for_e712_wavegen_point_scan, set_devices_for_e712_wavegen_line_scan, make_timestamp_now
+#from cls.scanning.SScanClass import SScanClass
+#from cls.scanning.scan_cfg_utils import set_devices_for_point_scan, set_devices_for_line_scan, \
+#    set_devices_for_e712_wavegen_point_scan, set_devices_for_e712_wavegen_line_scan, make_timestamp_now
 from cls.types.stxmTypes import scan_types, scan_sub_types, \
     energy_scan_order_types, sample_positioning_modes, sample_fine_positioning_modes
 from cls.scanning.scan_cfg_utils import ensure_valid_values, calc_accRange
 from cls.utils.roi_dict_defs import *
-from cls.utils.dict_utils import dct_get
+#from cls.utils.dict_utils import dct_get
 from cls.utils.log import get_module_logger
 from cls.utils.cfgparser import ConfigClass
 from cls.utils.dict_utils import dct_put, dct_get
-from cls.types.beamline import BEAMLINE_IDS
-from cls.utils.prog_dict_utils import make_progress_dict
+#from cls.types.beamline import BEAMLINE_IDS
+#from cls.utils.prog_dict_utils import make_progress_dict
 from cls.utils.json_utils import dict_to_json
-from cls.utils.qt5_utils import get_signals
-
-from cls.zeromq.epics.epics_api import *
-
+#from cls.utils.qt5_utils import get_signals
+#from cls.zeromq.epics.epics_api import *
 from cls.plotWidgets.utils import *
 
 _logger = get_module_logger(__name__)
 
 appConfig = ConfigClass(abs_path_to_ini_file)
+
+#get the accel disstance for now from the app configuration
+ACCEL_DISTANCE = MAIN_OBJ.get_preset_as_float('coarse_accel_distance')
 
 
 class CoarseSampleImageScanClass(BaseScan):
@@ -51,20 +52,15 @@ class CoarseSampleImageScanClass(BaseScan):
     '''
 
 
-    def __init__(self):
+    def __init__(self, main_obj=None):
         """
         __init__(): description
 
         :returns: None
         """
-        super(CoarseSampleImageScanClass, self).__init__('%sstxm' % MAIN_OBJ.get_sscan_prefix(), 'SAMPLEXY_EV_WG',
-                                                         main_obj=MAIN_OBJ)
-        self.x_use_reinit_ddl = False
-        # self.x_use_ddl = False
+        super(CoarseSampleImageScanClass, self).__init__(main_obj=main_obj)
         # self.x_use_reinit_ddl = False
-        # self.x_start_end_pos = False
-        # self.x_force_reinit = False
-        self.x_auto_ddl = True
+        # self.x_auto_ddl = True
         #self.spid_data = None
         self.img_idx_map = {}
         self.spid_data = {}
@@ -107,7 +103,7 @@ class CoarseSampleImageScanClass(BaseScan):
 
         return (yield from do_scan())
 
-    def make_lxl_scan_plan(self, dets, gate, bi_dir=False):
+    def make_lxl_scan_plan(self, dets, gate, md=None, bi_dir=False):
         '''
 
         this needs to be adapted to be a fly scan, setup SampleX to trigger at correct location, set scan velo and acc range
@@ -119,289 +115,40 @@ class CoarseSampleImageScanClass(BaseScan):
         '''
         dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
         self._bi_dir = bi_dir
-        mtr_dct = self.determine_samplexy_posner_pvs()
-        zp_def = self.get_zoneplate_info_dct()
-        md = {'entry_name': 'entry0', 'scan_type': self.scan_type,
-              'rois': {SPDB_X: self.x_roi, SPDB_Y: y_roi, SPDB_Z: zz_roi},
-              'dwell': self.dwell,
-              'primary_det': DNM_DEFAULT_COUNTER,
-              'zp_def': zp_def,
-              'wdg_com': dict_to_json(self.wdg_com)}
-
+        if (md is None):
+            md = {'metadata': dict_to_json(
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)
+        @bpp.run_decorator(md=md)
         def do_scan():
             mtr_x = self.main_obj.device(DNM_SAMPLE_X)
             mtr_y = self.main_obj.device(DNM_SAMPLE_Y)
-            mtr_z = self.main_obj.device(DNM_ZONEPLATE_Z_BASE)
             shutter = self.main_obj.device(DNM_SHUTTER)
 
             yield from bps.stage(gate)
             # the detector will be staged automatically by the grid_scan plan
             shutter.open()
-            bps.open_run(md=md)
+            #bps.open_run(md=md)
 
             # go to start of line
-            yield from bps.mv(mtr_x, self.x_roi[START], mtr_y, self.y_roi[CENTER])
+            yield from bps.mv(mtr_x, self.x_roi[START] - ACCEL_DISTANCE, mtr_y, self.y_roi[START])
 
-            # now do a horizontal line for every new zoneplate Z setpoint
-            for sp in self.zz_roi[SETPOINTS]:
-                yield from bps.mv(mtr_z, sp)
-                yield from bps.mv(mtr_z, self.x_roi[STOP])
-                yield from bps.mv(mtr_z, self.x_roi[START])
+            # now do a horizontal line for every new Y setpoint
+            for y_sp in self.y_roi[SETPOINTS]:
+                yield from bps.mv(mtr_y, y_sp)
+                yield from bps.mv(mtr_x, self.x_roi[STOP] + ACCEL_DISTANCE)
+                #return
+                yield from bps.mv(mtr_x, self.x_roi[START] - ACCEL_DISTANCE)
 
             shutter.close()
-            # yield from bps.wait(group='e712_wavgen')
+
             yield from bps.unstage(gate)
-            bps.close_run()
+            #bps.close_run()
             print('CoarseSampleImageScanClass LxL: make_scan_plan Leaving')
 
         return (yield from do_scan())
 
-    # def init_update_dev_lst(self):
-    #     '''
-    #      populate the list of devices I want snapshotted on each data_level_done signal, I dont like that the nexus path
-    #      is specified here, needs to be handled in a more standard way
-    #     :return:
-    #     '''
-    #     self.update_dev_lst = []
-    #     self.update_dev_lst.append(DNM_ENERGY)
-    #
-    #     self.update_dev_lst.append(DNM_EPU_POLARIZATION)
-    #     self.update_dev_lst.append(DNM_EPU_ANGLE)
-    #     self.update_dev_lst.append(DNM_EPU_GAP)
-    #     self.update_dev_lst.append(DNM_EPU_HARMONIC)
-    #     self.update_dev_lst.append(DNM_EPU_OFFSET)
-    #
-    #     self.update_dev_lst.append(DNM_PMT)
-    #     self.update_dev_lst.append(DNM_RING_CURRENT)
-    #     self.update_dev_lst.append(DNM_TYCHO_CAMERA)
-    #
-    #     #self.main_obj.zmq_register_upd_list(self.update_dev_lst)
-    #
-    #
-    # def init_sscans(self):
-    #
-    #     self.cb_idxs = []
-    #     self.ttl_pnts = 0
-    #     self.final_data_dir = None
-    #
-    #     self.setupScan = SScanClass('%s:scan5' % self.scan_prefix, 'SETUP', main_obj=MAIN_OBJ)
-    #     self._scan5 = SScanClass('%s:scan5' % self.scan_prefix, 'SSETUP', main_obj=MAIN_OBJ)
-    #     self._scan4 = SScanClass('%s:scan4' % self.scan_prefix, SPDB_EV_EV, main_obj=MAIN_OBJ)
-    #     self._scan3 = SScanClass('%s:scan3' % self.scan_prefix, SPDB_EV_POL, main_obj=MAIN_OBJ)
-    #
-    #     self._scan2 = SScanClass('%s:scan2' % self.scan_prefix, SPDB_Y, posner=MAIN_OBJ.device(DNM_SAMPLE_Y),
-    #                              main_obj=MAIN_OBJ)
-    #     self._scan1 = SScanClass('%s:scan1' % self.scan_prefix, SPDB_X, posner=MAIN_OBJ.device(DNM_SAMPLE_X),
-    #                              main_obj=MAIN_OBJ)
-    #
-    #     self.evScan = self._scan4
-    #     self.evScan.set_positioner(1, MAIN_OBJ.device('ENERGY'))
-    #
-    #     self.polScan = self._scan3
-    #     self.polScan.set_positioner(1, MAIN_OBJ.device(DNM_EPU_POLARIZATION))
-    #     self.polScan.set_positioner(2, MAIN_OBJ.device(DNM_EPU_OFFSET))
-    #     self.polScan.set_positioner(3, MAIN_OBJ.device(DNM_EPU_ANGLE))
-    #
-    #     ev_pol_lxl = {}
-    #     ev_pol_lxl['cmd_file'] = '%s/coarseimage_ev_then_pol.cmd' % self.script_dir
-    #     ev_pol_lxl['ev_section_id'] = SPDB_EV_EV
-    #     ev_pol_lxl['pol_section_id'] = SPDB_EV_POL
-    #     ev_pol_lxl['setup_scan'] = self.setupScan
-    #     ev_pol_lxl['ev_scan'] = self._scan4
-    #     ev_pol_lxl['pol_scan'] = self._scan3
-    #     ev_pol_lxl['y_scan'] = self._scan2
-    #     ev_pol_lxl['x_scan'] = self._scan1
-    #     ev_pol_lxl['xy_scan'] = None
-    #     ev_pol_lxl['top_lvl_scan'] = self._scan4
-    #     ev_pol_lxl['data_lvl_scan'] = self._scan2
-    #     ev_pol_lxl['btm_lvl_scan'] = self._scan1
-    #     ev_pol_lxl['on_counter_changed'] = self.on_coarse_sample_scan_counter_changed
-    #     ev_pol_lxl['on_data_level_done'] = self.on_this_scan_done
-    #     ev_pol_lxl['on_abort_scan'] = self.on_abort_scan
-    #     ev_pol_lxl['on_scan_done'] = None
-    #     ev_pol_lxl['on_dev_cfg'] = self.on_this_dev_cfg
-    #     ev_pol_lxl['modify_config'] = None
-    #     ev_pol_lxl['scanlist'] = [self._scan1, self._scan2, self._scan3, self._scan4]
-    #
-    #     ev_pol_pxp = {}
-    #     ev_pol_pxp['cmd_file'] = '%s/coarseimage_ev_then_pol_pxp.cmd' % self.script_dir
-    #     ev_pol_pxp['ev_section_id'] = SPDB_EV_EV
-    #     ev_pol_pxp['pol_section_id'] = SPDB_EV_POL
-    #     ev_pol_pxp['setup_scan'] = self.setupScan
-    #     ev_pol_pxp['ev_scan'] = self._scan4
-    #     ev_pol_pxp['pol_scan'] = self._scan3
-    #     ev_pol_pxp['y_scan'] = self._scan2
-    #     ev_pol_pxp['x_scan'] = self._scan1
-    #     ev_pol_pxp['xy_scan'] = None
-    #     ev_pol_pxp['top_lvl_scan'] = self._scan4
-    #     ev_pol_pxp['data_lvl_scan'] = self._scan2
-    #     ev_pol_pxp['btm_lvl_scan'] = self._scan1
-    #     ev_pol_pxp['on_counter_changed'] = self.on_sample_scan_counter_changed
-    #     ev_pol_pxp['on_data_level_done'] = self.on_done_save_jpg_and_tmp_file
-    #     ev_pol_pxp['on_abort_scan'] = self.on_abort_scan
-    #     ev_pol_pxp['on_scan_done'] = None
-    #     ev_pol_pxp['on_dev_cfg'] = self.on_this_dev_cfg
-    #     ev_pol_pxp['modify_config'] = None
-    #     ev_pol_pxp['scanlist'] = [self._scan1, self._scan2, self._scan3, self._scan4]
-    #
-    #     self.cmdfile_parms = {}
-    #     self.cmdfile_parms['ev_pol_lxl'] = ev_pol_lxl
-    #     self.cmdfile_parms['ev_pol_pxp'] = ev_pol_pxp
-    #
-    #     self.xyScan = self._scan1
-    #
-    #     self.lxl_yScan = self._scan2
-    #     self.lxl_xScan = self._scan1
-    #
-    #     self.pxp_yScan = self._scan2
-    #     self.pxp_xScan = self._scan1
-    #
-    #     self.pnt_yScan = self._scan2
-    #     self.pnt_xScan = self._scan1
-
-    def on_this_scan_done(self):
-        # self.shutter.close()
-        # self.gate.stop()
-        # self.counter.stop()
-        # #Jan 9 2018
-        # self.ensure_data()
-        #
-        # self.save_hdr()
-        # #self.on_save_sample_image()
-        # self.on_scan_done_discon_sigs()
-        pass
-
-    # def ensure_data(self):
-    #     _img_idx = self.get_imgidx() - 1
-    #     # this is a temp hack to fix CoarseImageSSCAN
-    #     if (not (hasattr(self, '_data'))):
-    #         t_img_idx = _img_idx
-    #         if (t_img_idx < 0):
-    #             t_img_idx = 0
-    #         _dct = self.get_img_idx_map(t_img_idx)
-    #         sp_id = _dct['sp_id']
-    #         sp_idx = _dct['sp_idx']
-    #         pol_idx = _dct['pol_idx']
-    #
-    #         # for now just use the default counter
-    #         counter = DNM_DEFAULT_COUNTER
-    #         self._data = self.spid_data[counter][sp_id][pol_idx]
-    #
-    # def on_done_save_jpg_and_tmp_file(self):
-    #     '''
-    #     this is a handler for data_ready signal from SscanClass if there are more than one images being acquired
-    #     the done here is for data_level_done, where we want to save a jpg, update the tmp file and continue IFF
-    #     the current image idx does not qual the last image index
-    #     :return:
-    #     '''
-    #     cur_idx = self.get_consecutive_scan_idx()
-    #
-    #     _logger.debug('CoarseSampleImageScanClass: on_done_save_jpg_and_tmp_file() called [%d]' % cur_idx)
-    #
-    #     _dct = self.get_img_idx_map(cur_idx)
-    #     sp_id = _dct['sp_id']
-    #     sp_idx = _dct['sp_idx']
-    #     pol_idx = _dct['pol_idx']
-    #
-    #     # for now just use the first counter
-    #     #counter = self.counter_dct.keys()[0]
-    #     counter = DNM_DEFAULT_COUNTER
-    #     self._data = self.spid_data[counter][sp_id][pol_idx]
-    #
-    #     #self.on_save_sample_image(_data=self._data)
-    #     self.on_save_sample_image(_data=self.img_data[sp_id])
-    #
-    #     _dct = self.get_snapshot_dict(cur_idx)
-    #     self.main_obj.zmq_save_dict_to_tmp_file(_dct)
-    #
-    #     # added this conditional when working on coarse scans
-    #     # not sure why I would need this incremented for fine scans
-    #     if (self.is_fine_scan):
-    #         self.incr_consecutive_scan_idx()
-    #
-    #     # THIS IS CRITICAL
-    #     # now that we have all of the data from all of the detectors, tell the sscan rec to continue
-    #     self._scan2.sscan.put('WAIT', 0)
-    #     ###############################
-    #     if (cur_idx == self.numImages - 1):
-    #         print('hey! I think this is the scan_done')
-    #         self.shutter.close()
-    #         self.on_scan_done_discon_sigs()
-    #         self.save_hdr()
-    #
-    #
-    # def on_scan_done_discon_sigs(self):
-    #     """
-    #     on_scan_done(): fires when the top level scan is done, calls on_child_scan_done() if one has been
-    #     configured by parent scan plugin
-    #
-    #     :returns: None
-    #     """
-    #
-    #     if (self.signals_connected):
-    #         # _logger.debug('BaseScan: on_scan_done_discon_sigs: emitted all_done sig')
-    #         self.all_done.emit()
-    #     else:
-    #         _logger.debug('BaseScan: on_scan_done_discon_sigs: ELSE: sigs were not connected')
-    #     # if(done):
-    #     self.disconnect_signals()
-    #
-    #
-    #
-    # def optimize_sample_line_scan(self):
-    #     '''
-    #     To be implemented by the inheriting class
-    #     This function is meant to retrieve from the ini file the section for its scan and set any PDLY's
-    #     and any other settings required to optimize the scan for speed.
-    #     Typically this is used by the scans that move the fine piezo stages as their status response can greatly
-    #     mprove the performance if it is optimized.
-    #
-    #     appConfig.get_value('SAMPLE_IMAGE', 'whatever')
-    #     c_scan1_pdly=0.0
-    #     c_scan2_pdly=0.0
-    #     f_scan2_pdly=0.0
-    #     f_scan1_pdly=0.15
-    #     # force done values are: 0=NORMAL, 1=FORCED, 2=INTERNAL_TIMED
-    #     f_fx_force_done=2
-    #     f_fy_force_done=1
-    #     '''
-    #     appConfig.update()
-    #     c_scan1_pdly = float(appConfig.get_value('SAMPLE_IMAGE_LXL', 'c_scan1_pdly'))
-    #     c_scan2_pdly = float(appConfig.get_value('SAMPLE_IMAGE_LXL', 'c_scan2_pdly'))
-    #     f_scan1_pdly = float(appConfig.get_value('SAMPLE_IMAGE_LXL', 'f_scan1_pdly'))
-    #     f_scan2_pdly = float(appConfig.get_value('SAMPLE_IMAGE_LXL', 'f_scan2_pdly'))
-    #     c_fx_force_done = float(appConfig.get_value('SAMPLE_IMAGE_LXL', 'c_fx_force_done'))
-    #     c_fy_force_done = float(appConfig.get_value('SAMPLE_IMAGE_LXL', 'c_fy_force_done'))
-    #     f_fx_force_done = float(appConfig.get_value('SAMPLE_IMAGE_LXL', 'f_fx_force_done'))
-    #     f_fy_force_done = float(appConfig.get_value('SAMPLE_IMAGE_LXL', 'f_fy_force_done'))
-    #     fx_done = MAIN_OBJ.device('FX_force_done')
-    #     fy_done = MAIN_OBJ.device('FY_force_done')
-    #
-    #     if (self.x_roi[SCAN_RES] == 'COARSE'):
-    #         self.xScan.put('PDLY', c_scan1_pdly)
-    #         fx_done.put(c_fx_force_done)
-    #     else:
-    #         self.xScan.put('PDLY', f_scan1_pdly)
-    #         fx_done.put(f_fx_force_done)
-    #
-    #     if (self.y_roi[SCAN_RES] == 'COARSE'):
-    #         self.yScan.put('PDLY', c_scan2_pdly)
-    #         fy_done.put(c_fy_force_done)
-    #     else:
-    #         self.yScan.put('PDLY', f_scan2_pdly)
-    #         fy_done.put(f_fy_force_done)
-    #
-    # def on_abort_scan(self):
-    #     """
-    #     on_abort_scan(): description
-    #
-    #     :returns: None
-    #     """
-    #     if (self.main_obj.device('Shutter').is_auto()):
-    #         self.main_obj.device('Shutter').close()
-    #     self._abort = True
 
     def configure(self, wdg_com, sp_id=0, ev_idx=0, line=True, block_disconnect_emit=False):
         """
@@ -442,25 +189,26 @@ class CoarseSampleImageScanClass(BaseScan):
         :returns: None
 
         """
+        super(CoarseSampleImageScanClass, self).configure(wdg_com, sp_id=sp_id, line=line, z_enabled=False)
         _logger.info('\n\nCoarseSampleImageScanClass: configuring sp_id [%d]' % sp_id)
         self.new_spatial_start_sent = False
         # initial setup and retrieval of common scan information
         self.set_spatial_id(sp_id)
-        self.wdg_com = wdg_com
-        self.sp_rois = wdg_com[WDGCOM_SPATIAL_ROIS]
-        self.sp_ids = list(self.sp_rois.keys())
-        self.sp_db = self.sp_rois[sp_id]
-        self.scan_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_TYPE)
-        self.scan_sub_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE)
-        self.sample_positioning_mode = MAIN_OBJ.get_sample_positioning_mode()
+        # self.wdg_com = wdg_com
+        # self.sp_rois = wdg_com[WDGCOM_SPATIAL_ROIS]
+        # self.sp_ids = list(self.sp_rois.keys())
+        # self.sp_db = self.sp_rois[sp_id]
+        # self.scan_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_TYPE)
+        # self.scan_sub_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE)
+        # self.sample_positioning_mode = MAIN_OBJ.get_sample_positioning_mode()
 
-        self.update_roi_member_vars(self.sp_db)
+        #self.update_roi_member_vars(self.sp_db)
 
         #the wavegenerator does both axis in one sscan record by calling the wavegenerator to execute,
         # this is done in sscan2
-        self.xScan = self._scan1
-        self.yScan = self._scan2
-        self.xyScan = None
+        # self.xScan = self._scan1
+        # self.yScan = self._scan2
+        # self.xyScan = None
 
         self.determine_scan_res()
         if(self.is_fine_scan):
@@ -474,7 +222,7 @@ class CoarseSampleImageScanClass(BaseScan):
         if (ev_idx == 0):
             self.reset_evidx()
             self.reset_imgidx()
-            self.reset_pnt_spec_spid_idx()
+            #self.reset_pnt_spec_spid_idx()
             self.final_data_dir = None
             self.update_dev_data = []
 
@@ -526,11 +274,11 @@ class CoarseSampleImageScanClass(BaseScan):
         if (self.scan_sub_type == scan_sub_types.LINE_UNIDIR):
             # LINE_UNIDIR
             self.is_lxl = True
-            _id = 'ev_pol_lxl'
+
         else:
             # POINT_BY_POINT
             self.is_pxp = True
-            _id = 'ev_pol_pxp'
+
 
         # parms = self.cmdfile_parms[_id]
         # self.set_cmdfile_params(parms)
@@ -566,7 +314,7 @@ class CoarseSampleImageScanClass(BaseScan):
         #
         # # depending on the scan size the positioners used in the scan will be different, use a singe
         # # function to find out which we are to use and return those names in a dct
-        # dct = self.determine_samplexy_posner_pvs()
+        dct = self.determine_samplexy_posner_pvs()
 
         self.config_for_sample_holder_scan(dct)
 
@@ -576,9 +324,194 @@ class CoarseSampleImageScanClass(BaseScan):
         # make sure OSA XY is in its center
         self.move_osaxy_to_its_center()
 
+        self.seq_map_dct = self.generate_2d_seq_image_map(1, self.y_roi[NPOINTS], self.x_roi[NPOINTS], lxl=self.is_lxl)
+
         # THIS must be the last call
         self.finish_setup()
         # self.new_spatial_start.emit(sp_id)
+
+    def config_for_sample_holder_scan(self, dct):
+        """
+        this function accomplishes the following:
+            - set the positoners for X and Y
+            - set the sample X and Y positioners to self.sample_mtrx etc
+            - determine and set the fine positioners to sample_finex etc
+            - move the sample_mtrx/y to start by setting scan Mode too ScanStart then moving and waiting until stopped
+            - determine if coarse or fine scan and PxP or LxL and:
+                - get max velo of the x positioner
+                - Determine if scan is Line Spectra
+                    - if LineSpectra the number of points is Y not X
+                    - calc ScanVelo, Npts and Dwell, adjusting Npts to match velo and dwell
+                - Depending on coarse or fine scans calc accel/deccel range or get straight from blConfig
+                - Set the MarkerStart,ScanStart/Stop etc by calling config_samplex_start_stop
+                - set the X positioner velocity to the scan velo
+                - set the driver Mode to LINE_UNIDIR or COARSE or whatever it needs
+                - if Fine scan make sure the servo power is on
+        """
+        self.sample_mtrx = self.main_obj.get_sample_positioner('X')
+        self.sample_mtry = self.main_obj.get_sample_positioner('Y')
+        self.sample_finex = self.main_obj.get_sample_fine_positioner('X')
+        self.sample_finey = self.main_obj.get_sample_fine_positioner('Y')
+
+        # setup X positioner
+        self.sample_mtrx.set_mode(self.sample_mtrx.MODE_SCAN_START)
+        self.sample_mtrx.move(dct['xstart'])
+        _logger.info('Waiting for SampleX to move to start')
+        self.confirm_stopped([self.sample_mtrx])
+
+        # setup Y positioner
+        self.sample_mtry.set_mode(self.sample_mtrx.MODE_SCAN_START)
+        self.sample_mtry.move(dct['ystart'])
+        _logger.info('Waiting for SampleY to move to start')
+        self.confirm_stopped([self.sample_mtry])
+
+        # setup X
+        if (self.is_pxp or self.is_point_spec):
+            if (self.x_roi[SCAN_RES] == COARSE):
+                #scan_velo = self.get_mtr_max_velo(self.xScan.P1)
+                scan_velo = self.sample_mtrx.get_max_velo()
+            else:
+                #scan_velo = self.get_mtr_max_velo(self.main_obj.device(DNM_SAMPLE_FINE_X))
+                scan_velo = self.sample_finex.get_max_velo()
+
+            # x needs one extra to switch the row
+            npts = self.numX
+            dwell = self.dwell
+            accRange = 0
+            deccRange = 0
+            line = False
+        else:
+            _ev_idx = self.get_evidx()
+            e_roi = self.e_rois[_ev_idx]
+            vmax = self.sample_mtrx.get_max_velo()
+            # its not a point scan so determine the scan velo and accRange
+            if (self.scan_type == scan_types.SAMPLE_LINE_SPECTRUM):
+                # for line spec scans the number of points is saved in self.numY
+                (scan_velo, npts, dwell) = ensure_valid_values(self.x_roi[START], self.x_roi[STOP], self.dwell,
+                                                               self.numY, vmax, do_points=True)
+            else:
+                (scan_velo, npts, dwell) = ensure_valid_values(self.x_roi[START], self.x_roi[STOP], self.dwell,
+                                                               self.numX, vmax, do_points=True)
+
+            if (self.x_roi[SCAN_RES] == COARSE):
+                accRange = calc_accRange(dct['sx_name'], self.x_roi[SCAN_RES], self.x_roi[RANGE], scan_velo, dwell,
+                                         accTime=0.04)
+                deccRange = accRange
+            else:
+                #pick up any changes from disk from the app config file
+                #appConfig.update()
+                section = 'SAMPLE_IMAGE_PXP'
+                if (self.is_lxl):
+                    section = 'SAMPLE_IMAGE_LXL'
+
+                #accRange = float(appConfig.get_value(section, 'f_acc_rng'))
+                #deccRange = float(appConfig.get_value(section, 'f_decc_rng'))
+                accRange = self.main_obj.get_preset(section, 'f_acc_rng')
+                deccRange = self.main_obj.get_preset(section, 'f_decc_rng')
+
+            # the number of points may have changed in order to satisfy the dwell the user wants
+            # so update the number of X points and dwell
+            # self.numX = npts
+            # self.x_roi[NPOINTS] = npts
+
+            line = True
+            e_roi[DWELL] = dwell
+            self.dwell = dwell
+
+        print('accRange=%.2f um' % (accRange))
+        print('deccRange=%.2f um' % (deccRange))
+
+        # move X to start
+        # self.sample_mtrx.put('Mode', MODE_SCAN_START)
+        # self.sample_mtrx.put('Mode', MODE_NORMAL)
+        if (self.is_lxl):
+            # self.config_samplex_start_stop(dct['xpv'], self.x_roi[START], self.x_roi[STOP], self.numX, accRange=accRange, line=line)
+            if (self.x_roi[SCAN_RES] == COARSE):
+                self.sample_mtrx.config_start_stop(self.x_roi[START], self.x_roi[STOP], self.numX, accRange=accRange, deccRange=deccRange, line=line)
+                self.sample_mtrx.set_velo(scan_velo)
+                #self.config_samplex_start_stop(dct['sample_pv_nm']['X'], self.x_roi[START], self.x_roi[STOP], self.numX,
+                # accRange=accRange, deccRange=deccRange, line=line)
+            else:
+                # if it is a fine scan then dont use the abstract motor for the actual scanning
+                # because the status fbk timing is currently not stable
+                self.sample_finex.config_start_stop(self.x_roi[START], self.x_roi[STOP], self.numX, accRange=accRange,
+                                                   deccRange=deccRange, line=line)
+                self.sample_finex.set_velo(scan_velo)
+                # self.config_samplex_start_stop(dct['fine_pv_nm']['X'], self.x_roi[START], self.x_roi[STOP],
+                #                                self.numX, accRange=accRange, deccRange=deccRange, line=line)
+
+        #self.set_x_scan_velo(scan_velo)
+        # self.confirm_stopped([self.sample_mtrx, self.sample_mtry])
+
+        self.num_points = self.numY
+
+        # self.confirm_stopped(self.mtr_list)
+        # set teh velocity in teh sscan rec for X
+        if (self.is_pxp or self.is_point_spec):
+            # force it to toggle, not sure why this doesnt just work
+            if (self.x_roi[SCAN_RES] == COARSE):
+                #self.sample_mtrx.put('Mode', MODE_COARSE)
+                self.sample_mtrx.set_mode(self.sample_mtrx.MODE_COARSE)
+
+            else:
+                #self.sample_mtrx.put('Mode', MODE_POINT)
+                #self.sample_finex.set_power( 1)
+                self.sample_mtrx.set_mode(self.sample_mtrx.MODE_POINT)
+                self.sample_finex.set_power(self.sample_mtrx.POWER_ON)
+
+            if (self.y_roi[SCAN_RES] == COARSE):
+                #self.sample_mtry.put('Mode', MODE_COARSE)
+                self.sample_mtry.set_mode(self.sample_mtry.MODE_COARSE)
+            else:
+                #self.sample_mtry.put('Mode', MODE_LINE_UNIDIR)
+                #self.sample_finey.set_power( 1)
+                self.sample_mtry.set_mode(self.sample_mtry.MODE_LINE_UNIDIR)
+                self.sample_finey.set_power(self.sample_mtry.POWER_ON)
+
+
+        else:
+            # force it to toggle, not sure why this doesnt just work
+            if (self.x_roi[SCAN_RES] == COARSE):
+                #self.sample_mtrx.put('Mode', MODE_COARSE)
+                self.sample_mtrx.set_mode(self.sample_mtrx.MODE_COARSE)
+                #self.xScan.put('P1PV', dct['coarse_pv_nm']['X'] + '.VAL')
+                #self.xScan.put('R1PV', dct['coarse_pv_nm']['X'] + '.RBV')
+            #                self.xScan.put('BSPV', dct['sample_pv_nm']['X'] + '.VELO')
+            # self.main_obj.device( DNM_CX_AUTO_DISABLE_POWER ).put(0) #disabled
+            # self.set_sample_posner_mode(self.sample_mtrx, self.sample_finex, MODE_COARSE)
+            else:
+                #self.sample_mtrx.put('Mode', MODE_LINE_UNIDIR)
+                self.sample_mtrx.set_mode(self.sample_mtrx.MODE_LINE_UNIDIR)
+
+                #self.xScan.put('P1PV', dct['fine_pv_nm']['X'] + '.VAL')
+                #self.xScan.put('R1PV', dct['fine_pv_nm']['X'] + '.RBV')
+                #self.sample_finex.set_power( 1)
+                self.sample_finex.set_power(self.sample_mtrx.POWER_ON)
+
+            # self.main_obj.device( DNM_CX_AUTO_DISABLE_POWER ).put(1) #enabled
+            # self.set_sample_posner_mode(self.sample_mtrx, self.sample_finex, MODE_LINE_UNIDIR)
+
+            # set Y's scan mode
+            if (self.y_roi[SCAN_RES] == COARSE):
+                # self.set_sample_posner_mode(self.sample_mtrx, self.sample_finex, MODE_COARSE)
+                #self.sample_mtry.put('Mode', MODE_COARSE)
+                self.sample_mtry.set_mode(self.sample_mtrx.MODE_COARSE)
+
+                #self.yScan.put('P1PV', dct['coarse_pv_nm']['Y'] + '.VAL')
+                #self.yScan.put('R1PV', dct['coarse_pv_nm']['Y'] + '.RBV')
+
+            else:
+
+                # self.set_sample_posner_mode(self.sample_mtrx, self.sample_finex, MODE_LINE_UNIDIR)
+                # self.sample_mtry.put('Mode', MODE_NORMAL)
+                #self.sample_mtry.put('Mode', MODE_LINE_UNIDIR)
+                self.sample_mtry.set_mode(self.sample_mtrx.MODE_LINE_UNIDIR)
+                #self.yScan.put('P1PV', dct['fine_pv_nm']['Y'] + '.VAL')
+                #self.yScan.put('R1PV', dct['fine_pv_nm']['Y'] + '.RBV')
+                #self.sample_finey.set_power( 1)
+                self.sample_finey.set_power(self.sample_mtry.POWER_ON)
+
+            # self.main_obj.device( DNM_CY_AUTO_DISABLE_POWER ).put(1) #enabled
 
     def on_this_dev_cfg(self):
         """

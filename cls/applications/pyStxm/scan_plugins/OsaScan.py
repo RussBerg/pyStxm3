@@ -10,7 +10,7 @@ from bluesky.plans import count, scan, grid_scan
 import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 
-from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 from cls.scanning.BaseScan import BaseScan
 from cls.scanning.SScanClass import SScanClass
 from cls.scanning.scan_cfg_utils import set_devices_for_point_scan
@@ -33,7 +33,7 @@ class OsaScanClass(BaseScan):
 
         :returns: None
         """
-        super(OsaScanClass, self).__init__('%sstxm' % MAIN_OBJ.get_sscan_prefix(), SPDB_XY, main_obj=MAIN_OBJ)
+        super(OsaScanClass, self).__init__(main_obj=MAIN_OBJ)
 
     def configure_devs(self, dets, gate):
         gate.set_dwell(self.dwell)
@@ -119,7 +119,8 @@ class OsaScanClass(BaseScan):
         self.config_basic_2d(wdg_com, sp_id=sp_id, z_enabled=False)
         
         self.move_zpxy_to_its_center()
-        
+
+        self.seq_map_dct = self.generate_2d_seq_image_map(1, self.y_roi[NPOINTS], self.x_roi[NPOINTS], lxl=False)
         
         
     def on_this_dev_cfg(self):

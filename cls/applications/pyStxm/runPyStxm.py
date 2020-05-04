@@ -14,7 +14,7 @@ import pstats
 
 
 def clean_up():
-    from cls.applications.pyStxm.bl10ID01 import MAIN_OBJ
+    from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
     MAIN_OBJ.cleanup()
 
 def determine_profile_bias_val():
@@ -60,9 +60,10 @@ def profile_it():
     p.sort_stats('cumulative').print_stats(100)
 
 def go():
-    #kill fricken carepeater
-    #os.system("taskkill /f /im  caRepeater.exe")
-
+    '''
+    the main launch function for pystxm
+    :return:
+    '''
     debugger = sys.gettrace()
     from cls.appWidgets.dialogs import excepthook
     sys.excepthook = excepthook
@@ -71,7 +72,7 @@ def go():
     if (not os.path.exists(logdir)):
         os.makedirs(logdir)
 
-    logfile = os.path.join(logdir, time.strftime("%Y%m%d-%H%M%S") + '.log')
+    logfile = os.path.join(logdir, time.strftime("%Y%m%d") + '.log')
     log = log_to_qt_and_to_file(logfile, level=logging.DEBUG)
 
     app = QtWidgets.QApplication(sys.argv)
@@ -91,6 +92,7 @@ def go():
 
     app.aboutToQuit.connect(clean_up)
     pystxm_win.show()
+
 
     try:
         #starts event loop

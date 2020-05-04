@@ -38,11 +38,11 @@ _logger = get_module_logger(__name__)
 appConfig = ConfigClass(os.path.join( os.path.dirname(os.path.abspath(__file__)),  'counters.ini'))
 #appConfig = ConfigClass(abs_path_to_top + '\counters.ini')
 
-uiDir = appConfig.get_value('DEFAULT', 'uiDir')
-dataDir = appConfig.get_value('DEFAULT', 'dataDir')
-cfgDir = appConfig.get_value('DEFAULT', 'cfgDir')
+uiDir = appConfig.get_value('MAIN', 'uiDir')
+dataDir = appConfig.get_value('MAIN', 'dataDir')
+cfgDir = appConfig.get_value('MAIN', 'cfgDir')
 sigList = appConfig.get_value('PV', 'sigList')
-SLASH = appConfig.get_value('DEFAULT', 'dirslash')
+SLASH = appConfig.get_value('MAIN', 'dirslash')
 
 icoDir = os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','icons')
 

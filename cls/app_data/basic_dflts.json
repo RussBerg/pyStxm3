@@ -1,0 +1,360 @@
+{
+    "APP": {
+        "UI": {
+            "COLORS": {
+                "app_blue": "rgb(114, 148, 240);",
+                "app_drkblue": "rgb(0, 85, 255);",
+                "app_drkgray": "rgb(66, 69, 66);",
+                "app_green": "rgb(99, 142, 82);",
+                "app_ltblue": "rgb(115, 150, 247);",
+                "app_ltgray": "rgb(165, 165, 165);",
+                "app_ltgreen": "rgb(85,255,127);",
+                "app_medblue": "rgb(94,123, 209);",
+                "app_meddrkgray": "rgb(100, 100, 100);",
+                "app_medgray": "rgb(115, 113, 115);",
+                "app_red": "rgb(142,50,50);",
+                "app_superltgray": "rgb(205, 205, 205);",
+                "app_yellow": "rgb(236,236,0);",
+                "black": "rgb(0,0,0);",
+                "btn_pressed": "qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 rgb(94, 128, 220), stop:1 rgb(72, 99, 174));",
+                "fbk_moving_ylw": "rgb(254, 233, 0);",
+                "master_background_color": "rgb(115,113,115);",
+                "msg_color": "rgb(0, 0, 254);",
+                "plot_bckgrnd": "rgb(0,0,0);",
+                "plot_forgrnd": "rgb(2,116,255);",
+                "plot_gridmaj": "rgb(63,63,63);",
+                "plot_gridmin": "rgb(40,40,40);",
+                "scan_sts_blue": "rgb(60, 115, 235);",
+                "white": "rgb(255,255,255);"
+            }
+        }
+    },
+    "PREFS": {
+        "DETECTORSPANEL": {
+            "COUNTER_APD": {
+                "COUNTER": "ctr1",
+                "DEVICE": "Dev3",
+                "ENABLED": false,
+                "SRC_CLK": "PFI2",
+                "SRC_TERM": "PFI1"
+            },
+            "PMT": {
+                "COUNTER": "ctr2",
+                "DEVICE": "Dev4",
+                "ENABLED": false,
+                "SRC_CLK": "PFI12",
+                "SRC_TERM": "PFI0"
+            }
+        }
+    },
+    "PRESETS": {
+        "DETECTOR": {
+            "ABS_CENTER": [
+                586,
+                259
+            ],
+            "CENTER": [
+                586,
+                259
+            ]
+        },
+        "OSA": {
+            "ABS_CENTER": [
+                -2416,
+                882.96
+            ],
+            "ABS_OUT": [
+                -4000,
+                null
+            ],
+            "CENTER": [
+                -2416,
+                882.96
+            ],
+            "OUT": [
+                -4000,
+                null
+            ]
+        },
+        "OSA_PARAMS": [
+            {
+                "D": 30.0,
+                "osa_id": 1
+            },
+            {
+                "D": 50.0,
+                "osa_id": 2
+            },
+            {
+                "D": 40.0,
+                "osa_id": 3
+            }
+        ],
+        "ZP_FOCUS_PARAMS": {
+            "OSA_A0": 534,
+            "OSA_A0MAX": 554,
+            "OSA_D": 50.0,
+            "OSA_IDEAL_A0": 534,
+            "OSA_IDX": 1,
+            "ZP_A1": -6.792,
+            "ZP_D": 240.0,
+            "ZP_IDX": 0
+        },
+        "ZP_PARAMS": [
+            {
+                "CsD": 45.0,
+                "D": 100.0,
+                "OZone": 60.0,
+                "a1": -4.84,
+                "zp_id": 1
+            },
+            {
+                "CsD": 90.0,
+                "D": 240.0,
+                "OZone": 35.0,
+                "a1": -6.792,
+                "zp_id": 2
+            },
+            {
+                "CsD": 90.0,
+                "D": 240.0,
+                "OZone": 40.0,
+                "a1": -7.767,
+                "zp_id": 3
+            },
+            {
+                "CsD": 60.0,
+                "D": 140.0,
+                "OZone": 40.0,
+                "a1": -4.524,
+                "zp_id": 4
+            },
+            {
+                "CsD": 95.0,
+                "D": 240.0,
+                "OZone": 25.0,
+                "a1": -4.859,
+                "zp_id": 5
+            }
+        ]
+    },
+    "SCAN": {
+        "DETECTOR": {
+            "CENTER": [
+                586,
+                259,
+                0,
+                0
+            ],
+            "DWELL": 2.0,
+            "NPOINTS": [
+                20,
+                20,
+                0,
+                0
+            ],
+            "RANGE": [
+                20,
+                20,
+                0,
+                0
+            ],
+            "STEP": [
+                1,
+                1,
+                0,
+                0
+            ]
+        },
+        "FOCUS": {
+            "CENTER": [
+                586,
+                259,
+                0,
+                0
+            ],
+            "DWELL": 2.0,
+            "NPOINTS": [
+                20,
+                20,
+                0,
+                0
+            ],
+            "RANGE": [
+                20,
+                20,
+                0,
+                0
+            ],
+            "STEP": [
+                1,
+                1,
+                0,
+                0
+            ]
+        },
+        "LINE": {
+            "CENTER": [
+                586,
+                259,
+                0,
+                0
+            ],
+            "DWELL": 2.0,
+            "NPOINTS": [
+                20,
+                20,
+                0,
+                0
+            ],
+            "RANGE": [
+                20,
+                20,
+                0,
+                0
+            ],
+            "STEP": [
+                1,
+                1,
+                0,
+                0
+            ]
+        },
+        "OSA": {
+            "CENTER": [
+                586,
+                259,
+                0,
+                0
+            ],
+            "DWELL": 2.0,
+            "NPOINTS": [
+                20,
+                20,
+                0,
+                0
+            ],
+            "RANGE": [
+                20,
+                20,
+                0,
+                0
+            ],
+            "STEP": [
+                1,
+                1,
+                0,
+                0
+            ]
+        },
+        "OSA_FOCUS": {
+            "CENTER": [
+                586,
+                259,
+                0,
+                0
+            ],
+            "DWELL": 2.0,
+            "NPOINTS": [
+                20,
+                20,
+                0,
+                0
+            ],
+            "RANGE": [
+                20,
+                20,
+                0,
+                0
+            ],
+            "STEP": [
+                1,
+                1,
+                0,
+                0
+            ]
+        },
+        "POINT": {
+            "CENTER": [
+                586,
+                259,
+                0,
+                0
+            ],
+            "DWELL": 2.0,
+            "NPOINTS": [
+                20,
+                20,
+                0,
+                0
+            ],
+            "RANGE": [
+                20,
+                20,
+                0,
+                0
+            ],
+            "STEP": [
+                1,
+                1,
+                0,
+                0
+            ]
+        },
+        "SAMPLE_LXL": {
+            "CENTER": [
+                586,
+                259,
+                0,
+                0
+            ],
+            "DWELL": 2.0,
+            "NPOINTS": [
+                20,
+                20,
+                0,
+                0
+            ],
+            "RANGE": [
+                20,
+                20,
+                0,
+                0
+            ],
+            "STEP": [
+                1,
+                1,
+                0,
+                0
+            ]
+        },
+        "SAMPLE_PXP": {
+            "CENTER": [
+                586,
+                259,
+                0,
+                0
+            ],
+            "DWELL": 2.0,
+            "NPOINTS": [
+                20,
+                20,
+                0,
+                0
+            ],
+            "RANGE": [
+                20,
+                20,
+                0,
+                0
+            ],
+            "STEP": [
+                1,
+                1,
+                0,
+                0
+            ]
+        }
+    },
+    "fpath": "C:\\controls\\github\\pyStxm3\\cls\\app_data\\basic_dflts.json"
+}

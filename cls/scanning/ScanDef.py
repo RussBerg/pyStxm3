@@ -10,7 +10,7 @@ from PyQt5 import QtCore, QtGui
 
 from cls.utils.unique_id import uniqueid
 from cls.utils.enum_utils import Enum
-from cls.applications.pyStxm.bl10ID01 import DEVICE_CFG
+from cls.applications.pyStxm.main_obj_init import DEVICE_CFG
 
 from bcm.epics_devices_MOVED.scan import Scan
 from bcm.epics_devices_MOVED.motor_v2 import Motor_V2 as Motor

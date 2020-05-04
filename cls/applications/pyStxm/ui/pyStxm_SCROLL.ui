@@ -1499,6 +1499,9 @@ p, li { white-space: pre-wrap; }
            <layout class="QVBoxLayout" name="verticalLayout_9">
             <item>
              <widget class="QScrollArea" name="scrollArea_2">
+              <property name="sizeAdjustPolicy">
+               <enum>QAbstractScrollArea::AdjustToContents</enum>
+              </property>
               <property name="widgetResizable">
                <bool>true</bool>
               </property>

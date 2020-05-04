@@ -4,6 +4,6 @@ requirements are that the following must be defined:
     mod_file = 'prefTemplate.py'      the module filename
 
 '''
-mod_file = 'uhv_bl10ID1.py'
-mod_classname = 'dev_config_uhv'
+mod_file = 'basic.py'
+#mod_classname = 'dev_config_uhv'
 

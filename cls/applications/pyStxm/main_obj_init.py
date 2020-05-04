@@ -18,7 +18,7 @@ from cls.types.beamline import BEAMLINE_IDS
 from cls.types.stxmTypes import sample_positioning_modes, sample_fine_positioning_modes
 from cls.utils.cfgparser import ConfigClass
 from cls.utils.log import get_module_logger
-from cls.applications.pyStxm.bl_config_loader import load_beamline_device_config
+from cls.applications.pyStxm.bl_config_loader import load_beamline_device_config, load_beamline_preset
 # from twisted.python.components import globalRegistry
 _logger = get_module_logger(__name__)
 
@@ -46,21 +46,33 @@ DEVPRFX = 'SIM_'
 MAIN_OBJ = None
 DEVICE_CFG = None
 
+#get the current scanning mode from teh app.ini configuration
+bl_config_nm = appConfig.get_value('MAIN', 'bl_config')
+blConfig = load_beamline_preset(bl_config_nm)
 
-MAIN_OBJ = main_object_base('CLS SM 10ID1','UHV STXM', BEAMLINE_IDS.STXM)
-#MAIN_OBJ.set_sample_positioning_mode(sample_positioning_modes.COARSE)
-MAIN_OBJ.set_datafile_prefix('C')
-MAIN_OBJ.set_thumbfile_suffix('jpg')
-MAIN_OBJ.set_endstation_prefix('uhv')
+#get the beamline specifics, found in bl_configs/<bl>/<bl>.ini
+beamline_desc = blConfig['BL_CFG_MAIN']['beamline_desc']
+endstation_name = blConfig['BL_CFG_MAIN']['endstation_name']
+endstation_prefix = blConfig['BL_CFG_MAIN']['endstation_prefix']
+datafile_prefix = blConfig['BL_CFG_MAIN']['datafile_prefix']
+scanning_mode = blConfig['SCANNING_MODE']['scanning_mode']
+
+#MAIN_OBJ = main_object_base(beamline_desc, endstation_name, BEAMLINE_IDS.STXM)
+MAIN_OBJ = main_object_base(beamline_desc, endstation_name)
+MAIN_OBJ.set_datafile_prefix(datafile_prefix)
+#MAIN_OBJ.set_thumbfile_suffix('jpg')
+MAIN_OBJ.set_endstation_prefix(endstation_prefix)
 ver_str = 'Version %s.%s' % (MAIN_OBJ.get('APP.MAJOR_VER'), MAIN_OBJ.get('APP.MINOR_VER'))
 splash = get_splash(img_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pyStxmSplash.png'),
                     ver_str=ver_str)
 
-#get teh current scanning mode from teh app.ini configuration
-scanning_mode = appConfig.get_value('DEFAULT', 'scanning_mode')
+
+
+MAIN_OBJ.set_sample_scanning_mode_string(scanning_mode)
+
 sample_mode = None
 fine_sample_mode = None
-bl_config_nm = appConfig.get_value('DEFAULT', 'bl_config')
+
 
 # COARSE_SAMPLEFINE (formerly 'conventional') scanning mode = Sample_pos_mode=COARSE, sample_fine_pos_mode=SAMPLE_FINE
 # GONI_ZONEPLATE scanning mode = Sample_pos_mode=GONIOMETER, sample_fine_pos_mode=ZONEPLATE
@@ -70,7 +82,6 @@ if (scanning_mode == 'GONI_ZONEPLATE'):
     # must be ZONEPLATE SCANNING, so set all
     MAIN_OBJ.set_sample_positioning_mode(sample_positioning_modes.GONIOMETER)
     MAIN_OBJ.set_fine_sample_positioning_mode(sample_fine_positioning_modes.ZONEPLATE)
-    MAIN_OBJ.set_sample_scanning_mode_string('GONI_ZONEPLATE Scanning')
 
     sample_mode = sample_positioning_modes.GONIOMETER
     fine_sample_mode = sample_fine_positioning_modes.ZONEPLATE
@@ -80,7 +91,7 @@ elif (scanning_mode == 'COARSE_SAMPLEFINE'):
     # set coarse mode
     MAIN_OBJ.set_sample_positioning_mode(sample_positioning_modes.COARSE)
     sample_mode = sample_positioning_modes.COARSE
-    MAIN_OBJ.set_sample_scanning_mode_string('COARSE_SAMPLEFINE Scanning')
+
     MAIN_OBJ.set_fine_sample_positioning_mode(sample_fine_positioning_modes.SAMPLEFINE)
     fine_sample_mode = sample_fine_positioning_modes.SAMPLEFINE
     #else:
@@ -93,14 +104,20 @@ elif (scanning_mode == 'COARSE_ZONEPLATE'):
     MAIN_OBJ.set_fine_sample_positioning_mode(sample_fine_positioning_modes.ZONEPLATE)
     sample_mode = sample_positioning_modes.COARSE
     fine_sample_mode = sample_fine_positioning_modes.ZONEPLATE
-    MAIN_OBJ.set_sample_scanning_mode_string('COARSE_ZONEPLATE Scanning')
+
 
 # DEVICE CONECTION
 if ((sample_mode is not None) and (fine_sample_mode is not None)):
     # connect to all teh devices for the desired beamline configuration
     DEVICE_CFG = load_beamline_device_config(bl_config_nm)
     MAIN_OBJ.set_devices(DEVICE_CFG)
-    DEFAULTS = Defaults('uhvstxm_dflts.json', new=False)
+    MAIN_OBJ.set_rot_angle_device(DEVICE_CFG.sample_rot_angle_dev)
+    #blConfig = load_beamline_preset(bl_config_nm)
+    mainConfig = appConfig.get_all()
+    mainConfig.update(blConfig)
+    MAIN_OBJ.set_presets(mainConfig)
+    #DEFAULTS = Defaults('uhvstxm_dflts.json', new=False)
+    DEFAULTS = Defaults('%s_dflts.json' % bl_config_nm)
 else:
     print('NO SAMPLE POSITIONING MODE SELECTED')
     exit()

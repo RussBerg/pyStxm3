@@ -16,74 +16,62 @@ from bcm.devices import BaseDevice
 from bcm.devices import Mbbi
 from bcm.devices import Mbbo
 from bcm.devices import Bo
-
 from bcm.devices import Motor_Qt
-from bcm.devices import sample_motor, sample_abstract_motor, e712_sample_motor
-from bcm.devices import Scan
-from bcm.devices import Transform
-
+from bcm.devices import sample_abstract_motor, e712_sample_motor
 from bcm.devices import BaseGate, BaseCounter
 from bcm.devices.device_names import *
 from bcm.devices import PvShutter
 from bcm.devices import E712WGDevice
 
-from cls.appWidgets.main_object import main_object_base, dev_config_base, POS_TYPE_BL, POS_TYPE_ES
+from cls.appWidgets.main_object import dev_config_base, POS_TYPE_BL, POS_TYPE_ES
 from cls.appWidgets.splashScreen import get_splash
 from cls.app_data.defaults import Defaults
 from cls.applications.pyStxm import abs_path_to_ini_file
 from cls.scanning.e712_wavegen.e712 import E712ControlWidget
-from cls.types.beamline import BEAMLINE_IDS
 from cls.types.stxmTypes import sample_positioning_modes, sample_fine_positioning_modes, endstation_id_types
 from cls.utils.cfgparser import ConfigClass
 from cls.utils.log import get_module_logger
 from cls.scan_engine.bluesky.test_detector import PointDetectorDevice, LineDetectorFlyerDevice, LineDetectorDevice
 from cls.scan_engine.bluesky.test_gate import GateDevice
+from cls.applications.pyStxm.bl_configs.utils import make_basedevice, get_config_name
 
-# from twisted.python.components import globalRegistry
 _logger = get_module_logger(__name__)
 
 appConfig = ConfigClass(abs_path_to_ini_file)
+
+bl_config_nm = appConfig.get_value('MAIN', 'bl_config')
+blConfig = ConfigClass(os.path.join(os.path.dirname(__file__),'%s.ini' % bl_config_nm))
+scanning_mode = blConfig.get_value('SCANNING_MODE','scanning_mode')
 
 # when simulating un comment the next line
 DEVPRFX = 'SIM_'
 # and comment this one
 # DEVPRFX = ''
 
-__version__ = '1.0.0'
 
-AMBIENT_STXM = False
-
-BEAMLINE_NAME = '10ID-1'
-BEAMLINE_TYPE = 'STXM'
-BEAMLINE_ENERGY_RANGE = (4.0, 18.5)
-
-SCANNING_MODE = 'SAMPLEXY'
+# def make_basedevice(cat, nm, desc='', units='', rd_only=False, devcfg=None):
+#     devcfg.msg_splash("connecting to %s: [%s]" % (cat, nm))
+#     dev = BaseDevice(nm, desc=desc, units=units, rd_only=rd_only)
+#     return (dev)
 
 
-# SCANNING_MODE = 'GONI'
-
-def make_basedevice(cat, nm, desc='', units='', rd_only=False, devcfg=None):
-    devcfg.msg_splash("connecting to %s: [%s]" % (cat, nm))
-    dev = BaseDevice(nm, desc=desc, units=units, rd_only=rd_only)
-    return (dev)
-
-
-class dev_config_uhv(dev_config_base):
+class device_config(dev_config_base):
     def __init__(self, splash=None, sample_pos_mode=sample_positioning_modes.COARSE,
                  fine_sample_pos_mode=sample_fine_positioning_modes.SAMPLEFINE):
-        super(dev_config_uhv, self).__init__(splash=splash)
+        super(device_config, self).__init__(splash=splash)
         print('Using UHV STXM DEVICES')
         self.beamline = 'UHV STXM 10ID1'
-        self.sscan_rec_prfx = 'uhv'
+        self.bl_config_prfx = get_config_name(__file__)
         self.es_id = endstation_id_types.UHV
         self.sample_pos_mode = sample_pos_mode
         self.fine_sample_pos_mode = fine_sample_pos_mode
         # self.splash = splash
         self.done = False
+        self.sample_rot_angle_dev = None
         # self.timer = QtCore.QTimer()
         # self.timer.timeout.connect(self.on_timer)
         self.init_devices()
-        self.init_presets()
+
         self.device_reverse_lookup_dct = self.make_device_reverse_lookup_dict()
         # self.get_cainfo()
 
@@ -94,17 +82,18 @@ class dev_config_uhv(dev_config_base):
         elif (self.sample_pos_mode is sample_positioning_modes.COARSE):
             if (self.fine_sample_pos_mode is sample_fine_positioning_modes.SAMPLEFINE):
                 self.exclude_list = [DNM_GONI_X, DNM_GONI_Y, DNM_GONI_Z, DNM_GONI_THETA, DNM_ZONEPLATE_Z_BASE,
-                                     DNM_SAMPLE_FINE_X, DNM_SAMPLE_FINE_Y,
+                                     DNM_SAMPLE_FINE_X, DNM_SAMPLE_FINE_Y, DNM_SAMPLE_ROT_ANGLE,
                                      DNM_COARSE_X, DNM_COARSE_Y, 'AUX1', 'AUX2', 'Cff', 'PeemM3Trans']
             else:
                 # zoneplate
                 self.exclude_list = [DNM_GONI_X, DNM_GONI_Y, DNM_GONI_Z, DNM_GONI_THETA, DNM_ZONEPLATE_X,
-                                     DNM_ZONEPLATE_Y, DNM_ZONEPLATE_Z_BASE,
+                                     DNM_ZONEPLATE_Y, DNM_ZONEPLATE_Z_BASE, DNM_SAMPLE_ROT_ANGLE,
                                      DNM_SAMPLE_FINE_X, DNM_SAMPLE_FINE_Y,
                                      DNM_COARSE_X, DNM_COARSE_Y, 'AUX1', 'AUX2', 'Cff', 'PeemM3Trans']
         # init_posner_snapshot_cbs(self.devices['POSITIONERS'])
         # self.close_splash()
-        print('leaving dev_config_uhv')
+
+        print('leaving device_config')
 
     def parse_cainfo_stdout_to_dct(self, s):
         dct = {}
@@ -162,40 +151,6 @@ class dev_config_uhv(dev_config_base):
 
         # dev_dct
 
-    def init_presets(self):
-        # these need to come from teh app.ini file FINE_SCAN_RANGES, leave as hack for now till I get time
-
-        maxCX = appConfig.get_value('SCAN_RANGES', 'coarse_x')
-        maxCY = appConfig.get_value('SCAN_RANGES', 'coarse_y')
-        maxFX = appConfig.get_value('SCAN_RANGES', 'fine_x')
-        maxFY = appConfig.get_value('SCAN_RANGES', 'fine_y')
-        use_laser = appConfig.get_value('DEFAULT', 'use_laser')
-        ptycho_enabled = appConfig.get_value('DEFAULT', 'ptychography_enabled')
-
-        # self.devices['PRESETS']['MAX_SCAN_RANGE_X'] = 98
-        # self.devices['PRESETS']['MAX_SCAN_RANGE_Y'] = 98
-
-        if (self.sample_pos_mode is sample_positioning_modes.GONIOMETER):
-            self.devices['PRESETS']['MAX_SCAN_RANGE_X'] = maxFX
-            self.devices['PRESETS']['MAX_SCAN_RANGE_Y'] = maxFY
-        else:
-            self.devices['PRESETS']['MAX_SCAN_RANGE_X'] = maxCX
-            self.devices['PRESETS']['MAX_SCAN_RANGE_Y'] = maxCY
-
-        self.devices['PRESETS']['MAX_FINE_SCAN_RANGE_X'] = maxFX
-        self.devices['PRESETS']['MAX_FINE_SCAN_RANGE_Y'] = maxFY
-
-        # self.devices['PRESETS']['MAX_ZP_SCAN_RANGE_X'] = maxFX
-        # self.devices['PRESETS']['MAX_ZP_SCAN_RANGE_Y'] = maxFY
-
-        # self.devices['PRESETS']['MAX_ZP_SUBSCAN_RANGE_X'] = maxFX
-        # self.devices['PRESETS']['MAX_ZP_SUBSCAN_RANGE_Y'] = maxFY
-
-        # self.devices['PVS'][DNM_ENERGY_ENABLE].put(0)
-        self.devices['PRESETS']['USE_LASER'] = use_laser
-        self.devices['PRESETS']['USE_E712_HDW_ACCEL'] = True
-        self.devices['PRESETS']['PTYCHOGRAPHY_ENABLED'] = ptycho_enabled
-
     def init_devices(self):
 
         # I don't have an elegant way yet to create these and also emit a signal to the splash screen
@@ -205,7 +160,8 @@ class dev_config_uhv(dev_config_base):
         # self.devices['POSITIONERS'][DNM_SAMPLE_FINE_X] = Motor_Qt('%sIOC:m100' % DEVPRFX, pos_set=POS_TYPE_ES)
         # self.devices['POSITIONERS'][DNM_SAMPLE_FINE_Y] = Motor_Qt('%sIOC:m101' % DEVPRFX, pos_set=POS_TYPE_ES)
 
-        prfx = self.sscan_rec_prfx
+        prfx = self.bl_config_prfx
+        prfx = 'uhv'
         self.msg_splash("connecting to: [%s]" % DNM_SAMPLE_FINE_X)
         self.devices['POSITIONERS'][DNM_SAMPLE_FINE_X] = e712_sample_motor('%sIOC:m100' % DEVPRFX,
                                                                            name='%sIOC:m100' % DEVPRFX,
@@ -282,6 +238,11 @@ class dev_config_uhv(dev_config_base):
         self.msg_splash("connecting to: [%s]" % DNM_GONI_THETA)
         self.devices['POSITIONERS'][DNM_GONI_THETA] = Motor_Qt('%sIOC:m110' % DEVPRFX, name='%sIOC:m110' % DEVPRFX,
                                                                pos_set=POS_TYPE_ES)
+        #make sure to set the sample rotation angle device
+        self.sample_rot_angle_dev = self.devices['POSITIONERS'][DNM_GONI_THETA]
+
+        #this is a required positioner name by the nxstxm suitcase, rotation_angle is a required field of the nxstxm suitcase
+        #self.devices['POSITIONERS'][DNM_SAMPLE_ROT_ANGLE] = Motor_Qt('%sIOC:m110' % (DEVPRFX), name='%sIOC:m110' % DEVPRFX)
 
         # self.msg_splash("connecting to: [%s]" % DNM_CALIB_CAMERA_SRVR)
         # self.devices['DETECTORS_NO_RECORD'][DNM_CALIB_CAMERA_SRVR] = camera('CCD1610-I10:%s' % prfx, server=True)
@@ -320,14 +281,6 @@ class dev_config_uhv(dev_config_base):
                     dct[dev_nm] = dev.get_name()
 
         return (dct)
-
-    # def make_device_reverse_lookup_dict(self):
-    #     dct = {}
-    #     dev_dct = self.devices['POSITIONERS']
-    #     for dev_nm, dev in dev_dct.items():
-    #         dct[dev.get_name()] = self.fix_device_nm(dev_nm)
-    #
-    #     return(dct)
 
     def fix_device_nm(self, nm_str):
         l = nm_str.lower()
@@ -549,32 +502,6 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
                                                              devcfg=devcfg)
     dev_dct['PVS'][DNM_AX2_INTERFER_VOLTS] = make_basedevice('PVS', '%s%sAi:ai:ai1_RBV' % (DEVPRFX, prfx), rd_only=True,
                                                              devcfg=devcfg)
-
-    # # ES = endstation temperatures
-    # #devcfg.msg_splash("connecting to TEMPERATURES: [TM1610-3-I12-01]")
-    # dev_dct['TEMPERATURES'][POS_TYPE_ES]['TM1610-3-I12-01'] = make_basedevice('PRESSURES','%sTM1610-3-I12-01'% (DEVPRFX), desc='Turbo cooling water', units='deg C', devcfg=devcfg)
-    # #devcfg.msg_splash("connecting to TEMPERATURES: [TM1610-3-I12-30]")
-    # dev_dct['TEMPERATURES'][POS_TYPE_ES]['TM1610-3-I12-30'] = make_basedevice('PRESSURES','%sTM1610-3-I12-30'% (DEVPRFX), desc='Sample Coarse Y', units='deg C', devcfg=devcfg)
-    # #devcfg.msg_splash("connecting to TEMPERATURES: [TM1610-3-I12-32]")
-    # dev_dct['TEMPERATURES'][POS_TYPE_ES]['TM1610-3-I12-32'] = make_basedevice('PRESSURES','%sTM1610-3-I12-32'% (DEVPRFX), desc='Detector Y', units='deg C', devcfg=devcfg)
-    # #devcfg.msg_splash("connecting to TEMPERATURES: [TM1610-3-I12-21]")
-    # dev_dct['TEMPERATURES'][POS_TYPE_ES]['TM1610-3-I12-21'] = make_basedevice('PRESSURES','%sTM1610-3-I12-21'% (DEVPRFX), desc='Chamber temp #1', units='deg C', devcfg=devcfg)
-    # #devcfg.msg_splash("connecting to TEMPERATURES: [TM1610-3-I12-22]")
-    # dev_dct['TEMPERATURES'][POS_TYPE_ES]['TM1610-3-I12-22'] = make_basedevice('PRESSURES','%sTM1610-3-I12-22'% (DEVPRFX), desc='Chamber temp #2', units='deg C', devcfg=devcfg)
-    # #devcfg.msg_splash("connecting to TEMPERATURES: [TM1610-3-I12-23]")
-    # dev_dct['TEMPERATURES'][POS_TYPE_ES]['TM1610-3-I12-23'] = make_basedevice('PRESSURES','%sTM1610-3-I12-23'% (DEVPRFX), desc='Chamber temp #3', units='deg C', devcfg=devcfg)
-    # #devcfg.msg_splash("connecting to TEMPERATURES: [TM1610-3-I12-24]")
-    # dev_dct['TEMPERATURES'][POS_TYPE_ES]['TM1610-3-I12-24'] = make_basedevice('PRESSURES','%sTM1610-3-I12-24'% (DEVPRFX), desc='Chamber temp #4', units='deg C', devcfg=devcfg)
-
-    # #pressures
-    # #devcfg.msg_splash("connecting to PRESSURES: [FRG1610-3-I12-01:vac:p]")
-    # dev_dct['PRESSURES'][POS_TYPE_ES]['FRG1610-3-I12-01:vac:p'] = make_basedevice('PRESSURES','%sFRG1610-3-I12-01:vac:p'% (DEVPRFX), desc='Chamber pressure', units='torr', devcfg=devcfg)
-    # #devcfg.msg_splash("connecting to PRESSURES: [TCG1610-3-I12-03:vac:p]")
-    # dev_dct['PRESSURES'][POS_TYPE_ES]['TCG1610-3-I12-03:vac:p'] = make_basedevice('PRESSURES','%sTCG1610-3-I12-03:vac:p'% (DEVPRFX), desc='Turbo backing pressure', units='torr', devcfg=devcfg)
-    # #devcfg.msg_splash("connecting to PRESSURES: [TCG1610-3-I12-04:vac:p]")
-    # dev_dct['PRESSURES'][POS_TYPE_ES]['TCG1610-3-I12-04:vac:p'] = make_basedevice('PRESSURES','%sTCG1610-3-I12-04:vac:p'% (DEVPRFX), desc='Load lock pressure', units='torr', devcfg=devcfg)
-    # #devcfg.msg_splash("connecting to PRESSURES: [TCG1610-3-I12-05:vac:p]")
-    # dev_dct['PRESSURES'][POS_TYPE_ES]['TCG1610-3-I12-05:vac:p'] = make_basedevice('PRESSURES','%sTCG1610-3-I12-05:vac:p'% (DEVPRFX), desc='Rough line pressure', units='torr', devcfg=devcfg)
 
     connect_ES_devices(dev_dct, prfx, devcfg=devcfg)
     connect_BL_devices(dev_dct, prfx, devcfg=devcfg)
@@ -934,8 +861,8 @@ DEVICE_CFG = None
 
 #ver_str = 'Version %s.%s' % (MAIN_OBJ.get('APP.MAJOR_VER'), MAIN_OBJ.get('APP.MINOR_VER'))
 #splash = get_splash(img_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pyStxmSplash.png'), ver_str=ver_str)
-splash = get_splash(img_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pyStxmSplash.png'), ver_str='VERSION YABABY')
-scanning_mode = appConfig.get_value('DEFAULT', 'scanning_mode')
+splash = get_splash(img_path=os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','..','pyStxmSplash.png'), ver_str='VERSION YABABY')
+#scanning_mode = appConfig.get_value('MAIN', 'scanning_mode')
 
 sample_mode = None
 fine_sample_mode = None
@@ -979,7 +906,7 @@ elif (scanning_mode == 'COARSE_ZONEPLATE'):
     #MAIN_OBJ.set_sample_scanning_mode_string('COARSE_ZONEPLATE Scanning')
 
 if ((sample_mode is not None) and (fine_sample_mode is not None)):
-    DEVICE_CFG = dev_config_uhv(splash=splash, sample_pos_mode=sample_mode, fine_sample_pos_mode=fine_sample_mode)
+    DEVICE_CFG = device_config(splash=splash, sample_pos_mode=sample_mode, fine_sample_pos_mode=fine_sample_mode)
     #MAIN_OBJ.set_devices(DEVICE_CFG)
     DEFAULTS = Defaults('uhvstxm_dflts.json', new=False)
 else:

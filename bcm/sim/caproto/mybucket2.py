@@ -7,6 +7,7 @@ from cls.utils.dirlist import dirlist
 from cls.utils.json_utils import json_to_dict, file_to_json
 import json
 
+DEV_PRFX = 'SIM_'
 
 def get_populated_motor_dict(field_path=None):
     '''
@@ -135,7 +136,8 @@ def ingest_pv_dict(inp):
                 'SIM_IOCE712:wg4:usereinit',
                 'SIM_uhvCI:counter:testwave_RBV',
                 'SIM_uhvPMT:ctr:Waveform_RBV',
-                'SIM_uhvPMT:ctr:testwave_RBV']
+                'SIM_uhvPMT:ctr:testwave_RBV',
+                'IOC:L101']
     body = {}
     # for (i, (k, (dtype, rec_type))) in enumerate(inp.items()):
     #     body[str(i)] = pvproperty(name=k,
@@ -145,6 +147,8 @@ def ingest_pv_dict(inp):
     for k, dct in inp.items():
         if(k in skip_lst):
             continue
+        if(k.find(':log') > -1):
+            print()
         #print('ingesting [%d][%s]' % (i, k))
         if(type(dct) is dict):
             try:
@@ -154,9 +158,23 @@ def ingest_pv_dict(inp):
                 # if('type' not in dct.keys()):
                 #     #print('HEY: [%s] seems to not have a [type] field in the dict???' % dct['pvname'])
                 #     dct['type'] = 'ChannelType.FLOAT'
-                if(k.find('SIM_IOCE712:ddl:1') > -1):
-                    print()
-                if(dct['count'] > 1):
+                if('ftype' not in dct.keys()):
+                    if(dct['type'].find('DOUBLE') > -1):
+                        dct['ftype'] = 9
+                    elif(dct['type'].find('Double') > -1):
+                        dct['ftype'] = 9
+                    elif (dct['type'].find('ENUM') > -1):
+                        dct['ftype'] = 10
+                    elif (dct['type'].find('STRING') > -1):
+                        dct['ftype'] = 7
+                    elif (dct['type'].find('LONG') > -1):
+                        dct['ftype'] = 8
+                    else:
+                        print()
+                if('count' not in dct.keys()):
+                    rec_type, data_type = get_rec_type(dct['ftype'])
+
+                elif(int(dct['count']) > 1):
                     rec_type, data_type = get_rec_type(dct['ftype'])
                     if(rec_type.find('ao') > -1):
                         rec_type = 'aao'
@@ -175,9 +193,9 @@ def ingest_pv_dict(inp):
                             else:
                                 val = data_type(dct['value'])
                         else:
-                            val = 0
+                            val = data_type(0)
                 else:
-                    if(dct['count'] > 1):
+                    if(int(dct['count']) > 1):
                         #its an array
                         val = np.array(dct['value'])
 
@@ -278,23 +296,37 @@ def load_json_files():
             if (pv_nm in list(mtr_dct.keys())):
                 #dct['SIM_' + pv_nm] = jdct[pv_nm]
                 #dct['SIM_' + pv_nm]['type'] = 'DoubleMotor'
-                dct[pv_nm] = jdct[pv_nm]
-                dct[pv_nm]['type'] = 'DoubleMotor'
+                dct[DEV_PRFX + pv_nm] = jdct[pv_nm]
+                dct[DEV_PRFX + pv_nm]['type'] = 'DoubleMotor'
                 for fld in list(mtr_dct[pv_nm].keys()):
                     if(len(fld) > 0):
                         #dct['SIM_' + pv_nm + '.%s' % fld] = {}
-                        dct[pv_nm + '.%s' % fld] = {}
-
+                        dct[DEV_PRFX + pv_nm + '.%s' % fld] = {}
+                        # strings = [0, 7, 14, 28]
+                        # ints = [1, 8, 15, 22, 29]
+                        # floats = [2, 9, 16, 23, 30]
+                        # enums = [3, 10, 17, 24, 31]
+                        # chars = [4, 11, 18, 25, 32]
+                        # longs = [5, 12, 19, 26, 33]
+                        # doubles = [6, 13, 20, 27, 34]
+                        # motors = [99]
                         if (fld in none_str_flds):
                             #dct['SIM_' + pv_nm + '.%s' % fld]['type'] = 'ChannelType.STRING'
-                            dct[pv_nm + '.%s' % fld]['type'] = 'ChannelType.STRING'
+                            dct[DEV_PRFX + pv_nm + '.%s' % fld]['type'] = 'ChannelType.STRING'
+                            dct[DEV_PRFX + pv_nm + '.%s' % fld]['ftype'] = 11
+                            dct[DEV_PRFX + pv_nm + '.%s' % fld]['count'] = 1
+
                             mtr_dct[pv_nm][fld] = '0'
                         elif(fld in str_flds):
                             #dct['SIM_' + pv_nm + '.%s' % fld]['type'] = 'ChannelType.STRING'
-                            dct[pv_nm + '.%s' % fld]['type'] = 'ChannelType.STRING'
+                            dct[DEV_PRFX + pv_nm + '.%s' % fld]['type'] = 'ChannelType.STRING'
+                            dct[DEV_PRFX + pv_nm + '.%s' % fld]['ftype'] = 11
+                            dct[DEV_PRFX + pv_nm + '.%s' % fld]['count'] = 1
                         else:
                             #dct['SIM_' + pv_nm + '.%s' % fld]['type'] = 'ChannelType.FLOAT'
-                            dct[pv_nm + '.%s' % fld]['type'] = 'ChannelType.FLOAT'
+                            dct[DEV_PRFX + pv_nm + '.%s' % fld]['type'] = 'ChannelType.FLOAT'
+                            dct[DEV_PRFX + pv_nm + '.%s' % fld]['ftype'] = 9
+                            dct[DEV_PRFX + pv_nm + '.%s' % fld]['count'] = 1
 
                         if (mtr_dct[pv_nm][fld] is ''):
                             mtr_dct[pv_nm][fld] = '0'
@@ -302,15 +334,15 @@ def load_json_files():
                         if(fld.find('MSTA') > -1):
                             #force it to be a good status value
                             #dct['SIM_' + pv_nm + '.%s' % fld]['value'] = 18690
-                            dct[pv_nm + '.%s' % fld]['value'] = 18690
+                            dct[DEV_PRFX + pv_nm + '.%s' % fld]['value'] = 18690
                         else:
                             #dct['SIM_' + pv_nm + '.%s' % fld]['value'] = mtr_dct[pv_nm][fld]
-                            dct[pv_nm + '.%s' % fld]['value'] = mtr_dct[pv_nm][fld]
+                            dct[DEV_PRFX + pv_nm + '.%s' % fld]['value'] = mtr_dct[pv_nm][fld]
                         #print('serving MOTOR: [%s], value=[%s]' % ('SIM_' + pv_nm + '.%s' % fld, dct['SIM_' + pv_nm + '.%s' % fld]['value']))
-                        print('serving MOTOR: [%s], value=[%s]' % (pv_nm + '.%s' % fld, dct[pv_nm + '.%s' % fld]['value']))
+                        print('serving MOTOR: [%s], value=[%s]' % (DEV_PRFX + pv_nm + '.%s' % fld, dct[DEV_PRFX + pv_nm + '.%s' % fld]['value']))
             else:
-                dct['SIM_' + pv_nm] = jdct[pv_nm]
-                print('serving: %s' % ('SIM_' + pv_nm))
+                dct[DEV_PRFX + pv_nm] = jdct[pv_nm]
+                print('serving: %s' % (DEV_PRFX + pv_nm))
 
                 #fout.write('caput %s %s\n' % ('SIM_' + pv_nm, jdct[pv_nm]['value']))
     #fout.close()

@@ -32,7 +32,7 @@ class MultiRegionWidget(BaseSelectionWidget):
     spatial_row_changed = QtCore.pyqtSignal(object)
     spatial_row_deleted = QtCore.pyqtSignal(object)
 
-    def __init__(self,use_center=True, is_point=False, is_arb_line=False, enable_multi_spatial=False, single_ev_model=True, max_range=100, use_hdw_accel=True,
+    def __init__(self,use_center=True, is_point=False, is_arb_line=False, enable_multi_spatial=False, single_ev_model=True, single_pol_model=False, max_range=100, use_hdw_accel=True,
                  min_sp_rois=0, x_cntr=None, y_cntr=None, main_obj=None, *args):
         """
         __init__(): description
@@ -68,8 +68,8 @@ class MultiRegionWidget(BaseSelectionWidget):
         self.getAllEvBtn.clicked.connect(self.get_just_ev_regions)
         self.getAllPolBtn.clicked.connect(self.get_just_pol_regions)
         
-        self.pol_widg = PolarizationSelWidget()
-        self.ev_widg = EnergySelWidget(self.pol_widg, main_obj=self.main_obj)
+        self.pol_widg = PolarizationSelWidget(single_pol_model)
+        self.ev_widg = EnergySelWidget(self.pol_widg, main_obj=self.main_obj, single_pol_model=single_pol_model)
 
         if(self.enable_multi_spatial):
             single_sp = False
@@ -827,9 +827,9 @@ if __name__ == '__main__':
     
     #multi = MultiRegionWidget(use_center=True, enable_multi_spatial=True)
     # multi = MultiRegionWidget(use_center=True, enable_multi_spatial=True, is_point=False, single_ev_model=False)
-    multi = MultiRegionWidget(use_center=True, enable_multi_spatial=True, is_point=False, single_ev_model=False,
+    multi = MultiRegionWidget(use_center=True, enable_multi_spatial=True, is_point=False, single_ev_model=False, single_pol_model=True,
                               min_sp_rois=1)
-    multi.disable_polarization_table(True)
+    #multi.disable_polarization_table(True)
     #multi.enable_add_spatial_region_menu(True)
     multi.show_load_btn()
     multi.show_getdata_btn()

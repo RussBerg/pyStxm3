@@ -9,7 +9,7 @@ from cls.utils.version import get_version
 from cls.zeromq.epics.qt5_cepics_client_pubsub import qt5_zmqClientWidget, compression_types
 from cls.utils.roi_dict_defs import *
 from cls.utils.log import get_module_logger
-
+from cls.utils.fileUtils import get_module_name
 from cls.types.stxmTypes import scan_types, scan_sub_types, sample_fine_positioning_modes, sample_positioning_modes
 
 
@@ -281,7 +281,20 @@ class main_object_base(QtCore.QObject):
     
     def get_datafile_prefix(self):
         return(self.datafile_prfx)
-    
+
+    def get_scan_panel_order(self, fname):
+        '''
+        from the beamline configuration file get teh enumeration for the scan_name, the scan_name should match the
+        name of the module
+        return enumeration if scan_name exists, None if it doesnt
+        :param scan_name:
+        :return:
+        '''
+        scan_mod_name = get_module_name(fname)
+
+        idx = self.get_preset_as_int(scan_mod_name, 'SCAN_PANEL_ORDER')
+        return(idx)
+
     def set_thumbfile_suffix(self, sffx):
         self.thumbfile_suffix = sffx
     

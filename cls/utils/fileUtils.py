@@ -11,6 +11,9 @@ import numpy
 import time
 from datetime import date
 
+def get_module_name(fname):
+    nm = fname.split(os.path.sep)[-1].replace('.py', '')
+    return(nm)
 
 def does_exist_on_disk(name):
     name = name.replace(' ', '')

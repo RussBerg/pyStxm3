@@ -29,7 +29,7 @@ def load_beamline_device_config(bl_config_nm):
             # create an instance of the class
             _cls = SourceFileLoader('mod_classname', _mod_filepath).load_module()
 
-    return(_cls.DEVICE_CFG)
+    return(_cls.DEVICE_CFG, cfgDir)
 
 
 def load_beamline_preset(bl_config_nm):

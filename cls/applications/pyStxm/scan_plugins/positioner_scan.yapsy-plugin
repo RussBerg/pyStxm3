@@ -1,9 +1,0 @@
-[Core]
-Name = Positioner scan params
-Module = positioner_scan
-
-[Documentation]
-Author = Russ Berg
-Version = 0.1
-Website = http://
-Description = Params for a positioner scan 

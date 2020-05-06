@@ -11,38 +11,25 @@ Created on 2014-06-23
 .. moduleauthor:: Russ Berg <russ.berg@lightsource.ca>
 
 """
-#import os
-#import traceback
+import os
 import time
 from importlib.machinery import SourceFileLoader
-#import datetime
 from time import mktime, strftime, strptime, gmtime
 import sys, os
-#import StringIO
-#import glob
-#import numpy as np
-#import Queue
 import atexit
-#import copy
+
 import logging
 import numpy as np
 import simplejson as json
 import webbrowser
-
+import copy
 from PyQt5 import QtCore, QtGui, uic, QtWidgets
 
-import copy
-
-from yapsy.PluginManager import PluginManager
-
-#import cls.applications.pyStxm.setup_env
 from cls.appWidgets.splashScreen import get_splash
 from cls.applications.pyStxm import abs_path_to_ini_file
 from cls.applications.pyStxm.sm_user import usr_acct_manager
 
-#from cls.scanning.base import zp_focus_modes
 from cls.utils.log import get_module_logger, log_to_qt, log_to_console, log_to_qt_and_to_file
-#from cls.utils.dict_utils import dct_get, dct_put
 from cls.utils.roi_dict_defs import *
 from cls.utils.list_utils import sum_lst
 from cls.utils.cfgparser import ConfigClass
@@ -53,8 +40,6 @@ from cls.utils.prog_dict_utils import *
 from cls.utils.sig_utils import reconnect_signal, disconnect_signal
 
 from cls.plotWidgets.imageWidget import ImageWidget
-#from cls.plotWidgets.imageWidget_latest import BS_ImageWidget
-#from cls.plotWidgets.bs_imageplot import ImgPlotWindow
 from cls.plotWidgets.zmq_imageWidget import ZMQImageWidget as ImgPlotWindow
 from cls.plotWidgets.striptool.stripToolWidget import StripToolWidget
 from cls.plotWidgets.curveWidget import CurveViewerWidget, get_next_color, get_basic_line_style
@@ -64,7 +49,7 @@ from cls.data_io.stxm_data_io import STXMDataIo
 from cls.scanning.BaseScan import LOAD_ALL
 from cls.scanning.paramLineEdit import intLineEditParamObj, dblLineEditParamObj
 # from cls.scanning.dataRecorder import HdrData
-from cls.types.stxmTypes import image_types, scan_types, scan_panel_order, scan_sub_types, spectra_type_scans, \
+from cls.types.stxmTypes import image_types, scan_types, scan_sub_types, spectra_type_scans, \
     spatial_type_prefix, energy_scan_order_types, sample_fine_positioning_modes, \
     sample_positioning_modes, scan_status_types, endstation_id_types
 
@@ -1147,11 +1132,12 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             MAIN_OBJ.device(DNM_SHUTTER).close()
 
     def setup_scan_toolbox(self):
-        """
-        setup_scan_toolbox(): description
 
-        :returns: None
-        """
+        '''
+        walk a directory where the preferences are kept and load the combobox and stacked widget
+        :return:
+        '''
+
         # Create plugin manager
         layout = QtWidgets.QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -1160,25 +1146,34 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.scanTypeToolBox = QtWidgets.QToolBox()
         self.scanTypeToolBox.layout().setContentsMargins(0, 0, 0, 0)
         self.scanTypeToolBox.layout().setSpacing(0)
-        # self.scanTypeToolBox.setStyleSheet(" QToolBox::tab {padding-left: 100px;} ")
-        self.manager = PluginManager(categories_filter={"Scans": ScanParamWidget})
-        # self.manager.setPluginPlaces(['scan_plugins'])
-        self.manager.setPluginPlaces([os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scan_plugins')])
-        # Load plugins
-        self.manager.locatePlugins()
-        self.manager.loadPlugins()
 
+        #get the beamline config directory from teh presets loaded at startup
+        plugin_dir = MAIN_OBJ.get_preset('bl_config_dir', 'MAIN')
+        _dirs = os.listdir(plugin_dir)
+
+        idx = 0
         pages = 0
         num_scans = 0
         scans = {}
-
-        # walk the plugin directory looking for plugins of category ScanParamWidget
-        for plugin in self.manager.getPluginsOfCategory("Scans"):
-            _logger.debug("Found SCAN plugin [%s]" % plugin.plugin_object.name)
-            print("Found SCAN plugin [%d][%s]" % (plugin.plugin_object.idx, plugin.plugin_object.name))
-            self.splash.show_msg("Found SCAN plugin [%d][%s]" % (plugin.plugin_object.idx, plugin.plugin_object.name))
-            scans[plugin.plugin_object.idx] = plugin.plugin_object
-            num_scans += 1
+        # walk the subdirs of the beamline config directory looking for scan plugins
+        for dir in _dirs:
+            if(os.path.isdir(os.path.join(plugin_dir, dir))):
+                # get files in dir
+                _files = os.listdir(os.path.join(plugin_dir, dir))
+                if ('loader.py' in _files):
+                    _filepath = os.path.join(plugin_dir, dir, 'loader.py')
+                    if (os.path.exists(_filepath)):
+                        _mod = SourceFileLoader('mod_classname', _filepath).load_module()
+                        _mod_filepath = os.path.join(plugin_dir, dir, _mod.mod_file)
+                        _cls = SourceFileLoader('mod_classname', _mod_filepath).load_module()
+                        # create an instance of the class
+                        plugin = eval('_cls.%s()' % _mod.mod_classname)
+                        _logger.debug("Found SCAN plugin [%s]" % plugin.name)
+                        print("Found SCAN plugin [%d][%s]" % (plugin.idx, plugin.name))
+                        self.splash.show_msg(
+                            "Found SCAN plugin [%d][%s]" % (plugin.idx, plugin.name))
+                        scans[plugin.idx] = plugin
+                        num_scans += 1
 
         # now insert then in the order the plugins idx value says
         for idx in range(num_scans):
@@ -1210,8 +1205,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         limit_def = self.scan_tbox_widgets[0].get_max_scan_range_limit_def()
         plot_item_type = self.scan_tbox_widgets[0].plot_item_type
 
-        if(hasattr(self, 'lineByLineImageDataWidget')):
-            if(self.scan_tbox_widgets[0].is_multi_region()):
+        if (hasattr(self, 'lineByLineImageDataWidget')):
+            if (self.scan_tbox_widgets[0].is_multi_region()):
                 self.lineByLineImageDataWidget.set_enable_multi_region(True)
             else:
                 self.lineByLineImageDataWidget.set_enable_multi_region(False)
@@ -1224,12 +1219,12 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         centers = (dx.get_position(), dy.get_position())
 
         if (hasattr(self, 'lineByLineImageDataWidget')):
-            self.lineByLineImageDataWidget.set_center_at_XY(centers, (500,500))
+            self.lineByLineImageDataWidget.set_center_at_XY(centers, (500, 500))
 
         self.scanTypeToolBox.currentChanged.connect(self.on_toolbox_changed)
 
         wdg_com = self.scan_tbox_widgets[0].update_data()
-        if(hasattr(self, 'scan_progress_table')):
+        if (hasattr(self, 'scan_progress_table')):
             self.scan_progress_table.load_wdg_com(wdg_com)
 
     def on_scantable_roi_deleted(self, wdg_com):
@@ -1442,9 +1437,9 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         if (self.scan_in_progress):
             return
 
-        non_interactive_plots = [scan_panel_order.POSITIONER_SCAN]
+        #non_interactive_plots = [scan_panel_order.POSITIONER_SCAN]
 
-        skip_scan_q_table_plots = [scan_panel_order.OSA_FOCUS_SCAN, scan_panel_order.FOCUS_SCAN]
+        #skip_scan_q_table_plots = [scan_panel_order.OSA_FOCUS_SCAN, scan_panel_order.FOCUS_SCAN]
 
         x1 = dct_get(wdg_com, SPDB_XSTART)
         y1 = dct_get(wdg_com, SPDB_YSTART)
@@ -1453,7 +1448,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         rect = (x1, y1, x2, y2)
         # print 'on_plotitem_roi_changed: rect', rect
 
-        if (self.scan_panel_idx in non_interactive_plots):
+        #if (self.scan_panel_idx in non_interactive_plots):
+        if(not self.scan_tbox_widgets[self.scan_panel_idx].is_interactive_plot()):
             return
 
         self.scan_tbox_widgets[self.scan_panel_idx].blockSignals(True)
@@ -1462,7 +1458,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             self.scan_tbox_widgets[self.scan_panel_idx].mod_roi(wdg_com)
             wdg_com = self.scan_tbox_widgets[self.scan_panel_idx].update_data()
 
-            if (self.scan_panel_idx in skip_scan_q_table_plots):
+            #if (self.scan_panel_idx in skip_scan_q_table_plots):
+            if(self.scan_tbox_widgets[self.scan_panel_idx].is_skip_scan_queue_table_plot()):
                 # just skip because this produces a lot of changes to the scan_q_table whcih currently are very slow when firing a lot of
                 # signals to say the plot roi has chnaged
                 pass
@@ -1781,16 +1778,16 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         reset_unique_roi_id()
         ranges = (None, None)
         # print 'on_toolbox_changed: %d' % idx
-        spectra_plot_types = [scan_panel_order.POINT_SCAN, scan_panel_order.POSITIONER_SCAN]
-        non_interactive_plots = [scan_panel_order.POSITIONER_SCAN]
+        #spectra_plot_types = [scan_panel_order.POINT_SCAN, scan_panel_order.POSITIONER_SCAN]
+        #non_interactive_plots = [scan_panel_order.POSITIONER_SCAN]
         # multi_spatial_scan_types = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM,
         #                             scan_types.SAMPLE_IMAGE, \
         #                             scan_types.SAMPLE_IMAGE_STACK]
         # skip_list = [scan_types.SAMPLE_FOCUS, scan_types.OSA_FOCUS]
 
         #Note: these are scan panel order NOT scan types
-        skip_centering_scans = [scan_panel_order.FOCUS_SCAN, scan_panel_order.TOMOGRAPHY,
-                                scan_panel_order.LINE_SCAN, scan_panel_order.POINT_SCAN, scan_panel_order.IMAGE_SCAN]
+        #skip_centering_scans = [scan_panel_order.FOCUS_SCAN, scan_panel_order.TOMOGRAPHY,
+        #                        scan_panel_order.LINE_SCAN, scan_panel_order.POINT_SCAN, scan_panel_order.IMAGE_SCAN]
 
         self.scan_panel_idx = idx
 
@@ -1828,9 +1825,11 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
         #self.lineByLineImageDataWidget.delShapePlotItems()
 
-        if (idx in spectra_plot_types):
+        #if (idx in spectra_plot_types):
+        if (scan_pluggin.is_spectra_plot_type()):
             #but only switch if it is not a point scan as the selection for a point scan is done on a 2D image
-            if(idx is scan_panel_order.POINT_SCAN):
+            #if(idx is scan_panel_order.POINT_SCAN):
+            if(scan_pluggin.type is scan_types.SAMPLE_POINT_SPECTRUM):
                 # it is a point scan so zoom the plot to a valid range
                 #sx = MAIN_OBJ.device(DNM_SAMPLE_X)
                 #sy = MAIN_OBJ.device(DNM_SAMPLE_Y)
@@ -1847,14 +1846,17 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
             if ((ranges[0] is not None) and (ranges[1] is not None)):
 
-                do_recenter_lst = [scan_panel_order.IMAGE_SCAN, scan_panel_order.TOMOGRAPHY, scan_panel_order.LINE_SCAN]
+                #do_recenter_lst = [scan_panel_order.IMAGE_SCAN, scan_panel_order.TOMOGRAPHY, scan_panel_order.LINE_SCAN]
 
                 #if ((self.scan_panel_idx == scan_panel_order.IMAGE_SCAN) and (sample_positioning_mode == sample_positioning_modes.GONIOMETER)):
-                if ((self.scan_panel_idx in  do_recenter_lst) and (sample_positioning_mode == sample_positioning_modes.GONIOMETER)):
+                #if ((self.scan_panel_idx in  do_recenter_lst) and (sample_positioning_mode == sample_positioning_modes.GONIOMETER)):
+                if ((scan_pluggin.is_do_recenter_type()) and (
+                        sample_positioning_mode == sample_positioning_modes.GONIOMETER)):
                     self.lineByLineImageDataWidget.set_center_at_XY(centers, ranges)
                 else:
 
-                    if(self.scan_panel_idx in skip_centering_scans):
+                    #if(self.scan_panel_idx in skip_centering_scans):
+                    if (scan_pluggin.is_skip_center_type()):
                         #we are likely already where we want to be on the plotter if the user switched to one of these scans
                         pass
                     else:
@@ -1874,7 +1876,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.lineByLineImageDataWidget.set_max_shape_sizes(max_scan_range)
         self.lineByLineImageDataWidget.set_enable_multi_region(enable_multi_region)
 
-        if (self.scan_panel_idx in non_interactive_plots):
+        #if (self.scan_panel_idx in non_interactive_plots):
+        if(not scan_pluggin.is_interactive_plot()):
             # disable all roi selection tools
             self.lineByLineImageDataWidget.set_shape_limits(shape=None, limit_def=None)
         else:
@@ -1911,10 +1914,11 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
 
     def on_update_plot_strs(self, axis_strs):
-        spectra_plot_types = [scan_panel_order.POINT_SCAN, scan_panel_order.POSITIONER_SCAN]
+        #spectra_plot_types = [scan_panel_order.POINT_SCAN, scan_panel_order.POSITIONER_SCAN]
         #scan_pluggin = self.scan_tbox_widgets[self.scan_panel_idx]
         #plot_item_type = scan_pluggin.plot_item_type
-        if(self.scan_panel_idx in spectra_plot_types):
+        #if(self.scan_panel_idx in spectra_plot_types):
+        if (self.scan_tbox_widgets[self.scan_panel_idx].is_spectra_plot_type()):
             self.spectraWidget.setPlotAxisStrs(axis_strs[0], axis_strs[1])
         else:
             self.lineByLineImageDataWidget.setPlotAxisStrs(axis_strs[0], axis_strs[1])

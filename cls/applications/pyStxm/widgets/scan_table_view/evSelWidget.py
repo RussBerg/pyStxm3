@@ -312,6 +312,8 @@ class EnergySelWidget(BaseSelectionWidget):
         :returns: None
         """
         # num_ev_rois = len(self.get_ev_regions())
+
+
         if (not self.add_region_enabled):
             return
 

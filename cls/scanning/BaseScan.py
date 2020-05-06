@@ -210,7 +210,7 @@ class BaseScan(BaseObject):
         self.numE = None
         self.numImages = None
         self.numSPIDS = None
-         
+
         self.gate = None
         self.counter = None
         self.shutter = None
@@ -263,6 +263,7 @@ class BaseScan(BaseObject):
         # on every on_data_level_done so that the value can be recorded and subsequently written to the data file
         self.update_dev_lst = {}
         self.update_dev_data = []
+        self.ev_setpoints = []
 
         self.scan_type = None #meant to be set in the parent scan of type like IMAGESCANLINEBYLINE or something
         self.sp_id_list = None

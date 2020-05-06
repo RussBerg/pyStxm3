@@ -14,7 +14,7 @@ class PolarizationSelWidget(BaseSelectionWidget):
     """
     A QWidget that contains an PolarizationTableView
     """
-    def __init__(self,*args):
+    def __init__(self, single_pol_model=False):
         """
         __init__(): description
 
@@ -23,12 +23,14 @@ class PolarizationSelWidget(BaseSelectionWidget):
 
         :returns: None
         """
-        BaseSelectionWidget.__init__(self, *args)
+        BaseSelectionWidget.__init__(self)
         # setGeometry(x_pos, y_pos, width, height)
         self.setGeometry(300, 200, 870, 450)
+        self.setMinimumSize(100,100)
         #self.setWindowTitle("Click on column title to sort")
         self.editable = False
         #rois = [get_epu_pol_dct(0, 0.0, angle=0.0)]
+        self.single_pol_model = single_pol_model
         
         self.dflt_polarization = 0
         self.dflt_offset = 0.0
@@ -198,6 +200,11 @@ class PolarizationSelWidget(BaseSelectionWidget):
 
         :returns: None
         """
+        if (self.single_pol_model):
+            if(len(self.table_view.get_scan_list()) == 1):
+                #dont allow adding more if there already is one
+                return
+
         if(not self.add_region_enabled):
             return
         
@@ -240,6 +247,10 @@ class PolarizationSelWidget(BaseSelectionWidget):
 
         :returns: None
         """
+        if(len(self.table_view.get_scan_list()) == 1):
+            #dont allow deleting all the pol models
+            return
+
         if(scan_id is None):
             scan = self.table_view.get_cur_selected_scan()
             scan_id = scan[SPDB_ID_VAL]

@@ -46,6 +46,8 @@ from cls.utils.log import get_module_logger
 from cls.utils.dict_utils import dct_get, dct_put
 from cls.utils.enum_utils import Enum
 from cls.utils.fileUtils import get_file_path_as_parts, creation_date
+
+
 from cls.applications.pyStxm import abs_path_to_ini_file, abs_path_to_top, abs_path_to_docs, abs_path_of_ddl_file
 from cls.utils.cfgparser import ConfigClass
 
@@ -186,6 +188,18 @@ class ScanParamWidget(QtWidgets.QFrame):
         self.upd_timer.setSingleShot(True)
         self.upd_timer.timeout.connect(self.update_min_max)
 
+        # configure how the main plot will treat this plugins data/metadata when this scan plugin is selected
+        # need a way to identify different plugin capabilities
+        # set the defaults and let each plugin override in the init_plugin()
+        self._type_interactive_plot = True # [scan_panel_order.POSITIONER_SCAN]
+        self._type_skip_scan_q_table_plots = False # [scan_panel_order.OSA_FOCUS_SCAN, scan_panel_order.FOCUS_SCAN]
+        self._type_spectra_plot_type = False # [scan_panel_order.POINT_SCAN, scan_panel_order.POSITIONER_SCAN]
+        self._type_skip_centering_scans = False # [scan_panel_order.FOCUS_SCAN, scan_panel_order.TOMOGRAPHY,
+                                                # scan_panel_order.LINE_SCAN, scan_panel_order.POINT_SCAN, scan_panel_order.IMAGE_SCAN]
+        self._type_do_recenter = False # [scan_panel_order.IMAGE_SCAN, scan_panel_order.TOMOGRAPHY, scan_panel_order.LINE_SCAN]
+
+
+
         #self.setToolTip('A whole bunch of info here')
         # set button context menu policy
         # _filter = ScanParamEventFilter()
@@ -222,6 +236,47 @@ class ScanParamWidget(QtWidgets.QFrame):
             self.helpBtn.clicked.connect(self.on_help_btn_clicked)
             self._help_html_fpath = os.path.join(abs_path_to_docs, self._help_html_fpath)
             self.helpBtn.setToolTip(self._help_ttip)
+
+    def is_interactive_plot(self):
+        '''
+        check the plugins settings to see if the main plot should treat this plugin as if it has an interactive plot,
+        some of the scans like the POSITIONER_SCAN do not have shapes that have any interaction with parameters
+        :return:
+        '''
+        return(self._type_interactive_plot)
+
+    def is_skip_scan_queue_table_plot(self):
+        '''
+        check the plugins settings to see if the main plot should allow this plugin to cause the scan_q_table to update
+        everytime a plot shape is changed, some plugins would cause too many updates which slows down the system
+        :return:
+        '''
+        return(self._type_skip_scan_q_table_plots)
+
+    def is_spectra_plot_type(self):
+        '''
+        is this plugin a spectra plot type? like a standard 2D line plot
+        :return:
+        '''
+        return(self._type_spectra_plot_type)
+
+    def is_skip_center_type(self):
+        '''
+        for some plugins when they are selected it is not helpful that the plot would recenter itself to the current
+        plugins parameters because the plugin may want to use teh data currently in the plot to do this plugins selection
+        from, so this is a parameter to filter out those situations
+        :return:
+        '''
+        return(self._type_skip_centering_scans)
+
+    def is_do_recenter_type(self):
+        '''
+        when this plugin is selected do we want the plot to recenter to the current plugins data
+        :return:
+        '''
+        return(self._type_do_recenter)
+
+
 
     def format_info_text(self, title, msg, title_clr='blue', newline=True, start_preformat=False, end_preformat=False):
         '''

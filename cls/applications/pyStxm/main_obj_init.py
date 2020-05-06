@@ -109,11 +109,12 @@ elif (scanning_mode == 'COARSE_ZONEPLATE'):
 # DEVICE CONECTION
 if ((sample_mode is not None) and (fine_sample_mode is not None)):
     # connect to all teh devices for the desired beamline configuration
-    DEVICE_CFG = load_beamline_device_config(bl_config_nm)
+    DEVICE_CFG, cfg_dir = load_beamline_device_config(bl_config_nm)
     MAIN_OBJ.set_devices(DEVICE_CFG)
     MAIN_OBJ.set_rot_angle_device(DEVICE_CFG.sample_rot_angle_dev)
     #blConfig = load_beamline_preset(bl_config_nm)
     mainConfig = appConfig.get_all()
+    mainConfig['MAIN']['bl_config_dir'] = os.path.join(cfg_dir, 'scan_plugins')
     mainConfig.update(blConfig)
     MAIN_OBJ.set_presets(mainConfig)
     #DEFAULTS = Defaults('uhvstxm_dflts.json', new=False)

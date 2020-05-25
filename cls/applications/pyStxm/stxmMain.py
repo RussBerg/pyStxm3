@@ -160,7 +160,11 @@ class EngineLabel(QtWidgets.QLabel):
     #              'paused': (master_colors['black'], master_colors['app_yellow'], master_colors['app_ltblue'], master_colors['app_blue']),
     #              'idle': (master_colors['white'], master_colors['app_drkgray'], master_colors['app_ltblue'], master_colors['app_blue'])}
     color_map = {'running': (master_colors['black'], master_colors['app_ltblue'], master_colors['fbk_moving_ylw'], master_colors['app_red']),
+                 'pausing': (master_colors['black'], master_colors['app_yellow'], master_colors['app_ltblue'],
+                            master_colors['app_blue']),
                  'paused': (master_colors['black'], master_colors['app_yellow'], master_colors['app_ltblue'],
+                            master_colors['app_blue']),
+                 'stopping': (master_colors['black'], master_colors['app_yellow'], master_colors['app_ltblue'],
                             master_colors['app_blue']),
                  'idle': (master_colors['white'], master_colors['app_drkgray'], master_colors['app_ltblue'],
                           master_colors['app_blue'])}
@@ -187,6 +191,9 @@ class EngineLabel(QtWidgets.QLabel):
 
     @QtCore.pyqtSlot('QString', 'QString')
     def on_state_change(self, state, old_state):
+        #print('on_state_change: state is:  ', state)
+        if(state is None):
+            return
         self._state_str = state.capitalize()
         # Update the label
         if(state.find('running') > -1):
@@ -2640,7 +2647,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         :param state_str:
         :return:
         '''
-        print('on_state_changed: [%s]' % state_str)
+        #print('on_state_changed: [%s]' % state_str)
         if (state_str.find('paused') > -1):
             pass
         elif(state_str.find('idle') > -1):
@@ -2648,16 +2655,6 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             self.executingScan.clear_subscriptions(MAIN_OBJ.engine_widget)
             self.disconnect_executingScan_signals()
             self.set_buttons_for_starting()
-
-            # if(self.executingScan.scan_type is not scan_types.PATTERN_GEN):
-            #     #fireoff a thread to handle saving data to an nxstxm file
-            #     worker = Worker(self.do_data_export, run_uids, 'datadir', False)  # Any other args, kwargs are passed to the run function
-            #     #worker.signals.result.connect(self.load_thumbs)
-            #     #worker.signals.progress.connect(self.progress_fn)
-            #     #worker.signals.finished.connect(self.thread_complete)
-            #
-            #     # Execute
-            #     self._threadpool.start(worker)
 
             # fireoff a thread to handle saving data to an nxstxm file
             worker = Worker(self.do_data_export, run_uids, 'datadir', False)  # Any other args, kwargs are passed to the run function

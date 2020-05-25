@@ -10,7 +10,7 @@ from time import localtime, gmtime
 # External #
 ############
 from bluesky import RunEngine
-from bluesky.utils import RunEngineInterrupted, install_qt_kicker
+from bluesky.utils import RunEngineInterrupted
 from bluesky.preprocessors import SupplementalData
 from ophyd.log import set_handler
 
@@ -20,7 +20,6 @@ from databroker import Broker
 from PyQt5.QtWidgets import QVBoxLayout, QLabel, QComboBox, QGroupBox
 from PyQt5.QtWidgets import QStackedWidget, QPushButton
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
-
 
 from cls.utils.log import get_module_logger
 
@@ -49,9 +48,6 @@ class QRunEngine(QObject, RunEngine):
         #self.subscribe(self.print_msg)
         #self.waiting_hook = self.check_progress
         #self.waiting_hook = MyProgressBar
-        # Create a kicker, not worried about doing this multiple times as this
-        # is checked by `install_qt_kicker` itself
-        install_qt_kicker(update_rate=self.update_rate)
         # Allow a plan to be stored on the RunEngine
         self.plan_creator = None
         #self.log.setLevel(logging.DEBUG)
@@ -309,34 +305,10 @@ class EngineControl(QStackedWidget):
 
     pause_commands = ['Abort', 'Halt',  'Resume', 'Stop']
 
-    # def __init__(self, parent=None):
-    #     super().__init__(parent=parent)
-    #     # Create our widgets
-    #     # self.state_widgets = {'idle': QPushButton('Start'),
-    #     #                       'running': QPushButton('Pause'),
-    #     #                       'paused': QPushButton('Resume'),
-    #     #                       'stop': QPushButton('Stop'),
-    #     #                       'halt': QPushButton('Halt')}
-    #     #                       #'paused': QComboBox()}
-    #     self.state_widgets = {'start': QPushButton('Start'),
-    #                           'pause': QPushButton('Pause'),
-    #                           'resume': QPushButton('Resume'),
-    #                           'stop': QPushButton('Stop'),
-    #                           'halt': QPushButton('Halt')}
-    #     # 'paused': QComboBox()}
-    #     # Add the options to QComboBox
-    #     #self.state_widgets['paused'].insertItems(0, self.pause_commands)
-    #     ## Add all the widgets to the stack
-    #     for widget in self.state_widgets.values():
-    #         self.addWidget(widget)
-
     def __init__(self, engine, parent=None):
         super().__init__(parent=parent)
         # Create our widgets
         self.engine = engine
-        #turn off raising exceptions that would be sent to teh console
-        self.engine.set_console_mode(False)
-
         self.startBtn = QPushButton('Start')
         self.pauseBtn = QPushButton('Pause')
         self.resumeBtn = QPushButton('Resume')
@@ -350,7 +322,6 @@ class EngineControl(QStackedWidget):
                               'halt': self.haltBtn}
         # 'paused': QComboBox()}
         # Add the options to QComboBox
-        # self.state_widgets['paused'].insertItems(0, self.pause_commands)
         self._cur_state = None
         ## Add all the widgets to the stack
         for widget in self.state_widgets.values():
@@ -365,19 +336,12 @@ class EngineControl(QStackedWidget):
     def connect(self, engine):
         """Connect a QRunEngine object"""
         # Connect all the control signals to the engine slots
-        # self.state_widgets['start'].clicked.connect(engine.start)
-        # self.state_widgets['pause'].clicked.connect(engine.request_pause)
-        # self.state_widgets['resume'].clicked.connect(engine.resume)
-        # self.state_widgets['halt'].clicked.connect(engine.halt)
-        # self.state_widgets['stop'].clicked.connect(engine.stop)
-
         self.state_widgets['start'].clicked.connect(self.on_start_clicked)
         self.state_widgets['pause'].clicked.connect(self.on_pause_clicked)
         self.state_widgets['resume'].clicked.connect(self.on_resume_clicked)
         self.state_widgets['halt'].clicked.connect(self.on_halt_clicked)
         self.state_widgets['stop'].clicked.connect(self.on_stop_clicked)
 
-        #self.state_widgets['paused'].activated['QString'].connect(engine.command)
         # Update our control widgets based on this engine
         engine.state_changed.connect(self.on_state_change)
         # Set the current widget correctly
@@ -390,16 +354,21 @@ class EngineControl(QStackedWidget):
             print('cant start: current state is %s' % self.engine.state)
             self.on_stop_clicked()
 
-
     def on_pause_clicked(self):
         if (self.engine.state.find('running') > -1):
-            self.engine.pause()
+            try:
+                self.engine.pause()
+            except:
+                print('pause was called: current state is %s' % self.engine.state)
         else:
             print('cant pause: current state is %s' % self.engine.state)
 
     def on_resume_clicked(self):
         if (self.engine.state.find('paused') > -1):
-            self.engine.resume()
+            try:
+                self.engine.resume()
+            except:
+                print('resume was called: current state is %s' % self.engine.state)
         else:
             print('cant resume: current state is %s' % self.engine.state)
 
@@ -408,9 +377,11 @@ class EngineControl(QStackedWidget):
 
     def on_stop_clicked(self):
         if(self.engine.state.find('idle') == -1):
-        #if(self.engine.state.find('running') > -1):
-            print('on_stop_clicked: ', self._cur_state)
-            uids = self.engine.stop()
+            try:
+                print('on_stop_clicked: ', self._cur_state)
+                uids = self.engine.stop()
+            except:
+                print('stop was called: current state is %s' % self.engine.state)
 
         #self.engine.exec_result.emit(uids)
 
@@ -462,7 +433,6 @@ class EngineWidget(QGroupBox):
         self.engine.preprocessors.append(self.sd)
         #install a metadata validator
         #self.engine.md_validator = self.ensure_sample_number
-
 
         if plan_creator:
             self.engine.plan_creator = plan_creator

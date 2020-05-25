@@ -99,7 +99,7 @@ class BaseDevice(QtCore.QObject):
         self.put(val)
         st = DeviceStatus(self)
         st.done = True
-        st.success = True
+        st.set_finished()
         return(st)
 
     def get_ophyd_device(self):

@@ -37,9 +37,7 @@ class OphydQt_AIDevice(ophyd.Device):
 
     def trigger(self):
         st = DeviceStatus(self)
-        #st.done = True
-        st._finished()
-        st.success = True
+        st.set_finished()
         return st
 
     def read(self):
@@ -95,7 +93,7 @@ class OphydQt_NodeDevice(ophyd.Device):
     def trigger(self):
         st = DeviceStatus(self)
         st.done = True
-        st.success = True
+        st.set_finished()
         return st
 
     def read(self):

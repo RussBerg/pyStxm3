@@ -557,12 +557,16 @@ class PositionerDetail(QtWidgets.QDialog):
 	'''
 	classdocs
 	'''
+	changed = QtCore.pyqtSignal(float)
+
 	def __init__(self, positioner, dev_ui, mtr):
 		super(PositionerDetail, self).__init__()
 		uic.loadUi(os.path.join(mtrDetailDir, 'spfbk_detail.ui'), self)
 		self.mtr = mtr
 		self.positioner = positioner
-		self.dev_ui = dev_ui	
+		self.dev_ui = dev_ui
+
+		self.units = ''
 		#load the Motor.cfg file
 		
 		#connect btn handlers
@@ -580,14 +584,15 @@ class PositionerDetail(QtWidgets.QDialog):
 		self.setPosFld.returnPressed.connect(self.on_set_position)
 		self.velFld.returnPressed.connect(self.on_set_velo)
 
+		self.changed.connect(self.update_fbk)
 		self.loadMotorConfig(self.positioner)
 		
 				
 	def loadMotorConfig(self, positioner='AbsSampleX'):
-		positioner = str(positioner)
+		posner_nm = str(positioner)
 		
 		if(self.mtr != None):
-			self.mtr.add_callback('user_readback', self.updateFbk)
+			self.mtr.add_callback('user_readback', self.on_change)
 			# disconnect_signal(self.mtr, self.mtr.changed.changed)
 			# disconnect_signal(self.mtr, self.mtr.status)
 			# disconnect_signal(self.mtr, self.mtr.calib_changed)
@@ -597,17 +602,17 @@ class PositionerDetail(QtWidgets.QDialog):
 			# del(self.mtr)
 			# self.mtr = None
 
-		self.mtrNameFld.setText(positioner)
+		self.mtrNameFld.setText(posner_nm)
 		self.unitsLbl.setText(self.units)
-		self.mtr = self.devices[positioner]
+		#self.mtr = self.positioner
 		self.loadParamsToGui(self.mtr)
 		#self.mtr.changed.connect(self.updateFbk)
 		
-		self.mtr.changed.connect(self.on_change)
-		self.mtr.calib_changed.connect(self.check_calibd)
-		self.mtr.status.connect(self.on_status)
-		self.mtr.moving.connect(self.on_moving)
-		self.mtr.log_msg.connect(self.on_log_msg)
+		#self.mtr.changed.connect(self.update_fbk)
+		# self.mtr.calib_changed.connect(self.check_calibd)
+		# self.mtr.status.connect(self.on_status)
+		# self.mtr.moving.connect(self.on_moving)
+		# self.mtr.log_msg.connect(self.on_log_msg)
 		
 		# self.moveThread = QtCore.QThread()
 		# self.scanObj = scanThread(self.mtr)
@@ -621,29 +626,32 @@ class PositionerDetail(QtWidgets.QDialog):
 
 	def loadParamsToGui(self, mtr):
 		self.posFbkLbl.setText('%.3f' % (self.mtr.position))
-		self.zeroOffsetLbl.setText('%.6f' % (self.mtr.unit_offset))
-		self.absPosLbl.setText(str('%.3f' % (self.mtr.abs_position)))
-		self.encSlopeLbl.setText(str('%.6f' % (self.mtr.enc_slope)))
-		self.negWindowLbl.setText(str('%.3f' % (self.mtr.negWindow)))
-		self.posWindowLbl.setText(str('%.3f' % (self.mtr.posWindow)))
+		#self.zeroOffsetLbl.setText('%.6f' % (self.mtr.unit_offset))
+		#self.absPosLbl.setText(str('%.3f' % (self.mtr.abs_position)))
+		# self.encSlopeLbl.setText(str('%.6f' % (self.mtr.enc_slope)))
+		# self.negWindowLbl.setText(str('%.3f' % (self.mtr.negWindow)))
+		# self.posWindowLbl.setText(str('%.3f' % (self.mtr.posWindow)))
 		
-		self.velFbkLbl.setText(str('%.3f' % (self.mtr.dVel)))
-		self.accFbkLbl.setText(str('%.3f' % (self.mtr.dAccel)))
-			
+		self.velFbkLbl.setText(str('%.3f' % (self.mtr.velocity.get())))
+		self.accFbkLbl.setText(str('%.3f' % (self.mtr.acceleration.get())))
 			
 
+	def on_change(self, **kwargs):
+		#print(kwargs)
+		val = kwargs['value']
+		self.changed.emit(val)
 
-	def on_change(self, val):
+	def update_fbk(self, val):
 		#print 'on_change: %s: %.2f' % (positioner, val)
 		self.posFbkLbl.setText('%.3f' % (val))
-		self.zeroOffsetLbl.setText('%.6f' % (self.mtr.unit_offset))
-		self.absPosLbl.setText(str('%.3f' % (self.mtr.abs_position)))
-		self.encSlopeLbl.setText(str('%.6f' % (self.mtr.enc_slope)))
-		self.negWindowLbl.setText(str('%.3f' % (self.mtr.negWindow)))
-		self.posWindowLbl.setText(str('%.3f' % (self.mtr.posWindow)))
-		
-		self.velFbkLbl.setText(str('%.3f' % (self.mtr.dVel)))
-		self.accFbkLbl.setText(str('%.3f' % (self.mtr.dAccel)))
+		#self.zeroOffsetLbl.setText('%.6f' % (self.mtr.unit_offset))
+		#self.absPosLbl.setText(str('%.3f' % (self.mtr.abs_position)))
+		#self.encSlopeLbl.setText(str('%.6f' % (self.mtr.enc_slope)))
+		#self.negWindowLbl.setText(str('%.3f' % (self.mtr.negWindow)))
+		#self.posWindowLbl.setText(str('%.3f' % (self.mtr.posWindow)))
+
+		self.velFbkLbl.setText(str('%.3f' % (self.mtr.velocity.get())))
+		self.accFbkLbl.setText(str('%.3f' % (self.mtr.acceleration.get())))
 		#self.check_calibd()
 
 	def on_log_msg(self, msg):
@@ -713,7 +721,7 @@ class PositionerDetail(QtWidgets.QDialog):
 			print('')
 			val = float(str(self.setpointFld.text()))
 			
-			self.mtr.move_to(val, wait=True)
+			self.mtr.move(val, wait=True)
 			
 	
 	def on_move_rel_position(self):		

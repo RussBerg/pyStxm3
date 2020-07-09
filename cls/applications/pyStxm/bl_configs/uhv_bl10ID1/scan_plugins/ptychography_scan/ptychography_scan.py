@@ -3,11 +3,7 @@ Created on Aug 25, 2014
 
 @author: bergr
 """
-'''
-Created on Aug 25, 2014
 
-@author: bergr
-'''
 from PyQt5 import QtCore, QtGui
 from PyQt5 import uic
 
@@ -33,7 +29,7 @@ from cls.utils.dict_utils import dct_get, dct_put
 from cls.utils.roi_dict_defs import *
 from cls.utils.log import get_module_logger
 
-from cls.applications.pyStxm.bl_configs.basic.scan_plugins.ptychography_scan.PtychographyScan import PtychographyScanClass
+from cls.applications.pyStxm.bl_configs.uhv_bl10ID1.scan_plugins.ptychography_scan.PtychographyScan import PtychographyScanClass
 
 MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('max_fine_x')
 MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('max_fine_y')

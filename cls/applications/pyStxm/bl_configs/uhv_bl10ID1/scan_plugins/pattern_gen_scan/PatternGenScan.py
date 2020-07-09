@@ -129,9 +129,11 @@ class PatternGenScanClass(BaseScan):
                 #this updates member vars x_roi, y_roi, etc... with current spatial id specifics
                 self.update_roi_member_vars(self.sp_rois[self.sp_id])
 
-                # need to handle this better for multiple detectors, in the future todo
-                dets[0].set_dwell(self.dwell)
-                dets[0].set_points_per_row(self.x_roi[NPOINTS])
+                for d in dets:
+                    if (hasattr(d, 'set_dwell')):
+                        d.set_dwell(self.dwell)
+                    if (hasattr(d, 'set_points_per_row')):
+                        d.set_points_per_row(self.x_roi[NPOINTS])
 
                 # take a single image that will be saved with its own run scan id
                 img_dct = self.img_idx_map['%d' % self._current_img_idx]

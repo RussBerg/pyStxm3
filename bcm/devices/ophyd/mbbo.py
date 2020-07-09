@@ -11,7 +11,8 @@ class Mbbo(BaseObject):
 
 	def __init__(self, base_signal_name=None, write_pv=None, desc=None, egu='', cb=None, ret_kwarg='value', **cb_kwargs):
 
-		super(Mbbo, self).__init__(base_signal_name, write_pv=base_signal_name + '.VAL', **cb_kwargs)
+		#super(Mbbo, self).__init__(base_signal_name, write_pv=base_signal_name + '.VAL', **cb_kwargs)
+		super(Mbbo, self).__init__(base_signal_name, write_pv=base_signal_name, **cb_kwargs)
 
 		if(DO_SIM):
 			self.attrs = ('VAL', 'OUT', 'NAME', 'DESC')

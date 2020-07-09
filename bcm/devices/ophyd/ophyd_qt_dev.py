@@ -41,8 +41,15 @@ class OphydQt_AIDevice(ophyd.Device):
         return st
 
     def read(self):
-        return {self.name + '_val': {'value': self.val.get(),
-                                    'timestamp': ttime.time(),
+        '''
+        add _val because that is the read_attr
+        :return:
+        '''
+        # return {self.name + '_val': {'value': self.val.get(),
+        #                             'timestamp': ttime.time(),
+        #                              'units': self._units}}
+        return {self.name: {'value': self.val.get(),
+                                     'timestamp': ttime.time(),
                                      'units': self._units}}
 
     def describe(self):
@@ -60,11 +67,25 @@ class OphydQt_AIDevice(ophyd.Device):
         '''
         #print('TestDetectorDevice: describe called')
         res = super().describe()
-        for key in res:
-            res[key]['units'] = self._units
-            res[key]['category'] = self._dev_category
-            res[key]['desc'] = self._desc
-        return res
+        d = res
+        k = list(res.keys())[0]
+        d[self.name] = res.pop(k)
+        for key in d:
+            d[key]['units'] = self._units
+            d[key]['category'] = self._dev_category
+            d[key]['desc'] = self._desc
+        return d
+
+
+        # #print('TestDetectorDevice: describe called')
+        # res = super().describe()
+        # #here the key is the name + _<EpicsSignal name> but I want this to be only 'name'
+        # d = res
+        # k = list(res.keys())[0]
+        # d[self.name] = res.pop(k)
+        # for key in d:
+        #     d[key]['units'] = "counts"
+        # return d
 
 class OphydQt_NodeDevice(ophyd.Device):
     #Node meaning there are no fields lower than this signal
@@ -97,14 +118,27 @@ class OphydQt_NodeDevice(ophyd.Device):
         return st
 
     def read(self):
-        return {self.name + '_val': {'value': self.get(),
-                                    'timestamp': ttime.time(),
+        # return {self.name + '_val': {'value': self.get(),
+        #                             'timestamp': ttime.time(),
+        #                              'units': self._units}}
+        return {self.name: {'value': self.get(),
+                                     'timestamp': ttime.time(),
                                      'units': self._units}}
 
     def describe(self):
         #print('TestDetectorDevice: describe called')
+        # res = super().describe()
+        # for key in res:
+        #     res[key]['units'] = self._units
+        #     res[key]['category'] = self._dev_category
+        # return res
+
         res = super().describe()
-        for key in res:
-            res[key]['units'] = self._units
-            res[key]['category'] = self._dev_category
-        return res
+        d = res
+        k = list(res.keys())[0]
+        d[self.name] = res.pop(k)
+        for key in d:
+            d[key]['units'] = self._units
+            d[key]['category'] = self._dev_category
+            d[key]['desc'] = self._desc
+        return d

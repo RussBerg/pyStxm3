@@ -148,7 +148,7 @@ class BaseGate(BaseObject):
         #	self.trig = self.add_device('SoftTrigger')
 
         self.isRunning = 0
-        time.sleep(0.4)
+        #time.sleep(0.4)
         self.stop()
 
 

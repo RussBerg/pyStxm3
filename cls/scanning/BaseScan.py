@@ -361,6 +361,35 @@ class BaseScan(BaseObject):
             ev_idx += 1
         return (dct)
 
+    def gen_spectrum_scan_seq_map(self, num_ev, sp_id_lst, num_pol=1):
+        num_spids = len(sp_id_lst)
+        num_ev_pol = num_ev*num_pol
+        ev_idx_lst = list(range(0,num_ev))
+        pol_idx_lst = list(range(0, num_pol))
+        seq = list(range(0, num_ev_pol*num_spids))
+        spid_seq = np.tile(sp_id_lst, num_ev_pol)
+        ev_seq = np.repeat(ev_idx_lst, num_spids)
+        pol_seq = np.repeat(pol_idx_lst, num_ev * num_spids)
+        entry_lst = ['entry%d' % s for s in sp_id_lst]
+        entry_seq = np.tile(entry_lst, num_ev_pol)
+        i = 0
+        # # assign the member vars
+        # self._e_idx = self._img_idx_map_dct['e_idx']
+        # self._entry_nm = self._img_idx_map_dct['entry']
+        # self._pol_idx = self._img_idx_map_dct['pol_idx']
+        # self._sp_id = self._img_idx_map_dct['sp_id']
+        # self._sp_idx = self._img_idx_map_dct['sp_idx']
+        dct = {}
+        for s in seq:
+            #dct[s] = {'img_num': int(img_idx), 'row': r, 'col': c}
+            #dct[s] = {'spid': spid_seq[i], 'ev_seq': ev_seq[i], 'pol_seq': pol_seq[i]}
+            dct[s] = {'entry': entry_seq[i], 'e_idx': ev_seq[i], 'sp_idx': spid_seq[i], 'sp_id': spid_seq[i], 'pol_idx': pol_seq[i] }
+            i += 1
+        return(dct)
+
+
+
+
     def gen_spid_seq_map(self, sp_id_lst, points_for_spid):
         '''
         given a list of sp_ids and the max number of points expected PER spid, create a zipped list of (spid, seq_number)
@@ -405,7 +434,17 @@ class BaseScan(BaseObject):
         else:
             return (self.make_lxl_scan_plan(dets, gate, md=md, bi_dir=bi_dir))
 
-    def make_standard_metadata(self, entry_name, scan_type, primary_det=DNM_DEFAULT_COUNTER, override_xy_posner_nms=False):
+    def dets_names(self, dets):
+
+        dlst = []
+        for d in dets:
+            dnm = list(d.describe().keys())[0]
+            if(not dnm in dlst):
+                dlst.append(dnm)
+        return(dlst)
+
+    #def make_standard_metadata(self, entry_name, scan_type, dets=[self.main_obj.device(DNM_DEFAULT_COUNTER)], override_xy_posner_nms=False):
+    def make_standard_metadata(self, entry_name, scan_type, dets=[], override_xy_posner_nms=False):
         '''
         return a dict that is standard for all scans and that gives teh data suitcase all it needs to be able to save
         the nxstxm datafile
@@ -417,6 +456,8 @@ class BaseScan(BaseObject):
         :return:
 
         '''
+        if len(dets) == 0:
+            dets = [self.main_obj.device(DNM_DEFAULT_COUNTER)]
 
         dct = {}
         dct['entry_name'] = entry_name
@@ -426,10 +467,14 @@ class BaseScan(BaseObject):
 
         #dct['device_reverse_lu_dct'] = self.main_obj.get_device_reverse_lu_dct()
         dct['dwell'] = self.dwell
-        dct['primary_det'] = primary_det
+        dct['primary_det'] = self.dets_names(dets)
+        dct['detector_names'] = self.dets_names(dets)
+        dct['default_det'] = DNM_DEFAULT_COUNTER
         dct['zp_def'] = self.get_zoneplate_info_dct()
         dct['rotation_angle'] = self.main_obj.get_sample_rotation_angle()
         dct['wdg_com'] = dict_to_json(self.wdg_com)
+        #include the full sequence map so that spectrum scans can organize the data in the suitcase later
+        dct['sequence_map'] = dict_to_json(self.img_idx_map)
         dct['img_idx_map'] = dict_to_json(self.img_idx_map['%d' % self._current_img_idx])
         dct['rev_lu_dct'] = self.main_obj.get_device_reverse_lu_dct()
         return(dct)
@@ -475,7 +520,7 @@ class BaseScan(BaseObject):
             ew.unsubscribe_cb(self._emitter_sub)
         self._emitter_cb = None
 
-    def init_subscriptions(self, ew, func):
+    def init_subscriptions(self, ew, func, counter_nm=None):
         '''
         Base init_subscriptions is used by most scans
         :param ew:
@@ -484,9 +529,13 @@ class BaseScan(BaseObject):
         '''
 
         if(self.scan_type in image_type_scans):
-            #self._emitter_cb = ImageDataEmitter('point_det_single_value_rbv', y='mtr_y', x='mtr_x', scan_type=scan_types.DETECTOR_IMAGE, bi_dir=self._bi_dir)
-            self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y='mtr_y', x='mtr_x',
-                                                scan_type=self.scan_type, bi_dir=self._bi_dir)
+            if(not counter_nm):
+                counter_dev = self.main_obj.device(DNM_DEFAULT_COUNTER)
+                counter_nm = list(counter_dev.describe().keys())[0]
+
+            #self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y='mtr_y', x='mtr_x', scan_type=self.scan_type, bi_dir=self._bi_dir)
+            self._emitter_cb = ImageDataEmitter(counter_nm, y='mtr_y', x='mtr_x', scan_type=self.scan_type, bi_dir=self._bi_dir)
+
             self._emitter_cb.set_row_col(rows=self.y_roi[NPOINTS], cols=self.x_roi[NPOINTS], seq_dct=self.seq_map_dct)
             self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
             self._emitter_cb.new_plot_data.connect(func)
@@ -5194,7 +5243,7 @@ class BaseScan(BaseObject):
         self._bi_dir = bi_dir
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, dets=dets))}
 
 
         @conditional_decorator(bpp.baseline_decorator(dev_list), do_baseline)
@@ -5268,7 +5317,7 @@ class BaseScan(BaseObject):
         #det.set_num_points(self.x_roi[NPOINTS])
         det.configure(self.x_roi[NPOINTS], self.scan_type)
         if(md is None):
-            md = {'metadata': dict_to_json(self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+            md = {'metadata': dict_to_json(self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, dets=dets))}
         # if(not skip_baseline):
         #     @bpp.baseline_decorator(dev_list)
 

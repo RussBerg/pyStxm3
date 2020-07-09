@@ -49,7 +49,7 @@ from cls.data_io.stxm_data_io import STXMDataIo
 from cls.scanning.BaseScan import LOAD_ALL
 from cls.scanning.paramLineEdit import intLineEditParamObj, dblLineEditParamObj
 # from cls.scanning.dataRecorder import HdrData
-from cls.types.stxmTypes import image_types, scan_types, scan_sub_types, spectra_type_scans, \
+from cls.types.stxmTypes import image_types, scan_types, scan_sub_types, spectra_type_scans, detector_types, \
     spatial_type_prefix, energy_scan_order_types, sample_fine_positioning_modes, \
     sample_positioning_modes, scan_status_types, endstation_id_types
 
@@ -84,7 +84,6 @@ from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 import suitcase.nxstxm as suit_nxstxm
 import suitcase.nxptycho as suit_nxptycho
 
-#from bcm.devices.device_names import *
 from bcm.devices.device_names import *
 
 
@@ -1444,18 +1443,12 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         if (self.scan_in_progress):
             return
 
-        #non_interactive_plots = [scan_panel_order.POSITIONER_SCAN]
-
-        #skip_scan_q_table_plots = [scan_panel_order.OSA_FOCUS_SCAN, scan_panel_order.FOCUS_SCAN]
-
         x1 = dct_get(wdg_com, SPDB_XSTART)
         y1 = dct_get(wdg_com, SPDB_YSTART)
         x2 = dct_get(wdg_com, SPDB_XSTOP)
         y2 = dct_get(wdg_com, SPDB_YSTOP)
         rect = (x1, y1, x2, y2)
         # print 'on_plotitem_roi_changed: rect', rect
-
-        #if (self.scan_panel_idx in non_interactive_plots):
         if(not self.scan_tbox_widgets[self.scan_panel_idx].is_interactive_plot()):
             return
 
@@ -1837,6 +1830,10 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             #but only switch if it is not a point scan as the selection for a point scan is done on a 2D image
             #if(idx is scan_panel_order.POINT_SCAN):
             if(scan_pluggin.type is scan_types.SAMPLE_POINT_SPECTRUM):
+                #we have switched to sample point spectrum scan so make sure the plotter knows it is an image (even if it isnt yet)
+                #this is to correct a situation of having just done a sample focus scan, if the image type is left as focus scan
+                # then the wdg_com dict emiitted by the plotter will think that it should put x/y positions in terms of using z for y
+                self.lineByLineImageDataWidget.set_image_type(image_types.IMAGE)
                 # it is a point scan so zoom the plot to a valid range
                 #sx = MAIN_OBJ.device(DNM_SAMPLE_X)
                 #sy = MAIN_OBJ.device(DNM_SAMPLE_Y)
@@ -2287,24 +2284,59 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
             # set others below
 
-    def set_user_selected_counters(self, sscan):
+    # def set_user_selected_counters(self, executing_scan, det_types=[detector_types.POINT]):
+    #     '''
+    #     get the current user selected counters and populate the counter_dct and set that dict to the sscan
+    #     :param sscan:
+    #     :return:
+    #     '''
+    #
+    #     # here get the counters that the user has selected and populate the counter dict
+    #     dets_pnl = self.get_pref_panel('DetectorsPanel')
+    #     sel_dets_lst = dets_pnl.get_selected_detectors()
+    #     #for now just populate it with APD
+    #     # cntr_dct[DNM_DEFAULT_COUNTER] = {'devname': DNM_COUNTER_APD, 'dev': MAIN_OBJ.device(DNM_COUNTER_APD)}
+    #     # # cntr_dct['axis1InterferVolts'] = {'devname': DNM_AX1_INTERFER_VOLTS, 'dev': MAIN_OBJ.device(DNM_AX1_INTERFER_VOLTS)}
+    #     # # cntr_dct['axis2InterferVolts'] = {'devname': DNM_AX2_INTERFER_VOLTS, 'dev': MAIN_OBJ.device(DNM_AX2_INTERFER_VOLTS)}
+    #     # # cntr_dct['ring_current'] = {'devname': DNM_RING_CURRENT,'dev': MAIN_OBJ.device(DNM_RING_CURRENT)}
+    #     cntr_dct = {}
+    #     dets = [self.ring_ma]
+    #     for d in sel_dets_lst:
+    #         cntr_dct[d['name']] = {'devname': d['name'], 'dev': MAIN_OBJ.device(d['name'])}
+    #         dev = MAIN_OBJ.device(d['name'])
+    #         if(dev.get_det_type() in det_types):
+    #             dets.append(MAIN_OBJ.device(d['name']))
+    #
+    #     cntr_dct[DNM_DEFAULT_COUNTER] = {'devname': DNM_COUNTER_APD, 'dev': MAIN_OBJ.device(DNM_COUNTER_APD)}
+    #     executing_scan.set_counter_dct(cntr_dct)
+    #     return(dets)
+
+    def get_user_selected_counters(self, det_types=[detector_types.POINT]):
         '''
-        get the current user sleected counters and populate the counter_dct and set that dict to the sscan
+        get the current user selected counters and populate the counter_dct and set that dict to the sscan
         :param sscan:
         :return:
         '''
 
         # here get the counters that the user has selected and populate the counter dict
+        dets_pnl = self.get_pref_panel('DetectorsPanel')
+        sel_dets_lst = dets_pnl.get_selected_detectors()
+        dets = [self.ring_ma, MAIN_OBJ.device(DNM_DEFAULT_COUNTER)]
+        for d in sel_dets_lst:
+            dev = MAIN_OBJ.device(d['name'])
+            if(hasattr(dev, 'get_det_type')):
+                dtp = dev.get_det_type()
+            else:
+                # then assume its a point det
+                dtp = detector_types.POINT
+            if (hasattr(dev, 'get_ophyd_device')):
+                dev = dev.get_ophyd_device()
 
-        #for now just populate it with APD
-        cntr_dct = {}
-        cntr_dct[DNM_DEFAULT_COUNTER] = {'devname': DNM_COUNTER_APD, 'dev': MAIN_OBJ.device(DNM_COUNTER_APD)}
-        #cntr_dct['axis1InterferVolts'] = {'devname': DNM_AX1_INTERFER_VOLTS, 'dev': MAIN_OBJ.device(DNM_AX1_INTERFER_VOLTS)}
-        #cntr_dct['axis2InterferVolts'] = {'devname': DNM_AX2_INTERFER_VOLTS, 'dev': MAIN_OBJ.device(DNM_AX2_INTERFER_VOLTS)}
-        #cntr_dct['ring_current'] = {'devname': DNM_RING_CURRENT,'dev': MAIN_OBJ.device(DNM_RING_CURRENT)}
+            if(dtp in det_types):
+                dets.append(dev)
 
-        sscan.set_counter_dct(cntr_dct)
-
+        #cntr_dct[DNM_DEFAULT_COUNTER] = {'devname': DNM_COUNTER_APD, 'dev': MAIN_OBJ.device(DNM_COUNTER_APD)}
+        return(dets)
 
     def on_test_scan(self, scan_panel_id):
         _logger.info('ok testing scan plugin [%d]' % scan_panel_id)
@@ -2390,8 +2422,6 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         cur_zp_def = fprms_pnl.get_cur_zp_def()
         self.executingScan.set_zoneplate_info_dct(cur_zp_def)
 
-        #assign the detectos to use
-        self.set_user_selected_counters(self.executingScan)
 
         # grab some information used by all scans below
         sp_rois = dct_get(self.cur_wdg_com, WDGCOM_SPATIAL_ROIS)
@@ -2419,9 +2449,15 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
             if(scan_sub_type is scan_sub_types.POINT_BY_POINT):
                 self.point_det.set_scan_type(scan_type)
-                scan_plan = scan_class.generate_scan_plan(detectors=[self.point_det, self.ring_ma], gate=self.gate)
+                #scan_plan = scan_class.generate_scan_plan(detectors=[self.point_det, self.ring_ma], gate=self.gate)
+                # assign the detectos to use
+                dets = self.get_user_selected_counters(det_types=[detector_types.POINT])
+                #dets = [self.point_det, self.ring_ma]
+                scan_plan = scan_class.generate_scan_plan(detectors=dets, gate=self.gate)
             else:
-                scan_plan = scan_class.generate_scan_plan(detectors=[self.line_det_flyer], gate=self.gate)
+                #scan_plan = scan_class.generate_scan_plan(detectors=[self.line_det_flyer], gate=self.gate)
+                dets = self.get_user_selected_counters(det_types=[detector_types.LINE])
+                scan_plan = scan_class.generate_scan_plan(detectors=dets, gate=self.gate)
             # scan_class.init_subscriptions(MAIN_OBJ.engine_widget, self.add_point_to_plot)
 
             if (scan_type == scan_types.GENERIC_SCAN):
@@ -2463,16 +2499,23 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                 if(scan_class.e712_enabled):
                     if (scan_type == scan_types.SAMPLE_POINT_SPECTRUM):
                         # use point detector
-                        scan_plan = scan_class.generate_scan_plan(detectors=[self.point_det, self.ring_ma],
-                                                                  gate=self.gate)
+                        dets = self.get_user_selected_counters(det_types=[detector_types.POINT])
+                        # scan_plan = scan_class.generate_scan_plan(detectors=[self.point_det, self.ring_ma],
+                        #                                           gate=self.gate)
+                        scan_plan = scan_class.generate_scan_plan(detectors=dets, gate=self.gate)
                     else:
                         #use the flyer scan because we are using the E712 wavegenerator
-                        scan_plan = scan_class.generate_scan_plan(detectors=[self.line_det_flyer], gate=self.gate)
+                        dets = self.get_user_selected_counters(det_types=[detector_types.LINE])
+                        #scan_plan = scan_class.generate_scan_plan(detectors=[self.line_det_flyer], gate=self.gate)
+                        scan_plan = scan_class.generate_scan_plan(detectors=dets, gate=self.gate)
                 else:
                     #use point detector
-                    scan_plan = scan_class.generate_scan_plan(detectors=[self.point_det, self.ring_ma], gate=self.gate)
+                    dets = self.get_user_selected_counters(det_types=[detector_types.POINT])
+                    scan_plan = scan_class.generate_scan_plan(detectors=dets, gate=self.gate)
             else:
-                scan_plan = scan_class.generate_scan_plan(detectors=[self.line_det_flyer], gate=self.gate)
+                dets = self.get_user_selected_counters(det_types=[detector_types.LINE])
+                #scan_plan = scan_class.generate_scan_plan(detectors=[self.line_det_flyer], gate=self.gate)
+                scan_plan = scan_class.generate_scan_plan(detectors=dets, gate=self.gate)
             # scan_class.init_subscriptions(MAIN_OBJ.engine_widget, self.add_point_to_plot)
 
             #if (scan_type == scan_types.GENERIC_SCAN):
@@ -2518,12 +2561,19 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                 self.point_det.set_scan_type(scan_type)
                 if (scan_class.e712_enabled):
                     # use the flyer scan because we are using the E712 wavegenerator
-                    scan_plan = scan_class.generate_scan_plan(detectors=[self.line_det_flyer], gate=self.gate)
+                    dets = self.get_user_selected_counters(det_types=[detector_types.LINE])
+                    #scan_plan = scan_class.generate_scan_plan(detectors=[self.line_det_flyer], gate=self.gate)
+                    scan_plan = scan_class.generate_scan_plan(detectors=dets, gate=self.gate)
                 else:
                     # use point detector
-                    scan_plan = scan_class.generate_scan_plan(detectors=[self.point_det], gate=self.gate)
+                    dets = self.get_user_selected_counters(det_types=[detector_types.POINT])
+                    #scan_plan = scan_class.generate_scan_plan(detectors=[self.point_det], gate=self.gate)
+                    scan_plan = scan_class.generate_scan_plan(detectors=dets, gate=self.gate)
             else:
-                scan_plan = scan_class.generate_scan_plan(detectors=[self.line_det_flyer], gate=self.gate)
+                dets = self.get_user_selected_counters(det_types=[detector_types.LINE])
+                # scan_plan = scan_class.generate_scan_plan(detectors=[self.line_det_flyer], gate=self.gate)
+                scan_plan = scan_class.generate_scan_plan(detectors=dets, gate=self.gate)
+
 
             if (scan_type == scan_types.PATTERN_GEN):
                 scan_class.init_subscriptions(MAIN_OBJ.engine_widget, self.add_point_to_plot)
@@ -2550,7 +2600,9 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             scan_class.configure(self.cur_wdg_com, sp_id=sp_id, line=False)
 
             self.point_det.set_scan_type(scan_type)
-            scan_plan = scan_class.generate_scan_plan(detectors=[self.point_det, self.ring_ma], gate=self.gate)
+            dets = self.get_user_selected_counters(det_types=[detector_types.POINT])
+            #scan_plan = scan_class.generate_scan_plan(detectors=[self.point_det, self.ring_ma], gate=self.gate)
+            scan_plan = scan_class.generate_scan_plan(detectors=dets, gate=self.gate)
             # this should be something else here
             scan_class.init_subscriptions(MAIN_OBJ.engine_widget, self.add_point_to_plot)
         else:

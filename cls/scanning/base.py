@@ -1697,7 +1697,9 @@ class ScanParamWidget(QtWidgets.QFrame):
             # added E712 waveform generator support
             if (hasattr(self, 'useE712WavegenBtn')):
                 dct_put(sp_db, SPDB_HDW_ACCEL_USE, self.useE712WavegenBtn.isChecked())
+            if (hasattr(self, 'autoDDLRadBtn')):
                 dct_put(sp_db, SPDB_HDW_ACCEL_AUTO_DDL, self.autoDDLRadBtn.isChecked())
+            if (hasattr(self, 'reinitDDLRadBtn')):
                 dct_put(sp_db, SPDB_HDW_ACCEL_REINIT_DDL, self.reinitDDLRadBtn.isChecked())
 
         # now set the wdg_com

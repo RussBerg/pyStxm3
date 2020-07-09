@@ -70,7 +70,7 @@ class FineSampleImageScanClass(BaseScan):
         self._bi_dir = bi_dir
         #zp_def = self.get_zoneplate_info_dct()
         mtr_dct = self.determine_samplexy_posner_pvs()
-        md = copy.deepcopy(self.make_standard_metadata(entry_num=0, scan_type=self.scan_type))
+        md = copy.deepcopy(self.make_standard_metadata(entry_num=0, scan_type=self.scan_type, dets=dets))
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)
         # @bpp.run_decorator(md={'entry_name': 'entry0', 'scan_type': scan_types.DETECTOR_IMAGE})
@@ -83,10 +83,6 @@ class FineSampleImageScanClass(BaseScan):
             mtr_y = self.main_obj.device(mtr_dct['fy_name'])
             shutter = self.main_obj.device(DNM_SHUTTER)
 
-            det = dets[0]
-            #md = self.make_standard_metadata(entry_num=0, scan_type=self.scan_type)
-            #md['x_roi'] = x_roi
-            #md['y_roi'] = y_roi
             yield from bps.stage(gate)
             # the detector will be staged automatically by the grid_scan plan
             shutter.open()

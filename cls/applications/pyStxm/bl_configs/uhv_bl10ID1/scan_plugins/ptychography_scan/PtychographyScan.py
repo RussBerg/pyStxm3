@@ -47,8 +47,9 @@ class PtychographyScanClass(BaseScan):
         gate.set_trig_src(trig_src_types.NORMAL_PXP)
         gate.set_mode(bs_dev_modes.NORMAL_PXP)
 
-        #need to handle this better for multiple detectors, in the future todo
-        dets[0].set_dwell(self.dwell)
+        for d in dets:
+            if (hasattr(d, 'set_dwell')):
+                d.set_dwell(self.dwell)
 
     def set_ev_first_flg(self, val):
         '''
@@ -275,7 +276,7 @@ class PtychographyScanClass(BaseScan):
 
 
         if (md is None):
-            _meta = self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type)
+            _meta = self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, dets=dets)
             _meta['num_ttl_imgs'] = num_ttl_imgs
             _meta['img_idx_map'] = dict_to_json(self.img_idx_map)
             _meta['det_filepath'] = ccd.file_plugin.file_path.get() + ccd.file_plugin.file_name.get() + '_000000.h5'

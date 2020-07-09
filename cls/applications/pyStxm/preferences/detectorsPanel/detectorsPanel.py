@@ -176,6 +176,12 @@ class DetectorItem(QtWidgets.QWidget):
         self.detailsBtn.setToolTip('Config ' + name + ' details')
         # self.radioBtn = QtWidgets.QRadioButton(name)
         self.chkBox = QtWidgets.QCheckBox(name)
+        if(hasattr(det, 'prefix')):
+            self.chkBox.setToolTip(det.prefix)
+        elif(hasattr(det, 'signal')):
+            self.chkBox.setToolTip(det.signal.name)
+        else:
+            self.chkBox.setToolTip(self.name)
         layout.addWidget(self.detailsBtn)
         # layout.addWidget(self.radioBtn)
         layout.addWidget(self.chkBox)
@@ -205,10 +211,6 @@ class DetectorItem(QtWidgets.QWidget):
         if (self.detailsWdg is not None):
             self.detailsWdg.show()
 
-    def on_radio_clicked(self, chkd):
-        self.is_checked = chkd
-
-
     def on_checkbox_clicked(self, chkd):
         self.is_checked = chkd
         dct = {}
@@ -219,7 +221,7 @@ class DetectorItem(QtWidgets.QWidget):
         self.update_setting.emit(dct)
 
     def is_checked(self):
-        return (self.is_checked)
+        return (self.get_checked())
 
     def get_name(self):
         return (self.name)
@@ -294,7 +296,7 @@ class DetectorsPanel(BasePreference):
         """
         lst = []
         for d in self.widgetList:
-            if (d.is_checked):
+            if (d.get_checked()):
                 dct = {}
                 dct['name'] = d.get_name()
                 dct['dcs_name'] = d.get_dcs_name()

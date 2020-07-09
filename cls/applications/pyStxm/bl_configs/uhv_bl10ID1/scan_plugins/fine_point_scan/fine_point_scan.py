@@ -3,11 +3,7 @@ Created on Aug 25, 2014
 
 @author: bergr
 '''
-'''
-Created on Aug 25, 2014
 
-@author: bergr
-'''
 from PyQt5 import uic
 from PyQt5 import QtCore, QtGui
 
@@ -30,7 +26,7 @@ from cls.plotWidgets.color_def import get_normal_clr, get_warn_clr, get_alarm_cl
 from cls.utils.roi_dict_defs import *
 from cls.utils.log import get_module_logger
 
-from cls.applications.pyStxm.bl_configs.basic.scan_plugins.fine_point_scan.PointSpecScan import PointSpecScanClass
+from cls.applications.pyStxm.bl_configs.uhv_bl10ID1.scan_plugins.fine_point_scan.PointSpecScan import PointSpecScanClass
 
 MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('max_fine_x')
 MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('max_fine_y')

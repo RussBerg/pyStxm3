@@ -48,8 +48,9 @@ class PointSpecScanClass(BaseScan):
         gate.set_trig_src(trig_src_types.NORMAL_PXP)
         gate.set_mode(bs_dev_modes.NORMAL_PXP)
 
-        # need to handle this better for multiple detectors, in the future todo
-        dets[0].set_dwell(self.dwell)
+        for d in dets:
+            if (hasattr(d, 'set_dwell')):
+                d.set_dwell(self.dwell)
 
     def add_spids_xy_setpoints(self, md={}):
         md['sp_id_setpoints'] = {}
@@ -69,7 +70,9 @@ class PointSpecScanClass(BaseScan):
 
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, override_xy_posner_nms=True))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, dets=dets, \
+                                            override_xy_posner_nms=True))}
+
         #override the POSIIONER so tha nxstxm and can export properly
         #md = self.add_spids_xy_setpoints(md)
         @bpp.baseline_decorator(dev_list)
@@ -77,15 +80,7 @@ class PointSpecScanClass(BaseScan):
         @bpp.run_decorator(md=md)
         def do_scan():
 
-
             mtr_ev = self.main_obj.device(DNM_ENERGY)
-            # if (self.is_zp_scan):
-            #     mtr_x = self.main_obj.device(DNM_ZONEPLATE_X)
-            #     mtr_y = self.main_obj.device(DNM_ZONEPLATE_Y)
-            #
-            # else:
-            #     mtr_x = self.main_obj.device(DNM_SAMPLE_FINE_X)
-            #     mtr_y = self.main_obj.device(DNM_SAMPLE_FINE_Y)
             mtr_x = self.main_obj.device(DNM_SAMPLE_X)
             mtr_y = self.main_obj.device(DNM_SAMPLE_Y)
             shutter = self.main_obj.device(DNM_SHUTTER)
@@ -132,7 +127,7 @@ class PointSpecScanClass(BaseScan):
             else:
                 mtr_x = self.main_obj.device(self.x_roi[POSITIONER])
             # we also need to pass the sp_id because it needs to send it on to the plotter as data comes in
-            self._emitter_cb = SpecDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, x=mtr_x.get_name(), \
+            self._emitter_cb = SpecDataEmitter(DNM_DEFAULT_COUNTER, x=mtr_x.get_name(), \
                                                scan_type=self.scan_type, spid_seq_map=spid_seq_map)
             self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
             self._emitter_cb.new_plot_data.connect(func)
@@ -179,25 +174,26 @@ class PointSpecScanClass(BaseScan):
         if(USE_E712_HDW_ACCEL):
             self.main_obj.device('e712_current_sp_id').put(sp_id)
 
-        # self.wdg_com = wdg_com
-        # self.sp_rois = wdg_com[WDGCOM_SPATIAL_ROIS]
-        # self.sp_db = self.sp_rois[sp_id]
-        # self.set_spatial_id(sp_id)
-        # self.scan_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_TYPE)
-        # self.scan_sub_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE)
-        # self.numX = int(dct_get(self.sp_db, SPDB_XNPOINTS))
-        # self.numY = int(dct_get(self.sp_db, SPDB_YNPOINTS))
-        # self.numZ = int(dct_get(self.sp_db, SPDB_ZNPOINTS))
-        # self.numE = int(dct_get(self.sp_db, SPDB_EV_NPOINTS))
-        # self.numSPIDS = len(self.sp_rois)
-        # self.e_rois = dct_get(self.sp_db, SPDB_EV_ROIS)
+        self.wdg_com = wdg_com
+        self.sp_rois = wdg_com[WDGCOM_SPATIAL_ROIS]
+        self.sp_id_list = list(self.sp_rois.keys())
+        self.sp_db = self.sp_rois[sp_id]
+        self.set_spatial_id(sp_id)
+        self.scan_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_TYPE)
+        self.scan_sub_type = dct_get(self.sp_db, SPDB_SCAN_PLUGIN_SUBTYPE)
+        self.numX = int(dct_get(self.sp_db, SPDB_XNPOINTS))
+        self.numY = int(dct_get(self.sp_db, SPDB_YNPOINTS))
+        self.numZ = int(dct_get(self.sp_db, SPDB_ZNPOINTS))
+        self.numE = int(dct_get(self.sp_db, SPDB_EV_NPOINTS))
+        self.numSPIDS = len(self.sp_rois)
+        self.e_rois = dct_get(self.sp_db, SPDB_EV_ROIS)
         self.ev_setpoints = dct_get(wdg_com, SPDB_SINGLE_LST_EV_ROIS)
-        # e_roi = self.e_rois[0]
-        # self.numEPU = len(dct_get(e_roi, EPU_POL_PNTS))
-        # if (self.numEPU < 1):
-        #     self.numEPU = 1
-        #
-        # self.update_roi_member_vars(self.sp_db)
+        e_roi = self.e_rois[0]
+        self.numEPU = len(dct_get(e_roi, EPU_POL_PNTS))
+        if (self.numEPU < 1):
+            self.numEPU = 1
+
+        self.update_roi_member_vars(self.sp_db)
 
         dct_put(self.sp_db, SPDB_RECT, (self.x_roi[START], self.y_roi[START], self.x_roi[STOP], self.y_roi[STOP]))
 
@@ -215,7 +211,8 @@ class PointSpecScanClass(BaseScan):
         self.config_hdr_datarecorder(stack=self.stack)
         self.move_zpxy_to_its_center()
 
-        self.seq_map_dct = self.generate_2d_seq_image_map(1, self.y_roi[NPOINTS], self.x_roi[NPOINTS], lxl=False)
+        #self.seq_map_dct = self.generate_2d_seq_image_map(len(self.ev_setpoints), self.y_roi[NPOINTS], self.x_roi[NPOINTS], lxl=False)
+        self.seq_map_dct = self.gen_spectrum_scan_seq_map(len(self.ev_setpoints), self.sp_id_list, num_pol=self.numEPU)
 
         # THIS must be the last call
         self.finish_setup()

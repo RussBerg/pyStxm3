@@ -8,7 +8,8 @@ from ophyd import Component as Cpt, EpicsSignal, EpicsSignalRO, DeviceStatus
 from ophyd.flyers import MonitorFlyerMixin
 from cls.plotWidgets.utils import *
 
-from cls.types.stxmTypes import scan_types
+from cls.types.stxmTypes import scan_types, detector_types
+
 
 DATA_OFFSET = 2
 
@@ -76,8 +77,14 @@ class BaseCounterInputDevice(ophyd.Device):
         self._scan_type = None
         self._pnts_per_row = None
         self.mode = 0
+        self._scale_val = 1.0
+
+        self._det_type = detector_types.POINT # or LINE or 2D
         if ('scan_type' in kwargs.keys()):
             self._scan_type = kwargs['scan_type']
+
+        if ('scale_val' in kwargs.keys()):
+            self._scale_val = kwargs['scale_val']
 
 
     def configure(self):
@@ -86,6 +93,37 @@ class BaseCounterInputDevice(ophyd.Device):
         :return:
         '''
         pass
+
+    def set_det_type(self, det_type='POINT'):
+        if(det_type.find('POINT')):
+            _det_type = detector_types.POINT
+        elif(det_type.find('LINE')):
+            _det_type = detector_types.LINE
+        elif(det_type.find('TWO_D')):
+            _det_type = detector_types.TWO_D
+        else:
+            print('set_det_type: Unknown Detector type [%s], needs to be a string of detector_type' % det_type)
+
+    def get_det_type(self):
+        return(self._det_type)
+
+    def is_point_det(self):
+        if(self._det_type is detector_types(detector_types.POINT)):
+            return(True)
+        else:
+            return(False)
+
+    def is_line_det(self):
+        if(self._det_type is detector_types(detector_types.LINE)):
+            return(True)
+        else:
+            return(False)
+
+    def is_2D_det(self):
+        if(self._det_type is detector_types(detector_types.TWO_D)):
+            return(True)
+        else:
+            return(False)
 
     def set_dwell(self, dwell):
         self.point_dwell.put(dwell)
@@ -127,24 +165,34 @@ class BaseCounterInputDevice(ophyd.Device):
         #return(self.single_value_rbv.get())
         self.cntr += 1
 
-        return {self.name + '_single_value_rbv': {'value': self.single_value_rbv.get(),
-                            'cntr': self.cntr, 'timestamp': ttime.time()}}
+        # return {self.name + '_single_value_rbv': {'value': self.single_value_rbv.get(),
+        #                     'cntr': self.cntr, 'timestamp': ttime.time()}}
+        return {self.name: {'value': self.single_value_rbv.get() * self._scale_val,
+                           'cntr': self.cntr, 'timestamp': ttime.time()}}
 
     def describe(self):
         #print('TestDetectorDevice: describe called')
         res = super().describe()
-        for key in res:
-            res[key]['units'] = "counts"
-        return res
+        #here the key is the name + _<EpicsSignal name> but I want this to be only 'name'
+        d = res
+        k = list(res.keys())[0]
+        d[self.name] = res.pop(k)
+        #d[self.name + '_single_value_rbv'] = res.pop(k)
+        for key in d:
+            d[key]['units'] = "counts"
+        return d
 
 
 
 class PointDetectorDevice(BaseCounterInputDevice):
+    # by adding this as 'hinted' it will be added to the name in the base class describe() function
     single_value_rbv = Cpt(EpicsSignalRO, 'SingleValue_RBV', kind='hinted')
-    def __init__(self, prefix, name):
-        super(PointDetectorDevice, self).__init__(prefix, name=name)
+    def __init__(self, prefix, name, scale_val=1.0):
+        super(PointDetectorDevice, self).__init__(prefix, name=name, scale_val=scale_val)
         self.single_value_rbv.subscribe(self.on_change)
         self.mode = 0  # 0 == point, 1 == line
+        self.set_det_type('POINT')
+
 
     def report(self):
         """ return a dict that reresents all of the settings for this device """
@@ -230,6 +278,7 @@ class LineDetectorDevice(BaseCounterInputDevice):
     def __init__(self, prefix, name):
         super(LineDetectorDevice, self).__init__(prefix, name=name)
         self.num_points = 0
+        self.set_det_type('LINE')
         self.waveform_rbv.subscribe(self.on_waveform_changed, event_type='value')
         self.sigs.sig_do_read.connect(self.read)
         #'readback'
@@ -343,6 +392,7 @@ class LineDetectorFlyerDevice(MonitorFlyerMixin, BaseCounterInputDevice):
     waveform_rbv = Cpt(EpicsSignalRO, 'Waveform_RBV', kind='hinted', auto_monitor=True)
 
     def __init__(self, *args, stream_names=None, **kwargs):
+        self.set_det_type('LINE')
         if(stream_names is not None):
             s_keys = list(stream_names.keys())
             self.stream_name = stream_names[s_keys[0]]

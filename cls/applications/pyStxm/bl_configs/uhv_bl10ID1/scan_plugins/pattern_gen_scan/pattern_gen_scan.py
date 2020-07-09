@@ -33,7 +33,7 @@ from cls.utils.dict_utils import dct_get, dct_put
 from cls.utils.roi_dict_defs import *
 from cls.utils.log import get_module_logger
 
-from cls.applications.pyStxm.bl_configs.basic.scan_plugins.pattern_gen_scan.PatternGenScan import PatternGenScanClass
+from cls.applications.pyStxm.bl_configs.uhv_bl10ID1.scan_plugins.pattern_gen_scan.PatternGenScan import PatternGenScanClass
 
 MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('max_fine_x')
 MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('max_fine_y')

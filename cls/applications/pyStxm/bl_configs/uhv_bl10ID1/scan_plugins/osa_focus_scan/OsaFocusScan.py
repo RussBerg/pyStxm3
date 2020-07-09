@@ -47,7 +47,7 @@ class OsaFocusScanClass(BaseScan):
         :return:
         '''
 
-        self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE, x=DNM_OSA_X,
+        self._emitter_cb = ImageDataEmitter(DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE, x=DNM_OSA_X,
                                                 scan_type=self.scan_type, bi_dir=self._bi_dir)
         self._emitter_cb.set_row_col(rows=self.zz_roi[NPOINTS], cols=self.x_roi[NPOINTS], seq_dct=self.seq_map_dct)
         self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
@@ -58,9 +58,11 @@ class OsaFocusScanClass(BaseScan):
         gate.set_trig_src(trig_src_types.NORMAL_PXP)
         gate.set_mode(bs_dev_modes.NORMAL_PXP)
 
-        # need to handle this better for multiple detectors, in the future todo
-        dets[0].set_dwell(self.dwell)
-        dets[0].set_num_points(1)
+        for d in dets:
+            if (hasattr(d, 'set_dwell')):
+                d.set_dwell(self.dwell)
+            if (hasattr(d, 'set_num_points')):
+                d.set_num_points(1)
 
     def make_pxp_scan_plan(self, dets, gate, md=None, bi_dir=False):
         dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
@@ -68,7 +70,7 @@ class OsaFocusScanClass(BaseScan):
 
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, dets=dets))}
 
         @bpp.baseline_decorator(dev_list)
         #@bpp.stage_decorator(dets)

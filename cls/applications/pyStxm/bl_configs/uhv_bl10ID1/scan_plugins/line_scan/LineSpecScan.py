@@ -60,16 +60,19 @@ class LineSpecScanClass(BaseScan):
         '''
 
         if(self.is_pxp):
-            self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE, x=DNM_SAMPLE_X,
-                                                     scan_type=self.scan_type, bi_dir=self._bi_dir)
-            #self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y='mtr_y', x='mtr_x',
+            # self._emitter_cb = ImageDataEmitter(DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE, x=DNM_SAMPLE_X,
+            #                                          scan_type=self.scan_type, bi_dir=self._bi_dir)
+            self._emitter_cb = ImageDataEmitter(DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE,
+                                                x=DNM_SAMPLE_X,
+                                                scan_type=self.scan_type, bi_dir=self._bi_dir)
+            #self._emitter_cb = ImageDataEmitter(DNM_DEFAULT_COUNTER, y='mtr_y', x='mtr_x',
             #                                    scan_type=self.scan_type, bi_dir=self._bi_dir)
             self._emitter_cb.set_row_col(rows=self.numE, cols=self.x_roi[NPOINTS], seq_dct=self.seq_map_dct)
             self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
             self._emitter_cb.new_plot_data.connect(func)
 
             # # self._emitter_cb = ImageDataEmitter('point_det_single_value_rbv', y='mtr_y', x='mtr_x', scan_type=scan_types.DETECTOR_IMAGE, bi_dir=self._bi_dir)
-            # self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y='mtr_y', x='mtr_x',
+            # self._emitter_cb = ImageDataEmitter(DNM_DEFAULT_COUNTER, y='mtr_y', x='mtr_x',
             #                                     scan_type=self.scan_type, bi_dir=self._bi_dir)
             # self._emitter_cb.set_row_col(rows=self.y_roi[NPOINTS], cols=self.x_roi[NPOINTS])
             # self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
@@ -79,71 +82,12 @@ class LineSpecScanClass(BaseScan):
 
 
         else:
-            self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE,
+            self._emitter_cb = ImageDataEmitter(DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE,
                                                 x=DNM_SAMPLE_X,
                                                 scan_type=self.scan_type, bi_dir=self._bi_dir)
             self._emitter_cb.set_row_col(rows=self.zz_roi[NPOINTS], cols=self.x_roi[NPOINTS], seq_dct=self.seq_map_dct)
             self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
             self._emitter_cb.new_plot_data.connect(func)
-
-    # def make_pxp_scan_plan(self, dets, gate, md=None, bi_dir=False):
-    #     '''
-    #         gate and counter need to be staged for pxp
-    #     :param dets:
-    #     :param gate:
-    #     :param bi_dir:
-    #     :return:
-    #     '''
-    #     dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
-    #     self._bi_dir = bi_dir
-    #     if (md is None):
-    #         md = {'metadata': dict_to_json(
-    #             self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
-    #     mtr_dct = self.determine_samplexy_posner_pvs()
-    #
-    #     @bpp.baseline_decorator(dev_list)
-    #     @bpp.stage_decorator(dets)
-    #     @bpp.run_decorator(md=md)
-    #     def do_scan():
-    #
-    #         mtr_x = self.main_obj.device(mtr_dct['cx_name'])
-    #         mtr_y = self.main_obj.device(mtr_dct['cy_name'])
-    #         ev_mtr = self.main_obj.device(DNM_ENERGY)
-    #         pol_mtr = self.main_obj.device(DNM_EPU_POLARIZATION)
-    #         shutter = self.main_obj.device(DNM_SHUTTER)
-    #
-    #         yield from bps.stage(gate)
-    #         # this starts the wavgen and waits for it to finish without blocking the Qt event loop
-    #         # the detector will be staged automatically by the grid_scan plan
-    #         shutter.open()
-    #
-    #         pol_setpoints = self.e_rois[0][EPU_POL_PNTS]
-    #         for pol in pol_setpoints:
-    #             # switch to new polarization
-    #             yield from bps.mv(pol_mtr, pol)
-    #             for ev_roi in self.e_rois:
-    #                 #switch to new energy
-    #                 for ev_sp in ev_roi[SETPOINTS]:
-    #                     yield from bps.mv(ev_mtr, ev_sp)
-    #                     self.dwell = ev_roi[DWELL]
-    #
-    #                     # go to start of line
-    #                     #yield from bps.mv(mtr_x, self.x_roi[START], mtr_y, self.y_roi[START])
-    #
-    #                     # now do point by point
-    #                     for i in range(int(self.x_roi[NPOINTS])):
-    #                         x = self.x_roi[SETPOINTS][i]
-    #                         y = self.y_roi[SETPOINTS][i]
-    #                         yield from bps.mv(mtr_x, x, mtr_y, y)
-    #                         yield from bps.trigger_and_read([dets[0], mtr_y, mtr_x])
-    #
-    #         shutter.close()
-    #         # yield from bps.wait(group='e712_wavgen')
-    #         yield from bps.unstage(gate)
-    #
-    #         print('LineSpecClass PxP: make_scan_plan Leaving')
-    #
-    #     return (yield from do_scan())
 
     def make_pxp_scan_plan(self, dets, gate, md=None, bi_dir=False):
         '''
@@ -177,7 +121,7 @@ class LineSpecScanClass(BaseScan):
             pol_setpoints = self.e_rois[0][EPU_POL_PNTS]
             for pol in pol_setpoints:
                 md = {'metadata': dict_to_json(
-                    self.make_standard_metadata(entry_name='entry%d' % idx, scan_type=self.scan_type))}
+                    self.make_standard_metadata(entry_name='entry%d' % idx, scan_type=self.scan_type, dets=dets))}
                 yield from bpp.open_run(md)
                 # switch to new polarization
                 yield from bps.mv(pol_mtr, pol)
@@ -195,7 +139,9 @@ class LineSpecScanClass(BaseScan):
                             x = self.x_roi[SETPOINTS][i]
                             y = self.y_roi[SETPOINTS][i]
                             yield from bps.mv(mtr_x, x, mtr_y, y)
-                            yield from bps.trigger_and_read([dets[0], mtr_y, mtr_x])
+                            yield from bps.trigger_and_read(dets + [mtr_y, mtr_x])
+
+
                 yield from bpp.close_run()
                 idx += 1
             shutter.close()
@@ -221,7 +167,7 @@ class LineSpecScanClass(BaseScan):
 
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, dets=dets))}
 
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)

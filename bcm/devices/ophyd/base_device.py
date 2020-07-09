@@ -85,10 +85,12 @@ class BaseDevice(QtCore.QObject):
             exit()
 
         #RUSS py3        self.signal.wait_for_connection()
+        #self.signal.wait_for_connection(timeout=0.5)
 
         self.info = dict(called=False)
         self.signal.subscribe(self._sub_test, run=False, event_type=self.signal.SUB_VALUE)
         self.signal._read_pv.connection_callbacks.append(self.on_connection)
+        self.connected = self.signal.connected
 
     def set(self, val):
         '''

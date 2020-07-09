@@ -3,11 +3,6 @@ Created on Aug 25, 2014
 
 @author: bergr
 '''
-'''
-Created on Aug 25, 2014
-
-@author: bergr
-'''
 
 from PyQt5 import QtCore, uic
 
@@ -31,8 +26,8 @@ from cls.utils.log import get_module_logger
 
 from cls.types.stxmTypes import scan_types, spatial_type_prefix, sample_positioning_modes
 
-from cls.applications.pyStxm.bl_configs.basic.scan_plugins.focus_scan.FocusScan import FocusScanClass
-from cls.applications.pyStxm.bl_configs.basic.scan_plugins.focus_scan.FocusE712Scan import FocusE712ScanClass
+from cls.applications.pyStxm.bl_configs.uhv_bl10ID1.scan_plugins.focus_scan.FocusScan import FocusScanClass
+from cls.applications.pyStxm.bl_configs.uhv_bl10ID1.scan_plugins.focus_scan.FocusE712Scan import FocusE712ScanClass
 
 MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('max_fine_x')
 MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('max_fine_y')

@@ -209,7 +209,7 @@ class SpecDataEmitter(BaseQtSpectraDataEmitter):
             new_x -= self._epoch_offset
 
         self.update_caches(new_x, new_y)
-        #print('SpecDataEmitter: emit x=%f y=%f' % (new_x, new_y))
+        print('SpecDataEmitter: emit x=%f y=%f' % (new_x, new_y))
         # self.new_data.emit(dct)
         self.new_data.emit((new_x, new_y))
         self._plot_dct[CNTR2PLOT_ROW] = 0
@@ -412,8 +412,13 @@ class ImageDataEmitter(BaseQtImageDataEmitter):
                 seq_num = doc['seq_num'] - 1
 
                 self.update_idxs(seq_num)
-                # print(doc['data'].keys())
-                if(self.det in doc['data'].keys()):
+                print(self.det)
+                print(doc['data'].keys())
+
+                klst = list(doc['data'].keys())
+                res = [i for i in klst if self.det in i]
+                #if(self.det in doc['data'].keys()):
+                if(len(res) > 0):
                     if(SIMULATE):
                         new_det = np.random.randint(65535)
                     else:
@@ -443,7 +448,7 @@ class ImageDataEmitter(BaseQtImageDataEmitter):
 
         if(None not in [new_x, new_y, new_det]):
             self.update_caches(new_x, new_y, new_det)
-            # print('ImageDataEmitter: emit x=%f y=%f' % (new_x, new_y))
+            print('ImageDataEmitter: emit x=%f y=%f' % (new_x, new_y))
             # self.new_data.emit(dct)
             self.new_data.emit((new_x, new_y, new_det))
             self._plot_dct[CNTR2PLOT_ROW] = int(new_y)

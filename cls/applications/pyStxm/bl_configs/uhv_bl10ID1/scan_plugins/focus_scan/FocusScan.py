@@ -49,13 +49,13 @@ class FocusScanClass(BaseScan):
         '''
 
         if(self.is_pxp):
-            self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE, x=DNM_SAMPLE_X,
+            self._emitter_cb = ImageDataEmitter(DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE, x=DNM_SAMPLE_X,
                                                     scan_type=self.scan_type, bi_dir=self._bi_dir)
             self._emitter_cb.set_row_col(rows=self.zz_roi[NPOINTS], cols=self.x_roi[NPOINTS], seq_dct=self.seq_map_dct)
             self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
             self._emitter_cb.new_plot_data.connect(func)
         else:
-            self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE,
+            self._emitter_cb = ImageDataEmitter(DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE,
                                                 x=DNM_SAMPLE_X,
                                                 scan_type=self.scan_type, bi_dir=self._bi_dir)
             self._emitter_cb.set_row_col(rows=self.zz_roi[NPOINTS], cols=self.x_roi[NPOINTS], seq_dct=self.seq_map_dct)
@@ -74,7 +74,7 @@ class FocusScanClass(BaseScan):
         self._bi_dir = bi_dir
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, dets=dets))}
         mtr_dct = self.determine_samplexy_posner_pvs()
 
         @bpp.baseline_decorator(dev_list)
@@ -127,7 +127,7 @@ class FocusScanClass(BaseScan):
         zp_def = self.get_zoneplate_info_dct()
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, dets=dets))}
 
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)
@@ -143,7 +143,7 @@ class FocusScanClass(BaseScan):
             mtr_y = self.main_obj.device(DNM_SAMPLE_Y)
             mtr_z = self.main_obj.device(DNM_ZONEPLATE_Z_BASE)
             shutter = self.main_obj.device(DNM_SHUTTER)
-
+            yield from bps.sleep(0.5)
             yield from bps.stage(gate)
 
             shutter.open()
@@ -223,8 +223,8 @@ class FocusScanClass(BaseScan):
         self.finish_setup()
 
         #added this to try and stabalize the start of the scan (sends lines before proper start)
-        self.gate.wait_till_running_polling()
-        self.counter.wait_till_running_polling()
+        #self.gate.wait_till_running_polling()
+        #self.counter.wait_till_running_polling()
         
     
     def goto_scan_start(self, dct):

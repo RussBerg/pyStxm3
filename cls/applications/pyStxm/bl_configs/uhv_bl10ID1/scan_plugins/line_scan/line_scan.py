@@ -25,8 +25,8 @@ from cls.utils.roi_utils import make_spatial_db_dict, widget_com_cmnd_types, get
                                 on_center_changed, recalc_setpoints, get_first_sp_db_from_wdg_com, get_base_start_stop_roi, get_base_roi
 from cls.utils.log import get_module_logger
 
-from cls.applications.pyStxm.bl_configs.basic.scan_plugins.line_scan.LineSpecScan import LineSpecScanClass
-from cls.applications.pyStxm.bl_configs.basic.scan_plugins.line_scan.LineSpecSSCANWithE712WavegenScan import LineSpecScanWithE712WavegenClass
+from cls.applications.pyStxm.bl_configs.uhv_bl10ID1.scan_plugins.line_scan.LineSpecScan import LineSpecScanClass
+from cls.applications.pyStxm.bl_configs.uhv_bl10ID1.scan_plugins.line_scan.LineSpecSSCANWithE712WavegenScan import LineSpecScanWithE712WavegenClass
 
 
 _logger = get_module_logger(__name__)

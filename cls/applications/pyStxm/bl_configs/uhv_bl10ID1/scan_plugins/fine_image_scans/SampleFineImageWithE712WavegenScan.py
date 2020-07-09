@@ -98,7 +98,7 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
         '''
 
         if(self.is_pxp):
-            # self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE, x=DNM_SAMPLE_X,
+            # self._emitter_cb = ImageDataEmitter(DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE, x=DNM_SAMPLE_X,
             #                                         scan_type=self.scan_type, bi_dir=self._bi_dir)
             # self._emitter_cb.set_row_col(rows=self.zz_roi[NPOINTS], cols=self.x_roi[NPOINTS])
             # self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
@@ -107,7 +107,7 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
         else:
 
 
-            # self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE,
+            # self._emitter_cb = ImageDataEmitter(DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE,
             #                                     x=DNM_SAMPLE_X,
             #                                     scan_type=self.scan_type, bi_dir=self._bi_dir)
             # self._emitter_cb.set_row_col(rows=self.zz_roi[NPOINTS], cols=self.x_roi[NPOINTS])
@@ -206,7 +206,7 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
         #det.configure(self.x_roi[NPOINTS], self.scan_type)
 
         if(md is None):
-            md = {'metadata': dict_to_json(self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+            md = {'metadata': dict_to_json(self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, dets=dets))}
         # if(not skip_baseline):
         #     @bpp.baseline_decorator(dev_list)
 
@@ -364,12 +364,23 @@ class SampleFineImageWithE712WavegenScanClass(BaseScan):
                             self.update_roi_member_vars(self.sp_rois[self.sp_id])
                             if(self.is_point_spec and (not point_spec_devs_configd)):
                                 #config the det and gate
-                                dets[0].set_mode(bs_dev_modes.NORMAL_PXP)
+
+                                # dets[0].set_mode(bs_dev_modes.NORMAL_PXP)
+                                # gate.set_mode(bs_dev_modes.NORMAL_PXP)
+                                # gate.set_num_points(1)
+                                # gate.set_trig_src(trig_src_types.E712)
+                                # gate.set_dwell(self.dwell)
+                                # dets[0].configure()
+                                # point_spec_devs_configd = True
+                                for d in dets:
+                                    if hasattr(d, 'set_mode'):
+                                        d.set_mode(bs_dev_modes.NORMAL_PXP)
+                                    if hasattr(d, 'configure'):
+                                        d.configure()
                                 gate.set_mode(bs_dev_modes.NORMAL_PXP)
                                 gate.set_num_points(1)
                                 gate.set_trig_src(trig_src_types.E712)
                                 gate.set_dwell(self.dwell)
-                                dets[0].configure()
                                 point_spec_devs_configd = True
 
                             samplemtrx = self.main_obj.get_sample_positioner('X')

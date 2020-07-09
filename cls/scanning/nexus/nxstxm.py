@@ -4973,6 +4973,22 @@ def load_single_entry_from_NXstxm_file(filename, only_roi_and_data=False):
         _logger.info('load_single_entry_from_NXstxm_file: opening file failed [%s]' % filename)  
         return(None)  
 
+def get_default_data_from_entry(entry_dct):
+    '''
+    get teh deafult plot data from the default entry
+    :param entry_dct:
+    :return:
+    '''
+    if('default' in list(entry_dct.keys())):
+        default_entry_nm = entry_dct['default']
+        default_plot_data_nm = entry_dct[default_entry_nm]['default']
+        # print 'get_NXdatas_from_entry: keys', entry_dct[entry_nm][nxkd.NXD_DATA].keys()
+        return (entry_dct[default_entry_nm][nxkd.NXD_DATA][default_plot_data_nm])
+    else:
+        _logger.error('No default data in entry')
+        return({})
+
+
 def get_data_from_NXdatas(nx_datas, counter_nm):
     data = nx_datas[counter_nm]['signal']
     return(data)
@@ -5045,37 +5061,28 @@ def load_NXstxm_file(filename, only_roi_and_data=False):
     nf = None
     try:
         nf = h5py.File(filename,  "r")
-        
-        
-        #fname = nf.attrs[nxkd.NXD_FILE_NAME]
         data_dir, fprefix, fsuffix = get_file_path_as_parts(filename)
         if(data_dir is None):
             return
         
         entries = {}
+        if('default' in list(nf.attrs)):
+            dct_put(dct, 'default', nf.attrs['default'])
+
         ekeys =list(nf.keys())
         for ekey in ekeys:
             ekey = str(ekey)
             if('NX_class' in list(nf[ekey].attrs.keys())):
                 if(nf[ekey].attrs['NX_class'] == 'NXentry'):
-                    
                     entries[ekey] = get_NXstxm_entry(nf[ekey])
+                    if ('default' in list(nf[ekey].attrs)):
+                        entries[ekey]['default'] = nf[ekey].attrs['default']
                     dct_put(dct, '%s' % ekey, entries[ekey])
                     
                 else:
                     print('[%s] is not of type NXentry' % ekey)
         
-#        dct_put(dct, 'DATA_DIR', data_dir)
-#        dct_put(dct, 'DATA_FILE_NAME', fprefix)
-#        ekey = ekeys[0]
-#        dct_put(dct, 'ENTRIES', {ekey: entries[ekey]})
         nf.close()
-        
-#         if(only_roi_and_data):
-#             ekeys = entries.keys()
-#             #just return the first one for now
-#             return(entries[ekeys[0]])
-#         else:
         return(dct)
     
     except:

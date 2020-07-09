@@ -5404,7 +5404,7 @@ class ImageWidget(ImageDialog):
         plot.add_item(item, z=MAX_IMAGE_Z-1)
 
 
-    def openfile_mod(self, fnames, addimages=True, counter='counter0', dropped=False):
+    def openfile_mod(self, fnames, addimages=True, counter='counter0', dropped=False, scan_type=None):
         """
         openfile(): description
 
@@ -5416,6 +5416,9 @@ class ImageWidget(ImageDialog):
 
         :returns: None
         """
+        if(scan_type is None):
+            _logger.error('scan_type is None')
+            return
         num_files = len(fnames)
         idx = 0
         iidx = 0
@@ -5452,7 +5455,7 @@ class ImageWidget(ImageDialog):
             ekey = list(entry_dct.keys())[0]
             nx_datas = data_io.get_NXdatas_from_entry(entry_dct, ekey)
             sp_id = list(entry_dct[ekey]['WDG_COM']['SPATIAL_ROIS'].keys())
-            scan_type = entry_dct[ekey]['WDG_COM']['SPATIAL_ROIS'][sp_id[0]]['SCAN_PLUGIN']['SCAN_TYPE']
+            #scan_type = entry_dct[ekey]['WDG_COM']['SPATIAL_ROIS'][sp_id[0]]['SCAN_PLUGIN']['SCAN_TYPE']
             rng_x = entry_dct[ekey]['WDG_COM']['SPATIAL_ROIS'][sp_id[0]]['X'][RANGE]
             rng_y = entry_dct[ekey]['WDG_COM']['SPATIAL_ROIS'][sp_id[0]]['Y'][RANGE]
 

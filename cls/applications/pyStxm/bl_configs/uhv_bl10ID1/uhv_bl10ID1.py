@@ -333,7 +333,11 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
     dev_dct['DIO']['ShutterTaskRun'] = make_basedevice('DIO', '%s%sDIO:shutter:Run' % (DEVPRFX, prfx), devcfg=devcfg)
 
     devcfg.msg_splash("connecting to: [%s]" % DNM_COUNTER_APD)
-    dev_dct['DETECTORS'][DNM_COUNTER_APD] = BaseCounter('%s%sCI:counter' % (DEVPRFX, prfx))
+    #dev_dct['DETECTORS'][DNM_COUNTER_APD] = BaseCounter('%s%sCI:counter' % (DEVPRFX, prfx))
+    dev_dct['DETECTORS'][DNM_COUNTER_APD] = PointDetectorDevice('%s%sCI2:counter:' % (DEVPRFX, prfx),  name=DNM_COUNTER_APD, scale_val=1.0)
+    dev_dct['DETECTORS'][DNM_DEFAULT_COUNTER] = PointDetectorDevice('%s%sCI:counter:' % (DEVPRFX, prfx),
+                                                                name=DNM_DEFAULT_COUNTER, scale_val=100.0)
+
     # dev_dct['DETECTORS']['Det_Cntr'] = EpicsPvCounter('%sPMT:ctr:SingleValue_RBV' % prfx)
     dev_dct['DETECTORS'][DNM_PMT] = make_basedevice('DETECTORS', '%s%sPMT:ctr:SingleValue_RBV' % (DEVPRFX, prfx),
                                                     devcfg=devcfg)
@@ -345,7 +349,7 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
     #     dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = GreatEyesCCD('CCD1610-I10-02:', name=DNM_GREATEYES_CCD)
 
     dev_dct['DETECTORS'][DNM_POINT_DET] = PointDetectorDevice('%s%sCI:counter:' % (DEVPRFX, prfx),
-                                                              name=DNM_DEFAULT_COUNTER)
+                                                              name=DNM_POINT_DET, scale_val=500.0)
     dev_dct['DIO'][DNM_POINT_GATE] = GateDevice('%suhvCO:gate:' % (DEVPRFX), name='gate_control')
 
     dev_dct['DETECTORS'][DNM_LINE_DET] = LineDetectorDevice('%s%sCI:counter:' % (DEVPRFX, prfx),
@@ -620,6 +624,7 @@ def connect_e712(dev_dct, prfx='uhv', e712_prfx='IOCE712', devcfg=None):
     # dev_dct['SSCANS']['SampleImageWithE712Wavegen'] = SampleImageWithE712Wavegen()
     dev_dct['WIDGETS'][DNM_E712_WIDGET] = E712ControlWidget('%s%s:' % (DEVPRFX, e712_prfx),
                                                             counter=dev_dct['DETECTORS'][DNM_COUNTER_APD],
+
                                                             gate=dev_dct['DIO'][DNM_GATE])
     dev_dct['WIDGETS'][DNM_E712_OPHYD_DEV] = E712WGDevice('%s%s:' % (DEVPRFX, e712_prfx),
                                                           name='e712_wgenerator_flyerdev')

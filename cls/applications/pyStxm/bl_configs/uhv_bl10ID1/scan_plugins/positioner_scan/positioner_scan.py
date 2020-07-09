@@ -19,7 +19,7 @@ from cls.utils.roi_dict_defs import *
 from cls.utils.dict_utils import dct_get, dct_put
 from cls.utils.log import get_module_logger
 
-from cls.applications.pyStxm.bl_configs.basic.scan_plugins.positioner_scan.PositionerScan import PositionerScanClass
+from cls.applications.pyStxm.bl_configs.uhv_bl10ID1.scan_plugins.positioner_scan.PositionerScan import PositionerScanClass
 
 _logger = get_module_logger(__name__)
 

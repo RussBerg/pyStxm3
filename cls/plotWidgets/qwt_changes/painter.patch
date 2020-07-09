@@ -1,0 +1,71 @@
+--- ../qwt/painter.py	2020-06-17 11:40:18.759731067 -0600
++++ painter.py	2020-06-17 12:02:45.546963861 -0600
+@@ -1,4 +1,4 @@
+-# -*- coding: utf-8 -*-
++
+ #
+ # Licensed under the terms of the Qwt License
+ # Copyright (c) 2002 Uwe Rathmann, for the original C++ code
+@@ -17,8 +17,9 @@
+ from qwt.scale_map import QwtScaleMap
+ 
+ from qwt.qt.QtGui import (QPaintEngine, QFrame, QPixmap, QPainter, QPalette, 
+-                          QStyle, QPen, QStyleOptionFocusRect, QBrush, 
+-                          QLinearGradient, QPainterPath, QColor, QStyleOption)
++                          QStyle, QPen, QStyleOptionFocusRect, QBrush,
++                          QLinearGradient, QPainterPath, QColor, QStyleOption,
++                          QRegion)
+ from qwt.qt.QtCore import Qt, QRect, QPoint, QT_VERSION
+ 
+ QWIDGETSIZE_MAX = (1<<24)-1
+@@ -95,7 +96,7 @@
+         :param QRectF rect: Target rectangle
+         :param QPalette palette: `QPalette.WindowText` is used for plain borders, `QPalette.Dark` and `QPalette.Light` for raised or sunken borders
+         :param int lineWidth: Line width
+-        :param int frameStyle: bitwise OR´ed value of `QFrame.Shape` and `QFrame.Shadow`
++        :param int frameStyle: bitwise OR�ed value of `QFrame.Shape` and `QFrame.Shadow`
+         """
+         Plain, Sunken, Raised = list(range(3))
+         style = Plain
+@@ -132,7 +133,7 @@
+         :param QPalette.ColorRole foregroundRole: Palette
+         :param int frameWidth: Frame width
+         :param int midLineWidth: Used for `QFrame.Box`
+-        :param int frameStyle: bitwise OR´ed value of `QFrame.Shape` and `QFrame.Shadow`
++        :param int frameStyle: bitwise OR�ed value of `QFrame.Shape` and `QFrame.Shadow`
+         """
+         if frameWidth <= 0 or rect.isEmpty():
+             return
+@@ -242,7 +243,7 @@
+         :param float yRadius: y-radius of the ellipses defining the corners
+         :param QPalette palette: `QPalette.WindowText` is used for plain borders, `QPalette.Dark` and `QPalette.Light` for raised or sunken borders
+         :param int lineWidth: Line width
+-        :param int frameStyle: bitwise OR´ed value of `QFrame.Shape` and `QFrame.Shadow`
++        :param int frameStyle: bitwise OR�ed value of `QFrame.Shape` and `QFrame.Shadow`
+         """
+         painter.save()
+         painter.setRenderHint(QPainter.Antialiasing, True)
+@@ -389,12 +390,12 @@
+         if widget.autoFillBackground():
+             qwtFillRect(widget, painter, rect, autoFillBrush)
+         if widget.testAttribute(Qt.WA_StyledBackground):
+-            painter.setClipRegion(rect)
++            #painter.setClipRegion(rect)
++            painter.setClipRegion(QRegion(rect))
+             opt = QStyleOption()
+             opt.initFrom(widget)
+-            widget.style().drawPrimitive(QStyle.PE_Widget, opt,
+-                                         painter, widget)
+-    
++            widget.style().drawPrimitive(QStyle.PE_Widget, opt,painter, widget)
++            
+     def drawBackground(self, painter, rect, widget):
+         """
+         Fill rect with the background of a widget
+@@ -443,4 +444,4 @@
+                 pm.x11SetScreen(widget.x11Info().screen())
+         return pm
+ 
+-QwtPainter = QwtPainterClass()
+\ No newline at end of file
++QwtPainter = QwtPainterClass()

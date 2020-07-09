@@ -76,13 +76,17 @@ class LineSpecScanWithE712WavegenClass(BaseScan):
 
     def configure_devs(self, dets, gate):
         if (self.is_pxp):
-            dets[0].set_mode(0)
+            for d in dets:
+                if hasattr(d, 'set_mode'):
+                    d.set_mode(0)
             gate.set_mode(bs_dev_modes.NORMAL_PXP)
             gate.set_num_points(1)
             gate.set_trig_src(trig_src_types.NORMAL_PXP)
 
         else:
-            dets[0].set_mode(bs_dev_modes.E712)
+            for d in dets:
+                if hasattr(d, 'set_mode'):
+                    d.set_mode(bs_dev_modes)
             gate.set_mode(bs_dev_modes.E712)
             gate.set_num_points(self.x_roi[NPOINTS])
             gate.set_trig_src(trig_src_types.E712)
@@ -107,11 +111,8 @@ class LineSpecScanWithE712WavegenClass(BaseScan):
 
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)
-        # @bpp.run_decorator(md={'entry_name': 'entry0', 'scan_type': scan_types.DETECTOR_IMAGE})
         def do_scan():
 
-            #mtr_x = self.main_obj.device(DNM_SAMPLE_X)
-            #mtr_y = self.main_obj.device(DNM_SAMPLE_Y)
             mtr_x = self.main_obj.device(mtr_dct['cx_name'])
             mtr_y = self.main_obj.device(mtr_dct['cy_name'])
             mtr_ev = self.main_obj.device(DNM_ENERGY)

@@ -49,7 +49,10 @@ class PointSpecScanClass(BaseScan):
         gate.set_mode(bs_dev_modes.NORMAL_PXP)
 
         # need to handle this better for multiple detectors, in the future todo
-        dets[0].set_dwell(self.dwell)
+        # dets[0].set_dwell(self.dwell)
+        for d in dets:
+            if (hasattr(d, 'set_dwell')):
+                d.set_dwell(self.dwell)
 
     def add_spids_xy_setpoints(self, md={}):
         md['sp_id_setpoints'] = {}
@@ -69,7 +72,7 @@ class PointSpecScanClass(BaseScan):
 
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, override_xy_posner_nms=True))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, dets=dets, override_xy_posner_nms=True))}
         #override the POSIIONER so tha nxstxm and can export properly
         #md = self.add_spids_xy_setpoints(md)
         @bpp.baseline_decorator(dev_list)
@@ -132,7 +135,7 @@ class PointSpecScanClass(BaseScan):
             else:
                 mtr_x = self.main_obj.device(self.x_roi[POSITIONER])
             # we also need to pass the sp_id because it needs to send it on to the plotter as data comes in
-            self._emitter_cb = SpecDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, x=mtr_x.get_name(), \
+            self._emitter_cb = SpecDataEmitter(DNM_DEFAULT_COUNTER, x=mtr_x.get_name(), \
                                                scan_type=self.scan_type, spid_seq_map=spid_seq_map)
             self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
             self._emitter_cb.new_plot_data.connect(func)

@@ -60,16 +60,16 @@ class LineSpecScanClass(BaseScan):
         '''
 
         if(self.is_pxp):
-            self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE, x=DNM_SAMPLE_X,
+            self._emitter_cb = ImageDataEmitter(DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE, x=DNM_SAMPLE_X,
                                                      scan_type=self.scan_type, bi_dir=self._bi_dir)
-            #self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y='mtr_y', x='mtr_x',
+            #self._emitter_cb = ImageDataEmitter(DNM_DEFAULT_COUNTER, y='mtr_y', x='mtr_x',
             #                                    scan_type=self.scan_type, bi_dir=self._bi_dir)
             self._emitter_cb.set_row_col(rows=self.numE, cols=self.x_roi[NPOINTS], seq_dct=self.seq_map_dct)
             self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
             self._emitter_cb.new_plot_data.connect(func)
 
             # # self._emitter_cb = ImageDataEmitter('point_det_single_value_rbv', y='mtr_y', x='mtr_x', scan_type=scan_types.DETECTOR_IMAGE, bi_dir=self._bi_dir)
-            # self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y='mtr_y', x='mtr_x',
+            # self._emitter_cb = ImageDataEmitter(DNM_DEFAULT_COUNTER, y='mtr_y', x='mtr_x',
             #                                     scan_type=self.scan_type, bi_dir=self._bi_dir)
             # self._emitter_cb.set_row_col(rows=self.y_roi[NPOINTS], cols=self.x_roi[NPOINTS])
             # self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
@@ -79,7 +79,7 @@ class LineSpecScanClass(BaseScan):
 
 
         else:
-            self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE,
+            self._emitter_cb = ImageDataEmitter(DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE,
                                                 x=DNM_SAMPLE_X,
                                                 scan_type=self.scan_type, bi_dir=self._bi_dir)
             self._emitter_cb.set_row_col(rows=self.zz_roi[NPOINTS], cols=self.x_roi[NPOINTS], seq_dct=self.seq_map_dct)
@@ -177,7 +177,7 @@ class LineSpecScanClass(BaseScan):
             pol_setpoints = self.e_rois[0][EPU_POL_PNTS]
             for pol in pol_setpoints:
                 md = {'metadata': dict_to_json(
-                    self.make_standard_metadata(entry_name='entry%d' % idx, scan_type=self.scan_type))}
+                    self.make_standard_metadata(entry_name='entry%d' % idx, scan_type=self.scan_type, dets=dets))}
                 yield from bpp.open_run(md)
                 # switch to new polarization
                 yield from bps.mv(pol_mtr, pol)
@@ -221,7 +221,7 @@ class LineSpecScanClass(BaseScan):
 
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, dets=dets))}
 
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)

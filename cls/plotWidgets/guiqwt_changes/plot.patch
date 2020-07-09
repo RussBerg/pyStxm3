@@ -1,0 +1,9 @@
+1041c1041,1042
+<             QApplication.processEvents()
+---
+>             #QApplication.processEvents()
+>             pass
+1045c1046
+<             QApplication.processEvents()
+---
+>             #QApplication.processEvents()

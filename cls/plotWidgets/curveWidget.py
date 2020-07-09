@@ -75,7 +75,7 @@ from cls.scanning.dataRecorder import DataIo
 from cls.utils.fileUtils import get_file_path_as_parts
 from cls.app_data.defaults import  get_style
 from cls.plotWidgets.curve_object import curve_Obj
-from cls.types.stxmTypes import scan_types
+import cls.types.stxmTypes as types
 #setup module logger with a default do-nothing handler
 _logger = get_module_logger(__name__)
 
@@ -532,7 +532,12 @@ class CurveViewerWidget(CurveDialog):
                 else:
                     # text = " ".join(["%02X" % ord(datum)
                     #                  for datum in mimeData.data(format)])
-                    text = " ".join(["%02X" % ord(datum) for datum in str(mimeData.data(format), encoding='cp1252')])
+                    #text = " ".join(["%02X" % ord(datum) for datum in str(mimeData.data(format), encoding='cp1252')])
+                    if (str(mimeData.data(format)).find('8f') > -1):
+                        text = " ".join(["%02X" % ord(datum) for datum in str(mimeData.data(format))])
+                    else:
+                        text = " ".join(
+                            ["%02X" % ord(datum) for datum in str(mimeData.data(format), encoding='cp1252')])
 
                 #row = self.formatsTable.rowCount()
                 # self.formatsTable.insertRow(row)
@@ -760,7 +765,7 @@ class CurveViewerWidget(CurveDialog):
     def install_data_io_handler(self, data_io_hndlr):
         self.data_io = data_io_hndlr
     
-    def openfile(self, fname, scan_type=scan_types.SAMPLE_POINT_SPECTRUM):
+    def openfile(self, fname, scan_type=None):
         """
         openfile(): currently only supports 1 counter per entry
 
@@ -769,6 +774,12 @@ class CurveViewerWidget(CurveDialog):
 
         :returns: None
         """
+        if (scan_type is None):
+            _logger.error('scan_type is None')
+            return
+        if (scan_type not in types.spectra_type_scans):
+            # only allow image type scan data to be dropped here
+            return
         if(self.data_io is None):
             _logger.error('No data IO module registered')
             return
@@ -785,17 +796,20 @@ class CurveViewerWidget(CurveDialog):
         if(entry_dct is None):
             _logger.error('No entry in datafile')
             return
+        #remove the 'default' key
+        entry_dct.pop('default')
         ekeys = sorted(entry_dct.keys())
+
         for ekey in ekeys:
             entry = entry_dct[ekey]
             nx_datas = data_io.get_NXdatas_from_entry(entry_dct, ekey)
             #currently only support 1 counter
             #counter_name = nx_datas.keys()[0]
             counter_name = DNM_DEFAULT_COUNTER
-            nx_data_dct = data_io.get_data_from_NXdatas(nx_datas, counter_name)
+            #nx_data_dct = data_io.get_data_from_NXdatas(nx_datas, counter_name)
             axes = data_io.get_axes_list_from_NXdata(nx_datas, counter_name)
 
-            if(scan_type is scan_types.GENERIC_SCAN):
+            if(scan_type is types.scan_types.GENERIC_SCAN):
                 xdata, ydata = self.get_xydata_from_generic_scan(entry, data_io, counter_name)
             else:
                 xdata = data_io.get_axes_data_by_index_in_NXdata(nx_datas, counter_name, 0)

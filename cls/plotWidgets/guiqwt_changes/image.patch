@@ -1,0 +1,5 @@
+689c689,690
+<                 res = np.histogram(self.data, nbins)
+---
+>                 #res = np.histogram(self.data, nbins)
+>                 res = np.histogram(self.data, nbins, range=(np.nanmin(self.data) + 0.0, np.nanmax(self.data) + 0.0))

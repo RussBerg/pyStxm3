@@ -304,7 +304,7 @@ def connect_standard_beamline_devices(dev_dct, prfx=DEVPRFX, devcfg=None):
                                                        devcfg=devcfg)
 
 
-def connect_devices(dev_dct, prfx='%sBL1611-I10' % DEVPRFX, devcfg=None):
+def connect_devices(dev_dct, prfx='%sBL1610-I10' % DEVPRFX, devcfg=None):
     '''
         connect to general devices
     :param dev_dct:
@@ -312,6 +312,7 @@ def connect_devices(dev_dct, prfx='%sBL1611-I10' % DEVPRFX, devcfg=None):
     :param devcfg:
     :return:
     '''
+
     devcfg.msg_splash("connecting to: [%s-CO:gate]" % (prfx))
     dev_dct['DIO'][DNM_GATE] = BaseGate('%s-CO:gate' % (prfx))
     devcfg.msg_splash("connecting to: [%s]" % DNM_SHUTTER)
@@ -321,12 +322,12 @@ def connect_devices(dev_dct, prfx='%sBL1611-I10' % DEVPRFX, devcfg=None):
 
     devcfg.msg_splash("connecting to: [%s]" % DNM_COUNTER_APD)
     dev_dct['DETECTORS'][DNM_COUNTER_APD] = BaseCounter('%s-CI:counter' % (prfx))
-    # dev_dct['DETECTORS']['Det_Cntr'] = EpicsPvCounter('%sPMT:ctr:SingleValue_RBV' % prfx)
-    #dev_dct['DETECTORS'][DNM_PMT] = make_basedevice('DETECTORS', '%s-PMT:ctr:SingleValue_RBV' % (prfx),
-    #                                                devcfg=devcfg)
-    dev_dct['DETECTORS'][DNM_PMT] = make_basedevice('DETECTORS', '%suhvPMT:ctr:SingleValue_RBV' % (DEVPRFX),
-                                                    devcfg=devcfg)
+    dev_dct['DETECTORS'][DNM_DEFAULT_COUNTER] = PointDetectorDevice('%s-CI:counter:' % (prfx),
+                                                                    name=DNM_DEFAULT_COUNTER, scale_val=100.0)
 
+    # dev_dct['DETECTORS']['Det_Cntr'] = EpicsPvCounter('%sPMT:ctr:SingleValue_RBV' % prfx)
+    dev_dct['DETECTORS'][DNM_PMT] = make_basedevice('DETECTORS', '%s-PMT:ctr:SingleValue_RBV' % (prfx),
+                                                    devcfg=devcfg)
 
     # dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = GreatEyesDetectorCam('%sCCD1610-02:cam1:'  % (DEVPRFX), name='GE_CCD')
     # if(DEVPRFX.find('SIM')):
@@ -352,23 +353,18 @@ def connect_devices(dev_dct, prfx='%sBL1611-I10' % DEVPRFX, devcfg=None):
     dev_dct['PVS']['Zpz_adjust'] = make_basedevice('PVS', '%s:ENERGY:zp:adjust_zpz' % (prfx),
                                                    devcfg=devcfg)
 
-    devcfg.msg_splash("connecting to: [%s]" % DNM_ZONEPLATE_SCAN_MODE)
     dev_dct['PVS'][DNM_ZONEPLATE_SCAN_MODE] = Mbbo('%s:ENERGY:zp:scanselflag' % (prfx))  # used to control which value gets sent to Zpz, fl or fl - A0
     dev_dct['PVS'][DNM_ZONEPLATE_INOUT] = Bo('%s:zp_inout' % (prfx))
     dev_dct['PVS'][DNM_ZONEPLATE_INOUT_FBK] = Mbbi('%s:zp_inout:fbk' % (prfx))  # used to convieniently move zp z in and out
     # used to adjust the current focus value, the delta represents the relative microns for zpz to move to new focus position
-    dev_dct['PVS'][DNM_DELTA_A0] = make_basedevice('PVS', '%s:ENERGY:delta_A0' % (prfx),
-                                                   devcfg=devcfg)
-    dev_dct['PVS'][DNM_FOCAL_LEN] = make_basedevice('PVS', '%s:ENERGY:zp:FL' % (prfx), units='um',
-                                                    devcfg=devcfg)
+    dev_dct['PVS'][DNM_DELTA_A0] = make_basedevice('PVS', '%s:ENERGY:delta_A0' % (prfx), devcfg=devcfg)
+    dev_dct['PVS'][DNM_FOCAL_LEN] = make_basedevice('PVS', '%s:ENERGY:zp:FL' % (prfx), units='um',  devcfg=devcfg)
     dev_dct['PVS'][DNM_A0] = make_basedevice('PVS', '%s:ENERGY:A0' % (prfx), devcfg=devcfg)
     dev_dct['PVS'][DNM_A0MAX] = make_basedevice('PVS', '%s:ENERGY:A0Max' % (prfx), devcfg=devcfg)
-    dev_dct['PVS'][DNM_A0_FOR_CALC] = make_basedevice('PVS', '%s:ENERGY:A0:for_calc' % (prfx),
-                                                      devcfg=devcfg)
+    dev_dct['PVS'][DNM_A0_FOR_CALC] = make_basedevice('PVS', '%s:ENERGY:A0:for_calc' % (prfx),  devcfg=devcfg)
 
     devcfg.msg_splash("connecting to: [%s]" % 'zoneplate definitions')
-    dev_dct['PVS'][DNM_ZPZ_POS] = make_basedevice('PVS', '%s:ENERGY:zp:zpz_pos' % (prfx),
-                                                  devcfg=devcfg)
+    dev_dct['PVS'][DNM_ZPZ_POS] = make_basedevice('PVS', '%s:ENERGY:zp:zpz_pos' % (prfx), devcfg=devcfg)
     # dev_dct['PVS']['Zp_def'] = Transform('%sBL1610-I10:ENERGY:zp:def' % (prfx))
     # dev_dct['PVS']['OSA_def'] = Transform('%sBL1610-I10:ENERGY:%s:osa:def' % (prfx))
 
@@ -377,56 +373,33 @@ def connect_devices(dev_dct, prfx='%sBL1611-I10' % DEVPRFX, devcfg=None):
 
     devcfg.msg_splash("connecting to: [%s]" % 'Energy_enable')
     dev_dct['PVS'][DNM_ENERGY_ENABLE] = Bo('%s:ENERGY:enabled' % (prfx))
-    dev_dct['PVS'][DNM_ENERGY_RBV] = make_basedevice('PVS', '%sBL1610-I10:ENERGY.RBV' % (DEVPRFX), units='um',
-                                                     devcfg=devcfg)
-    dev_dct['PVS'][DNM_ZPZ_RBV] = make_basedevice('PVS', '%sIOC:m711C.RBV' % (DEVPRFX), units='um', devcfg=devcfg)
+    dev_dct['PVS'][DNM_ENERGY_RBV] = make_basedevice('PVS', '%s:ENERGY.RBV' % (prfx), units='um', devcfg=devcfg)
+    dev_dct['PVS'][DNM_ZPZ_RBV] = make_basedevice('PVS', '%sIOC:m111C.RBV' % (DEVPRFX), units='um', devcfg=devcfg)
 
-    dev_dct['PVS'][DNM_ZP_DEF_A] = make_basedevice('PVS', '%s:ENERGY:zp:def_A' % (prfx),
-                                                   devcfg=devcfg)
-    dev_dct['PVS'][DNM_ZP_DEF1_A] = make_basedevice('PVS', '%s:ENERGY:zp1:def_A' % (prfx),
-                                                    devcfg=devcfg)
-    dev_dct['PVS'][DNM_ZP_DEF2_A] = make_basedevice('PVS', '%s:ENERGY:zp2:def_A' % (prfx),
-                                                    devcfg=devcfg)
-    dev_dct['PVS'][DNM_ZP_DEF3_A] = make_basedevice('PVS', '%s:ENERGY:zp3:def_A' % (prfx),
-                                                    devcfg=devcfg)
-    dev_dct['PVS'][DNM_ZP_DEF4_A] = make_basedevice('PVS', '%s:ENERGY:zp4:def_A' % (prfx),
-                                                    devcfg=devcfg)
-    dev_dct['PVS'][DNM_ZP_DEF5_A] = make_basedevice('PVS', '%s:ENERGY:zp5:def_A' % (prfx),
-                                                    devcfg=devcfg)
+    dev_dct['PVS'][DNM_ZP_DEF_A] = make_basedevice('PVS', '%s:ENERGY:zp:def_A' % (prfx), devcfg=devcfg)
+    dev_dct['PVS'][DNM_ZP_DEF1_A] = make_basedevice('PVS', '%s:ENERGY:zp1:def_A' % (prfx), devcfg=devcfg)
+    dev_dct['PVS'][DNM_ZP_DEF2_A] = make_basedevice('PVS', '%s:ENERGY:zp2:def_A' % (prfx), devcfg=devcfg)
+    dev_dct['PVS'][DNM_ZP_DEF3_A] = make_basedevice('PVS', '%s:ENERGY:zp3:def_A' % (prfx), devcfg=devcfg)
+    dev_dct['PVS'][DNM_ZP_DEF4_A] = make_basedevice('PVS', '%s:ENERGY:zp4:def_A' % (prfx), devcfg=devcfg)
+    dev_dct['PVS'][DNM_ZP_DEF5_A] = make_basedevice('PVS', '%s:ENERGY:zp5:def_A' % (prfx), devcfg=devcfg)
 
     # dev_dct['PVS']['SRStatus_msgL1'] = BaseDevice('SRStatus:msg:tL1')
     # dev_dct['PVS']['SRStatus_msgL2'] = BaseDevice('SRStatus:msg:tL2')
     # dev_dct['PVS']['SRStatus_msgL3'] = BaseDevice('SRStatus:msg:tL3')
 
     # dev_dct['PVS']['mbbiSYSTEM:mode:fbk'] = Mbbi('SYSTEM:mode:fbk')
-    dev_dct['PVS'][DNM_BEAM_DEFOCUS] = make_basedevice('PVS', '%s:ENERGY:zp:defocus' % (prfx),
-                                                       units='um', devcfg=devcfg)
+    dev_dct['PVS'][DNM_BEAM_DEFOCUS] = make_basedevice('PVS', '%s:ENERGY:zp:defocus' % (prfx), units='um', devcfg=devcfg)
+    dev_dct['PVS_DONT_RECORD']['CX_auto_disable_power'] = make_basedevice('PVS_DONT_RECORD', '%sIOC:m112:XPS_AUTO_DISABLE_MODE' % (  DEVPRFX), devcfg=devcfg)
+    dev_dct['PVS_DONT_RECORD']['CY_auto_disable_power'] = make_basedevice('PVS_DONT_RECORD','%sIOC:m113:XPS_AUTO_DISABLE_MODE' % ( DEVPRFX), devcfg=devcfg)
+    dev_dct['PVS_DONT_RECORD']['DX_auto_disable_power'] = make_basedevice('PVS_DONT_RECORD','%sIOC:m114:XPS_AUTO_DISABLE_MODE' % ( DEVPRFX), devcfg=devcfg)
+    dev_dct['PVS_DONT_RECORD']['DY_auto_disable_power'] = make_basedevice('PVS_DONT_RECORD','%sIOC:m115:XPS_AUTO_DISABLE_MODE' % ( DEVPRFX), devcfg=devcfg)
 
+    dev_dct['PVS_DONT_RECORD']['accRange'] = make_basedevice('PVS_DONT_RECORD', '%s-TestSIG:signal:MaxPoints' % (prfx), devcfg=devcfg)
+    # dev_dct['PVS_DONT_RECORD']['FX_force_done'] = make_basedevice(  ,'%sIOC:m100:ForceDone' % (DEVPRFX))
+    # dev_dct['PVS_DONT_RECORD']['FY_force_done'] = make_basedevice(  ,'%sIOC:m101:ForceDone' % (DEVPRFX))
 
-    dev_dct['PVS_DONT_RECORD']['CX_auto_disable_power'] = make_basedevice('PVS_DONT_RECORD',
-                                                                          '%sIOC:m712:XPS_AUTO_DISABLE_MODE' % (
-                                                                              DEVPRFX), devcfg=devcfg)
-    dev_dct['PVS_DONT_RECORD']['CY_auto_disable_power'] = make_basedevice('PVS_DONT_RECORD',
-                                                                          '%sIOC:m713:XPS_AUTO_DISABLE_MODE' % (
-                                                                              DEVPRFX), devcfg=devcfg)
-    dev_dct['PVS_DONT_RECORD']['DX_auto_disable_power'] = make_basedevice('PVS_DONT_RECORD',
-                                                                          '%sIOC:m714:XPS_AUTO_DISABLE_MODE' % (
-                                                                              DEVPRFX), devcfg=devcfg)
-    dev_dct['PVS_DONT_RECORD']['DY_auto_disable_power'] = make_basedevice('PVS_DONT_RECORD',
-                                                                          '%sIOC:m715:XPS_AUTO_DISABLE_MODE' % (
-                                                                              DEVPRFX), devcfg=devcfg)
-
-    dev_dct['PVS_DONT_RECORD']['accRange'] = make_basedevice('PVS_DONT_RECORD',
-                                                             '%s-TestSIG:signal:MaxPoints' % (prfx),
-                                                             devcfg=devcfg)
-
-    # dev_dct['PVS_DONT_RECORD']['FX_force_done'] = make_basedevice(  ,'%sIOC:m700:ForceDone' % (DEVPRFX))
-    # dev_dct['PVS_DONT_RECORD']['FY_force_done'] = make_basedevice(  ,'%sIOC:m701:ForceDone' % (DEVPRFX))
-
-    dev_dct['PVS'][DNM_AX1_INTERFER_VOLTS] = make_basedevice('PVS', '%s-Ai:ai:ai0_RBV' % (prfx), rd_only=True,
-                                                             devcfg=devcfg)
-    dev_dct['PVS'][DNM_AX2_INTERFER_VOLTS] = make_basedevice('PVS', '%s-Ai:ai:ai1_RBV' % (prfx), rd_only=True,
-                                                             devcfg=devcfg)
+    dev_dct['PVS'][DNM_AX1_INTERFER_VOLTS] = make_basedevice('PVS', '%s-Ai:ai:ai0_RBV' % (prfx), rd_only=True, devcfg=devcfg)
+    dev_dct['PVS'][DNM_AX2_INTERFER_VOLTS] = make_basedevice('PVS', '%s-Ai:ai:ai1_RBV' % (prfx), rd_only=True, devcfg=devcfg)
 
     connect_ES_devices(dev_dct, prfx, devcfg=devcfg)
     connect_BL_devices(dev_dct, prfx, devcfg=devcfg)

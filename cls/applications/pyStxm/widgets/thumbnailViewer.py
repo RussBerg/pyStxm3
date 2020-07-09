@@ -94,8 +94,14 @@ def make_thumb_widg_dct(data_dir, fname, entry_dct, counter=DNM_DEFAULT_COUNTER)
 
 
 def get_first_entry_key(entries_dct):
+    '''
+    use the default attribute to return the default entry name to use
+    :param entries_dct:
+    :return:
+    '''
     # return (entries_dct['entries'].keys()[0])
-    return (list(entries_dct['entries'])[0])
+    #return (list(entries_dct['entries'])[0])
+    return(entries_dct['entries']['default'])
 
 
 def get_first_sp_db_from_entry(entry_dct):
@@ -578,13 +584,14 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
         entry_dct = self.dct['entries'][ekey]
         xdata = get_point_spec_energy_data_from_entry(entry_dct, counter=self.counter)
         # xdata = self.dct['entries'][ekey]['data'][self.counter]['energy']['signal']
-
+        counter_nm = entry_dct['default']
         ydatas = []
         # for ekey in self.dct['entries'].keys():
-        for ekey in list(self.dct['entries']):
+        ekeys = [k for k,v in self.dct['entries'].items() if k.find('entry') > -1]
+        for ekey in ekeys:
             entry_dct = self.dct['entries'][ekey]
             # ydatas.append(self.dct['entries'][ekey]['data'][self.counter]['signal'])
-            ydatas.append(get_point_spec_data_from_entry(entry_dct, counter=self.counter))
+            ydatas.append(get_point_spec_data_from_entry(entry_dct, counter=counter_nm))
 
         if (len(xdata) <= 1):
             pmap = QtGui.QPixmap()
@@ -807,7 +814,7 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
             ydatas = []
             # it matters that the data is in sequential entry order
             # ekeys = sorted(self.dct['entries'].keys())
-            ekeys = sorted(list(self.dct['entries']))
+            ekeys = sorted([k for k,v in self.dct['entries'].items() if k.find('entry') > -1])
             for ekey in ekeys:
                 entry_dct = self.dct['entries'][ekey]
                 # ydatas.append(self.dct['entries'][ekey]['data'][self.counter]['signal'])
@@ -1270,14 +1277,15 @@ class ContactSheet(QtWidgets.QWidget):
             _logger.info('Problem with file [%s]' % fname)
             return (sp_db, data)
 
-        # num_entries = len(entry_dct.keys())
-        num_entries = len(list(entry_dct))
+        ekeys = [k for k,v in entry_dct.items() if k.find('entry') > -1]
+
+        num_entries = len(ekeys)
         sp_db_lst = []
         data_lst = []
 
         if (num_entries > 1):
             # for ekey in entry_dct.keys():
-            for ekey in list(entry_dct):
+            for ekey in ekeys:
                 wdg_com = self.data_io.get_wdg_com_from_entry(entry_dct, ekey)
                 _sp_db = get_first_sp_db_from_wdg_com(wdg_com)
                 _scan_type = dct_get(_sp_db, SPDB_SCAN_PLUGIN_TYPE)
@@ -1289,7 +1297,7 @@ class ContactSheet(QtWidgets.QWidget):
                 #there is a problem,
                 _logger.error('get_sp_db_and_data: there is aproblem with the file [%s]' % fprefix)
                 return([],[])
-            ekey = list(entry_dct)[0]
+            ekey = ekeys[0]
             wdg_com = self.data_io.get_wdg_com_from_entry(entry_dct, ekey)
             sp_db = get_first_sp_db_from_wdg_com(wdg_com)
             _scan_type = dct_get(sp_db, SPDB_SCAN_PLUGIN_TYPE)
@@ -2299,7 +2307,7 @@ class ContactSheet(QtWidgets.QWidget):
         th_wdg = self.make_thumbWidget(data_dir, '..', info_dct, sp_db={}, data=None, stype=None, is_folder=True)
         return (th_wdg)
 
-    @cached(cache)  # 3 - it's time to decorate the method to use our cache system!
+    @cached(cache)
     def reload_view(self, datadir, is_stack_dir=False, progress_callback=None):
         """
         reload_view(): walk the self.data_dir and try to load every .hdf5 file, display only the ones that are valid
@@ -2731,7 +2739,7 @@ class ContactSheet(QtWidgets.QWidget):
 
 
 if __name__ == "__main__":
-    from cls.data_io.bioxas_im_data_io import BioxasDataIo
+    #from cls.data_io.bioxas_im_data_io import BioxasDataIo
     from cls.data_io.stxm_data_io import STXMDataIo
 
     log_to_qt()
@@ -2747,6 +2755,7 @@ if __name__ == "__main__":
     dir = r'S:\STXM-data\Cryo-STXM\2019\guest\test\0215'
     dir = r'C:\controls\stxm-data\guest\0515'
     dir = r'C:\controls\stxm-data\2020\guest\0110'
+    dir = r'C:\controls\stxm-data\2020\guest\0529'
     # dir = r'/home/bergr/git/testing/py27_qt5/py2.7/cls/data/guest'
     # main = ContactSheet(r'S:\STXM-data\Cryo-STXM\2016\guest\test')
     # main = ContactSheet(dir, BioxasDataIo)

@@ -40,15 +40,16 @@ class OsaScanClass(BaseScan):
         gate.set_trig_src(trig_src_types.NORMAL_PXP)
         gate.set_mode(bs_dev_modes.NORMAL_PXP)
 
-        #need to handle this better for multiple detectors, in the future todo
-        dets[0].set_dwell(self.dwell)
+        for d in dets:
+            if (hasattr(d, 'set_dwell')):
+                d.set_dwell(self.dwell)
 
     def make_pxp_scan_plan(self, dets, gate, md=None, bi_dir=False):
         dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
         self._bi_dir = bi_dir
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, dets=dets))}
         #@bpp.run_decorator(md={'entry_name': 'entry0', 'scan_type': scan_types.DETECTOR_IMAGE})
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)

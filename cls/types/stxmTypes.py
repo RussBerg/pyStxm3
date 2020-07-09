@@ -105,6 +105,7 @@ three_posner_scans = [scan_types.OSA_FOCUS ,
 positioner_sub_types = Enum('SampleXY', 'GoniometerXY')
 
 scan_sub_types = Enum( 'Point_by_Point','Line_Unidir')
+detector_types = Enum( 'Point','Line', 'TWO_D')
 
 scans_with_energy = [scan_types.SAMPLE_IMAGE,
 					 scan_types.SAMPLE_POINT_SPECTRUM,
@@ -174,5 +175,8 @@ non_zp_scans = [scan_types.DETECTOR_IMAGE,
 
 focus_scans = [scan_types.OSA_FOCUS,
 			   scan_types.SAMPLE_FOCUS]
+
+
+
 
 __all__ = ['SPATIAL_TYPE_PREFIX', 'TWO_D', 'SEG', 'PNT', scan_types, scans_with_energy]

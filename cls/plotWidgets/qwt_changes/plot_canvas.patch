@@ -1,0 +1,99 @@
+--- ../qwt/plot_canvas.py	2020-06-17 11:40:18.770731118 -0600
++++ plot_canvas.py	2020-06-17 12:08:00.669424229 -0600
+@@ -1,4 +1,4 @@
+-# -*- coding: utf-8 -*-
++
+ #
+ # Licensed under the terms of the Qwt License
+ # Copyright (c) 2002 Uwe Rathmann, for the original C++ code
+@@ -20,7 +20,7 @@
+ from qwt.qt.QtGui import (QFrame, QPaintEngine, QPen, QBrush, QRegion, QImage,
+                           QPainterPath, QPixmap, QGradient, QPainter, qAlpha,
+                           QPolygonF, QStyleOption, QStyle, QStyleOptionFrame)
+-from qwt.qt.QtCore import Qt, QSizeF, QT_VERSION, QEvent, QPointF, QRectF
++from qwt.qt.QtCore import Qt, QSizeF, QT_VERSION, QEvent, QPointF, QRectF, QRect
+ 
+ 
+ class Border(object):
+@@ -58,7 +58,8 @@
+     
+     def drawRects(self, rects, count):
+         for i in range(count):
+-            self.border.rectList += rects[i]
++            #self.border.rectList += rects[i]
++            self.border.rectList.append(rects[i])
+     
+     def drawPath(self, path):
+         rect = QRectF(QPointF(0., 0.), self.__size)
+@@ -247,7 +248,7 @@
+ def qwtFillBackground(*args):
+     if len(args) == 2:
+         painter, canvas = args
+-
++ 
+         rects = []
+         if canvas.testAttribute(Qt.WA_StyledBackground):
+             recorder = QwtStyleSheetRecorder(canvas.size())
+@@ -267,12 +268,12 @@
+                           QRectF(r.topRight()-QPointF(radius, 0), sz),
+                           QRectF(r.bottomRight()-QPointF(radius, radius), sz),
+                           QRectF(r.bottomLeft()-QPointF(0, radius), sz)]
+-
++ 
+         qwtFillBackground(painter, canvas, rects)
+-
++ 
+     elif len(args) == 3:
+         painter, widget, fillRects = args
+-        
++        fillRects = _rects_conv_PyQt5(fillRects)
+         if not fillRects:
+             return
+         if painter.hasClipping():
+@@ -281,17 +282,16 @@
+             clipRegion = widget.contentsRect()
+         bgWidget = qwtBackgroundWidget(widget.parentWidget())
+         for fillRect in fillRects:
+-            rect = fillRect.toAlignedRect()
+-            if clipRegion.intersects(rect):
+-                pm = QPixmap(rect.size())
+-                QwtPainter.fillPixmap(bgWidget, pm, widget.mapTo(bgWidget, rect.topLeft()))
+-                painter.drawPixmap(rect, pm)
+-        
++            _qr = fillRect.toAlignedRect()
++            rect = QRectF(_qr.left(), _qr.top(), _qr.width(), _qr.height())
++            if clipRegion.intersects(_qr):
++                pm = QPixmap(_qr.size())
++                QwtPainter.fillPixmap(bgWidget, pm, widget.mapTo(bgWidget, _qr.topLeft()))
++                painter.drawPixmap(_qr, pm)
++         
+     else:
+         raise TypeError("%s() takes 2 or 3 argument(s) (%s given)"\
+                         % ("qwtFillBackground", len(args)))
+-
+-
+ class StyleSheetBackground(object):
+     def __init__(self):
+         self.brush = QBrush()
+@@ -765,10 +765,10 @@
+         opt.initFrom(self)
+         self.style().drawPrimitive(QStyle.PE_Widget, opt, painter, self)
+         painter.end()
+-        self.__data.styleSheet.hasBorder = not recorder.border.rectList.isEmpty()
++        self.__data.styleSheet.hasBorder = not (len(recorder.border.rectList) is 0)
+         self.__data.styleSheet.cornerRects = recorder.clipRects
+         if recorder.background.path.isEmpty():
+-            if not recorder.border.rectList.isEmpty():
++            if not (len(recorder.border.rectList) is 0):
+                 self.__data.styleSheet.borderPath =\
+                     qwtCombinePathList(self.rect(), recorder.border.pathlist)
+         else:
+@@ -796,7 +796,7 @@
+             painter.end()
+             if not recorder.background.path.isEmpty():
+                 return recorder.background.path
+-            if not recorder.border.rectList.isEmpty():
++            if not (len(recorder.border.rectList) is 0):
+                 return qwtCombinePathList(rect, recorder.border.pathlist)
+         elif self.__data.borderRadius > 0.:
+             fw2 = self.frameWidth()*.5

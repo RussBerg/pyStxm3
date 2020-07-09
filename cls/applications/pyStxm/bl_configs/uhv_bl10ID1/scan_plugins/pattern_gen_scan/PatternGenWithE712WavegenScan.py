@@ -259,7 +259,7 @@ class PatternGenWithE712WavegenScanClass(BaseScan):
                 img_dct = self.img_idx_map['%d' % self._current_img_idx]
 
                 md = {'metadata': dict_to_json(
-                    self.make_standard_metadata(entry_name=img_dct['entry'], scan_type=self.scan_type))}
+                    self.make_standard_metadata(entry_name=img_dct['entry'], scan_type=self.scan_type, dets=dets))}
                 #if(entry_num is 0):
                 #if(img_dct['entry'] is not prev_entry_nm):
                 # if(img_dct['entry'] not in entrys_lst):

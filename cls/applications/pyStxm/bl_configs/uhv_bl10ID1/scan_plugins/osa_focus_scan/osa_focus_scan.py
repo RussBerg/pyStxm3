@@ -3,11 +3,7 @@ Created on Aug 25, 2014
 
 @author: bergr
 '''
-'''
-Created on Aug 25, 2014
 
-@author: bergr
-'''
 from PyQt5 import uic, QtCore
 
 import os
@@ -27,7 +23,7 @@ from cls.utils.dict_utils import dct_get, dct_put
 from cls.utils.roi_dict_defs import *
 from cls.utils.log import get_module_logger
 
-from cls.applications.pyStxm.bl_configs.basic.scan_plugins.osa_focus_scan.OsaFocusScan import OsaFocusScanClass
+from cls.applications.pyStxm.bl_configs.uhv_bl10ID1.scan_plugins.osa_focus_scan.OsaFocusScan import OsaFocusScanClass
 
 _logger = get_module_logger(__name__)
 

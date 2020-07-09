@@ -118,20 +118,6 @@ class TomographyWithE712WavegenScanClass(BaseScan):
         e712_wdg.on_wavegen_scan_done()
 
 
-    # def configure_devs(self, dets, gate):
-    #     if (self.is_pxp):
-    #         dets[0].set_mode(0)
-    #         gate.set_trig_src(trig_src_types.E712)
-    #         gate.set_num_points(1)
-    #         gate.set_mode(bs_dev_modes.E712)
-    #     else:
-    #         # if (self.is_lxl):
-    #         dets[0].set_mode(1)
-    #         gate.set_mode(1)
-    #         gate.set_num_points(self.x_roi[NPOINTS])
-    #         gate.set_trig_src(trig_src_types.E712)
-
-
     def make_scan_plan(self, dets, gate, md=None, bi_dir=False):
         '''
         override the default make_scan_plan to set the scan_type
@@ -221,7 +207,7 @@ class TomographyWithE712WavegenScanClass(BaseScan):
                             # take a single image that will be saved with its own run scan id
                             img_dct = self.img_idx_map['%d' % self._current_img_idx]
                             md = {'metadata': dict_to_json(
-                                    self.make_standard_metadata(entry_name=img_dct['entry'], scan_type=self.scan_type))}
+                                    self.make_standard_metadata(entry_name=img_dct['entry'], scan_type=self.scan_type, dets=dets))}
 
                             if(img_dct['entry'] not in entrys_lst):
                                 entrys_lst.append(img_dct['entry'])

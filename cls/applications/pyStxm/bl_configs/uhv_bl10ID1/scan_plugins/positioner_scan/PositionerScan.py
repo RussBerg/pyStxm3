@@ -48,8 +48,9 @@ class PositionerScanClass(BaseScan):
         gate.set_trig_src(trig_src_types.NORMAL_PXP)
         gate.set_mode(bs_dev_modes.NORMAL_PXP)
 
-        # need to handle this better for multiple detectors, in the future todo
-        dets[0].set_dwell(self.dwell)
+        for d in dets:
+            if (hasattr(d, 'set_dwell')):
+                d.set_dwell(self.dwell)
 
     def make_pxp_scan_plan(self, dets, gate, md=None, bi_dir=False):
         # gate.set_mode(0)  # point
@@ -58,7 +59,7 @@ class PositionerScanClass(BaseScan):
         self._bi_dir = bi_dir
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, dets=dets))}
 
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)
@@ -94,10 +95,10 @@ class PositionerScanClass(BaseScan):
             mtr_x = self.main_obj.device(self.x_roi[POSITIONER])
             #we also need to pass the sp_id because it needs to send it on to the plotter as data comes in
             # spid_seq_map
-            # self._emitter_cb = SpecDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, x=mtr_x.get_name(), \
+            # self._emitter_cb = SpecDataEmitter(DNM_DEFAULT_COUNTER, x=mtr_x.get_name(), \
             #                                    scan_type=self.scan_type, sp_id=self.sp_id, spid_seq_map=spid_seq_map)
             # self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
-            self._emitter_cb = SpecDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, x=mtr_x.get_name(), \
+            self._emitter_cb = SpecDataEmitter(DNM_DEFAULT_COUNTER, x=mtr_x.get_name(), \
                                                scan_type=self.scan_type, spid_seq_map=spid_seq_map)
             self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
             self._emitter_cb.new_plot_data.connect(func)

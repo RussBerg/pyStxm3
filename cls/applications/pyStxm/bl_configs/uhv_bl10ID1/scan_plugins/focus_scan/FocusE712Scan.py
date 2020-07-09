@@ -61,7 +61,7 @@ class FocusE712ScanClass(BaseScan):
         '''
 
         if(self.is_pxp):
-            self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE, x=DNM_SAMPLE_X,
+            self._emitter_cb = ImageDataEmitter(DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE, x=DNM_SAMPLE_X,
                                                     scan_type=self.scan_type, bi_dir=self._bi_dir)
             self._emitter_cb.set_row_col(rows=self.zz_roi[NPOINTS], cols=self.x_roi[NPOINTS], seq_dct=self.seq_map_dct)
             self._emitter_sub = ew.subscribe_cb(self._emitter_cb)
@@ -69,7 +69,7 @@ class FocusE712ScanClass(BaseScan):
         else:
 
 
-            # self._emitter_cb = ImageDataEmitter('%s_single_value_rbv' % DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE,
+            # self._emitter_cb = ImageDataEmitter(DNM_DEFAULT_COUNTER, y=DNM_ZONEPLATE_Z_BASE,
             #                                     x=DNM_SAMPLE_X,
             #                                     scan_type=self.scan_type, bi_dir=self._bi_dir)
             # self._emitter_cb.set_row_col(rows=self.zz_roi[NPOINTS], cols=self.x_roi[NPOINTS])
@@ -93,15 +93,21 @@ class FocusE712ScanClass(BaseScan):
 
     def configure_devs(self, dets, gate):
         if (self.is_pxp):
+            # for d in dets:
+            #     if (hasattr(d, 'set_mode')):
+            #         d.set_mode(0)
             gate.set_trig_src(trig_src_types.NORMAL_PXP)
             gate.set_num_points(1)
             gate.set_mode(bs_dev_modes.NORMAL_PXP)
         else:
             # if (self.is_lxl):
-            dets[0].set_mode(1)
+            for d in dets:
+                if (hasattr(d, 'set_mode')):
+                    d.set_mode(1)
             gate.set_mode(1)
             gate.set_num_points(self.x_roi[NPOINTS])
             gate.set_trig_src(trig_src_types.E712)
+
 
         gate.set_dwell(self.dwell)
         gate.configure()
@@ -113,10 +119,11 @@ class FocusE712ScanClass(BaseScan):
         :param bi_dir:
         :return:
         '''
-        point_det = dets[0]
-        # gate.set_num_points(1)
-        # gate.set_mode(0)
-        point_det.configure()
+
+        #point_det = dets[0]
+        #point_det.configure()
+        for d in dets:
+            d.configure()
         #gate.set_trig_src(trig_src_types.E712)
         #the rest of the gate configuration is handled when it is staged
         skip_lst = [DNM_FINE_X, DNM_FINE_Y, DNM_FINE_ZX, DNM_FINE_ZX]
@@ -130,7 +137,7 @@ class FocusE712ScanClass(BaseScan):
 
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, dets=dets))}
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)
         def do_scan():
@@ -261,7 +268,7 @@ class FocusE712ScanClass(BaseScan):
 
         if (md is None):
             md = {'metadata': dict_to_json(
-                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type))}
+                self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, dets=dets))}
 
         @bpp.baseline_decorator(dev_list)
         @bpp.stage_decorator(dets)

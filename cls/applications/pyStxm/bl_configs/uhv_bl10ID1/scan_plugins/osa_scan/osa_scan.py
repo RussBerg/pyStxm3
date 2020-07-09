@@ -3,11 +3,6 @@ Created on Aug 25, 2014
 
 @author: bergr
 '''
-'''
-Created on Aug 25, 2014
-
-@author: bergr
-'''
 from PyQt5 import QtCore, QtGui
 from PyQt5 import uic
 
@@ -33,7 +28,7 @@ from cls.utils.log import get_module_logger
 
 #from cls.applications.pyStxm.bl_configs.basic.scan_plugins.osa_scan.osa_scan_tester import test_sp_db
 
-from cls.applications.pyStxm.bl_configs.basic.scan_plugins.osa_scan.OsaScan import OsaScanClass
+from cls.applications.pyStxm.bl_configs.uhv_bl10ID1.scan_plugins.osa_scan.OsaScan import OsaScanClass
 
 _logger = get_module_logger(__name__)
     

@@ -110,10 +110,15 @@ class STXMDataIo(DataIo):
 
         :returns: array of data
         """
-        if(counter_name not in list(nx_datas.keys())):
+        # search to see if a partial match of counter name exists in data keys
+        dkeys = list(nx_datas.keys())
+        cntr_match = "\n".join(s for s in dkeys if counter_name.lower() in s.lower())
+        #if(counter_name not in list(nx_datas.keys())):
+        if(len(cntr_match) < 1):
             #print 'counter [%s] doesnt exist in data' % counter_name
             return(None)
-        data = nx_datas[counter_name]['signal']
+        #data = nx_datas[counter_name]['signal']
+        data = nx_datas[cntr_match]['signal']
         return(data)
 
     def get_first_entry_key(self, entries_dct):

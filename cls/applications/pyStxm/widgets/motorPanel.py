@@ -488,6 +488,7 @@ class PositionersPanel(QtWidgets.QWidget):
 		pvname = str(fld.statusTip())
 		(dev, dev_ui, widg, mtr) = self.mtr_dict[pvname]
 		pos = float(str(self.sender().text()))
+		#support for CLS collision tracking
 		if(hasattr(mtr, 'check_tr_A')):
 			mtr.check_tr_A.put(pos)
 			sts = 'success'

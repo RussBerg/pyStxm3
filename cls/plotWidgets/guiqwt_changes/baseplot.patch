@@ -1,0 +1,11 @@
+--- ./guiqwt/baseplot.py	2020-06-17 11:39:58.868639047 -0600
++++ ./guiqwt_changes/baseplot.py	2020-06-17 11:40:10.087690950 -0600
+@@ -493,7 +493,7 @@
+         """
+         zlist = sorted([_it.z() for _it in self.items
+                         if _it.z() >= zoffset]+[zoffset-1])
+-        dzlist = np.argwhere(np.diff(zlist) > 1)
++        dzlist = np.argwhere(np.diff(zlist) > 1)[0].tolist()
+         if len(dzlist) == 0:
+             z = max(zlist)+1
+         else:

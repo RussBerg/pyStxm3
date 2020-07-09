@@ -532,6 +532,15 @@ class ImageWidget(ImageDialog):
 
         self._shape_registry = {}
 
+    def set_image_type(self, image_type):
+        '''
+        sometimes it when switching between different scans it is required that the wdg_com dict that gets emitted
+        by the tools knows what type of image it should be using  as focus scans use Z coordinates for Y plot coordinates.
+        :param image_type:
+        :return:
+        '''
+        self.image_type = image_type
+
     def set_fill_plot_window(self, val):
         '''
         when the user clicks auto scale, it will check this flag to see if they want the plot to be filled or not
@@ -626,7 +635,7 @@ class ImageWidget(ImageDialog):
                 dct = mime_to_dct(mimeData)
                 #print 'dropped file is : %s' % dct['file']
                 self.blockSignals(True)
-                self.openfile([dct['file']], addimages=True, dropped=True)
+                self.openfile([dct['file']], scan_type=dct['scan_type_num'], addimages=True, dropped=True)
                 self.blockSignals(False)
             elif mimeData.hasUrls():
                 #self.setText("\n{"energy": 1078.7, "xpositioner": "GoniX", "file": "S:\\STXM-data\\Cryo-STXM\\2019\\guest\\0516\\C190516001.hdf5", "estop": 1078.7, "estart": 1078.7, "angle": 0.0, "ypositioner": "GoniY", "polarization": "CircLeft", "start": [356.531656880734, -102.98874617737003], "dwell": 1.0, "stop": [406.531656880734, -52.98874617737003], "scan_type": "sample_image Line_Unidir", "step": [0.33557046979865773, 0.33557046979865773], "goni_theta_cntr": 0.0, "offset": 0.0, "date": "2019-05-16", "center": [374.1234, -72.66], "scan_type_num": 6, "range": [50.0, 50.0], "end_time": "09:10:55", "npoints": [150, 150], "scan_panel_idx": 5, "goni_z_cntr": 200.00643000000002}".join([url.path() for url in mimeData.urls()])){"polarity": "CircLeft", "angle": 0.0, "center": [-419.172, 5624.301], "energy": 1029.0, "step": [110.86591666666668, 114.90791666666667], "scan_type": "coarse_image Line_Unidir", "range": [2660.782, 2757.79], "file": "S:\\STXM-data\\Cryo-STXM\\2017\\guest\\1207\\C171207014.hdf5", "offset": 0.0, "npoints": [25, 25], "dwell": 30.408937142857148, "scan_panel_idx": 8}
@@ -2877,8 +2886,8 @@ class ImageWidget(ImageDialog):
 
 
             if(hasattr(item, 'unique_id')):
-                if(item.unique_id is not get_current_unique_id()):
-                    print('why dont these ids match? %d %d' % (item.unique_id, get_current_unique_id()))
+                # if(item.unique_id is not get_current_unique_id()):
+                #     print('why dont these ids match? %d %d' % (item.unique_id, get_current_unique_id()))
                 item.unique_id = get_current_unique_id()
                 self.inputState.plotitem_id = item.unique_id
                 #print 'annotation_item_changed: item unique_id = %d' % self.inputState.plotitem_id
@@ -4018,8 +4027,7 @@ class ImageWidget(ImageDialog):
             self.set_lock_aspect_ratio(True)
             plot.do_autoscale()
 
-    def \
-            show_data(self, img_idx, init=False, ):
+    def show_data(self, img_idx, init=False, ):
         """
         show_data(): description
 
@@ -5110,16 +5118,16 @@ class ImageWidget(ImageDialog):
         return(progbar)
 
     @exception
-    def openfile(self, fnames, addimages=True, counter='counter0', dropped=False):
+    def openfile(self, fnames, scan_type=None, addimages=True, counter='counter0', dropped=False):
         if(self.show_image_params):
-            self.openfile_mod(fnames, addimages=True, counter='counter0', dropped=dropped)
+            self.openfile_mod(fnames, scan_type=scan_type, addimages=True, counter='counter0', dropped=dropped)
         elif (len(fnames) is 1):
             if((len(self.item) is 0) and (fnames[0].find('.png') > -1)):
                 #most likely calib camera
-                self.openfile_mod(fnames, addimages=True, counter='counter0', dropped=dropped, alpha=1.0)
+                self.openfile_mod(fnames, scan_type=scan_type, addimages=True, counter='counter0', dropped=dropped, alpha=1.0)
             else:
                 #most likely adding a VLM image to several data images
-                self.openfile_mod(fnames, addimages=True, counter='counter0', dropped=dropped)
+                self.openfile_mod(fnames, scan_type=scan_type, addimages=True, counter='counter0', dropped=dropped)
         else:
             num_fnames = len(fnames)
             self.progbar = self.get_file_loading_progbar(num_fnames)
@@ -5196,7 +5204,7 @@ class ImageWidget(ImageDialog):
         plot.add_item(item, z=MAX_IMAGE_Z-1)
 
 
-    def openfile_mod(self, fnames, addimages=True, counter='counter0', dropped=False, alpha=0.4):
+    def openfile_mod(self, fnames, scan_type=None, addimages=True, counter='counter0', dropped=False, alpha=0.4):
         """
         openfile(): description
 
@@ -5208,6 +5216,12 @@ class ImageWidget(ImageDialog):
 
         :returns: None
         """
+        if (scan_type is None):
+            _logger.error('scan_type is None')
+            return
+        if (scan_type not in types.image_type_scans):
+            # only allow image type scan data to be dropped here
+            return
         num_files = len(fnames)
         idx = 0
         iidx = 0
@@ -5241,10 +5255,13 @@ class ImageWidget(ImageDialog):
             start_time = timeit.default_timer()
 
             entry_dct = data_io.load()
-            ekey = list(entry_dct.keys())[0]
+            #ekey = list(entry_dct.keys())[0]
+            ekey = entry_dct['default']
             nx_datas = data_io.get_NXdatas_from_entry(entry_dct, ekey)
             sp_id = list(entry_dct[ekey]['WDG_COM']['SPATIAL_ROIS'].keys())
-            scan_type = entry_dct[ekey]['WDG_COM']['SPATIAL_ROIS'][sp_id[0]]['SCAN_PLUGIN']['SCAN_TYPE']
+            #scan_type = entry_dct[ekey]['WDG_COM']['SPATIAL_ROIS'][sp_id[0]]['SCAN_PLUGIN']['SCAN_TYPE']
+
+
             rng_x = entry_dct[ekey]['WDG_COM']['SPATIAL_ROIS'][sp_id[0]]['X'][RANGE]
             rng_y = entry_dct[ekey]['WDG_COM']['SPATIAL_ROIS'][sp_id[0]]['Y'][RANGE]
             npts_x = entry_dct[ekey]['WDG_COM']['SPATIAL_ROIS'][sp_id[0]]['X'][NPOINTS]
@@ -5817,7 +5834,7 @@ def get_percentage_of_qrect(qrect, p):
 #def make_default_stand_alone_stxm_imagewidget(parent=None, data_io=None, _type=None, sample_positioning_mode=types.sample_positioning_modes):
 def make_default_stand_alone_stxm_imagewidget(parent=None, data_io=None, _type=None, bndg_rect=None):
     #from cls.applications.pyStxm.widgets.beam_spot_fbk import BeamSpotFeedbackObjStandAlone
-    from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
+    #from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 
     # def on_new_beamspot_fbk(cx, cy):
     #     '''
@@ -5832,8 +5849,10 @@ def make_default_stand_alone_stxm_imagewidget(parent=None, data_io=None, _type=N
     from cls.utils.cfgparser import ConfigClass
     from cls.applications.pyStxm import abs_path_to_ini_file
     #appConfig = ConfigClass(abs_path_to_ini_file)
-    scan_mode = MAIN_OBJ.get_sample_scanning_mode_string()
-    sample_pos_mode = types.scanning_mode.get_value_by_name(scan_mode)
+    #scan_mode = MAIN_OBJ.get_sample_scanning_mode_string()
+    #sample_pos_mode = types.scanning_mode.get_value_by_name(scan_mode)
+    sample_pos_mode = types.scanning_mode.get_value_by_name('GONI_ZONEPLATE')
+
 
     if(data_io is None):
         from cls.data_io.stxm_data_io import STXMDataIo

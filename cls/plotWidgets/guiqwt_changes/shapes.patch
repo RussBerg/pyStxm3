@@ -1,0 +1,935 @@
+22,23c22,23
+< A shape is a plot item (derived from QwtPlotItem) that may be displayed 
+< on a 2D plotting widget like :py:class:`guiqwt.curve.CurvePlot` 
+---
+> A shape is a plot item (derived from QwtPlotItem) that may be displayed
+> on a 2D plotting widget like :py:class:`guiqwt.curve.CurvePlot`
+32,33c32,33
+<     * from the associated plot item class (e.g. `RectangleShape` to create a 
+<       rectangle): the item properties are then assigned by creating the 
+---
+>     * from the associated plot item class (e.g. `RectangleShape` to create a
+>       rectangle): the item properties are then assigned by creating the
+36c36
+<       
+---
+> 
+42c42
+<       
+---
+> 
+44c44
+<       
+---
+> 
+98,102c98,102
+<     """Interface pour les objets manipulables
+<     il n'est pas nécessaire de dériver de QwtShape si on
+<     réutilise une autre classe dérivée de QwtPlotItem
+<     
+<     La classe de base 
+---
+>     """Interface for manipulables
+>     it is not necessary to derive from QwtShape if one
+>     reuses another class derived from QwtPlotItem
+> 
+>     The basic class
+110c110
+<     _can_rotate = False #TODO: implement shape rotation?
+---
+>     _can_rotate = False  # TODO: implement shape rotation?
+112c112
+<     
+---
+> 
+116,117c116,117
+<     
+<     #------IBasePlotItem API----------------------------------------------------
+---
+> 
+>     # ------IBasePlotItem API----------------------------------------------------
+121c121
+<         
+---
+> 
+126c126
+<         
+---
+> 
+130c130
+<         
+---
+> 
+134c134
+<         
+---
+> 
+136a137
+> 
+138a140
+> 
+140a143
+> 
+149,150c152,153
+<         return (IShapeItemType, )
+<         
+---
+>         return (IShapeItemType,)
+> 
+154c157
+<         
+---
+> 
+158c161
+<         
+---
+> 
+162c165
+<         
+---
+> 
+171c174
+<     
+---
+> 
+176c179
+<         
+---
+> 
+181c184
+<         
+---
+> 
+196c199
+<     
+---
+> 
+203c206
+<     
+---
+> 
+208c211
+<         
+---
+> 
+217,219c220,224
+<         pt = canvas_to_axes(self, pos)
+<         self.move_point_to(handle, pt, ctrl)
+<         
+---
+>         # RUSS ADDED IF LINE July 26 2019
+>         if (handle is not None):
+>             pt = canvas_to_axes(self, pos)
+>             self.move_point_to(handle, pt, ctrl)
+> 
+227c232
+<             self.plot().SIG_ITEM_MOVED.emit(self, *(old_pt+new_pt))
+---
+>             self.plot().SIG_ITEM_MOVED.emit(self, *(old_pt + new_pt))
+236c241
+<     #------Public API-----------------------------------------------------------
+---
+>     # ------Public API-----------------------------------------------------------
+239c244
+<     
+---
+> 
+249a255
+> 
+286c292
+<     #------QwtPlotItem API------------------------------------------------------
+---
+>     # ------QwtPlotItem API------------------------------------------------------
+295c301
+<     #------IBasePlotItem API----------------------------------------------------
+---
+>     # ------IBasePlotItem API----------------------------------------------------
+299c305
+<         
+---
+> 
+304c310
+<         
+---
+> 
+308c314
+<         
+---
+> 
+312c318
+<         
+---
+> 
+314a321
+> 
+316a324
+> 
+318a327
+> 
+328c337
+<         
+---
+> 
+332c341
+<         
+---
+> 
+336c345
+<         
+---
+> 
+340c349
+<         
+---
+> 
+365c374
+<         
+---
+> 
+370c379
+<         
+---
+> 
+383,384c392,393
+<         # The following assert has no purpose except reminding that the 
+<         # markerstyle is one of the MARKERSTYLES dictionary values, in case 
+---
+>         # The following assert has no purpose except reminding that the
+>         # markerstyle is one of the MARKERSTYLES dictionary values, in case
+388c397
+<             return sqrt((x-xc)**2 + (y-yc)**2), 0, False, None
+---
+>             return sqrt((x - xc) ** 2 + (y - yc) ** 2), 0, False, None
+390c399
+<             return sqrt((y-yc)**2), 0, False, None
+---
+>             return sqrt((y - yc) ** 2), 0, False, None
+392c401
+<             return sqrt((x-xc)**2), 0, False, None
+---
+>             return sqrt((x - xc) ** 2), 0, False, None
+394c403
+<             return sqrt(min((x-xc)**2, (y-yc)**2) ), 0, False, None
+---
+>             return sqrt(min((x - xc) ** 2, (y - yc) ** 2)), 0, False, None
+398c407
+<         
+---
+> 
+406c415
+<     
+---
+> 
+411c420
+<         
+---
+> 
+420c429
+<     
+---
+> 
+426c435
+<         
+---
+> 
+441c450
+<     #------Public API-----------------------------------------------------------
+---
+>     # ------Public API-----------------------------------------------------------
+445c454
+<         
+---
+> 
+456c465
+<             
+---
+> 
+459c468
+<         
+---
+> 
+464c473
+<         
+---
+> 
+468c477
+<         
+---
+> 
+472c481
+<         
+---
+> 
+483c492
+<                 y = .5*(y_top+y_bottom)
+---
+>                 y = .5 * (y_top + y_bottom)
+487c496
+<                 x = .5*(x_left+x_right)
+---
+>                 x = .5 * (x_left + x_right)
+493,494c502,503
+<         dx = new_pos[0]-old_pos[0]
+<         dy = new_pos[1]-old_pos[1]
+---
+>         dx = new_pos[0] - old_pos[0]
+>         dy = new_pos[1] - old_pos[1]
+496c505
+<         return self.move_point_to(0, (x+dx, y+dy))
+---
+>         return self.move_point_to(0, (x + dx, y + dy))
+502c511
+<         
+---
+> 
+521c530
+<             if x < (xaxis.upperBound()+xaxis.lowerBound())/2:
+---
+>             if x < (xaxis.upperBound() + xaxis.lowerBound()) / 2:
+528c537
+<             if y < .5*(yaxis.upperBound()+yaxis.lowerBound()):
+---
+>             if y < .5 * (yaxis.upperBound() + yaxis.lowerBound()):
+538,539c547,549
+<             self.setLabelAlignment(hor_alignment|ver_alignment)
+<         
+---
+>             self.setLabelAlignment(hor_alignment | ver_alignment)
+> 
+> 
+545,546c555,556
+<     ADDITIONNAL_POINTS = 0 # Number of points which are not part of the shape
+<     LINK_ADDITIONNAL_POINTS = False # Link additionnal points with dotted lines
+---
+>     ADDITIONNAL_POINTS = 0  # Number of points which are not part of the shape
+>     LINK_ADDITIONNAL_POINTS = False  # Link additionnal points with dotted lines
+547a558
+> 
+552c563
+<         
+---
+> 
+558c569
+<         
+---
+> 
+565c576
+<         self.points = np.zeros( (0, 2), float )
+---
+>         self.points = np.zeros((0, 2), float)
+568c579
+<                 
+---
+> 
+581c592
+<     
+---
+> 
+589c600
+<     
+---
+> 
+598,599c609,610
+<     
+<     #----Public API-------------------------------------------------------------
+---
+> 
+>     # ----Public API-------------------------------------------------------------
+608c619
+<         
+---
+> 
+612c623
+<         
+---
+> 
+620c631
+<         
+---
+> 
+627c638
+<     
+---
+> 
+647c658
+<                 t0 = QTransform.fromTranslate(xx0, yy0) 
+---
+>                 t0 = QTransform.fromTranslate(xx0, yy0)
+652c663
+<             tr = tr*t0
+---
+>             tr = tr * t0
+680c691
+<     
+---
+> 
+692c703
+<             if i < pts.shape[0]-self.ADDITIONNAL_POINTS:
+---
+>             if i < pts.shape[0] - self.ADDITIONNAL_POINTS:
+694c705
+<             d = (Cx-px)**2 + (Cy-py)**2
+---
+>             d = (Cx - px) ** 2 + (Cy - py) ** 2
+706c717
+<     
+---
+> 
+710c721
+<         
+---
+> 
+713,714c724,725
+<         self.points = np.resize(self.points, (N+1, 2))
+<         self.points[N,:] = pt
+---
+>         self.points = np.resize(self.points, (N + 1, 2))
+>         self.points[N, :] = pt
+722,723c733,734
+<             return self.points.shape[0]-1
+<     
+---
+>             return self.points.shape[0] - 1
+> 
+725,726c736,737
+<         self.points[handle,:] = pos
+<         
+---
+>         self.points[handle, :] = pos
+> 
+728,729c739,740
+<         dx = new_pos[0]-old_pos[0]
+<         dy = new_pos[1]-old_pos[1]
+---
+>         dx = new_pos[0] - old_pos[0]
+>         dy = new_pos[1] - old_pos[1]
+738c749
+<     
+---
+> 
+743c754,755
+<         
+---
+> 
+> 
+748a761
+> 
+752c765
+<         
+---
+> 
+756c769
+<         
+---
+> 
+760c773
+<     
+---
+> 
+773a787
+> 
+779c793,794
+<     ADDITIONNAL_POINTS = 1 # Number of points which are not part of the shape
+---
+>     ADDITIONNAL_POINTS = 1  # Number of points which are not part of the shape
+> 
+783c798
+<         
+---
+> 
+786c801
+<         Set the start point of this segment to (x1, y1) 
+---
+>         Set the start point of this segment to (x1, y1)
+790c805
+<                          (.5*(x1+x2), .5*(y1+y2))])
+---
+>                          (.5 * (x1 + x2), .5 * (y1 + y2))])
+793,794c808,809
+<         return tuple(self.points[0])+tuple(self.points[1])
+<     
+---
+>         return tuple(self.points[0]) + tuple(self.points[1])
+> 
+803c818
+<             delta = (nx, ny)-self.points.mean(axis=0)
+---
+>             delta = (nx, ny) - self.points.mean(axis=0)
+812c827
+<         #----------------------------------------------------------------------
+---
+>         # ----------------------------------------------------------------------
+815,816c830,831
+<         v12 = np.array((x2-x1, y2-y1))
+<         v13 = np.array((x3-x1, y3-y1))
+---
+>         v12 = np.array((x2 - x1, y2 - y1))
+>         v13 = np.array((x3 - x1, y3 - y1))
+820c835
+<         #----------------------------------------------------------------------
+---
+>         # ----------------------------------------------------------------------
+825a841
+> 
+830a847
+> 
+834c851
+<         
+---
+> 
+837c854
+<         Set the coordinates of the rectangle's top-left corner to (x1, y1), 
+---
+>         Set the coordinates of the rectangle's top-left corner to (x1, y1),
+843,844c860,861
+<         return tuple(self.points[0])+tuple(self.points[2])
+<         
+---
+>         return tuple(self.points[0]) + tuple(self.points[2])
+> 
+861c878
+<             delta = (nx, ny)-self.points.mean(axis=0)
+---
+>             delta = (nx, ny) - self.points.mean(axis=0)
+872a890
+> 
+880c898,899
+<     
+---
+> 
+> 
+883,884c902,904
+<     ADDITIONNAL_POINTS = 2 # Number of points which are not part of the shape
+<     LINK_ADDITIONNAL_POINTS = True # Link additionnal points with dotted lines
+---
+>     ADDITIONNAL_POINTS = 2  # Number of points which are not part of the shape
+>     LINK_ADDITIONNAL_POINTS = True  # Link additionnal points with dotted lines
+> 
+889c909
+<         
+---
+> 
+893c913
+<             
+---
+> 
+898c918
+<             
+---
+> 
+900c920
+<             
+---
+> 
+903c923
+<             
+---
+> 
+913,914c933,934
+<                          (.5*(x0+x3), .5*(y0+y3)),
+<                          (.5*(x1+x2), .5*(y1+y2))])
+---
+>                          (.5 * (x0 + x3), .5 * (y0 + y3)),
+>                          (.5 * (x1 + x2), .5 * (y1 + y2))])
+917,918c937,938
+<         return self.points.ravel()[:-self.ADDITIONNAL_POINTS*2]
+<         
+---
+>         return self.points.ravel()[:-self.ADDITIONNAL_POINTS * 2]
+> 
+921c941
+<         rect = tuple(self.points[0])+tuple(self.points[2])
+---
+>         rect = tuple(self.points[0]) + tuple(self.points[2])
+929c949
+<                 v0n = np.array((nx-x0, ny-y0))
+---
+>                 v0n = np.array((nx - x0, ny - y0))
+937c957
+<                 v1n = np.array((nx-x1, ny-y1))
+---
+>                 v1n = np.array((nx - x1, ny - y1))
+945c965
+<                 v2n = np.array((nx-x2, ny-y2))
+---
+>                 v2n = np.array((nx - x2, ny - y2))
+953c973
+<                 v3n = np.array((nx-x3, ny-y3))
+---
+>                 v3n = np.array((nx - x3, ny - y3))
+960,970c980,990
+<             x4, y4 = .5*(x0+x3), .5*(y0+y3)
+<             x5, y5 = .5*(x1+x2), .5*(y1+y2)
+<             nx, ny = x0+nx-x4, y0+ny-y4 # moving handle #4 to handle #0
+<             
+<             v10 = np.array((x0-x1, y0-y1))
+<             v12 = np.array((x2-x1, y2-y1))
+<             v10n = np.array((nx-x1, ny-y1))
+<             k = np.linalg.norm(v12)/np.linalg.norm(v10)
+<             v12n = vector_rotation(-np.pi/2, *v10n)*k
+<             x2, y2 = v12n+np.array([x1, y1])
+<             x3, y3 = v12n+v10n+np.array([x1, y1])
+---
+>             x4, y4 = .5 * (x0 + x3), .5 * (y0 + y3)
+>             x5, y5 = .5 * (x1 + x2), .5 * (y1 + y2)
+>             nx, ny = x0 + nx - x4, y0 + ny - y4  # moving handle #4 to handle #0
+> 
+>             v10 = np.array((x0 - x1, y0 - y1))
+>             v12 = np.array((x2 - x1, y2 - y1))
+>             v10n = np.array((nx - x1, ny - y1))
+>             k = np.linalg.norm(v12) / np.linalg.norm(v10)
+>             v12n = vector_rotation(-np.pi / 2, *v10n) * k
+>             x2, y2 = v12n + np.array([x1, y1])
+>             x3, y3 = v12n + v10n + np.array([x1, y1])
+972,978c992,998
+<             
+<             dx = x5-.5*(x1+x2)
+<             dy = y5-.5*(y1+y2)
+<             x0, y0 = x0+dx, y0+dy
+<             x1, y1 = x1+dx, y1+dy
+<             x2, y2 = x2+dx, y2+dy
+<             x3, y3 = x3+dx, y3+dy
+---
+> 
+>             dx = x5 - .5 * (x1 + x2)
+>             dy = y5 - .5 * (y1 + y2)
+>             x0, y0 = x0 + dx, y0 + dy
+>             x1, y1 = x1 + dx, y1 + dy
+>             x2, y2 = x2 + dx, y2 + dy
+>             x3, y3 = x3 + dx, y3 + dy
+981,991c1001,1011
+<             x4, y4 = .5*(x0+x3), .5*(y0+y3)
+<             x5, y5 = .5*(x1+x2), .5*(y1+y2)
+<             nx, ny = x1+nx-x5, y1+ny-y5 # moving handle #5 to handle #1
+<             
+<             v01 = np.array((x1-x0, y1-y0))
+<             v03 = np.array((x3-x0, y3-y0))
+<             v01n = np.array((nx-x0, ny-y0))
+<             k = np.linalg.norm(v03)/np.linalg.norm(v01)
+<             v03n = vector_rotation(np.pi/2, *v01n)*k
+<             x3, y3 = v03n+np.array([x0, y0])
+<             x2, y2 = v03n+v01n+np.array([x0, y0])
+---
+>             x4, y4 = .5 * (x0 + x3), .5 * (y0 + y3)
+>             x5, y5 = .5 * (x1 + x2), .5 * (y1 + y2)
+>             nx, ny = x1 + nx - x5, y1 + ny - y5  # moving handle #5 to handle #1
+> 
+>             v01 = np.array((x1 - x0, y1 - y0))
+>             v03 = np.array((x3 - x0, y3 - y0))
+>             v01n = np.array((nx - x0, ny - y0))
+>             k = np.linalg.norm(v03) / np.linalg.norm(v01)
+>             v03n = vector_rotation(np.pi / 2, *v01n) * k
+>             x3, y3 = v03n + np.array([x0, y0])
+>             x2, y2 = v03n + v01n + np.array([x0, y0])
+993,999c1013,1019
+<             
+<             dx = x4-.5*(x0+x3)
+<             dy = y4-.5*(y0+y3)
+<             x0, y0 = x0+dx, y0+dy
+<             x1, y1 = x1+dx, y1+dy
+<             x2, y2 = x2+dx, y2+dy
+<             x3, y3 = x3+dx, y3+dy
+---
+> 
+>             dx = x4 - .5 * (x0 + x3)
+>             dy = y4 - .5 * (y0 + y3)
+>             x0, y0 = x0 + dx, y0 + dy
+>             x1, y1 = x1 + dx, y1 + dy
+>             x2, y2 = x2 + dx, y2 + dy
+>             x3, y3 = x3 + dx, y3 + dy
+1002c1022
+<             delta = (nx, ny)-self.points.mean(axis=0)
+---
+>             delta = (nx, ny) - self.points.mean(axis=0)
+1013a1034
+> 
+1017c1038
+< #FIXME: EllipseShape's ellipse drawing is invalid when aspect_ratio != 1
+---
+> # FIXME: EllipseShape's ellipse drawing is invalid when aspect_ratio != 1
+1019a1041
+> 
+1024c1046
+<         
+---
+> 
+1032c1054
+<         yline.translate(xline.pointAt(.5)-xline.p1())
+---
+>         yline.translate(xline.pointAt(.5) - xline.p1())
+1037c1059
+<         yline.translate(yline.pointAt(.5)-yline.p2())
+---
+>         yline.translate(yline.pointAt(.5) - yline.p2())
+1040c1062
+<                          
+---
+> 
+1043,1044c1065,1066
+<         return tuple(self.points[0])+tuple(self.points[1])
+<                          
+---
+>         return tuple(self.points[0]) + tuple(self.points[1])
+> 
+1049c1071
+<         xline.translate(yline.pointAt(.5)-yline.p1())
+---
+>         xline.translate(yline.pointAt(.5) - yline.p1())
+1052c1074
+<         xline.translate(xline.pointAt(.5)-xline.p2())
+---
+>         xline.translate(xline.pointAt(.5) - xline.p2())
+1055c1077
+<                          
+---
+> 
+1058,1059c1080,1081
+<         return tuple(self.points[2])+tuple(self.points[3])
+<         
+---
+>         return tuple(self.points[2]) + tuple(self.points[3])
+> 
+1063,1066c1085,1088
+<         xc, yc = .5*(x0+x1), .5*(y0+y1)
+<         radius = .5*np.sqrt((x1-x0)**2+(y1-y0)**2)
+<         return xc-radius, yc-radius, xc+radius, yc+radius
+<         
+---
+>         xc, yc = .5 * (x0 + x1), .5 * (y0 + y1)
+>         radius = .5 * np.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2)
+>         return xc - radius, yc - radius, xc + radius, yc + radius
+> 
+1070c1092
+<     
+---
+> 
+1073c1095
+<         self.set_xdiameter(x0, .5*(y0+y1), x1, .5*(y0+y1))
+---
+>         self.set_xdiameter(x0, .5 * (y0 + y1), x1, .5 * (y0 + y1))
+1079c1101
+<         line1 = QLineF(points[2], points[3])        
+---
+>         line1 = QLineF(points[2], points[3])
+1091c1113
+<                                              self.xAxis(), self.yAxis(), pos)
+---
+>                                                          self.xAxis(), self.yAxis(), pos)
+1118c1140
+<         return QLineF(*(tuple(self.points[0])+tuple(self.points[1])))
+---
+>         return QLineF(*(tuple(self.points[0]) + tuple(self.points[1])))
+1121c1143
+<         return QLineF(*(tuple(self.points[2])+tuple(self.points[3])))
+---
+>         return QLineF(*(tuple(self.points[2]) + tuple(self.points[3])))
+1130c1152
+<                 x1, y1 = x1+x0-nx, y1+y0-ny
+---
+>                 x1, y1 = x1 + x0 - nx, y1 + y0 - ny
+1137c1159
+<                 x0, y0 = x0+x1-nx, y0+y1-ny
+---
+>                 x0, y0 = x0 + x1 - nx, y0 + y1 - ny
+1144c1166
+<                 x3, y3 = x3+x2-nx, y3+y2-ny
+---
+>                 x3, y3 = x3 + x2 - nx, y3 + y2 - ny
+1151c1173
+<                 x2, y2 = x2+x3-nx, y2+y3-ny
+---
+>                 x2, y2 = x2 + x3 - nx, y2 + y3 - ny
+1154c1176
+<             delta = (nx, ny)-self.points.mean(axis=0)
+---
+>             delta = (nx, ny) - self.points.mean(axis=0)
+1165a1188
+> 
+1171a1195
+> 
+1176,1177c1200,1201
+<         self.arrow_angle = 15 # degrees
+<         self.arrow_size = 0.05 # % of axe length
+---
+>         self.arrow_angle = 15  # degrees
+>         self.arrow_size = 0.05  # % of axe length
+1201c1225
+<         
+---
+> 
+1207c1231
+<     
+---
+> 
+1214c1238
+<     
+---
+> 
+1217c1241
+<         matrix = np.array([(p1-p0)/dx, (p2-p0)/dy, p0])
+---
+>         matrix = np.array([(p1 - p0) / dx, (p2 - p0) / dy, p0])
+1222,1223c1246,1247
+<         p3x = p1[0]+p2[0]-p0[0]
+<         p3y = p1[1]+p2[1]-p0[1]
+---
+>         p3x = p1[0] + p2[0] - p0[0]
+>         p3y = p1[1] + p2[1] - p0[1]
+1227c1251
+<         PolygonShape.set_style(self, section, option+"/border")
+---
+>         PolygonShape.set_style(self, section, option + "/border")
+1234,1237c1258,1261
+<         d1x = p1[0]-p0[0]
+<         d1y = p1[1]-p0[1]
+<         d2x = p2[0]-p0[0]
+<         d2y = p2[1]-p0[1]
+---
+>         d1x = p1[0] - p0[0]
+>         d1y = p1[1] - p0[1]
+>         d2x = p2[0] - p0[0]
+>         d2y = p2[1] - p0[1]
+1252,1255c1276,1279
+<             d3x = pos[0]-p0[0]
+<             d3y = pos[1]-p0[1]
+<             det = d1x*d2y-d2x*d1y
+<             if abs(det)<1e-6:
+---
+>             d3x = pos[0] - p0[0]
+>             d3y = pos[1] - p0[1]
+>             det = d1x * d2y - d2x * d1y
+>             if abs(det) < 1e-6:
+1260,1261c1284,1285
+<             a = (d2y*d3x - d2x*d3y) / det
+<             b = (-d1y*d3x + d1x*d3y) / det
+---
+>             a = (d2y * d3x - d2x * d3y) / det
+>             b = (-d1y * d3x + d1x * d3y) / det
+1263,1264c1287,1288
+<             pp1 = p0[0] + a*d1x, p0[1] + a*d1y
+<             pp2 = p0[0] + b*d2x, p0[1] + b*d2y
+---
+>             pp1 = p0[0] + a * d1x, p0[1] + a * d1y
+>             pp2 = p0[0] + b * d2x, p0[1] + b * d2y
+1269c1293
+<             
+---
+> 
+1286c1310
+<         
+---
+> 
+1289c1313
+<         angle = pi*self.arrow_angle/180.
+---
+>         angle = pi * self.arrow_angle / 180.
+1291,1293c1315,1317
+<         d1x = (xMap.transform(p1[0])-xMap.transform(p0[0]))
+<         d1y = (yMap.transform(p1[1])-yMap.transform(p0[1]))
+<         norm = sqrt(d1x**2+d1y**2)
+---
+>         d1x = (xMap.transform(p1[0]) - xMap.transform(p0[0]))
+>         d1y = (yMap.transform(p1[1]) - yMap.transform(p0[1]))
+>         norm = sqrt(d1x ** 2 + d1y ** 2)
+1296,1297c1320,1321
+<         d1x *= sz/norm
+<         d1y *= sz/norm
+---
+>         d1x *= sz / norm
+>         d1y *= sz / norm
+1303,1307c1327,1331
+<         a0x = a1x - ca*d1x + sa*n1x
+<         a0y = a1y - ca*d1y + sa*n1y
+<         a2x = a1x - ca*d1x - sa*n1x
+<         a2y = a1y - ca*d1y - sa*n1y
+<         
+---
+>         a0x = a1x - ca * d1x + sa * n1x
+>         a0y = a1y - ca * d1y + sa * n1y
+>         a2x = a1x - ca * d1x - sa * n1x
+>         a2y = a1y - ca * d1y - sa * n1y
+> 
+1313c1337
+<         
+---
+> 
+1321c1345
+<     
+---
+> 
+1327c1351,1352
+<         
+---
+> 
+> 
+1347,1348c1372,1373
+<         self.shapeparam.update_range(self) # creates all the above QObjects
+<         
+---
+>         self.shapeparam.update_range(self)  # creates all the above QObjects
+> 
+1356c1381
+<         
+---
+> 
+1367c1392
+<             
+---
+> 
+1372c1397
+<         
+---
+> 
+1384c1409
+<         x0, x1, y = self.get_handles_pos()        
+---
+>         x0, x1, y = self.get_handles_pos()
+1387c1412
+<         
+---
+> 
+1391,1393c1416,1418
+<         d0 = fabs(x0-x)
+<         d1 = fabs(x1-x)
+<         d2 = fabs((x0+x1)/2-x)
+---
+>         d0 = fabs(x0 - x)
+>         d1 = fabs(x1 - x)
+>         d2 = fabs((x0 + x1) / 2 - x)
+1397c1422
+<         inside = bool(x0<x<x1)
+---
+>         inside = bool(x0 < x < x1)
+1399c1424
+<         
+---
+> 
+1405c1430
+<         
+---
+> 
+1413c1438
+<             move = val-(self._max+self._min)/2
+---
+>             move = val - (self._max + self._min) / 2
+1418c1443
+<         #self.plot().replot()
+---
+>         # self.plot().replot()
+1430c1455
+<         dx = new_pos[0]-old_pos[0]
+---
+>         dx = new_pos[0] - old_pos[0]
+1438c1463
+<         
+---
+> 
+1442c1467
+<     
+---
+> 
+1448c1473,1474
+<         
+---
+> 
+> 

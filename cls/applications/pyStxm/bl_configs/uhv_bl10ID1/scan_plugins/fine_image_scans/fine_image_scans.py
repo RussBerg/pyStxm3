@@ -29,8 +29,8 @@ from cls.utils.dict_utils import dct_get, dct_put
 from cls.utils.roi_dict_defs import *
 from cls.utils.log import get_module_logger
 
-from cls.applications.pyStxm.bl_configs.basic.scan_plugins.fine_image_scans.SampleFineImageWithE712WavegenScan import SampleFineImageWithE712WavegenScanClass
-from cls.applications.pyStxm.bl_configs.basic.scan_plugins.fine_image_scans.SampleFineImageScan import FineSampleImageScanClass
+from cls.applications.pyStxm.bl_configs.uhv_bl10ID1.scan_plugins.fine_image_scans.SampleFineImageWithE712WavegenScan import SampleFineImageWithE712WavegenScanClass
+from cls.applications.pyStxm.bl_configs.uhv_bl10ID1.scan_plugins.fine_image_scans.SampleFineImageScan import FineSampleImageScanClass
 
 _logger = get_module_logger(__name__)
 

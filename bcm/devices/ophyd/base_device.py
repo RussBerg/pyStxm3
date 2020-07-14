@@ -23,6 +23,9 @@ class BaseDevice(QtCore.QObject):
         super(BaseDevice, self).__init__()
         #name here for compatability
         self.name = sig_name
+        # name here for compatability
+        self.prefix = sig_name
+
         self.sig_name = sig_name
         self.rd_only = rd_only
         self.can_write = True

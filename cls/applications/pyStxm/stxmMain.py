@@ -62,7 +62,7 @@ from cls.appWidgets.user_account.login import loginWidget
 #from cls.applications.pyStxm.widgets.thumbnailViewer_wip import ContactSheet
 from cls.applications.pyStxm.widgets.thumbnailViewer import ContactSheet
 from cls.appWidgets.dialogs import excepthook
-from cls.appWidgets.spyder_console import ShellWidget#, ShellDock
+#from cls.appWidgets.spyder_console import ShellWidget#, ShellDock
 from cls.appWidgets.thread_worker import Worker
 from cls.app_data.defaults import master_colors, get_style, rgb_as_hex, master_q_colors
 
@@ -82,7 +82,7 @@ from cls.types.beamline import BEAMLINE_IDS
 from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
 
 import suitcase.nxstxm as suit_nxstxm
-import suitcase.nxptycho as suit_nxptycho
+import cls.data_io.nxptycho as suit_nxptycho
 
 from bcm.devices.device_names import *
 
@@ -1756,14 +1756,15 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
         :returns: None
         """
-        # ns = {'main': self, 'widget': self, 'det_scan' : scans[1]}
-        #sscans = self.init_sscans_for_console()
-        ns = {'main': self, 'pythonShell': self.pythonshell, 'g': globals(), 'MAIN_OBJ': MAIN_OBJ, 'scans_plgins': self.scan_tbox_widgets}
-        # msg = "Try for example: widget.set_text('foobar') or win.close()"
-        #self.pythonshell = ShellWidget(parent=None, namespace=ns, commands=[], multithreaded=True, exitfunc=exit)
-        self.pythonshell = ShellWidget(parent=None, namespace=ns, commands=[], multithreaded=True)
-        self.pyconsole_layout.addWidget(self.pythonshell)
-        # self.apply_stylesheet(self.pythonshell, self.qssheet)
+        pass
+        # # ns = {'main': self, 'widget': self, 'det_scan' : scans[1]}
+        # #sscans = self.init_sscans_for_console()
+        # ns = {'main': self, 'pythonShell': self.pythonshell, 'g': globals(), 'MAIN_OBJ': MAIN_OBJ, 'scans_plgins': self.scan_tbox_widgets}
+        # # msg = "Try for example: widget.set_text('foobar') or win.close()"
+        # #self.pythonshell = ShellWidget(parent=None, namespace=ns, commands=[], multithreaded=True, exitfunc=exit)
+        # self.pythonshell = ShellWidget(parent=None, namespace=ns, commands=[], multithreaded=True)
+        # self.pyconsole_layout.addWidget(self.pythonshell)
+        # # self.apply_stylesheet(self.pythonshell, self.qssheet)
 
 
     def on_toolbox_changed(self, idx):

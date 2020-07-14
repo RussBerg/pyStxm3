@@ -336,6 +336,8 @@ class BaseScan(BaseObject):
         '''
         dct = {}
         seq_num = 0
+        nypnts = int(nypnts)
+        nxpnts = int(nxpnts)
         for ev_idx in list(range(0, energies)):
             row_lst = list(range(0, nypnts))
             col_lst = list(range(0, nxpnts))

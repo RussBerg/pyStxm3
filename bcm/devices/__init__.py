@@ -40,7 +40,7 @@ elif(USE_OPHYD_EPICS):
     from .ophyd.scan import Scan
     from .ophyd.transform import Transform
     from .ophyd.dio import digitalIO
-    from .ophyd.counter import BaseGate, BaseCounter
+    from .ophyd.counter import BaseGate, BaseCounter, BaseOphydGate
     from .ophyd.stringin import Stringin
     from .ophyd.waveform import Waveform
     from .ophyd.motor import Motor_Qt

@@ -27,7 +27,6 @@ class Mbbo(BaseObject):
 					'TVVL', 'TTVL', 'FTVL', 'FFVL']
 		self.str_flds = ['ZRST', 'ONST', 'TWST', 'THST', 'FRST', 'FVST', 'SXST', 'SVST', 'EIST', 'NIST', 'TEST', 'ELST',
 					'TVST', 'TTST', 'FTST', 'FFST']
-
 		self.main_dev = self.add_device(base_signal_name)
 		self.changed = self.main_dev.changed
 		self.on_connect = self.main_dev.on_connect

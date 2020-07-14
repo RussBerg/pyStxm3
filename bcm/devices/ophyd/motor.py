@@ -77,7 +77,6 @@ class Motor_Qt(EpicsMotor):
 
     max_velo = Cpt(EpicsSignal, '.VMAX', kind='omitted')
 
-    #todo: this needs to be standardized so that all attrs are lower case
     #the following is here for compatability with e712_sample_motor
 
     def __init__(self, *args, **kwargs):

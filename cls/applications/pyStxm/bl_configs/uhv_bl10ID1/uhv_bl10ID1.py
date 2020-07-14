@@ -18,7 +18,7 @@ from bcm.devices import Mbbo
 from bcm.devices import Bo
 from bcm.devices import Motor_Qt
 from bcm.devices import sample_abstract_motor, e712_sample_motor
-from bcm.devices import BaseGate, BaseCounter
+from bcm.devices import BaseGate, BaseCounter, BaseOphydGate
 from bcm.devices.device_names import *
 from bcm.devices import PvShutter
 from bcm.devices import E712WGDevice
@@ -44,9 +44,9 @@ blConfig = ConfigClass(os.path.join(os.path.dirname(__file__),'%s.ini' % bl_conf
 scanning_mode = blConfig.get_value('SCANNING_MODE','scanning_mode')
 
 # when simulating un comment the next line
-DEVPRFX = 'SIM_'
+#DEVPRFX = 'SIM_'
 # and comment this one
-# DEVPRFX = ''
+DEVPRFX = ''
 
 
 # def make_basedevice(cat, nm, desc='', units='', rd_only=False, devcfg=None):
@@ -73,7 +73,8 @@ class device_config(dev_config_base):
         self.init_devices()
 
         self.device_reverse_lookup_dct = self.make_device_reverse_lookup_dict()
-        # self.get_cainfo()
+
+        self.perform_device_connection_check(verbose=False)
 
         if (self.sample_pos_mode is sample_positioning_modes.GONIOMETER):
             self.set_exclude_positioners_list(
@@ -95,61 +96,7 @@ class device_config(dev_config_base):
 
         print('leaving device_config')
 
-    def parse_cainfo_stdout_to_dct(self, s):
-        dct = {}
-        s2 = s.split('\n')
-        for l in s2:
-            l2 = l.replace(' ', '')
-            l3 = l2.split(':')
-            if (len(l3) > 1):
-                dct[l3[0]] = l3[1]
-        return (dct)
 
-    def do_cainfo(self, pvname):
-        import subprocess
-        print('cainfo [%s]' % pvname)
-        proc = subprocess.Popen('cainfo %s' % pvname, stdout=subprocess.PIPE)
-        stdout_str = proc.stdout.read()
-        _dct = self.parse_cainfo_stdout_to_dct(stdout_str)
-        return (_dct)
-
-    def get_cainfo(self):
-
-        skip_lst = ['PVS_DONT_RECORD', 'PRESETS', 'DETECTORS_NO_RECORD', 'WIDGETS']
-        dev_dct = {}
-        sections = list(self.devices.keys())
-        for section in sections:
-            keys = []
-            if (section not in skip_lst):
-                keys = list(self.devices[section].keys())
-                # check to see if this is a subsectioned section that has pvs for BL (beamline) and ES (endstation)
-                # if so do those
-                if (keys == ['BL', 'ES']):
-                    dev_dct[section] = {}
-                    for subsec in keys:
-                        for pvname in list(self.devices[section][subsec].keys()):
-                            _dct = self.do_cainfo(pvname)
-                            dev_dct[section][pvname] = {}
-                            dev_dct[section][pvname]['dev'] = self.devices[section][subsec][pvname]
-                            dev_dct[section][pvname]['cainfo'] = _dct
-                            if (_dct['State'].find('dis') > -1):
-                                print('[%s] does not appear to exist' % k)
-                                print(_dct)
-                else:
-                    for k in keys:
-                        dev = self.devices[section][k]
-                        dev_dct[section] = {}
-                        dev_dct[section][k] = {}
-                        dev_dct[section][k]['dev'] = dev
-                        if (not hasattr(dev, 'get_name')):
-                            print('crap!', dev)
-                        _dct = self.do_cainfo(dev.get_name())
-                        dev_dct[section][k]['cainfo'] = _dct
-                        if (_dct['State'].find('dis') > -1):
-                            print('[%s] does not appear to exist' % k)
-                            print(_dct)
-
-        # dev_dct
 
     def init_devices(self):
 
@@ -326,7 +273,9 @@ def connect_standard_beamline_positioners(dev_dct, prfx='uhv', devcfg=None):
 
 def connect_devices(dev_dct, prfx='uhv', devcfg=None):
     devcfg.msg_splash("connecting to: [%s%sCO:gate]" % (DEVPRFX, prfx))
-    dev_dct['DIO'][DNM_GATE] = BaseGate('%s%sCO:gate' % (DEVPRFX, prfx))
+    #dev_dct['DIO'][DNM_GATE] = BaseGate('%s%sCO:gate' % (DEVPRFX, prfx))
+    dev_dct['DIO'][DNM_GATE] = BaseOphydGate('%s%sCO:gate' % (DEVPRFX, prfx), name=DNM_GATE)
+
     devcfg.msg_splash("connecting to: [%s]" % DNM_SHUTTER)
     dev_dct['DIO'][DNM_SHUTTER] = PvShutter('%s%sDIO:shutter:ctl' % (DEVPRFX, prfx))
     # devcfg.msg_splash("connecting to: [%s]" % 'ShutterTaskRun')WavGen3UseTblNum
@@ -334,7 +283,7 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
 
     devcfg.msg_splash("connecting to: [%s]" % DNM_COUNTER_APD)
     #dev_dct['DETECTORS'][DNM_COUNTER_APD] = BaseCounter('%s%sCI:counter' % (DEVPRFX, prfx))
-    dev_dct['DETECTORS'][DNM_COUNTER_APD] = PointDetectorDevice('%s%sCI2:counter:' % (DEVPRFX, prfx),  name=DNM_COUNTER_APD, scale_val=1.0)
+    dev_dct['DETECTORS'][DNM_COUNTER_APD] = PointDetectorDevice('%s%sCI:counter:' % (DEVPRFX, prfx),  name=DNM_COUNTER_APD, scale_val=1.0)
     dev_dct['DETECTORS'][DNM_DEFAULT_COUNTER] = PointDetectorDevice('%s%sCI:counter:' % (DEVPRFX, prfx),
                                                                 name=DNM_DEFAULT_COUNTER, scale_val=100.0)
 
@@ -342,7 +291,8 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
     dev_dct['DETECTORS'][DNM_PMT] = make_basedevice('DETECTORS', '%s%sPMT:ctr:SingleValue_RBV' % (DEVPRFX, prfx),
                                                     devcfg=devcfg)
 
-    # dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = GreatEyesDetectorCam('%sCCD1610-02:cam1:'  % (DEVPRFX), name='GE_CCD')
+    #dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = SimGreatEyesCCD('SIMCCD1610-I10-02:', name=DNM_GREATEYES_CCD)
+    #dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = GreatEyesDetectorCam('%sCCD1610-02:cam1:'  % (DEVPRFX), name='GE_CCD')
     # if(DEVPRFX.find('SIM')):
     #     dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = SimGreatEyesCCD('SIMCCD1610-I10-02:', name=DNM_GREATEYES_CCD)
     # else:
@@ -350,7 +300,7 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
 
     dev_dct['DETECTORS'][DNM_POINT_DET] = PointDetectorDevice('%s%sCI:counter:' % (DEVPRFX, prfx),
                                                               name=DNM_POINT_DET, scale_val=500.0)
-    dev_dct['DIO'][DNM_POINT_GATE] = GateDevice('%suhvCO:gate:' % (DEVPRFX), name='gate_control')
+    dev_dct['DIO'][DNM_POINT_GATE] = GateDevice('%s%sCO:gate:' % (DEVPRFX, prfx), name='gate_control')
 
     dev_dct['DETECTORS'][DNM_LINE_DET] = LineDetectorDevice('%s%sCI:counter:' % (DEVPRFX, prfx),
                                                             name=DNM_DEFAULT_COUNTER)
@@ -413,17 +363,17 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
                                                      devcfg=devcfg)
     dev_dct['PVS'][DNM_ZPZ_RBV] = make_basedevice('PVS', '%sIOC:m111C.RBV' % (DEVPRFX), units='um', devcfg=devcfg)
 
-    dev_dct['PVS'][DNM_ZP_DEF_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:def_A' % (DEVPRFX, prfx),
+    dev_dct['PVS'][DNM_ZP_DEF_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:def.A' % (DEVPRFX, prfx),
                                                    devcfg=devcfg)
-    dev_dct['PVS'][DNM_ZP_DEF1_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp1:def_A' % (DEVPRFX, prfx),
+    dev_dct['PVS'][DNM_ZP_DEF1_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp1:def.A' % (DEVPRFX, prfx),
                                                     devcfg=devcfg)
-    dev_dct['PVS'][DNM_ZP_DEF2_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp2:def_A' % (DEVPRFX, prfx),
+    dev_dct['PVS'][DNM_ZP_DEF2_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp2:def.A' % (DEVPRFX, prfx),
                                                     devcfg=devcfg)
-    dev_dct['PVS'][DNM_ZP_DEF3_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp3:def_A' % (DEVPRFX, prfx),
+    dev_dct['PVS'][DNM_ZP_DEF3_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp3:def.A' % (DEVPRFX, prfx),
                                                     devcfg=devcfg)
-    dev_dct['PVS'][DNM_ZP_DEF4_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp4:def_A' % (DEVPRFX, prfx),
+    dev_dct['PVS'][DNM_ZP_DEF4_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp4:def.A' % (DEVPRFX, prfx),
                                                     devcfg=devcfg)
-    dev_dct['PVS'][DNM_ZP_DEF5_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp5:def_A' % (DEVPRFX, prfx),
+    dev_dct['PVS'][DNM_ZP_DEF5_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp5:def.A' % (DEVPRFX, prfx),
                                                     devcfg=devcfg)
     # dev_dct['PVS']['Zp_def6_A'] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp6:def.A' % (DEVPRFX, prfx), devcfg=devcfg)
     # dev_dct['PVS']['Zp_def7_A'] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp7:def.A' % (DEVPRFX, prfx), devcfg=devcfg)

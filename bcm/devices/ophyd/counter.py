@@ -26,6 +26,10 @@ from cls.utils.dict_utils import dct_get, dct_put
 from cls.utils.thread_logger import doprint
 from cls.utils.enum_utils import Enum
 
+import ophyd
+from ophyd import Component as Cpt, EpicsSignal, EpicsSignalRO, DeviceStatus
+
+
 trig_types = Enum('DAQmx_Val_None', 'DAQmx_Val_AnlgEdge', 'DAQmx_Val_AnlgWin', 'DAQmx_Val_DigEdge',
                   'DAQmx_Val_DigPattern', 'SOFT_TRIGGER')
 
@@ -118,6 +122,7 @@ class BaseGate(BaseObject):
         self.p_dwell = 2.0
         self.p_duty_cycle = 0.5
         self.p_num_points = 1
+        self.prefix = name
 
         self.run = self.add_device('Run', _delim=':', is_dev_attr=True)
         self.dwell = self.add_device('Dwell',_delim=':', is_dev_attr=True)
@@ -156,7 +161,7 @@ class BaseGate(BaseObject):
 
     # self.configure()
     def get_name(self):
-        return (self.p_prefix + ':Run')
+        return (self.prefix + ':Run')
 
     # def on_running(self, **kwargs):
     #     rawData = kwargs['value']
@@ -247,6 +252,137 @@ class BaseGate(BaseObject):
     def set_dwell(self, val):
         self.dwell.put(val)
 
+class BaseOphydGate(ophyd.Device):
+    """
+    This class represents a counter output task that generates a pulse train used to gate other
+    counter tasks, this it is stored here in the counter module
+    """
+    run = Cpt(EpicsSignal, ':Run', kind='omitted')
+    dwell = Cpt(EpicsSignal, ':Dwell', kind='omitted')
+    max_points = Cpt(EpicsSignal, ':MaxPoints', kind='omitted')
+    duty_cycle = Cpt(EpicsSignal, ':DutyCycle', kind='omitted')
+    trig_type = Cpt(EpicsSignal, ':TriggerType', kind='omitted')
+    trig_delay = Cpt(EpicsSignal, ':TriggerDelay', kind='omitted')
+    retrig = Cpt(EpicsSignal, ':Retriggerable', kind='omitted')
+    device_select = Cpt(EpicsSignal, ':DeviceSelect', kind='omitted')
+    counter_select = Cpt(EpicsSignal, ':CounterSelect', kind='omitted')
+    sample_mode = Cpt(EpicsSignal, ':SampleMode', kind='omitted')
+    output_idle_state = Cpt(EpicsSignal, ':OutputIdleState', kind='omitted')
+    clock_src_select = Cpt(EpicsSignal, ':ClockSrcSelect', kind='omitted')
+    retriggerable = Cpt(EpicsSignal, ':Retriggerable', kind='omitted')
+    trigger_type = Cpt(EpicsSignal, ':TriggerType', kind='omitted')
+    trig_src_select = Cpt(EpicsSignal, ':TrigSrcSelect', kind='omitted')
+    edge_select = Cpt(EpicsSignal, ':EdgeSelect', kind='omitted')
+    trigger_delay = Cpt(EpicsSignal, ':TriggerDelay', kind='omitted')
+    soft_trigger = Cpt(EpicsSignal, ':SoftTrigger', kind='omitted')
+    run_rbv = Cpt(EpicsSignal, ':Run_RBV', kind='omitted')
+
+
+    def __init__(self, prefix, name, **kwargs):
+        super(BaseOphydGate, self).__init__(prefix, name=name, **kwargs)
+        self.p_dwell = 2.0
+        self.p_duty_cycle = 0.5
+        self.p_num_points = 1
+        self.run_rbv.subscribe(self.on_running)
+
+        self.trig = None
+
+        self.isRunning = 0
+        #time.sleep(0.4)
+        self.stop()
+
+    # self.configure()
+    def get_name(self):
+        return (self.prefix + ':Run')
+
+    def on_running(self, **kwargs):
+        #rawData = kwargs['value']
+        # print 'BaseGate: on_running' , kwargs
+        self.isRunning = kwargs['value']
+    # def on_running(self, val):
+    #     # print 'BaseGate: on_running' , kwargs
+    #     self.isRunning = val
+
+    def wait_till_stopped(self, proc_qt_msgs=True):
+        while self.isRunning:
+            time.sleep(0.1)
+            if (proc_qt_msgs):
+                QtWidgets.QApplication.processEvents()
+
+    def wait_till_running(self, proc_qt_msgs=True):
+        while not self.isRunning:
+            time.sleep(0.1)
+            if (proc_qt_msgs):
+                QtWidgets.QApplication.processEvents()
+
+    def wait_till_running_polling(self, proc_qt_msgs=True):
+        idx = 0
+        while (not self.run_rbv.get() and (idx < 10)):
+            time.sleep(0.1)
+            if (proc_qt_msgs):
+                QtWidgets.QApplication.processEvents()
+            idx += 1
+
+    def stop(self):
+        if(self.run.connected):
+            self.run.put(0)
+        # self.isRunning = 0
+
+    def configure(self, num_points=1, dwell=2.0, duty=0.5, soft_trig=False, trig_delay=0.0):
+        self.p_dwell = dwell
+        self.p_duty_cycle = duty
+        self.p_num_points = num_points
+
+        self.max_points.put(self.p_num_points)
+        self.dwell.put(self.p_dwell)
+        self.duty_cycle.put(self.p_duty_cycle)
+        self.trig_delay.put(trig_delay)
+
+        if (self.trig is not None):
+            self.trig_type.put(trig_types.SOFT_TRIGGER)
+        else:
+            self.trig_type.put(trig_types.DAQMX_VAL_DIGEDGE)
+
+    def get_report(self):
+        """ return a dict that reresents all of the settings for this device """
+        dct = {}
+        dct_put(dct, 'dwell', self.dwell.get())
+        dct_put(dct, 'max_points', self.max_points.get())
+        dct_put(dct, 'duty_cycle', self.duty_cycle.get())
+        dct_put(dct, 'trig_type', self.trig_type.get())
+        dct_put(dct, 'trig_delay', self.trig_delay.get())
+        dct_put(dct, 'retrig', self.retrig.get())
+        dct_put(dct, 'device_select', self.device_select.get())
+        dct_put(dct, 'counter_select', self.counter_select.get())
+        dct_put(dct, 'sample_mode', self.sample_mode.get())
+        dct_put(dct, 'output_idle_state', self.output_idle_state.get())
+        dct_put(dct, 'clock_src_select', self.clock_src_select.get())
+        dct_put(dct, 'retriggerable', self.retriggerable.get())
+        dct_put(dct, 'trigger_type', self.trigger_type.get())
+        dct_put(dct, 'trig_src_select', self.trig_src_select.get())
+        dct_put(dct, 'edge_select', self.edge_select.get())
+        dct_put(dct, 'trigger_delay', self.trigger_delay.get())
+        return (dct)
+
+    def load_defaults(self):
+        self.duty_cycle.set(0.5)
+        self.max_points(1)
+        self.retrig.set(0)
+
+    def open(self):
+        self.start()
+
+    def start(self):
+        self.run.put(1)
+
+    # self.isRunning = 1
+
+    def do_trigger(self):
+        if (self.trig is not None):
+            self.trig.put(1)
+
+    def set_dwell(self, val):
+        self.dwell.put(val)
 
 class BaseCounter(BaseObject):
     changed = QtCore.pyqtSignal(int, object)
@@ -254,7 +390,7 @@ class BaseCounter(BaseObject):
 
     def __init__(self, name=None, **kwargs):
         super(BaseCounter, self).__init__(name=name, **kwargs)
-        self.name = self.name = name
+        self.name = self.prefix = name
         self.data_q = queue.Queue()
         self.proc_queue.connect(self.on_proc_queue)
 

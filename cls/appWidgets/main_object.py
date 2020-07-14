@@ -749,6 +749,110 @@ class dev_config_base(QtCore.QObject):
 
         self.posner_reverse_lookup_dct = {}
 
+    def parse_cainfo_stdout_to_dct(self, s):
+        dct = {}
+        s2 = s.split('\n')
+        for l in s2:
+            l2 = l.replace(' ', '')
+            l3 = l2.split(':')
+            if (len(l3) > 1):
+                dct[l3[0]] = l3[1]
+        return (dct)
+
+    def do_pv_conn_check(self, num_pvs, pvname, verbose=False):
+        import subprocess
+        proc = subprocess.Popen('cainfo %s' % pvname, stdout=subprocess.PIPE)
+        stdout_str = proc.stdout.read()
+        _dct = self.parse_cainfo_stdout_to_dct(stdout_str.decode('utf-8'))
+        if(verbose):
+            if(self.check_cainfo(_dct)):
+                print('[%d] pv connection check [%s] is connected and ready' % (num_pvs, pvname))
+        else:
+            if (self.check_cainfo(_dct)):
+                print('', end=".")
+            else:
+                #just make a new line for the error that will be printed shortly
+                print()
+        return (_dct)
+
+    def perform_device_connection_check(self, verbose=False):
+
+        print('Performing individual device connection check, this may take a few minutes depending:')
+        skip_lst = ['PVS_DONT_RECORD', 'PRESETS', 'DETECTORS_NO_RECORD', 'WIDGETS']
+        dev_dct = {}
+        num_pvs = 0
+        num_fail_pvs = 0
+        sections = list(self.devices.keys())
+        for section in sections:
+            keys = []
+            if (section not in skip_lst):
+                keys = list(self.devices[section].keys())
+                # check to see if this is a subsectioned section that has pvs for BL (beamline) and ES (endstation)
+                # if so do those
+                if (keys == ['BL', 'ES']):
+                    dev_dct[section] = {}
+                    for subsec in keys:
+                        for pvname in list(self.devices[section][subsec].keys()):
+                            num_pvs += 1
+                            _dct = self.do_pv_conn_check(num_pvs, self.build_pv_name(pvname), verbose)
+                            dev_dct[section][pvname] = {}
+                            dev_dct[section][pvname]['dev'] = self.devices[section][subsec][pvname]
+                            dev_dct[section][pvname]['cainfo'] = _dct
+                            if(not self.check_cainfo(_dct)):
+                                num_fail_pvs += 1
+                                print('[%d][%s] does not appear to exist' % (num_pvs, k))
+
+                else:
+                    for k in keys:
+                        dev = self.devices[section][k]
+                        dev_dct[section] = {}
+                        dev_dct[section][k] = {}
+                        if type(dev) is dict:
+                            for kk in dev.keys():
+                                num_pvs += 1
+                                dev_dct[section][k][kk] = {}
+                                dev_dct[section][k][kk]['dev'] = dev[kk]
+                                _dct = self.do_pv_conn_check(num_pvs, self.build_pv_name(dev[kk]), verbose)
+                                dev_dct[section][k][kk]['cainfo'] = _dct
+                                if(not self.check_cainfo(_dct)):
+                                    num_fail_pvs += 1
+                                    print('[%d][%s] does not appear to exist' % (num_pvs, dev[kk].prefix))
+
+                        else:
+                            num_pvs += 1
+                            _dct = self.do_pv_conn_check(num_pvs, self.build_pv_name(dev), verbose)
+                            dev_dct[section][k]['cainfo'] = _dct
+                            if(not self.check_cainfo(_dct)):
+                                num_fail_pvs += 1
+                                print('[%d][%s] does not appear to exist' % (num_pvs, dev.prefix))
+
+
+        #report
+        if(num_fail_pvs > 0):
+            print('\n%d devices failed to connect out of a total of %d' % (num_fail_pvs, num_pvs))
+            exit()
+        else:
+            print('\nall %d devices are connected' % (num_pvs))
+
+    def build_pv_name(self, dev):
+        pvname = None
+        if hasattr(dev, 'component_names'):
+            #just use the first one
+            a = getattr(dev, dev.component_names[0])
+            pvname = a.pvname
+        else:
+            pvname = dev.prefix
+        return(pvname)
+
+    def check_cainfo(self, d):
+        if d is None:
+            return(False)
+        if len(d) == 0:
+            return(False)
+        if (d['State'].find('dis') > -1):
+            return(False)
+        return(True)
+
     def devs_as_list(self, skip_lst=[]):
         '''
 

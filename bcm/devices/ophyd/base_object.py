@@ -7,7 +7,7 @@ class BaseObject(QtCore.QObject):
 
     def __init__(self, name, write_pv=None, val_only=False, val_kw='value', backend='epics'):
         super(BaseObject, self).__init__()
-        self.name = name
+        self.name = self.prefix = name
         self.backend = backend
         self.devs = {}
 

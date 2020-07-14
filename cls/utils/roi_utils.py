@@ -168,10 +168,10 @@ def get_base_roi(name, positionerName, center, rng, npoints, stepSize=None, max_
 
 def determine_setpoints(roi_def, stepSize=None):
 	if(roi_def[NPOINTS] == 1):
-		roi_def[SETPOINTS] = np.linspace(roi_def[START] + roi_def[OFFSET], roi_def[STOP] + roi_def[OFFSET], roi_def[NPOINTS], endpoint=True, retstep=False)
+		roi_def[SETPOINTS] = np.linspace(roi_def[START] + roi_def[OFFSET], roi_def[STOP] + roi_def[OFFSET], int(roi_def[NPOINTS]), endpoint=True, retstep=False)
 		roi_def[ROI_STEP] = 0.0
 	elif((roi_def[RANGE] == 0) and ( not roi_def[IS_POINT])):
-		roi_def[SETPOINTS] = np.linspace(roi_def[START] + roi_def[OFFSET], roi_def[STOP] + roi_def[OFFSET], roi_def[NPOINTS], endpoint=True, retstep=False)
+		roi_def[SETPOINTS] = np.linspace(roi_def[START] + roi_def[OFFSET], roi_def[STOP] + roi_def[OFFSET], int(roi_def[NPOINTS]), endpoint=True, retstep=False)
 		
 	elif((roi_def[START] == None) or (roi_def[NPOINTS] == 0)):
 		roi_def[SETPOINTS] = []
@@ -182,7 +182,7 @@ def determine_setpoints(roi_def, stepSize=None):
 			roi_def[ROI_STEP] = stepSize
 			roi_def[SETPOINTS] = np.arange(roi_def[START] + roi_def[OFFSET], roi_def[STOP] + roi_def[OFFSET] + stepSize, stepSize)
 		else:	
-			roi_def[SETPOINTS], roi_def[ROI_STEP] = np.linspace(roi_def[START] + roi_def[OFFSET], roi_def[STOP] + roi_def[OFFSET], roi_def[NPOINTS], endpoint=True, retstep=True)
+			roi_def[SETPOINTS], roi_def[ROI_STEP] = np.linspace(roi_def[START] + roi_def[OFFSET], roi_def[STOP] + roi_def[OFFSET], int(roi_def[NPOINTS]), endpoint=True, retstep=True)
 
 
 def get_base_start_stop_roi(name, positionerName, start, stop, npoints, stepSize=None, max_scan_range=111, enable=True, is_point=False, src=None):
@@ -387,13 +387,13 @@ def recalc_setpoints(roi):
 	if(roi[NPOINTS] == 1):
 		roi[ROI_STEP] = roi[STOP] - roi[START]
 		if(roi[ROI_STEP] != 0.0):
-			roi[SETPOINTS], STEP = np.linspace(roi[START], roi[STOP], roi[NPOINTS], endpoint=True, retstep=True)
+			roi[SETPOINTS], STEP = np.linspace(roi[START], roi[STOP], int(roi[NPOINTS]), endpoint=True, retstep=True)
 		else:
-			roi[SETPOINTS] = np.linspace(roi[START], roi[STOP], roi[NPOINTS], endpoint=True, retstep=False)
+			roi[SETPOINTS] = np.linspace(roi[START], roi[STOP], int(roi[NPOINTS]), endpoint=True, retstep=False)
 	else:	
 		#roi[SETPOINTS], roi[ROI_STEP] = np.linspace(roi[START], roi[STOP], roi[NPOINTS], endpoint=True, retstep=True)
 		#roi[SETPOINTS], STEP = np.linspace(roi[START], roi[STOP], roi[NPOINTS], endpoint=True, retstep=True)
-		roi[SETPOINTS], roi[ROI_STEP] = np.linspace(roi[START], roi[STOP], roi[NPOINTS], endpoint=True, retstep=True)
+		roi[SETPOINTS], roi[ROI_STEP] = np.linspace(roi[START], roi[STOP], int(roi[NPOINTS]), endpoint=True, retstep=True)
 	roi['RECT'] = (roi[START], roi[STOP] - roi[RANGE], roi[STOP], roi[START] + roi[RANGE])
 	
 def on_center_changed(roi):

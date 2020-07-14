@@ -57,6 +57,7 @@ class BaseCounterOutputDevice(ophyd.Device):
 
     def __init__(self, prefix, name):
         super(BaseCounterOutputDevice, self).__init__(prefix, name=name)
+        self.name = name
         self.cntr = 0
         self.p_dwell = 1.0
         self.p_duty_cycle = 0.5
@@ -64,6 +65,10 @@ class BaseCounterOutputDevice(ophyd.Device):
         self.p_trig_src = 4
         self.trig = None
         self.mode = bs_dev_modes.NORMAL_PXP # 0 == point, 1 == line
+
+
+    def get_name(self):
+        return(self.name)
 
     def report(self):
         print('\tname = %s, type = %s' % (str(self.__class__), self.name))

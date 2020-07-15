@@ -77,7 +77,7 @@ class FocusScanParam(ScanParamWidget):
         if(USE_E712_HDW_ACCEL):
             self.scan_class_e712 = FocusE712ScanClass(main_obj=self.main_obj)
             self.scan_class = self.scan_class_e712
-        
+
         self.sp_db = None
         self.load_from_defaults()
         self.init_sp_db()

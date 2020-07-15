@@ -38,7 +38,7 @@ from cls.applications.pyStxm.bl_configs.cosmic.scan_plugins.pattern_gen_scan.Pat
 MAX_SCAN_RANGE_FINEX = MAIN_OBJ.get_preset_as_float('max_fine_x')
 MAX_SCAN_RANGE_FINEY = MAIN_OBJ.get_preset_as_float('max_fine_y')
 USE_E712_HDW_ACCEL = MAIN_OBJ.get_preset_as_bool('USE_E712_HDW_ACCEL', 'BL_CFG_MAIN')
-
+PATTERN_GEN_ENABLED = MAIN_OBJ.get_preset_as_bool('PATTERN_GEN_ENABLED')
 _logger = get_module_logger(__name__)
 
 
@@ -48,29 +48,33 @@ class PatternGeneratorScanParam(ScanParamWidget):
     def __init__(self, parent=None):
         ScanParamWidget.__init__(self, main_obj=MAIN_OBJ, data_io=STXMDataIo, dflts=DEFAULTS)
         self._parent = parent
-        uic.loadUi(os.path.join(os.path.dirname(__file__), 'pattern_gen_scan.ui'), self)
-        self.scan_mod_path, self.scan_mod_name = self.derive_scan_mod_name(__file__)
+        if (PATTERN_GEN_ENABLED == False):
+            self.name = "Pattern Genertor Scan ---- [DISABLED in app.ini] "
+            self.setEnabled(False)
+        else:
+            uic.loadUi(os.path.join(os.path.dirname(__file__), 'pattern_gen_scan.ui'), self)
+            self.scan_mod_path, self.scan_mod_name = self.derive_scan_mod_name(__file__)
 
-        # if(not USE_E712_HDW_ACCEL):
-        # 	self.name = "Pattern Generator Scan ---- [DISABLED, non hardware acclerated version is currently not supported] "
-        # 	self.setEnabled(False)
-        # 	self.setToolTip('PatternGeneratorScanParam: Scan plugin is disabled, non hardware acclerated version is currently not supported ')
-        # else:
+            # if(not USE_E712_HDW_ACCEL):
+            # 	self.name = "Pattern Generator Scan ---- [DISABLED, non hardware acclerated version is currently not supported] "
+            # 	self.setEnabled(False)
+            # 	self.setToolTip('PatternGeneratorScanParam: Scan plugin is disabled, non hardware acclerated version is currently not supported ')
+            # else:
 
-        # self.scan_class = PatternGenWithE712WavegenScanClass(main_obj=self.main_obj)
-        self.scan_class = PatternGenScanClass(main_obj=self.main_obj)
-        self.sp_db = None
-        self.load_from_defaults()
-        self.init_sp_db()
-        self.connect_paramfield_signals()
-        self.on_single_spatial_npoints_changed()
+            # self.scan_class = PatternGenWithE712WavegenScanClass(main_obj=self.main_obj)
+            self.scan_class = PatternGenScanClass(main_obj=self.main_obj)
+            self.sp_db = None
+            self.load_from_defaults()
+            self.init_sp_db()
+            self.connect_paramfield_signals()
+            self.on_single_spatial_npoints_changed()
 
-        self.loadScanBtn.clicked.connect(self.load_scan)
-        self.showPatternBtn.clicked.connect(self.on_show_pattern_btn_clicked)
-        self.defaultBtn.clicked.connect(self.on_default_btn_clicked)
+            self.loadScanBtn.clicked.connect(self.load_scan)
+            self.showPatternBtn.clicked.connect(self.on_show_pattern_btn_clicked)
+            self.defaultBtn.clicked.connect(self.on_default_btn_clicked)
 
-        # self.init_test_module()
-        self.init_loadscan_menu()
+            # self.init_test_module()
+            self.init_loadscan_menu()
 
     def init_plugin(self):
         '''

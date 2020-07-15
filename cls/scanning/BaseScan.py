@@ -301,6 +301,7 @@ class BaseScan(BaseObject):
         dct = {}
         ev_idx = 0
         seq_num = 0
+        nxpnts = int(nxpnts)
         for eroi in erois:
             # col_lst = [[0,1,2], [3,4,5,6,7,8], [11,22,33,44,55,66,77,88,99]]
             ev_lst = eroi[SETPOINTS]

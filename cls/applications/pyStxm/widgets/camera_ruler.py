@@ -37,10 +37,10 @@ camruler_mode = Enum('LOCAL', 'SERVER', 'CLIENT')
 appConfig = ConfigClass(abs_path_to_ini_file)
 #widgetsUiDir = appConfig.get_value('MAIN', 'widgetsUiDir')
 widgetsUiDir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ui')
-CAMERA_WAVEFORM_PV_STR = appConfig.get_value('CAMERA', 'camera_waveform')
-IMAGE_WIDTH = appConfig.get_value('CAMERA', 'frame_wd')
-IMAGE_HT = appConfig.get_value('CAMERA', 'frame_ht')
-SCALER_AT_FULL_LENS_ZOOM_OUT = float(appConfig.get_value('CAMERA', 'scaling_factor'))
+# CAMERA_WAVEFORM_PV_STR = appConfig.get_value('CAMERA', 'camera_waveform')
+# IMAGE_WIDTH = appConfig.get_value('CAMERA', 'frame_wd')
+# IMAGE_HT = appConfig.get_value('CAMERA', 'frame_ht')
+#SCALER_AT_FULL_LENS_ZOOM_OUT = float(appConfig.get_value('CAMERA', 'scaling_factor'))
 PREC = 3
 
 _logger = get_module_logger(__name__)
@@ -72,7 +72,7 @@ class CameraRuler(QtWidgets.QWidget):
 
 
     '''
-    def __init__(self, mode=camruler_mode.LOCAL, main_obj=None, parent=None):
+    def __init__(self, mode=camruler_mode.LOCAL, main_obj=None, scaling_factor=1.0, parent=None):
         global zpz, osaz, detz, camera_client
         super(CameraRuler, self).__init__(parent)
         uic.loadUi(os.path.join(widgetsUiDir, 'camera_ruler.ui'), self)
@@ -83,6 +83,7 @@ class CameraRuler(QtWidgets.QWidget):
         self.plotFrame.setLayout(vlayout)
         self.main_obj = main_obj
 
+        self.scaler_at_full_lens_zoom_out = scaling_factor
 
         self.zpz = self.main_obj.device( DNM_ZONEPLATE_Z_BASE)
         self.osaz = self.main_obj.device( DNM_OSA_Z_BASE)
@@ -176,7 +177,7 @@ class CameraRuler(QtWidgets.QWidget):
         #ht, wd, clrs = image.shape
         ht, wd = image.shape
         #scale = float(1000.0/float(wd))
-        scale = SCALER_AT_FULL_LENS_ZOOM_OUT
+        scale = self.scaler_at_full_lens_zoom_out
         #if scale != 1.0:
         #    image = cv2.resize(image, (0, 0), fx=scale, fy=scale)
         #get user especified center and scale

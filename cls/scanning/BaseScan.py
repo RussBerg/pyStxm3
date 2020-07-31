@@ -22,7 +22,7 @@ from cls.scan_engine.decorators import conditional_decorator
 
 from bcm.devices import BaseDevice, BaseObject
 from bcm.devices.device_names import *
-from cls.appWidgets.dialogs import warn, message_no_btns
+from cls.appWidgets.dialogs import warn, notify, message_no_btns
 from cls.app_data.defaults import get_style
 from cls.applications.pyStxm import abs_path_to_ini_file
 from cls.plotWidgets.utils import (make_counter_to_plotter_com_dct, CNTR2PLOT_TYPE_ID, \
@@ -289,6 +289,14 @@ class BaseScan(BaseObject):
         #self.init_set_scan_levels()
         #self.init_signals()
 
+    def pre_flight_chk(self):
+        '''
+        before the scan plan is configured and executed it must first pass a pre flight check,
+        to be implemented by inheriting class
+        :return:
+        '''
+        return(True)
+
 
     def generate_ev_roi_seq_image_map(self, erois, nxpnts):
         '''
@@ -440,7 +448,11 @@ class BaseScan(BaseObject):
 
         dlst = []
         for d in dets:
-            dnm = list(d.describe().keys())[0]
+            # if hasattr(d, 'describe'):
+            #     dnm = list(d.describe().keys())[0]
+            # else:
+            #     dnm = 'GE_CCD'
+            dnm = d.name
             if(not dnm in dlst):
                 dlst.append(dnm)
         return(dlst)
@@ -2141,7 +2153,33 @@ class BaseScan(BaseObject):
                 if(resp == 'No'):
                     return False
             return(True)
-    
+
+    def display_message(self, msg):
+        '''
+        a function to throw up a modal dialog box letting the user know an issue has occured
+
+
+        :param datafile_name:
+        :return:
+        '''
+
+        app = QtWidgets.QApplication.instance()
+        windows = app.allWindows()
+        #init default QRect
+        rect = QtCore.QRect(50,50,100,100)
+        #now find our applications window
+        for w in windows:
+            w_obj_nm = str(w.objectName())
+            if(w_obj_nm.find('pySTXM') > -1):
+                rect = w.geometry()
+                print(rect)
+
+        px = (rect.width() + rect.x()) / 3
+        py = (rect.height() + rect.y()) / 3
+
+        ss = get_style('dark')
+        resp = notify("Warning",msg, accept_str="Ok", ss=ss, posn=(px, py))
+
     def flip_data_upsdown(self, data):
         _data = np.flipud(data).copy()
         return(_data)
@@ -5302,22 +5340,33 @@ class BaseScan(BaseObject):
         stagers = []
         for d in dets:
             stagers.append(d)
-        det = dets[0]
-        if(self.is_lxl):
+        #det = dets[0]
+        for d in dets:
+            if(self.is_lxl):
+                stagers.append(gate)
+                if hasattr(d, 'set_mode'):
+                    d.set_mode(1)
+                if hasattr(d, 'configure'):
+                    d.configure(self.x_roi[NPOINTS], self.scan_type)
+            else:
+                if hasattr(d, 'set_mode'):
+                    d.set_mode(0)
+                if hasattr(d, 'configure'):
+                    d.configure(self.x_roi[NPOINTS], self.scan_type)
+
+        if (self.is_lxl):
             stagers.append(gate)
-            det.set_mode(1)
             gate.set_mode(1)
             gate.set_num_points(self.x_roi[NPOINTS])
             gate.set_trig_src(trig_src_types.E712)
         else:
-            det.set_mode(0)
             gate.set_mode(0)
             gate.set_num_points(1)
             gate.set_trig_src(trig_src_types.E712)
 
         gate.set_dwell(self.dwell)
         #det.set_num_points(self.x_roi[NPOINTS])
-        det.configure(self.x_roi[NPOINTS], self.scan_type)
+        #det.configure(self.x_roi[NPOINTS], self.scan_type)
         if(md is None):
             md = {'metadata': dict_to_json(self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, dets=dets))}
         # if(not skip_baseline):
@@ -5339,8 +5388,8 @@ class BaseScan(BaseObject):
             e712_y_usetablenum.put(y_tbl_id)
 
             #make sure servo power is on
-            finemtrx = self.main_obj.get_sample_fine_positioner('X').ServoPower.put(1)
-            finemtry = self.main_obj.get_sample_fine_positioner('Y').ServoPower.put(1)
+            finemtrx = self.main_obj.get_sample_fine_positioner('X').servo_power.put(1)
+            finemtry = self.main_obj.get_sample_fine_positioner('Y').servo_power.put(1)
             # get the X motor reset position * /
             # samplemtrx = self.main_obj.get_sample_positioner('X')
             # samplemtry = self.main_obj.get_sample_positioner('Y')

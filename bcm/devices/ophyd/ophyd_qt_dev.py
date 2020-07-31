@@ -29,11 +29,11 @@ class OphydQt_AIDevice(ophyd.Device):
     def set_dev_units(self, units):
         self._units = units
 
-    def stage(self):
-        pass
-
-    def unstage(self):
-        pass
+    # def stage(self):
+    #     super().
+    #
+    # def unstage(self):
+    #     pass
 
     def trigger(self):
         st = DeviceStatus(self)

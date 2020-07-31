@@ -35,7 +35,7 @@ from cls.utils.list_utils import sum_lst
 from cls.utils.cfgparser import ConfigClass
 from cls.utils.roi_utils import widget_com_cmnd_types, get_first_sp_db_from_wdg_com, reset_unique_roi_id, \
     add_to_unique_roi_id_list
-from cls.utils.file_system_tools import master_get_seq_names, get_thumb_file_name_list
+from cls.utils.file_system_tools import master_get_seq_names, get_thumb_file_name_list, get_latest_file_num_in_dir
 from cls.utils.prog_dict_utils import *
 from cls.utils.sig_utils import reconnect_signal, disconnect_signal
 
@@ -321,7 +321,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         _cam_en = MAIN_OBJ.get_preset_as_bool('enabled', 'CAMERA')
         if(_cam_en):
             if (int(_cam_en) == 1):
-                self.setup_calib_camera()
+                self.setup_calib_camera(MAIN_OBJ.get_preset_as_float('scaling_factor', 'CAMERA'))
 
         if(LOAD_ALL):
             self.setup_video_panel()
@@ -1631,7 +1631,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.spectraPlotFrame.setLayout(vbox)
 
 
-    def setup_calib_camera(self):
+    def setup_calib_camera(self, scaling_factor):
         """
         setup_video_panel(): description
 
@@ -1643,7 +1643,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         vbox = QtWidgets.QVBoxLayout()
         # self.spectraWidget = CurveViewerWidget(parent = self, winTitleStr = "Spectra Data Viewer")
         #self.splash.show_msg('Loading Calibration Camera in Client Mode')
-        self.calibCamWidget = CameraRuler(mode=camruler_mode.CLIENT, main_obj=MAIN_OBJ, parent=self)
+        self.calibCamWidget = CameraRuler(mode=camruler_mode.CLIENT, main_obj=MAIN_OBJ, scaling_factor=scaling_factor, parent=self)
         self.calibCamWidget.setObjectName("calibCamWidget")
 
         vbox.addWidget(self.calibCamWidget)
@@ -2323,6 +2323,9 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         dets_pnl = self.get_pref_panel('DetectorsPanel')
         sel_dets_lst = dets_pnl.get_selected_detectors()
         dets = [self.ring_ma, MAIN_OBJ.device(DNM_DEFAULT_COUNTER)]
+        # dets = []
+        # sel_dets_lst.append({'name':DNM_RING_CURRENT})
+        # sel_dets_lst.append({'name': DNM_DEFAULT_COUNTER})
         for d in sel_dets_lst:
             dev = MAIN_OBJ.device(d['name'])
             if(hasattr(dev, 'get_det_type')):
@@ -2415,14 +2418,10 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.executingScan = scan_class
         self.executingScan.disconnect_signals()
 
-        # set main gui widgets up for running a scan
-        self.set_buttons_for_scanning()
-
         # make sure that all data required by scan metadata is loaded into scan
         fprms_pnl = self.get_pref_panel('FocusParams')
         cur_zp_def = fprms_pnl.get_cur_zp_def()
         self.executingScan.set_zoneplate_info_dct(cur_zp_def)
-
 
         # grab some information used by all scans below
         sp_rois = dct_get(self.cur_wdg_com, WDGCOM_SPATIAL_ROIS)
@@ -2430,12 +2429,19 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.cur_sp_rois = copy.copy(sp_rois)
 
         scan_class.set_spatial_id_list(sp_ids)
+        # if not scan_class.pre_flight_chk():
+        #     _logger.error(
+        #         'scan class failed pre flight check, not executing scan')
+        #     return
 
         # a list of basic scans that use the same configuration block below
         _simple_types = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.OSA_FOCUS, scan_types.GENERIC_SCAN,
                          scan_types.SAMPLE_FOCUS, scan_types.COARSE_IMAGE, scan_types.COARSE_GONI]
         _multispatial_types = [scan_types.SAMPLE_IMAGE, scan_types.SAMPLE_LINE_SPECTRUM, scan_types.SAMPLE_POINT_SPECTRUM]#, scan_types.TOMOGRAPHY]
         _stack_types = [scan_types.SAMPLE_IMAGE_STACK, scan_types.TOMOGRAPHY ]
+
+        # set main gui widgets up for running a scan
+        self.set_buttons_for_scanning()
 
         if (scan_type in _simple_types):
             sp_id = sp_ids[0]
@@ -2602,10 +2608,13 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
             self.point_det.set_scan_type(scan_type)
             dets = self.get_user_selected_counters(det_types=[detector_types.POINT])
+            #dets = []
             #scan_plan = scan_class.generate_scan_plan(detectors=[self.point_det, self.ring_ma], gate=self.gate)
             scan_plan = scan_class.generate_scan_plan(detectors=dets, gate=self.gate)
             # this should be something else here
             scan_class.init_subscriptions(MAIN_OBJ.engine_widget, self.add_point_to_plot)
+            #add the CCD detector so that it can be unstaged later if scan is aborted
+            dets.append(MAIN_OBJ.device(DNM_GREATEYES_CCD))
         else:
             _logger.error('start_scan: unsupported scan type [%d]' % scan_type)
             self.set_buttons_for_starting()
@@ -2654,11 +2663,21 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.on_image_start(self.cur_wdg_com, sp_id=sp_id)
 
         self.start_time = time.time()
-
+        self._cur_dets = dets
         # Start the RunEngine
         MAIN_OBJ.engine_widget.engine.md['user'] = 'bergr'
         MAIN_OBJ.engine_widget.engine.md['host'] = 'myNotebook'
         MAIN_OBJ.engine_widget.control.state_widgets['start'].clicked.emit()
+
+
+    def on_show_runengine_msgs(self):
+        MAIN_OBJ.engine_widget.engine.msg_changed.connect(self.print_re_msg)
+
+    def on_dont_show_runengine_msgs(self):
+        MAIN_OBJ.engine_widget.engine.msg_changed.disconnect(self.print_re_msg)
+
+    def print_re_msg(self, msg):
+        print(msg)
 
     def get_data_as_array(self, hdr, strm_nm, det_nm, final_shape):
         '''
@@ -2714,6 +2733,12 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             # Execute
             self._threadpool.start(worker)
 
+            #ensure that all detectors have been unstaged in case scan aws aborted
+            for d in self._cur_dets:
+                d.unstage()
+            #detector
+            time.sleep(0.25)
+
 
     def check_data_export_good_to_go(self):
         '''
@@ -2753,6 +2778,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
         elif(scan_type in [scan_types.PTYCHOGRAPHY]):
         #could also just be multiple rois on a single energy
+            #areaDetector has already created teh directory so we need to make sure that the filename and data dir are not next in teh sequence
+            fprefix = 'C' + str(get_latest_file_num_in_dir(data_dir, extension='hdf5'))
             data_dir = os.path.join(data_dir, fprefix)
             is_stack = True
             self.do_ptychography_export(run_uids, data_dir, fprefix)

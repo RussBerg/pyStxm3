@@ -74,7 +74,7 @@ class device_config(dev_config_base):
 
         self.device_reverse_lookup_dct = self.make_device_reverse_lookup_dict()
 
-        self.perform_device_connection_check(verbose=False)
+        #self.perform_device_connection_check(verbose=False)
 
         if (self.sample_pos_mode is sample_positioning_modes.GONIOMETER):
             self.set_exclude_positioners_list(
@@ -270,6 +270,19 @@ def connect_standard_beamline_positioners(dev_dct, prfx='uhv', devcfg=None):
                                                      name='%sBL1610-I10:epuAngle' % DEVPRFX, abstract_mtr=True,
                                                      pos_set=POS_TYPE_BL)
 
+def ad_warmed_up(detector):
+    old_capture = detector.file_plugin.capture.get()
+    old_file_write_mode = detector.file_plugin.file_write_mode.get()
+    if old_capture == 1:
+        return True
+    
+    detector.file_plugin.file_write_mode.put(1)
+    detector.cam.acquire.put(1)
+    detector.file_plugin.capture.put(1)
+    verdict = detector.file_plugin.capture.get() == 1
+    detector.file_plugin.capture.put(old_capture)
+    detector.file_plugin.file_write_mode.put(old_file_write_mode)
+    return verdict
 
 def connect_devices(dev_dct, prfx='uhv', devcfg=None):
     devcfg.msg_splash("connecting to: [%s%sCO:gate]" % (DEVPRFX, prfx))
@@ -291,12 +304,17 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
     dev_dct['DETECTORS'][DNM_PMT] = make_basedevice('DETECTORS', '%s%sPMT:ctr:SingleValue_RBV' % (DEVPRFX, prfx),
                                                     devcfg=devcfg)
 
-    #dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = SimGreatEyesCCD('SIMCCD1610-I10-02:', name=DNM_GREATEYES_CCD)
-    #dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = GreatEyesDetectorCam('%sCCD1610-02:cam1:'  % (DEVPRFX), name='GE_CCD')
-    # if(DEVPRFX.find('SIM')):
-    #     dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = SimGreatEyesCCD('SIMCCD1610-I10-02:', name=DNM_GREATEYES_CCD)
-    # else:
-    #     dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = GreatEyesCCD('CCD1610-I10-02:', name=DNM_GREATEYES_CCD)
+    # dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = SimGreatEyesCCD('SIMCCD1610-I10-02:', name=DNM_GREATEYES_CCD)
+    #
+    dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = GreatEyesCCD('CCD1610-01:', name='GE_CCD')
+    _res = ad_warmed_up(dev_dct['DETECTORS'][DNM_GREATEYES_CCD])
+    det = dev_dct['DETECTORS'][DNM_GREATEYES_CCD]
+    det.cam.acquire.put(1)
+    _res = ad_warmed_up(det)
+    # # if(DEVPRFX.find('SIM')):
+    # #     dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = SimGreatEyesCCD('SIMCCD1610-I10-02:', name=DNM_GREATEYES_CCD)
+    # # else:
+    # #     dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = GreatEyesCCD('CCD1610-I10-02:', name=DNM_GREATEYES_CCD)
 
     dev_dct['DETECTORS'][DNM_POINT_DET] = PointDetectorDevice('%s%sCI:counter:' % (DEVPRFX, prfx),
                                                               name=DNM_POINT_DET, scale_val=500.0)
@@ -320,11 +338,11 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
     # dev_dct['DETECTORS']['Ax2InterferVolts'] = EpicsPvCounter('%sAi:ai:ai1_RBV' % prfx)
 
     # dev_dct['PVS'][DNM_IDEAL_A0] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:fbk:tr.K' % (DEVPRFX, prfx), devcfg=devcfg)
-    dev_dct['PVS'][DNM_IDEAL_A0] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:fbk:tr_K' % (DEVPRFX, prfx),
+    dev_dct['PVS'][DNM_IDEAL_A0] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:fbk:tr.K' % (DEVPRFX, prfx),
                                                    devcfg=devcfg)
     # dev_dct['PVS'][DNM_CALCD_ZPZ] = BaseDevice('%sBL1610-I10:ENERGY:%s:zp:fbk:tr.L' % prfx)
     # dev_dct['PVS'][DNM_CALCD_ZPZ] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:fbk:tr.I' % (DEVPRFX, prfx), devcfg=devcfg)
-    dev_dct['PVS'][DNM_CALCD_ZPZ] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:fbk:tr_I' % (DEVPRFX, prfx),
+    dev_dct['PVS'][DNM_CALCD_ZPZ] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:fbk:tr.I' % (DEVPRFX, prfx),
                                                     devcfg=devcfg)
     dev_dct['PVS']['Zpz_adjust'] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:adjust_zpz' % (DEVPRFX, prfx),
                                                    devcfg=devcfg)
@@ -448,9 +466,9 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
     dev_dct['PVS_DONT_RECORD'][DNM_SET_XY_LOCKPOSITION] = make_basedevice('PVS',
                                                                           '%sBL1610-I10:ENERGY:%s:set_xy:lockposn' % (
                                                                           DEVPRFX, prfx), units='um', devcfg=devcfg)
-    dev_dct['PVS_DONT_RECORD'][DNM_SET_Z_LOCKPOSITION] = make_basedevice('PVS',
-                                                                         '%sBL1610-I10:ENERGY:%s:set_z:lock_posn' % (
-                                                                         DEVPRFX, prfx), units='um', devcfg=devcfg)
+    # dev_dct['PVS_DONT_RECORD'][DNM_SET_Z_LOCKPOSITION] = make_basedevice('PVS',
+    #                                                                      '%sBL1610-I10:ENERGY:%s:set_z:lock_posn' % (
+    #                                                                      DEVPRFX, prfx), units='um', devcfg=devcfg)
 
     dev_dct['PVS'][DNM_AX1_INTERFER_VOLTS] = make_basedevice('PVS', '%s%sAi:ai:ai0_RBV' % (DEVPRFX, prfx), rd_only=True,
                                                              devcfg=devcfg)

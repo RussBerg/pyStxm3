@@ -20,6 +20,7 @@ import time
 import datetime
 from time import localtime
 
+import suitcase
 import cls.data_io.utils
 from cls.data_io.nxptycho.utils import *
 from cls.data_io.nxptycho.device_names import *
@@ -226,7 +227,7 @@ class Serializer(event_model.DocumentRouter):
         self._streamnames = {}  # maps descriptor uids to stream_names
         self._img_idx_map_dct = {}
         self._primary_det_nm = None
-        self._primary_det_prefix = None
+        self._detector_names = None
         self._file_time_str = make_timestamp_now()
         self._cur_scan_md = {}
         self._processed_sp_ids = []
@@ -315,19 +316,14 @@ class Serializer(event_model.DocumentRouter):
             self._cur_scan_md[doc['uid']]['first_uid'] = doc['uid']
 
         self._img_idx_map_dct = json.loads(_metadata_dct['img_idx_map'])
-        self._primary_det_prefix = _metadata_dct['primary_det']
+        self._detector_names = _metadata_dct['detector_names']
+        self._default_det = _metadata_dct['default_det']
         self._scan_type = _metadata_dct['scan_type']
         self._sp_id_lst = _metadata_dct['sp_id_lst']
         self._det_fpath = _metadata_dct['det_filepath'].split('/')[-1]
         self._cur_sp_id = self._sp_id_lst[0]
         self._cur_uid = doc['uid']
 
-        # #assign the member vars
-        # self._e_idx = self._img_idx_map_dct['e_idx']
-        # self._entry_nm = self._img_idx_map_dct['entry']
-        # self._pol_idx = self._img_idx_map_dct['pol_idx']
-        # self._sp_id = self._img_idx_map_dct['sp_id']
-        # self._sp_idx = self._img_idx_map_dct['sp_idx']
         self._tmp_fname = os.path.join(self._directory, self._file_prefix.format(self._cur_scan_md[doc['uid']]['first_uid']))
 
         js_str = self._cur_scan_md[doc['uid']]['wdg_com']
@@ -425,6 +421,7 @@ class Serializer(event_model.DocumentRouter):
             if(k in self._data[strm_name].keys()):
                 #self._data[strm_name][k]['data'].append((doc['seq_num'][0], doc['data'][k][0]))
                 self._data[strm_name][k][self._cur_uid]['data'].append(doc['data'][k][0])
+                print('event_page: saving stream[%s][%s] ' % (strm_name, k))
 
         event_model.verify_filled(doc)
 
@@ -449,12 +446,7 @@ class Serializer(event_model.DocumentRouter):
         '''
 
         _logger.info('creating [%s]' % self._entry_nm)
-        if(scan_types(scan_type) in single_entry_scans):
-            self.save_single_entry_scan(doc, scan_type)
-        elif(scan_types(scan_type) is scan_types.SAMPLE_POINT_SPECTRA):
-            self.save_point_spec_entry_scan(doc, scan_type)
-        else:
-            self.save_multi_entry_scan(doc, scan_type)
+        self.save_multi_entry_scan(doc, scan_type)
 
     def create_file_attrs(self):
         nf = None
@@ -473,51 +465,6 @@ class Serializer(event_model.DocumentRouter):
         except:
             _logger.error('create_file_attrs: problem creating file [%s]' % self._tmp_fname)
 
-
-    def save_single_entry_scan(self, doc, scan_type):
-        '''
-        the main function to create the NXstxm file for scans that are NOT point spectra or multi entry
-        :param doc:
-        :param scan_type:
-        :return:
-        '''
-        nf = None
-        try:
-            nf = self._nf = h5py.File(self._tmp_fname, 'a')
-
-            #this entry name comes from metadata setup by scan plan
-            entry_nxgrp = _group(nf, self._entry_nm, 'NXentry')
-
-            # # set attrs foe the file
-            _dataset(entry_nxgrp, 'title', 'NeXus sample', 'NX_CHAR')
-            _dataset(entry_nxgrp, 'start_time', self._start_time_str, 'NX_DATE_TIME')
-            _dataset(entry_nxgrp, 'end_time', self._stop_time_str, 'NX_DATE_TIME')
-            _dataset(entry_nxgrp, 'definition', 'NXstxm', 'NX_CHAR')
-            _dataset(entry_nxgrp, 'version', '1.0', 'NX_CHAR')
-
-            self.specific_scan_funcs = self.get_scan_specific_funcs(scan_type)
-
-            #create entry groups
-            #self.create_collection_group(entry_nxgrp, doc, scan_type)
-
-            ctrl_nxgrp = self.create_base_control_group(entry_nxgrp, doc, scan_type)
-            self.specific_scan_funcs['mod_nxctrl'](self, ctrl_nxgrp, doc,scan_type)
-
-            data_nxgrp = self.create_base_nxdata_group(entry_nxgrp, self._primary_det_prefix, doc, scan_type)
-            self.specific_scan_funcs['mod_nxdata'](self, data_nxgrp, doc, scan_type)
-
-            inst_nxgrp = self.create_base_instrument_group(entry_nxgrp, doc, scan_type)
-            self.specific_scan_funcs['mod_nxinst'](self, inst_nxgrp, doc, scan_type)
-            #
-            self.create_base_sample_group(entry_nxgrp, doc, scan_type)
-
-            nf.close()
-        except:
-            print("save_single_entry_scan: Unexpected error:", sys.exc_info()[0])
-            _logger.info('Problem saving file[%s]' % self._tmp_fname)
-            if (nf is not None):
-                nf.close()
-            os.rename(self._tmp_fname, self._tmp_fname + '.err')
 
     def save_multi_entry_scan(self, doc, scan_type):
         '''
@@ -539,8 +486,9 @@ class Serializer(event_model.DocumentRouter):
             _dataset(entry_nxgrp, 'title', 'NeXus sample', 'NX_CHAR')
             _dataset(entry_nxgrp, 'start_time', self._start_time_str, 'NX_DATE_TIME')
             _dataset(entry_nxgrp, 'end_time', self._stop_time_str, 'NX_DATE_TIME')
-            _dataset(entry_nxgrp, 'definition', 'NXstxm', 'NX_CHAR')
+            _dataset(entry_nxgrp, 'definition', 'NXptycho', 'NX_CHAR')
             _dataset(entry_nxgrp, 'version', '1.0', 'NX_CHAR')
+            _string_attr(entry_nxgrp, 'default', self._default_det)
 
             self.specific_scan_funcs = self.get_scan_specific_funcs(scan_type)
 
@@ -550,11 +498,15 @@ class Serializer(event_model.DocumentRouter):
             ctrl_nxgrp = self.create_stack_control_group(entry_nxgrp, doc, scan_type)
             self.specific_scan_funcs['mod_nxctrl'](self, ctrl_nxgrp, doc,scan_type)
 
-            data_nxgrp = self.create_stack_nxdata_group(entry_nxgrp, self._primary_det_prefix, doc, scan_type)
-            self.specific_scan_funcs['mod_nxdata'](self, data_nxgrp, doc, scan_type)
+            data_nxgrps = self.create_stack_nxdata_group(entry_nxgrp, self._detector_names, doc, self._scan_type)
+            for dgrp in data_nxgrps:
+                self.specific_scan_funcs['mod_nxdata'](self, dgrp, doc, scan_type)
 
             inst_nxgrp = self.create_base_instrument_group(entry_nxgrp, doc, scan_type)
             self.specific_scan_funcs['mod_nxinst'](self, inst_nxgrp, doc, scan_type)
+            for det_nm in self._detector_names:
+                self.create_base_instrument_detector(inst_nxgrp, det_nm, doc)
+
             #
             self.create_base_sample_group(entry_nxgrp, doc, scan_type)
 
@@ -568,25 +520,31 @@ class Serializer(event_model.DocumentRouter):
                 nf.close()
             os.rename(self._tmp_fname, self._tmp_fname + '.err')
 
+    def create_base_instrument_detector(self, inst_nxgrp, det_nm, doc):
+        '''
+
+        :param nxgrp:
+        :param doc:'detector_names'
+        :param scan_type:
+        :return:
+        '''
+        rois = self.get_rois_from_current_md(doc['run_start'])
+        dwell = self._cur_scan_md[doc['run_start']]['dwell'] * 0.001
+        scan_type = self.get_stxm_scan_type(doc['run_start'])
+        uid = self.get_current_uid()
+        ttlpnts = int(rois[SPDB_X][NPOINTS] * rois[SPDB_Y][NPOINTS])
+        if(scan_type == scan_types.SAMPLE_POINT_SPECTRUM.value):
+            #need to slice the 1d array data into num spatial ids
+            det_data = np.array(self._data['primary'][det_nm][uid]['data'][::len(self._sp_id_lst)])  # .reshape((ynpoints, xnpoints))
+        else:
+            #take teh entire 1d array
+            det_data = np.array(self._data['primary'][det_nm][uid]['data'])
+        self.make_detector(inst_nxgrp, det_nm, det_data, dwell, ttlpnts, units='counts')
 
     def get_scan_specific_funcs(self, scan_type):
         '''
         using the scan-type that is specified, return a dict of functions that will be used be the data saving
         main routine
-
-                'detector_image', \
-				'osa_image', \
-				'osa_focus', \
-				'sample_focus', \
-				'sample_point_spectrum', \
-				'sample_line_spectrum', \
-				'sample_image', \
-				'sample_image_stack', \
-				'generic_scan', \
-				'coarse_image_scan', \
-				'coarse_goni_scan', \
-				'tomography_scan' , \
-				'pattern_generator_scan'
 
         :param scan_type:
         :return:
@@ -706,7 +664,7 @@ class Serializer(event_model.DocumentRouter):
         xnpoints = rois['X']['NPOINTS']
         ynpoints = rois['Y']['NPOINTS']
 
-        epnts = self.get_baseline_all_data(self.get_devname(DNM_MONO_EV_FBK) + '_val')
+        epnts = self.get_baseline_all_data(self.get_devname(DNM_MONO_EV_FBK))
         #just use the value of energy at start
         epnt = epnts[0]
         e_arr = make_1d_array(xnpoints * ynpoints, epnt)
@@ -746,13 +704,13 @@ class Serializer(event_model.DocumentRouter):
         xnpoints = rois['X']['NPOINTS']
         ynpoints = rois['Y']['NPOINTS']
 
-        ang = self.get_baseline_all_data(self.get_devname(DNM_EPU_POL_ANGLE) + '_val')[0]
+        ang = self.get_baseline_all_data(self.get_devname(DNM_EPU_POL_ANGLE))[0]
         ang_arr = make_1d_array(xnpoints * ynpoints, ang)
-        epu_gap_offset = self.get_baseline_all_data(self.get_devname(DNM_EPU_GAP_OFFSET) + '_val')[0]
+        epu_gap_offset = self.get_baseline_all_data(self.get_devname(DNM_EPU_GAP_OFFSET))[0]
         epu_gap_offset_arr = make_1d_array(xnpoints * ynpoints, epu_gap_offset)
-        epu_gap_fbk = self.get_baseline_all_data(self.get_devname(DNM_EPU_GAP_FBK) + '_val')[0]
+        epu_gap_fbk = self.get_baseline_all_data(self.get_devname(DNM_EPU_GAP_FBK))[0]
         epu_gap_fbk_arr = make_1d_array(xnpoints * ynpoints, epu_gap_fbk)
-        epu_harm = int(self.get_baseline_all_data(self.get_devname(DNM_EPU_HARMONIC_PV) + '_val')[0])
+        epu_harm = int(self.get_baseline_all_data(self.get_devname(DNM_EPU_HARMONIC_PV))[0])
         epu_harm_arr = make_1d_array(xnpoints * ynpoints, epu_harm)
 
         # also get the stokes parameters for the pol_mode
@@ -818,13 +776,13 @@ class Serializer(event_model.DocumentRouter):
         :return:
         '''
         if (not modify):
-            ring_cur_signame = self.get_devname(DNM_RING_CURRENT) + '_val'
+            ring_cur_signame = self.get_devname(DNM_RING_CURRENT)
             if (ring_cur_signame in self._data['baseline'].keys()):
                 rois = self.get_rois_from_current_md(doc['run_start'])
                 # use the baseline start/stop values and create a sequence from start to stop
                 #strt, stp = self._data['baseline'][ring_cur_signame][uid]['data']
                 strt, stp = self.get_baseline_all_data(ring_cur_signame)
-                sr_data = np.linspace(strt, stp, rois['X']['NPOINTS'], dtype=np.float32)
+                sr_data = np.linspace(strt, stp, int(rois['X']['NPOINTS']), dtype=np.float32)
             else:
                 sr_data = np.array(self._data['primary'][ring_cur_signame]['data'], dtype=np.float32)
 
@@ -838,19 +796,19 @@ class Serializer(event_model.DocumentRouter):
             # nothing to modify
             pass
 
-    def get_devname(self, lu_nm):
+    def get_devname(self, lu_nm, do_warn=True):
         '''
         get the device name using the reverse lookup dict
         :param lu_nm:
         :return:
         '''
         md = self._cur_scan_md[self._cur_uid]
-        if(lu_nm in md['rev_lu_dct'].keys()):
-            return(md['rev_lu_dct'][lu_nm])
+        if (lu_nm in md['rev_lu_dct'].keys()):
+            return (md['rev_lu_dct'][lu_nm])
         else:
-            _logger.error('nxptycho_primary: get_devname: Oh Oh ')
-            return(None)
-
+            if (do_warn):
+                _logger.error('nxstxm_primary: get_devname: cannot find [%s] in current scan metadata' % lu_nm)
+            return (None)
 
     def get_baseline_start_data(self, src_devnm):
         '''
@@ -1038,8 +996,7 @@ class Serializer(event_model.DocumentRouter):
 
         return(data_nxgrp)
 
-
-    def create_stack_nxdata_group(self, entry_nxgrp, cntr_nm, doc, scan_type):
+    def create_stack_nxdata_group(self, entry_nxgrp, cntr_nm_lst, doc, scan_type):
         '''
         create a sample image stack NXdata group
         :param entry_nxgrp:
@@ -1049,24 +1006,33 @@ class Serializer(event_model.DocumentRouter):
         :return:
         '''
         resize_data = False
-        data_nxgrp = _group(entry_nxgrp, cntr_nm, 'NXdata')
+        dgrps = []
+        for cntr_nm in cntr_nm_lst:
+            data_nxgrp = _group(entry_nxgrp, cntr_nm, 'NXdata')
+            dgrps.append(data_nxgrp)
+            # make sure dwell is in seconds
+            dwell = np.float32(self._cur_scan_md[doc['run_start']]['dwell']) * 0.001
+            ev_setpoints = self._wdg_com['SINGLE_LST']['EV_ROIS']
+            num_ev_points = len(ev_setpoints)
+            _dataset(data_nxgrp, 'count_time', make_1d_array(num_ev_points, dwell), 'NX_FLOAT')
+            _dataset(data_nxgrp, 'energy', ev_setpoints, 'NX_FLOAT')
+            _dataset(data_nxgrp, nxkd.SAMPLE_X, self.get_sample_x_data('start'), 'NX_FLOAT')
+            _dataset(data_nxgrp, nxkd.SAMPLE_Y, self.get_sample_y_data('start'), 'NX_FLOAT')
 
-        #make sure dwell is in seconds
-        dwell = np.float32(self._cur_scan_md[doc['run_start']]['dwell']) * 0.001
-        ev_setpoints = self._wdg_com['SINGLE_LST']['EV_ROIS']
-        num_ev_points = len(ev_setpoints)
-        _dataset(data_nxgrp, 'count_time', make_1d_array(num_ev_points, dwell), 'NX_FLOAT')
-        _dataset(data_nxgrp, 'energy', ev_setpoints, 'NX_FLOAT')
-        _dataset(data_nxgrp, nxkd.SAMPLE_X, self.get_sample_x_data('start'), 'NX_FLOAT')
-        _dataset(data_nxgrp, nxkd.SAMPLE_Y, self.get_sample_y_data('start'), 'NX_FLOAT')
+            # pol_src = self.get_devname(DNM_EPU_POLARIZATION, do_warn=False)
+            # if (pol_src):
+            #     _dataset(data_nxgrp, 'epu_polarization', self.get_baseline_start_data(pol_src), 'NX_FLOAT')
+            epu_pol_src = self.get_devname(DNM_EPU_POLARIZATION, do_warn=False)
+            if (epu_pol_src):
+                # then EPU is supported
+                epu_offset_src = self.get_devname(DNM_EPU_OFFSET)
+                _dataset(data_nxgrp, nxkd.EPU_OFFSET, [self.get_baseline_start_data(epu_offset_src)], 'NX_FLOAT')
+                _dataset(data_nxgrp, nxkd.EPU_POLARIZATION, [self.get_baseline_start_data(epu_pol_src)], 'NX_FLOAT')
 
-        pol_src = self.get_devname(DNM_EPU_POLARIZATION)
-        _dataset(data_nxgrp, 'epu_polarization', self.get_baseline_start_data(pol_src), 'NX_FLOAT')
+            scan_type_str = self.get_stxm_scan_type_str(doc['run_start'])
+            _dataset(data_nxgrp, 'stxm_scan_type', scan_type_str, 'NX_CHAR')
 
-        scan_type_str = self.get_stxm_scan_type_str(doc['run_start'])
-        _dataset(data_nxgrp, 'stxm_scan_type', scan_type_str, 'NX_CHAR')
-
-        return(data_nxgrp)
+        return (dgrps)
 
     def get_stxm_scan_type_str(self, uid):
         '''
@@ -1124,7 +1090,7 @@ class Serializer(event_model.DocumentRouter):
                 return(k)
 
 
-    def get_primary_det_prefix(self, uid):
+    def get_detector_names(self, uid):
         '''
         convienience function to return the detector prefix specified in the metadata as the primary
         :param uid:
@@ -1176,22 +1142,6 @@ class Serializer(event_model.DocumentRouter):
                      'exit_status': 'success',
                      'num_events': {'oranges': 101}}
 
-                     scan_types =
-                        'detector_image', \
-                        'osa_image', \
-                        'osa_focus', \
-                        'sample_focus', \
-                        'sample_point_spectrum', \
-                        'sample_line_spectrum', \
-                        'sample_image', \
-                        'sample_image_stack', \
-                        'generic_scan', \
-                        'coarse_image_scan', \
-                        'coarse_goni_scan', \
-                        'tomography_scan', \
-                        'pattern_gen_scan'
-
-
                 '''
         # add the stop doc to self._meta.
         try:
@@ -1232,20 +1182,6 @@ class Serializer(event_model.DocumentRouter):
             if(self._cur_scan_md[doc['run_start']]['first_uid'] == self._cur_uid):
                 if (not os.path.exists(self._tmp_fname)):
                     self.create_file_attrs()
-
-            # if (has_baseline):
-            #     self.create_entry_structure(doc, scan_type=scan_type)
-            #     self._processed_sp_ids.append(self._sp_id)
-            # else:
-            #     # this is an ev only run so just update the data
-            #     #print('modifying data to an existing entry')
-            #     uid = self.get_current_uid()
-            #     det_nm = self.get_primary_det_nm(uid)
-            #     det_prfx = self.get_primary_det_prefix(uid)
-            #     dat_arr = np.array(self._data['primary'][det_nm][uid]['data'])
-            #
-            #     #now place it in correct entry/counter/data
-            #     self.modify_entry_data(self._entry_nm, det_prfx, dat_arr)
 
             self.create_entry_structure(doc, scan_type=scan_type)
             self._processed_sp_ids.append(self._sp_id)

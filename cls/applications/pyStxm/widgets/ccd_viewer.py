@@ -11,7 +11,7 @@ class CCDViewerPanel(QtWidgets.QWidget):
     changed = QtCore.pyqtSignal()
 
     def __init__(self, ccd, parent=None):
-        super().__init__()
+        super(CCDViewerPanel, self).__init__()
         self.ccd = ccd
         self.ss = get_style('dark', skip_lst=['QLabel.qss'])
         self.changed.connect(self.on_changed)
@@ -110,7 +110,7 @@ class CCDViewerPanel(QtWidgets.QWidget):
         # else:
         #     # self.bg_sts_lbl_clr = 'transparent'
         #     self.bg_sts_lbl_clr = 'rgb(114, 148, 240)'
-
+        print('on_new_image: ', kwargs)
         if(kwargs['old_value'] == 2 and kwargs['value'] == 0):
             self.changed.emit()
 
@@ -145,9 +145,10 @@ class CCDViewerPanel(QtWidgets.QWidget):
         pmap = pmap.scaled(QtCore.QSize(QtCore.QSize(PANEL_SIZE, PANEL_SIZE)), QtCore.Qt.IgnoreAspectRatio)
         self.imglbl.setPixmap(pmap)
         cntr = self.ccd.cam.array_counter.get()
-        #print('turn data into image # [%d] and display' % cntr)
+        print('turn data into image # [%d] and display' % cntr)
         self.cntrlbl.setText('Image [%d]' % cntr)
         s = self.get_image_meta()
+        print(s)
         self.imglbl.setToolTip(s)
         del pmap
 

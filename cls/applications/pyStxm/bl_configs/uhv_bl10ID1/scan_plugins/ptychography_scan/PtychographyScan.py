@@ -22,6 +22,8 @@ from cls.utils.json_utils import dict_to_json
 from cls.scan_engine.bluesky.bluesky_defs import bs_dev_modes
 from cls.scan_engine.bluesky.test_gate import trig_src_types
 from cls.utils.log import get_module_logger
+from cls.utils.dict_utils import dct_get
+from cls.appWidgets.dialogs import warn
 
 
 _logger = get_module_logger(__name__)
@@ -254,6 +256,23 @@ class PtychographyScanClass(BaseScan):
     #
     #     return (yield from do_scan())
 
+    def pre_flight_chk(self):
+        '''
+        before the scan plan is configured and executed it must first pass a pre flight check,
+        to be implemented by inheriting class
+        :return:
+        '''
+        ccd = self.main_obj.device(DNM_GREATEYES_CCD)
+        temp = ccd.get_temperature()
+
+        #make sure temperature is -20 before allowing scan to execute
+        if(temp > -20.0):
+            _logger.warn('CCD temperature [%.2f C] is too warm to execute scan, must be -20.0C or less' % temp)
+            self.display_message('CCD temperature [%.2f C] is too warm to execute scan, must be -20.0C or less' % temp)
+            return(False)
+        else:
+            return(True)
+
     def make_pxp_scan_plan(self, dets, gate, md=None, bi_dir=False):
         dev_list = self.main_obj.main_obj[DEVICES].devs_as_list()
 
@@ -262,9 +281,25 @@ class PtychographyScanClass(BaseScan):
         num_ttl_imgs = len(self.inner_pts) * len(self.outer_pnts) * self.y_roi[NPOINTS] * self.x_roi[NPOINTS]
         ccd = self.main_obj.device(DNM_GREATEYES_CCD)
         # set the output file path and configure ccd
-        ccd.file_plugin.file_path.put('/home/bergr/SM/test_data/')
+        #ccd.file_plugin.file_path.put('/home/bergr/SM/test_data/')
+        _rpath = dct_get(self.sp_db[SPDB_ACTIVE_DATA_OBJECT], ADO_CFG_STACK_DIR)
+        ccd.file_plugin.read_path_template = _rpath
+        _cur_datadir = _rpath.replace('/', '')
+        _cur_datadir = _cur_datadir.replace('G:\\', '/home/bergr/')
+        _cur_datadir = _cur_datadir.replace('\\', '/')
+        #ccd.file_plugin.reg_root.put('/home/bergr/SM')
+        ccd.file_plugin.file_path.put(_cur_datadir)
+        #ccd.file_plugin.read_path_template = ccd.file_plugin.write_path_template = _cur_datadir
+        ccd.file_plugin.write_path_template = _cur_datadir
+
+
+        #ccd.file_plugin.file_path.put('/opt/test_data/')
         # ccd.file_plugin.file_name.put('Ctest_')
         ccd.file_plugin.file_number.put(0)
+        ccd.file_plugin.auto_save.put(1)
+        #ccd.file_plugin.create_directory.put(-2) # this will create at least 2 levels of directories if they do not already exist
+        # self.file_plugin.compression.put(6)  # set to LZ4
+        #ccd.file_plugin.compression.put(0)  # set to NONE
 
         ccd.cam.image_mode.put(0)  # single
         ccd.cam.trigger_mode.put(0)  # internal
@@ -274,9 +309,21 @@ class PtychographyScanClass(BaseScan):
 
         ccd.stage()
 
-
         if (md is None):
             _meta = self.make_standard_metadata(entry_name='entry0', scan_type=self.scan_type, dets=dets)
+
+            # hack, need to do this the proper way once all is working
+            #modify the det names list
+            l = []
+            for n in _meta['detector_names']:
+                if n.find(DNM_DEFAULT_COUNTER) > -1:
+                    pass
+                elif n.find('GE_CCD') > -1:
+                    #the name GE_CCD_image shows up in data streeam not GE_CCD
+                    l.append('GE_CCD_image')
+                else:
+                    l.append(n)
+            _meta['detector_names'] = l
             _meta['num_ttl_imgs'] = num_ttl_imgs
             _meta['img_idx_map'] = dict_to_json(self.img_idx_map)
             _meta['det_filepath'] = ccd.file_plugin.file_path.get() + ccd.file_plugin.file_name.get() + '_000000.h5'
@@ -297,20 +344,13 @@ class PtychographyScanClass(BaseScan):
             mtr_x = self.main_obj.get_sample_fine_positioner('X')
             mtr_y = self.main_obj.get_sample_fine_positioner('Y')
             shutter = self.main_obj.device(DNM_SHUTTER)
-            # ccd = self.main_obj.device(DNM_GREATEYES_CCD)
-            # #set the output file path and configure ccd
-            # ccd.file_plugin.file_path.put('/home/bergr/SM/test_data/')
-            # #ccd.file_plugin.file_name.put('Ctest_')
-            # ccd.file_plugin.file_number.put(img_cntr)
-            #
-            # ccd.cam.image_mode.put(0) # single
-            # ccd.cam.trigger_mode.put(0)  # internal
-            # ccd.cam.acquire_time.put(dwell_sec)
+            ring_cur = self.main_obj.device(DNM_RING_CURRENT).get_ophyd_device()
+            ccd = self.main_obj.device(DNM_GREATEYES_CCD)
+            #pmt = self.main_obj.device(DNM_DEFAULT_COUNTER)
             # #Ru says the acquire period should be a tad longer than exposer time
             # ccd.cam.acquire_period.put(dwell_sec + 0.002)
 
             yield from bps.stage(gate)
-            #yield from bps.stage(ccd)
 
             shutter.open()
             img_cntr = 0
@@ -329,7 +369,10 @@ class PtychographyScanClass(BaseScan):
                             #print('PtychographyScanClass: moving X to [%.3f]' % x)
                             yield from bps.mv(mtr_x, x)
                             #print('PtychographyScanClass: calling ccd.acquire()')
-                            yield from bps.trigger_and_read([ccd, mtr_y, mtr_x])
+                            #yield from bps.trigger_and_read(dets + [ccd, mtr_y, mtr_x])
+                            #yield from bps.trigger_and_read(dets + [mtr_y, mtr_x])
+                            # yield from bps.trigger_and_read(dets)
+                            yield from bps.trigger_and_read([ccd, ring_cur, mtr_y, mtr_x])
                             img_cntr += 1
                             print('PtychographyScanClass: img_counter = [%d]' % img_cntr)
 

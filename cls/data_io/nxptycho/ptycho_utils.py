@@ -6,10 +6,10 @@ Created on Jan 4, 2019
 
 import numpy as np
 
-from cls.data_io.nxstxm.stxm_types import scan_types, two_posner_scans
-from cls.data_io.nxstxm.device_names import *
+from cls.data_io.nxptycho.stxm_types import scan_types, two_posner_scans
+from cls.data_io.nxptycho.device_names import *
 #from suitcase.nxstxm.utils import dct_get, dct_put
-from cls.data_io.nxstxm.roi_dict_defs import *
+from cls.data_io.nxptycho.roi_dict_defs import *
 
 # from suitcase.nxstxm.nxstxm_utils import (make_signal, _dataset, _string_attr, _group, make_1d_array, \
 #                                           get_nx_standard_epu_mode, get_nx_standard_epu_harmonic_new, translate_pol_id_to_stokes_vector, \

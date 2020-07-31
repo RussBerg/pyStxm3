@@ -15,7 +15,7 @@ from ophyd.areadetector.filestore_mixins import (FileStoreHDF5IterativeWrite  )
 from ophyd.areadetector import (GreatEyesDetector, GreatEyesDetectorCam,
                                 ImagePlugin, TIFFPlugin, StatsPlugin,
                                 ProcessPlugin, ROIPlugin, TransformPlugin)
-from ophyd.areadetector.filestore_mixins import FileStoreTIFFIterativeWrite
+from ophyd.areadetector.filestore_mixins import FileStoreTIFFIterativeWrite, FileStoreHDF5SingleIterativeWrite
 
 from ophyd.areadetector.cam import SimDetectorCam
 
@@ -29,10 +29,16 @@ class TIFFPluginWithFileStore(TIFFPlugin, FileStoreTIFFIterativeWrite):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-class GE_HDF5_Plugin(HDF5Plugin, FileStoreHDF5IterativeWrite  ):
-    pass
+# class GE_HDF5_Plugin(HDF5Plugin, FileStoreHDF5IterativeWrite  ):
+#      pass
+
+class GE_HDF5_Plugin(HDF5Plugin, FileStoreHDF5SingleIterativeWrite  ):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
 
 dest = '/home/bergr/SM/test_data'
+# = '/opt/test_data'
 
 class SimGreatEyesCCDTiff( SingleTrigger, GreatEyesDetector):
     _html_docs = ['GreatEyesDoc.html']
@@ -74,6 +80,13 @@ class SimGreatEyesCCDTiff( SingleTrigger, GreatEyesDetector):
 
     def get_position(self):
         return(0.0)
+
+    def describe(self):
+        '''Describe details for the flyer collect() method'''
+        desc = dict()
+        d = {self.name: desc}
+        #print('describe_collect: ', d)
+        return d
 
 class SimGreatEyesCCD( SingleTrigger, GreatEyesDetector):
     _html_docs = ['GreatEyesDoc.html']
@@ -117,9 +130,25 @@ class SimGreatEyesCCD( SingleTrigger, GreatEyesDetector):
     def get_position(self):
         return(0.0)
 
+    def describe(self):
+        '''Describe details for the flyer collect() method'''
+        desc = dict()
+        d = {self.name: desc}
+        #print('describe_collect: ', d)
+        return d
+
 class GreatEyesCCD(SingleTrigger, GreatEyesDetector):
     _html_docs = ['GreatEyesDoc.html']
-    file_plugin = C(GE_HDF5_Plugin, suffix='HDF1:', write_path_template=dest, root=dest)
+    # file_plugin = C(GE_HDF5_Plugin, suffix='HDF1:',
+    #                 write_path_template=dest,
+    #                 read_path_template=dest,
+    #                 root=dest)
+    # file_plugin = C(GE_HDF5_Plugin, suffix='HDF1:',
+    #                 write_path_template='/home/bergr/SM/test_data')
+    file_plugin = C(GE_HDF5_Plugin, suffix='HDF1:',
+                    read_path_template='G:\\SM\\test_data',
+                    write_path_template='/home/bergr/SM/test_data',
+                    root='G:\\')
     cam = C(GreatEyesDetectorCam, 'cam1:')
     image = C(ImagePlugin, 'image1:')
     stats1 = C(StatsPlugin, 'Stats1:')
@@ -136,11 +165,14 @@ class GreatEyesCCD(SingleTrigger, GreatEyesDetector):
 
     def __init__(self, prefix, name):
         super(GreatEyesCCD, self).__init__(prefix=prefix, name=name)
+        #these will appear in databroker documents
+        #self.read_attrs = ['file_plugin', 'stats1.total']
+        self.read_attrs = ['file_plugin']
+
 
     def stage(self, *args, **kwargs):
         # init some settings
         self.file_plugin.array_counter.put(0)
-        self.file_plugin.compression.put(6)  # set to LZ4
 
         return (super().stage(*args, **kwargs))
 
@@ -149,6 +181,17 @@ class GreatEyesCCD(SingleTrigger, GreatEyesDetector):
 
     def get_position(self):
         return(0.0)
+
+    def get_temperature(self):
+        val = self.cam.temperature_actual.get()
+        return(val)
+
+    # def describe(self):
+    #     '''Describe details for the flyer collect() method'''
+    #     desc = dict()
+    #     d = {self.name: desc}
+    #     #print('describe_collect: ', d)
+    #     return d
 
 
 def go():
@@ -165,16 +208,30 @@ def go():
 
 if __name__ == '__main__':
 
+    from bluesky import RunEngine
+    from bluesky.plans import count
+    from databroker import Broker
 
-    ccd = SimGreatEyesCCD('SIMCCD1610-I10-02:', name='SIM_GE_CCD')
-    #ccd = GreatEyesDetector('SIMCCD1610-I10-02:', name='SIM_GE_CCD')
-    #ccd.cam.stage()
-    #ccd.cam.trigger()
-    print('areaDetector main done')
-    # RE = RunEngine({})
-    # RE(bp.count([ccd]))
-    ccd.stage()
-    ccd.describe()
-    ccd.trigger()
-    ccd.read()
-    ccd.unstage()
+    db = Broker.named('mongo_databroker')
+    RE = RunEngine({})
+    RE.subscribe(db.insert)
+    #ccd = SimGreatEyesCCD('SIMCCD1610-I10-02:', name='SIM_GE_CCD')
+    ccd = GreatEyesCCD('CCD1610-01:', name='GE_CCD')
+    print(ccd.summary())
+    #ccd.read_attrs = ['file_plugin']
+    uid, = RE(count([ccd]))
+    hdr = db[uid]
+    docs = hdr.documents()
+    #next(docs)  # repeat it until the end of iterator
+    #hdr = db['<your uid>']
+    docs = hdr.documents()
+    for name, doc in docs:
+        if name in ['resource', 'datum']:
+            print(name, doc)
+    #
+
+    #print(ccd.describe())
+    # ccd.stage()
+    # # ccd.trigger()
+    # # ccd.read()
+    # ccd.unstage()

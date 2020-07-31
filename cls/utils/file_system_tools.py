@@ -105,6 +105,35 @@ def get_next_dir_in_seq_num(path, prefix_char='C', extension='hdf5'):
         
     return(generate_new_seq_num(path, prefix_char))    
 
+def get_latest_file_num_in_dir(path, prefix_char='C',extension='hdf5'):
+    _files = get_filenames_in_dir(path, extension)
+    if(len(_files) is 0):
+        _files = get_filenames_in_dir(path, extension + '.tmp')
+    if (len(_files) is 0):
+        _files = get_filenames_in_dir(path, extension + '.idx')
+    if (len(_files) is 0):
+        _files = get_filenames_in_dir(path, extension + '.err')
+    if (len(_files) is 0):
+        _files = get_cur_data_dir(path)
+    if(len(_files) is 0):
+        _files = [get_next_dir_in_seq(path, prefix_char=prefix_char)]
+
+    if(len(_files) > 0):
+        seq_num_str = _files[-1].replace(prefix_char,'').replace('.%s'%extension,'')
+        seq_num_str = seq_num_str.replace('.tmp','')
+        seq_num_str = seq_num_str.replace('.idx', '')
+        seq_num_str = seq_num_str.replace('.err', '')
+        #seq_num = int(seq_num_str) + 1
+        seq_num = int(seq_num_str)
+
+        while(check_if_tmp_or_final_exist(path, seq_num, prefix_char=prefix_char, extension=extension)):
+            # skip over the tmp/final file sequence number
+            seq_num = seq_num + 1
+
+        return(seq_num - 1)
+    else:
+        return(generate_new_seq_num(path, prefix_char))
+
 def get_next_file_num_in_seq(path, prefix_char='C',extension='hdf5'):
     _files = get_filenames_in_dir(path, extension)
     if(len(_files) is 0):

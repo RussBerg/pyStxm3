@@ -344,8 +344,14 @@ def message_no_btns(title, msg):
 	return ret
 
 
-def notify(title, msg, accept_str):
+def notify(title, msg, accept_str, ss=None, posn=None):
 	dialog = Dialog()
+	if (posn):
+		dialog.setGeometry(QtCore.QRect(posn[0], posn[1], dialog.width(), dialog.height()))
+
+	if (ss):
+		dialog.setStyleSheet(ss)
+
 	ret = dialog.notifyMessage(title, msg, accept_str)
 	return ret
 

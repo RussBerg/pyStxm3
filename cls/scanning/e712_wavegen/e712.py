@@ -359,22 +359,22 @@ class PI_E712_wave_generator(QtCore.QObject):
         # self.ddltbl_rbv = BaseDevice('%sDDLTbl%d_RBV' % (self.prefix, self.wg_num))
 
         self.start_mode = BaseDevice('%sWavTbl%dStartMode' % (self.prefix, self.wg_num))
-        self.start_mode_rbv = BaseDevice('%sWavTbl%dStartMode_RBV' % (self.prefix, self.wg_num), rd_only=True)
+        #self.start_mode_rbv = BaseDevice('%sWavTbl%dStartMode_RBV' % (self.prefix, self.wg_num), rd_only=True)
 
         self.use_ddl = BaseDevice('%sWavTbl%dUseDDL' % (self.prefix, self.wg_num))
-        self.use_ddl_rbv = BaseDevice('%sWavTbl%dUseDDL_RBV' % (self.prefix, self.wg_num), rd_only=True)
+        #self.use_ddl_rbv = BaseDevice('%sWavTbl%dUseDDL_RBV' % (self.prefix, self.wg_num), rd_only=True)
 
         self.use_reinit_ddl = BaseDevice('%sWavTbl%dUseReinitDDL' % (self.prefix, self.wg_num))
-        self.use_reinit_ddl_rbv = BaseDevice('%sWavTbl%dUseReinitDDL_RBV' % (self.prefix, self.wg_num), rd_only=True)
+        #self.use_reinit_ddl_rbv = BaseDevice('%sWavTbl%dUseReinitDDL_RBV' % (self.prefix, self.wg_num), rd_only=True)
 
         self.start_at_end_pos = BaseDevice('%sWavTbl%dStartAtEndPos' % (self.prefix, self.wg_num))
-        self.start_at_end_pos_rbv = BaseDevice('%sWavTbl%dStartAtEndPos_RBV' % (self.prefix, self.wg_num), rd_only=True)
+        #self.start_at_end_pos_rbv = BaseDevice('%sWavTbl%dStartAtEndPos_RBV' % (self.prefix, self.wg_num), rd_only=True)
 
         self.wavgen_usetbl_num = BaseDevice('%sWavGen%dUseTblNum' % (self.prefix, self.wg_num))
         self.wavgen_usetbl_num_rbv = BaseDevice('%sWavGen%dUseTblNum_RBV' % (self.prefix, self.wg_num), rd_only=True)
 
         #self.ddl_tbl = BaseDevice('%sDDLTbl%d' % (self.prefix, self.wg_num))
-
+#
         self.status_rbv = BaseDevice('%sWaveGen%dStatus_RBV' % (self.prefix, self.wg_num), rd_only=True)
 
         #self.status_rbv.add_callback(self.on_status_changed)

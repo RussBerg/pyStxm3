@@ -59,7 +59,7 @@ def modify_ptycho_ctrl_data_grps(parent, nxgrp, doc, scan_type):
     _dataset(nxgrp, nxkd.SAMPLE_X, xdata, 'NX_FLOAT')
 
     # this should be an array the same shape as the 'data' group in NXdata filled with the storagering current
-    _sr_data = parent.get_baseline_all_data(parent.get_devname(DNM_RING_CURRENT) + '_val')
+    _sr_data = parent.get_baseline_all_data(parent.get_devname(DNM_RING_CURRENT))
     sr_data = np.linspace(_sr_data[0], _sr_data[1], ttlpnts)
 
     _dataset(nxgrp, 'data', np.reshape(sr_data, (num_ev_points, ynpoints, xnpoints)), 'NX_NUMBER')
@@ -193,8 +193,8 @@ def modify_ptycho_instrument_group(parent, inst_nxgrp, doc, scan_type):
     '''
     rois = parent.get_rois_from_current_md(doc['run_start'])
     dwell = parent._cur_scan_md[doc['run_start']]['dwell'] * 0.001
-    det_nm = parent.get_primary_det_nm(doc['run_start'])
-    scan_type = parent.get_stxm_scan_type(doc['run_start'])
+    #det_nm = parent.get_primary_det_nm(doc['run_start'])
+    #scan_type = parent.get_stxm_scan_type(doc['run_start'])
 
     ttl_pnts = int(rois[SPDB_X][NPOINTS] * rois[SPDB_Y][NPOINTS])
     uid = parent.get_current_uid()

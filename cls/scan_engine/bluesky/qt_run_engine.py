@@ -43,7 +43,7 @@ class QRunEngine(QObject, RunEngine):
         # Attach the state_hook to emit signals
         self.state_hook = self.on_state_change
         self._execution_result = None
-        #self.msg_hook = self.on_msg_hook
+        self.msg_hook = self.on_msg_hook
         self.subscribe(self.update_progress)
         #self.subscribe(self.print_msg)
         #self.waiting_hook = self.check_progress
@@ -205,8 +205,9 @@ class QRunEngine(QObject, RunEngine):
     def on_msg_hook(self, msg):
         """
         """
-        #self.msg_changed.emit(msg)
-        _logger.debug(msg)
+        self.msg_changed.emit(msg)
+        #_logger.debug(msg)
+        #print(msg)
         #pass
 
 

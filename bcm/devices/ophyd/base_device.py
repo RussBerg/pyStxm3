@@ -87,8 +87,9 @@ class BaseDevice(QtCore.QObject):
             print('signal_base: ERROR: backend [%s] unsupported' % backend)
             exit()
 
+        # self.signal.wait_for_connection(timeout=0.5)
         #RUSS py3        self.signal.wait_for_connection()
-        #self.signal.wait_for_connection(timeout=0.5)
+        self.signal.wait_for_connection()
 
         self.info = dict(called=False)
         self.signal.subscribe(self._sub_test, run=False, event_type=self.signal.SUB_VALUE)

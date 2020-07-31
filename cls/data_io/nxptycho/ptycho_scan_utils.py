@@ -145,8 +145,8 @@ def modify_ptycho_nxdata_group(parent, data_nxgrp, doc, scan_type):
     _string_attr(data_nxgrp, 'axes', ['energy', nxkd.SAMPLE_Y, nxkd.SAMPLE_X])
     _string_attr(data_nxgrp, 'signal', 'data')
 
+    det_nm = data_nxgrp.name.split('/')[-1]
     #det_nm = parent.get_primary_det_nm(doc['run_start'])
-
     #need to find out how many energy points we need to make space for
     #det_data = np.array(parent._data['primary'][det_nm][uid]['data'], dtype=np.float32)
 
@@ -156,8 +156,24 @@ def modify_ptycho_nxdata_group(parent, data_nxgrp, doc, scan_type):
     num_ev_points = len(evs)
     #rows, cols = det_data.shape
     #init_dat_arr = np.zeros((num_ev_points, rows, cols), dtype=np.float32)
-    init_dat_arr = np.empty((num_ev_points, ynpoints, xnpoints), dtype=np.float32)
-    init_dat_arr[:] = np.NAN
+    # init_dat_arr = np.empty((num_ev_points, ynpoints, xnpoints), dtype=np.float32)
+    # init_dat_arr[:] = np.NAN
+    all_data = np.array(parent._data['primary'][det_nm][uid]['data'])
+
+    if det_nm.find('CCD') > -1:
+        #this is CCD data
+        #externa,-addr is where the data is in the detector written files
+        external_addr = u"/entry/data/data"
+        i = 0
+        for d in all_data:
+            data_nxgrp['data_%d' % i] = h5py.ExternalLink('%s' % (parent._det_fprfx % i), external_addr)
+            i += 1
+    else:
+        #all other detectors
+        all_data = np.array(parent._data['primary'][det_nm][uid]['data'])
+        _dataset(data_nxgrp, 'data', all_data, 'NX_NUMBER')
+
+
 
     #init_dat_arr[0] = det_data
     #_dataset(data_nxgrp, 'data', init_dat_arr, 'NX_NUMBER')
@@ -177,8 +193,9 @@ def modify_ptycho_nxdata_group(parent, data_nxgrp, doc, scan_type):
     # local_addr = u"/entry/instrument"
     # f[local_addr] = h5py.ExternalLink(FILE_HDF5_COUNTS, u"/entry/instrument")
 
-    external_addr = u"/entry/data/data"
-    data_nxgrp['data'] = h5py.ExternalLink(parent._det_fpath, external_addr)
+
+    # external_addr = u"/entry/data/data"
+    # data_nxgrp['data'] = h5py.ExternalLink(parent._det_fpath, external_addr)
 
 
 

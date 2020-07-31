@@ -783,6 +783,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.actionAbout_pyStxm.triggered.connect(self.on_about_pystxm)
         self.actionpyStxm_help.triggered.connect(self.on_pystxm_help)
         self.actionSwitch_User.triggered.connect(self.on_switch_user)
+        self.actionDisplay_RunEngine_msgs.triggered.connect(self.on_show_runengine_msgs)
 
         self.startBtn.clicked.connect(self.on_start_scan)
         self.pauseBtn.clicked.connect(self.on_pause)
@@ -1153,7 +1154,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.scanTypeToolBox.layout().setContentsMargins(0, 0, 0, 0)
         self.scanTypeToolBox.layout().setSpacing(0)
 
-        #get the beamline config directory from teh presets loaded at startup
+        #get the beamline config directory from the presets loaded at startup
         plugin_dir = MAIN_OBJ.get_preset('bl_config_dir', 'MAIN')
         _dirs = os.listdir(plugin_dir)
 
@@ -2429,10 +2430,10 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.cur_sp_rois = copy.copy(sp_rois)
 
         scan_class.set_spatial_id_list(sp_ids)
-        # if not scan_class.pre_flight_chk():
-        #     _logger.error(
-        #         'scan class failed pre flight check, not executing scan')
-        #     return
+        if not scan_class.pre_flight_chk():
+            _logger.error(
+                'scan class failed pre flight check, not executing scan')
+            return
 
         # a list of basic scans that use the same configuration block below
         _simple_types = [scan_types.DETECTOR_IMAGE, scan_types.OSA_IMAGE, scan_types.OSA_FOCUS, scan_types.GENERIC_SCAN,
@@ -2665,18 +2666,29 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.start_time = time.time()
         self._cur_dets = dets
         # Start the RunEngine
-        MAIN_OBJ.engine_widget.engine.md['user'] = 'bergr'
+        MAIN_OBJ.engine_widget.engine.md['user'] = 'guest'
         MAIN_OBJ.engine_widget.engine.md['host'] = 'myNotebook'
         MAIN_OBJ.engine_widget.control.state_widgets['start'].clicked.emit()
 
 
-    def on_show_runengine_msgs(self):
-        MAIN_OBJ.engine_widget.engine.msg_changed.connect(self.print_re_msg)
 
-    def on_dont_show_runengine_msgs(self):
-        MAIN_OBJ.engine_widget.engine.msg_changed.disconnect(self.print_re_msg)
+    def on_show_runengine_msgs(self, chkd):
+        '''
+        user selectable from the 'Help' menu, connect the RunEngine msg_changed signal for debugging
+        :param chkd:
+        :return:
+        '''
+        if(chkd):
+            reconnect_signal(MAIN_OBJ.engine_widget.engine, MAIN_OBJ.engine_widget.engine.msg_changed, self.print_re_msg)
+        else:
+            disconnect_signal(MAIN_OBJ.engine_widget.engine, MAIN_OBJ.engine_widget.engine.msg_changed)
 
     def print_re_msg(self, msg):
+        '''
+        simple msg handler for debugging
+        :param msg:
+        :return:
+        '''
         print(msg)
 
     def get_data_as_array(self, hdr, strm_nm, det_nm, final_shape):
@@ -2733,10 +2745,10 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             # Execute
             self._threadpool.start(worker)
 
-            #ensure that all detectors have been unstaged in case scan aws aborted
+            # #ensure that all detectors have been unstaged in case scan aws aborted
             for d in self._cur_dets:
                 d.unstage()
-            #detector
+            #need a gap, sue me
             time.sleep(0.25)
 
 
@@ -2778,7 +2790,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
         elif(scan_type in [scan_types.PTYCHOGRAPHY]):
         #could also just be multiple rois on a single energy
-            #areaDetector has already created teh directory so we need to make sure that the filename and data dir are not next in teh sequence
+            #areaDetector has already created the directory so we need to make sure that the filename and data dir are not next in the sequence
             fprefix = 'C' + str(get_latest_file_num_in_dir(data_dir, extension='hdf5'))
             data_dir = os.path.join(data_dir, fprefix)
             is_stack = True
@@ -2895,21 +2907,24 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             idx += 1
         last_uid = uid
         idx = 0
-        print('starting multi_entry export [%s]' % uid)
+        _logger.info('starting multi_entry export [%s]' % uid)
         for uid in run_uids:
             #export each uid as an nxstxm entry
+            _logger.info('getting documents')
             header = MAIN_OBJ.engine_widget.db[uid]
             primary_docs = header.documents(fill=True)
+            _logger.info('got documents')
 
             if(not os.path.exists(data_dir)):
                 os.makedirs(data_dir)
             suit_nxptycho.export(primary_docs, data_dir, file_prefix=fprefix, first_uid=first_uid)
             idx += 1
+            _logger.info('finished export')
 
     def call_do_post_test(self):
         '''
         create a dict of hte data to check
-        :return:
+        :return:☻
         '''
         time.sleep(0.5)
         dct = {}

@@ -262,11 +262,23 @@ class PtychographyScanClass(BaseScan):
         to be implemented by inheriting class
         :return:
         '''
+        mtr_x = self.main_obj.get_sample_fine_positioner('X')
+        mtr_y = self.main_obj.get_sample_fine_positioner('Y')
+        if hasattr(mtr_x, 'servo_power'):
+            #toggle power to clear any errors if there are any
+            mtr_x.servo_power.put(0)
+            mtr_x.servo_power.put(1)
+        if hasattr(mtr_y, 'servo_power'):
+            #toggle power to clear any errors if there are any
+            mtr_y.servo_power.put(0)
+            mtr_y.servo_power.put(1)
+
         ccd = self.main_obj.device(DNM_GREATEYES_CCD)
         temp = ccd.get_temperature()
 
         #make sure temperature is -20 before allowing scan to execute
-        if(temp > -20.0):
+        # if(temp > -20.0):
+        if (temp > 50.0):
             _logger.warn('CCD temperature [%.2f C] is too warm to execute scan, must be -20.0C or less' % temp)
             self.display_message('CCD temperature [%.2f C] is too warm to execute scan, must be -20.0C or less' % temp)
             return(False)
@@ -326,7 +338,7 @@ class PtychographyScanClass(BaseScan):
             _meta['detector_names'] = l
             _meta['num_ttl_imgs'] = num_ttl_imgs
             _meta['img_idx_map'] = dict_to_json(self.img_idx_map)
-            _meta['det_filepath'] = ccd.file_plugin.file_path.get() + ccd.file_plugin.file_name.get() + '_000000.h5'
+            _meta['det_filepath'] = ccd.file_plugin.file_path.get() + ccd.file_plugin.file_name.get() + '_%06d.h5' % 0
             md = {'metadata': dict_to_json(_meta)}
 
             # md = {'metadata': dict_to_json(
@@ -346,7 +358,7 @@ class PtychographyScanClass(BaseScan):
             shutter = self.main_obj.device(DNM_SHUTTER)
             ring_cur = self.main_obj.device(DNM_RING_CURRENT).get_ophyd_device()
             ccd = self.main_obj.device(DNM_GREATEYES_CCD)
-            #pmt = self.main_obj.device(DNM_DEFAULT_COUNTER)
+            pmt = self.main_obj.device(DNM_DEFAULT_COUNTER)
             # #Ru says the acquire period should be a tad longer than exposer time
             # ccd.cam.acquire_period.put(dwell_sec + 0.002)
 
@@ -368,10 +380,6 @@ class PtychographyScanClass(BaseScan):
                         for x in self.x_roi[SETPOINTS]:
                             #print('PtychographyScanClass: moving X to [%.3f]' % x)
                             yield from bps.mv(mtr_x, x)
-                            #print('PtychographyScanClass: calling ccd.acquire()')
-                            #yield from bps.trigger_and_read(dets + [ccd, mtr_y, mtr_x])
-                            #yield from bps.trigger_and_read(dets + [mtr_y, mtr_x])
-                            # yield from bps.trigger_and_read(dets)
                             yield from bps.trigger_and_read([ccd, ring_cur, mtr_y, mtr_x])
                             img_cntr += 1
                             print('PtychographyScanClass: img_counter = [%d]' % img_cntr)

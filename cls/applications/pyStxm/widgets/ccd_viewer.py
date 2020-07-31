@@ -110,8 +110,8 @@ class CCDViewerPanel(QtWidgets.QWidget):
         # else:
         #     # self.bg_sts_lbl_clr = 'transparent'
         #     self.bg_sts_lbl_clr = 'rgb(114, 148, 240)'
-        print('on_new_image: ', kwargs)
-        if(kwargs['old_value'] == 2 and kwargs['value'] == 0):
+        #print('on_new_image: ', kwargs)
+        if(kwargs['old_value'] != 0 and kwargs['value'] == 0):
             self.changed.emit()
 
     def init_panel(self):
@@ -121,7 +121,7 @@ class CCDViewerPanel(QtWidgets.QWidget):
         '''
         self.ccd.cam.array_counter.put(0)
 
-    def on_capture(self, **kwargs):
+    def on_capture(self, kwargs):
         if (kwargs['value'] != 0):
             self.bg_sts_lbl_clr = 'rgb(234, 234, 0)'
             #self.cntrlbl.setStyleSheet('QLabel{background-color: %s;}' % self.bg_sts_lbl_clr)
@@ -145,10 +145,10 @@ class CCDViewerPanel(QtWidgets.QWidget):
         pmap = pmap.scaled(QtCore.QSize(QtCore.QSize(PANEL_SIZE, PANEL_SIZE)), QtCore.Qt.IgnoreAspectRatio)
         self.imglbl.setPixmap(pmap)
         cntr = self.ccd.cam.array_counter.get()
-        print('turn data into image # [%d] and display' % cntr)
+        #print('turn data into image # [%d] and display' % cntr)
         self.cntrlbl.setText('Image [%d]' % cntr)
         s = self.get_image_meta()
-        print(s)
+        #print(s)
         self.imglbl.setToolTip(s)
         del pmap
 

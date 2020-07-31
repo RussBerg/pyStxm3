@@ -208,8 +208,9 @@ def go():
 
 if __name__ == '__main__':
 
+
     from bluesky import RunEngine
-    from bluesky.plans import count
+    import bluesky.plans as bp
     from databroker import Broker
 
     db = Broker.named('mongo_databroker')
@@ -219,7 +220,7 @@ if __name__ == '__main__':
     ccd = GreatEyesCCD('CCD1610-01:', name='GE_CCD')
     print(ccd.summary())
     #ccd.read_attrs = ['file_plugin']
-    uid, = RE(count([ccd]))
+    uid, = RE(bp.count([ccd]))
     hdr = db[uid]
     docs = hdr.documents()
     #next(docs)  # repeat it until the end of iterator

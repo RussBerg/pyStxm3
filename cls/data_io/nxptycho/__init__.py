@@ -321,6 +321,8 @@ class Serializer(event_model.DocumentRouter):
         self._scan_type = _metadata_dct['scan_type']
         self._sp_id_lst = _metadata_dct['sp_id_lst']
         self._det_fpath = _metadata_dct['det_filepath'].split('/')[-1]
+        #_det_fprfx will be the filepath minus the sequence number <filepath>'_%05d.h5' % sequence_number
+        self._det_fprfx = _metadata_dct['det_filepath'].split('/')[-1].replace('_000000.h5', '_%06d.h5')
         self._cur_sp_id = self._sp_id_lst[0]
         self._cur_uid = doc['uid']
 
@@ -528,17 +530,19 @@ class Serializer(event_model.DocumentRouter):
         :param scan_type:
         :return:
         '''
-        rois = self.get_rois_from_current_md(doc['run_start'])
         dwell = self._cur_scan_md[doc['run_start']]['dwell'] * 0.001
-        scan_type = self.get_stxm_scan_type(doc['run_start'])
         uid = self.get_current_uid()
-        ttlpnts = int(rois[SPDB_X][NPOINTS] * rois[SPDB_Y][NPOINTS])
-        if(scan_type == scan_types.SAMPLE_POINT_SPECTRUM.value):
-            #need to slice the 1d array data into num spatial ids
-            det_data = np.array(self._data['primary'][det_nm][uid]['data'][::len(self._sp_id_lst)])  # .reshape((ynpoints, xnpoints))
+        #ttlpnts = int(rois[SPDB_X][NPOINTS] * rois[SPDB_Y][NPOINTS])
+        det_data = np.array(self._data['primary'][det_nm][uid]['data'])
+        shp = det_data.shape
+        if len(shp) == 1:
+            ttlpnts = shp[0]
+        elif len(shp) == 2:
+            ttlpnts = shp[0] * shp[1]
         else:
-            #take teh entire 1d array
-            det_data = np.array(self._data['primary'][det_nm][uid]['data'])
+            _logger.error('create_base_instrument_detector: unsupported data dimension size [%d]' % len(shp))
+            return
+
         self.make_detector(inst_nxgrp, det_nm, det_data, dwell, ttlpnts, units='counts')
 
     def get_scan_specific_funcs(self, scan_type):

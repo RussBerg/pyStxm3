@@ -423,6 +423,7 @@
     <addaction name="actionpyStxm_help"/>
     <addaction name="separator"/>
     <addaction name="actionAbout_pyStxm"/>
+    <addaction name="actionDisplay_RunEngine_msgs"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -3366,6 +3367,14 @@ p, li { white-space: pre-wrap; }
   <action name="actionHelp_pystxm">
    <property name="text">
     <string>Help</string>
+   </property>
+  </action>
+  <action name="actionDisplay_RunEngine_msgs">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Display RunEngine msgs</string>
    </property>
   </action>
  </widget>

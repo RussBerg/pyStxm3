@@ -313,8 +313,6 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.setup_image_plot()
         self.setup_spectra_plot()
 
-
-
         #beam spot feedback dispatcher
         #self.bmspot_fbk_obj = BeamSpotFeedbackObj(MAIN_OBJ)
         #self.bmspot_fbk_obj.new_beam_pos.connect(self.on_new_beamspot_fbk)
@@ -345,6 +343,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.ev_rois = None
         self.cur_ev_idx = 0
         self.cur_sp_rois = {}
+        self.cur_dets = []
         # self.e_roi_queue = Queue.Queue()
 
         self.ySetpoints = None
@@ -2664,7 +2663,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.on_image_start(self.cur_wdg_com, sp_id=sp_id)
 
         self.start_time = time.time()
-        self._cur_dets = dets
+        self.cur_dets = dets
         # Start the RunEngine
         MAIN_OBJ.engine_widget.engine.md['user'] = 'guest'
         MAIN_OBJ.engine_widget.engine.md['host'] = 'myNotebook'
@@ -2745,11 +2744,11 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             # Execute
             self._threadpool.start(worker)
 
-            # #ensure that all detectors have been unstaged in case scan aws aborted
-            for d in self._cur_dets:
-                d.unstage()
-            #need a gap, sue me
-            time.sleep(0.25)
+            # # #ensure that all detectors have been unstaged in case scan aws aborted
+            # for d in self.cur_dets:
+            #     d.unstage()
+            # #need a gap, sue me
+            # time.sleep(0.25)
 
 
     def check_data_export_good_to_go(self):
@@ -3450,6 +3449,10 @@ class pySTXMWindow(QtWidgets.QMainWindow):
             # stop
             #MAIN_OBJ.engine_widget.control.state_widgets['stop'].clicked.emit()
             MAIN_OBJ.engine_widget.control.on_stop_clicked()
+
+        # #ensure that all detectors have been unstaged in case scan aws aborted
+        for d in self.cur_dets:
+            d.unstage()
 
     def on_exit(self):
         """

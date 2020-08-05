@@ -146,9 +146,9 @@ class GreatEyesCCD(SingleTrigger, GreatEyesDetector):
     # file_plugin = C(GE_HDF5_Plugin, suffix='HDF1:',
     #                 write_path_template='/home/bergr/SM/test_data')
     file_plugin = C(GE_HDF5_Plugin, suffix='HDF1:',
-                    read_path_template='G:\\SM\\test_data',
-                    write_path_template='/home/bergr/SM/test_data',
-                    root='G:\\')
+                    read_path_template='S:\\SM\\test_data',
+                    write_path_template='/nas/sm-user/SM/test_data',
+                    root='S:\\')
     cam = C(GreatEyesDetectorCam, 'cam1:')
     image = C(ImagePlugin, 'image1:')
     stats1 = C(StatsPlugin, 'Stats1:')

@@ -121,8 +121,10 @@ class CCDViewerPanel(QtWidgets.QWidget):
         '''
         self.ccd.cam.array_counter.put(0)
 
-    def on_capture(self, kwargs):
-        if (kwargs['value'] != 0):
+    #def on_capture(self, kwargs):
+    def on_capture(self, value = None, old_value = None, ** kwargs):
+        #if (kwargs['value'] != 0):
+        if (value != 0):
             self.bg_sts_lbl_clr = 'rgb(234, 234, 0)'
             #self.cntrlbl.setStyleSheet('QLabel{background-color: %s;}' % self.bg_sts_lbl_clr)
         else:

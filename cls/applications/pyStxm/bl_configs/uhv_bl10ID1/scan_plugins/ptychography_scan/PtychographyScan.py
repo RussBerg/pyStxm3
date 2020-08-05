@@ -297,7 +297,8 @@ class PtychographyScanClass(BaseScan):
         _rpath = dct_get(self.sp_db[SPDB_ACTIVE_DATA_OBJECT], ADO_CFG_STACK_DIR)
         ccd.file_plugin.read_path_template = _rpath
         _cur_datadir = _rpath.replace('/', '')
-        _cur_datadir = _cur_datadir.replace('G:\\', '/home/bergr/')
+        #_cur_datadir = _cur_datadir.replace('G:\\', '/home/bergr/')
+        _cur_datadir = _cur_datadir.replace('S:\\', '/nas/sm-user/')
         _cur_datadir = _cur_datadir.replace('\\', '/')
         #ccd.file_plugin.reg_root.put('/home/bergr/SM')
         ccd.file_plugin.file_path.put(_cur_datadir)
@@ -315,6 +316,7 @@ class PtychographyScanClass(BaseScan):
 
         ccd.cam.image_mode.put(0)  # single
         ccd.cam.trigger_mode.put(0)  # internal
+        ccd.cam.array_counter.put(0) #reset counter to 0 for this run
         ccd.cam.acquire_time.put(dwell_sec)
         # Ru says the acquire period should be a tad longer than exposer time
         ccd.cam.acquire_period.put(dwell_sec + 0.002)

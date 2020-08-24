@@ -223,8 +223,9 @@ class FocusScanClass(BaseScan):
         self.finish_setup()
 
         #added this to try and stabalize the start of the scan (sends lines before proper start)
-        self.gate.wait_till_running_polling()
-        self.counter.wait_till_running_polling()
+        #
+        # self.gate.wait_till_running_polling()
+        # self.counter.wait_till_running_polling()
         
     
     def goto_scan_start(self, dct):

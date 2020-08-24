@@ -59,8 +59,8 @@ class device_config(dev_config_base):
         self.done = False
         self.init_devices()
         self.device_reverse_lookup_dct = self.make_device_reverse_lookup_dict()
-        # elif (self.sample_pos_mode is sample_positioning_modes.COARSE):
-        # if (self.fine_sample_pos_mode is sample_fine_positioning_modes.SAMPLEFINE):
+
+        #self.perform_device_connection_check(verbose=True)
 
         # the following is a list of positioners that will not show up on teh devices panel
         self.exclude_list = [DNM_GONI_X, DNM_GONI_Y, DNM_GONI_Z, DNM_GONI_THETA, DNM_ZONEPLATE_Z_BASE,
@@ -69,61 +69,7 @@ class device_config(dev_config_base):
 
         print('leaving device_config')
 
-    def parse_cainfo_stdout_to_dct(self, s):
-        dct = {}
-        s2 = s.split('\n')
-        for l in s2:
-            l2 = l.replace(' ', '')
-            l3 = l2.split(':')
-            if (len(l3) > 1):
-                dct[l3[0]] = l3[1]
-        return (dct)
 
-    def do_cainfo(self, pvname):
-        import subprocess
-        print('cainfo [%s]' % pvname)
-        proc = subprocess.Popen('cainfo %s' % pvname, stdout=subprocess.PIPE)
-        stdout_str = proc.stdout.read()
-        _dct = self.parse_cainfo_stdout_to_dct(stdout_str)
-        return (_dct)
-
-    def get_cainfo(self):
-
-        skip_lst = ['PVS_DONT_RECORD', 'PRESETS', 'DETECTORS_NO_RECORD', 'WIDGETS']
-        dev_dct = {}
-        sections = list(self.devices.keys())
-        for section in sections:
-            keys = []
-            if (section not in skip_lst):
-                keys = list(self.devices[section].keys())
-                # check to see if this is a subsectioned section that has pvs for BL (beamline) and ES (endstation)
-                # if so do those
-                if (keys == ['BL', 'ES']):
-                    dev_dct[section] = {}
-                    for subsec in keys:
-                        for pvname in list(self.devices[section][subsec].keys()):
-                            _dct = self.do_cainfo(pvname)
-                            dev_dct[section][pvname] = {}
-                            dev_dct[section][pvname]['dev'] = self.devices[section][subsec][pvname]
-                            dev_dct[section][pvname]['cainfo'] = _dct
-                            if (_dct['State'].find('dis') > -1):
-                                print('[%s] does not appear to exist' % k)
-                                print(_dct)
-                else:
-                    for k in keys:
-                        dev = self.devices[section][k]
-                        dev_dct[section] = {}
-                        dev_dct[section][k] = {}
-                        dev_dct[section][k]['dev'] = dev
-                        if (not hasattr(dev, 'get_name')):
-                            print('crap!', dev)
-                        _dct = self.do_cainfo(dev.get_name())
-                        dev_dct[section][k]['cainfo'] = _dct
-                        if (_dct['State'].find('dis') > -1):
-                            print('[%s] does not appear to exist' % k)
-                            print(_dct)
-
-        # dev_dct
 
     # def init_presets(self):
     #     # these need to come from teh app.ini file FINE_SCAN_RANGES, leave as hack for now till I get time
@@ -327,7 +273,7 @@ def connect_devices(dev_dct, prfx='%sBL1610-I10' % DEVPRFX, devcfg=None):
     dev_dct['DIO']['ShutterTaskRun'] = make_basedevice('DIO', '%s-DIO:shutter:Run' % (prfx), devcfg=devcfg)
 
     devcfg.msg_splash("connecting to: [%s]" % DNM_COUNTER_APD)
-    dev_dct['DETECTORS'][DNM_COUNTER_APD] = BaseCounter('%s-CI:counter' % (prfx))
+    dev_dct['DETECTORS'][DNM_COUNTER_APD] = PointDetectorDevice('%s-CI:counter' % (prfx),  name=DNM_COUNTER_APD, scale_val=1.0)
     dev_dct['DETECTORS'][DNM_DEFAULT_COUNTER] = PointDetectorDevice('%s-CI:counter:' % (prfx),
                                                                     name=DNM_DEFAULT_COUNTER, scale_val=100.0)
 

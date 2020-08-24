@@ -65,7 +65,7 @@
             ],
             "ZP_FOCUS_PARAMS": {
                 "OSA_A0": 1500.0,
-                "OSA_A0MAX": 1528.1031256918527,
+                "OSA_A0MAX": -0.0,
                 "OSA_D": 40.0,
                 "OSA_IDEAL_A0": 1000,
                 "OSA_IDX": 1,
@@ -338,7 +338,7 @@
             "CENTER": [
                 -16.67,
                 -504.75,
-                -5997.2,
+                -1.25,
                 0
             ],
             "DWELL": 1.0,
@@ -443,7 +443,7 @@
             "CENTER": [
                 -10.0,
                 -314.71,
-                -5997.2,
+                -1.25,
                 0
             ],
             "DWELL": 1.0,
@@ -711,5 +711,5 @@
             ]
         }
     },
-    "fpath": "C:\\controls\\github\\pyStxm3\\cls\\app_data\\uhv_bl10ID1_dflts.json"
+    "fpath": "C:\\controls\\sandbox\\pyStxm3\\cls\\app_data\\uhv_bl10ID1_dflts.json"
 }

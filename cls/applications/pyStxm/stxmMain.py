@@ -267,8 +267,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         # self.setWindowTitle('pyStxm %s.%s Canadian Light Source Inc. ' % (major_version, minor_version))
         #self.setWindowTitle('pyStxm %s.%s Canadian Light Source Inc. %s [%s]' % (
         #MAIN_OBJ.get('APP.MAJOR_VER'), MAIN_OBJ.get('APP.MINOR_VER'), MAIN_OBJ.get('APP.DATE'), os.path.dirname(os.path.abspath(__file__))))
-        self.setWindowTitle('pyStxm %s.%s Canadian Light Source Inc. [%s] [%s] [%s]' % (
-            MAIN_OBJ.get('APP.MAJOR_VER'), MAIN_OBJ.get('APP.MINOR_VER'), os.path.dirname(os.path.abspath(__file__)), MAIN_OBJ.get('APP.COMMIT'), MAIN_OBJ.get('APP.DATE')))
+        self.setWindowTitle('pyStxm %s.%s Canadian Light Source Inc. [%s] [%s] [%s] [Branch: %s]' % (
+            MAIN_OBJ.get('APP.MAJOR_VER'), MAIN_OBJ.get('APP.MINOR_VER'), os.path.dirname(os.path.abspath(__file__)), MAIN_OBJ.get('APP.COMMIT'), MAIN_OBJ.get('APP.DATE'), MAIN_OBJ.get('APP.BRANCH')))
 
         self.setGeometry(10, 100, 2000, 1300)
         self.qssheet = get_style('dark')

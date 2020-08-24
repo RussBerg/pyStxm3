@@ -24,6 +24,11 @@ def gen_version_json():
     #commit_date = subprocess.check_output(["git", "show", "-s", "--format=%ci", str(commit_uid)])
     commit_date = str(subprocess.check_output(["git", "show", "-s", commit_uid])).split('\\n')[2]
     commit_date = commit_date.replace('Date: ','')
+
+    commit_branch = subprocess.check_output(["git", "status"]).decode('utf-8')
+    commit_branch = commit_branch.split('\n')[0]
+    commit_branch = commit_branch.replace('On branch ','')
+
     dct = {
         "ver": "3.0",
         "ver_str": "Version 3.0",
@@ -31,7 +36,8 @@ def gen_version_json():
         "minor_ver": "0",
         "commit": str(commit_uid),
         "auth": "Russ Berg",
-        "date": commit_date
+        "date": commit_date,
+        "branch": commit_branch
     }
     os.chdir(wd)
 

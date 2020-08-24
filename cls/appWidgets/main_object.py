@@ -98,6 +98,7 @@ class main_object_base(QtCore.QObject):
         dct_put(self.main_obj, 'APP.AUTHOR', ver_dct['auth'])
         dct_put(self.main_obj, 'APP.DATE', ver_dct['date'])
         dct_put(self.main_obj, 'APP.COMMIT', ver_dct['commit'])
+        dct_put(self.main_obj, 'APP.BRANCH', ver_dct['branch'])
 
         
         dct_put(self.main_obj, 'SCAN.CFG.SCAN_TYPE', 'THIS IS THE SCAN CFG TYPE')

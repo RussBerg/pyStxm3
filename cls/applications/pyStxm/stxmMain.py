@@ -39,7 +39,7 @@ from cls.utils.file_system_tools import master_get_seq_names, get_thumb_file_nam
 from cls.utils.prog_dict_utils import *
 from cls.utils.sig_utils import reconnect_signal, disconnect_signal
 
-from cls.plotWidgets.imageWidget import ImageWidget
+from cls.plotWidgets.imageWidget import ImageWidgetPlot
 from cls.plotWidgets.zmq_imageWidget import ZMQImageWidget as ImgPlotWindow
 from cls.plotWidgets.striptool.stripToolWidget import StripToolWidget
 from cls.plotWidgets.curveWidget import CurveViewerWidget, get_next_color, get_basic_line_style
@@ -173,7 +173,7 @@ class EngineLabel(QtWidgets.QLabel):
         self._blink_timer = QtCore.QTimer()
         self._blink_timer.timeout.connect(self.on_timeout)
         self._tmr_en = False
-        self._blink_timer.start(500)
+        #self._blink_timer.start(500)
         self._cur_color = None
         self._state_str = None
 
@@ -1544,13 +1544,13 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         called by the pattern generator scan plugin
         :return:
         '''
-        chkd, xc, yc, pad_size = tple
-        if(chkd):
-            #check to see if it is currently visible if so hide it if not show it
-
-            self.lineByLineImageDataWidget.show_pattern( xc, yc, pad_size, do_show=True)
-        else:
-            self.lineByLineImageDataWidget.show_pattern(xc, yc, pad_size, do_show=False)
+        if (hasattr(self, 'lineByLineImageDataWidget')):
+            chkd, xc, yc, pad_size = tple
+            if(chkd):
+                #check to see if it is currently visible if so hide it if not show it
+                    self.lineByLineImageDataWidget.show_pattern( xc, yc, pad_size, do_show=True)
+            else:
+                self.lineByLineImageDataWidget.show_pattern(xc, yc, pad_size, do_show=False)
 
     def setup_image_plot(self):
         """
@@ -1569,49 +1569,49 @@ class pySTXMWindow(QtWidgets.QMainWindow):
 
         # gridparam = {'fg_clr':fg_clr, 'bg_clr':bg_clr, 'min_clr':min_clr, 'maj_clr':maj_clr}
 
-        # self.lineByLineImageDataWidget = ImageWidget(parent=None, filtStr="*.hdf5", type=None,
+        # self.lineByLineImageDataWidget = ImageWidgetPlot(parent=None, filtStr="*.hdf5", type=None,
         #         options = dict(lock_aspect_ratio=True, show_contrast=True, show_xsection=True, show_ysection=True,
         #         xlabel=("microns", ""), ylabel=("microns", ""), colormap="gist_gray"))
 
 
-        self.lineByLineImageDataWidget = ImageWidget(parent=None, type='analyze', settings_fname='%s_settings.json' % MAIN_OBJ.get_endstation_prefix())
-        self.lineByLineImageDataWidget.set_lock_aspect_ratio(True)
-        #self.bsImagePlotWidget = ImgPlotWindow()
-        #vb = QtWidgets.QVBoxLayout()
-        #vb.addWidget(self.bsImagePlotWidget)
-        #self.bsImagePlotFrame.setLayout(vb)
+        self.lineByLineImageDataWidget = ImageWidgetPlot(parent=None, type='analyze', settings_fname='%s_settings.json' % MAIN_OBJ.get_endstation_prefix())
+        if (hasattr(self, 'lineByLineImageDataWidget')):
+            self.lineByLineImageDataWidget.set_lock_aspect_ratio(True)
+            #self.bsImagePlotWidget = ImgPlotWindow()
+            #vb = QtWidgets.QVBoxLayout()
+            #vb.addWidget(self.bsImagePlotWidget)
+            #self.bsImagePlotFrame.setLayout(vb)
 
-        self.lineByLineImageDataWidget.setObjectName("lineByLineImageDataWidget")
-        self.lineByLineImageDataWidget.register_osa_and_samplehldr_tool(sample_pos_mode)
-        #        self.lineByLineImageDataWidget.register_osa_and_samplehldr_tool(sample_pos_mode)
-        # self.lineByLineImageDataWidget.set_transform_factors(0.333, 0.333, 0.333, 'um')
-        self.lineByLineImageDataWidget.setMinimumSize(600, 600)
-        self.lineByLineImageDataWidget.setMaximumSize(1000, 1000)
-        self.lineByLineImageDataWidget.enable_tool_by_name('tools.clsOpenFileTool', False)
-        #   self.lineByLineImageDataWidget.set_sample_positioning_mode(sample_pos_mode)
-        self.lineByLineImageDataWidget.set_dataIO(STXMDataIo)
+            self.lineByLineImageDataWidget.setObjectName("lineByLineImageDataWidget")
+            self.lineByLineImageDataWidget.register_osa_and_samplehldr_tool(sample_pos_mode)
+            #        self.lineByLineImageDataWidget.register_osa_and_samplehldr_tool(sample_pos_mode)
+            # self.lineByLineImageDataWidget.set_transform_factors(0.333, 0.333, 0.333, 'um')
+            self.lineByLineImageDataWidget.setMinimumSize(600, 600)
+            self.lineByLineImageDataWidget.setMaximumSize(1000, 1000)
+            self.lineByLineImageDataWidget.enable_tool_by_name('tools.clsOpenFileTool', False)
+            #   self.lineByLineImageDataWidget.set_sample_positioning_mode(sample_pos_mode)
+            self.lineByLineImageDataWidget.set_dataIO(STXMDataIo)
 
-        self.lineByLineImageDataWidget.addTool('DummySeparatorTool')
-        self.lineByLineImageDataWidget.addTool('tools.BeamSpotTool')
-        self.lineByLineImageDataWidget.addTool('tools.StxmControlBeamTool')
-        self.lineByLineImageDataWidget.addTool('DummySeparatorTool')
+            self.lineByLineImageDataWidget.addTool('DummySeparatorTool')
+            self.lineByLineImageDataWidget.addTool('tools.BeamSpotTool')
+            self.lineByLineImageDataWidget.addTool('tools.StxmControlBeamTool')
+            self.lineByLineImageDataWidget.addTool('DummySeparatorTool')
 
-        self.lineByLineImageDataWidget.set_grid_parameters(bg_clr, min_clr, maj_clr)
-        self.lineByLineImageDataWidget.set_cs_grid_parameters(fg_clr, bg_clr, min_clr, maj_clr)
+            self.lineByLineImageDataWidget.set_grid_parameters(bg_clr, min_clr, maj_clr)
+            self.lineByLineImageDataWidget.set_cs_grid_parameters(fg_clr, bg_clr, min_clr, maj_clr)
 
-        self.lineByLineImageDataWidget.new_roi_center.connect(self.on_plotitem_roi_changed)
-        self.lineByLineImageDataWidget.scan_loaded.connect(self.on_scan_loaded)
-        self.lineByLineImageDataWidget.install_beam_fbk_devs(MAIN_OBJ)
-        self.lineByLineImageDataWidget.new_beam_position.connect(self.on_new_directed_beam_pos)
+            self.lineByLineImageDataWidget.new_roi_center.connect(self.on_plotitem_roi_changed)
+            self.lineByLineImageDataWidget.scan_loaded.connect(self.on_scan_loaded)
+            self.lineByLineImageDataWidget.install_beam_fbk_devs(MAIN_OBJ)
+            self.lineByLineImageDataWidget.new_beam_position.connect(self.on_new_directed_beam_pos)
 
-        vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.lineByLineImageDataWidget)
-        self.imagePlotFrame.setLayout(vbox)
+            # self.lineByLineImageDataWidget.create_sample_holder()
 
-        # self.lineByLineImageDataWidget.create_sample_holder()
-
-        self.lineByLineImageDataWidget.set_data_dir(self.active_user.get_data_dir())
-        MAIN_OBJ.set('IMAGE_WIDGET', self.lineByLineImageDataWidget)
+            vbox = QtWidgets.QVBoxLayout()
+            vbox.addWidget(self.lineByLineImageDataWidget)
+            self.imagePlotFrame.setLayout(vbox)
+            self.lineByLineImageDataWidget.set_data_dir(self.active_user.get_data_dir())
+            MAIN_OBJ.set('IMAGE_WIDGET', self.lineByLineImageDataWidget)
 
     def setup_spectra_plot(self):
 
@@ -1779,7 +1779,7 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         reset_unique_roi_id()
         ranges = (None, None)
         # print 'on_toolbox_changed: %d' % idx
-        #spectra_plot_types = [scan_panel_order.POINT_SCAN, scan_panel_order.POSITIONER_SCAN]
+        #spectra_plot_types = [scan_panel_ord{"file": "C:/controls/stxm-data/2019/1212\\C191212195.hdf5", "scan_type_num": 6, "scan_type": "sample_image Line_Unidir", "scan_panel_idx": 5, "energy": 693.9, "estart": 693.9, "estop": 693.9, "e_npnts": 1, "polarization": "CircLeft", "offset": 0.0, "angle": 0.0, "dwell": 1.0, "npoints": [100, 100], "date": "2019-12-12", "end_time": "22:39:30", "center": [-163.51892127843303, -503.91446634377246], "range": [59.999999999999886, 59.999999999999545], "step": [0.606060606060605, 0.6060606060606014], "start": [-193.51892127843297, -533.9144663437722], "stop": [-133.51892127843308, -473.9144663437727], "xpositioner": "GoniX", "ypositioner": "GoniY", "goni_z_cntr": 0.0, "goni_theta_cntr": 0.0}er.POINT_SCAN, scan_panel_order.POSITIONER_SCAN]
         #non_interactive_plots = [scan_panel_order.POSITIONER_SCAN]
         # multi_spatial_scan_types = [scan_types.SAMPLE_POINT_SPECTRUM, scan_types.SAMPLE_LINE_SPECTRUM,
         #                             scan_types.SAMPLE_IMAGE, \
@@ -1793,8 +1793,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         self.scan_panel_idx = idx
 
         if (len(self.scan_tbox_widgets) > 0):
-
-            self.lineByLineImageDataWidget.delShapePlotItems()
+            if (hasattr(self, 'lineByLineImageDataWidget')):
+                self.lineByLineImageDataWidget.delShapePlotItems()
 
             if (hasattr(self, 'scan_progress_table')):
                 self.scan_progress_table.clear_table()
@@ -1834,7 +1834,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                 #we have switched to sample point spectrum scan so make sure the plotter knows it is an image (even if it isnt yet)
                 #this is to correct a situation of having just done a sample focus scan, if the image type is left as focus scan
                 # then the wdg_com dict emiitted by the plotter will think that it should put x/y positions in terms of using z for y
-                self.lineByLineImageDataWidget.set_image_type(image_types.IMAGE)
+                if (hasattr(self, 'lineByLineImageDataWidget')):
+                    self.lineByLineImageDataWidget.set_image_type(image_types.IMAGE)
                 # it is a point scan so zoom the plot to a valid range
                 #sx = MAIN_OBJ.device(DNM_SAMPLE_X)
                 #sy = MAIN_OBJ.device(DNM_SAMPLE_Y)
@@ -1842,7 +1843,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                 sy = MAIN_OBJ.get_sample_positioner('Y')
 
                 centers = (sx.get_position(), sy.get_position())
-                self.lineByLineImageDataWidget.set_center_at_XY(centers, max_scan_range)
+                if (hasattr(self, 'lineByLineImageDataWidget')):
+                    self.lineByLineImageDataWidget.set_center_at_XY(centers, max_scan_range)
             else:
                 self.plotTabWidget.setCurrentIndex(PLOTTER_SPECTRA_TAB)
                 self.spectraWidget.setPlotAxisStrs(axis_strs[0], axis_strs[1])
@@ -1857,7 +1859,8 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                 #if ((self.scan_panel_idx in  do_recenter_lst) and (sample_positioning_mode == sample_positioning_modes.GONIOMETER)):
                 if ((scan_pluggin.is_do_recenter_type()) and (
                         sample_positioning_mode == sample_positioning_modes.GONIOMETER)):
-                    self.lineByLineImageDataWidget.set_center_at_XY(centers, ranges)
+                    if (hasattr(self, 'lineByLineImageDataWidget')):
+                        self.lineByLineImageDataWidget.set_center_at_XY(centers, ranges)
                 else:
 
                     #if(self.scan_panel_idx in skip_centering_scans):
@@ -1870,23 +1873,26 @@ class pySTXMWindow(QtWidgets.QMainWindow):
                         sx = MAIN_OBJ.get_sample_positioner('X')
                         sy = MAIN_OBJ.get_sample_positioner('Y')
                         centers = (sx.get_position(), sy.get_position())
-                        if (scan_type is scan_types.PATTERN_GEN):
-                            self.lineByLineImageDataWidget.set_center_at_XY(centers, (ranges[0]*10, ranges[1]*10))
-                        else:
-                            self.lineByLineImageDataWidget.set_center_at_XY(centers, ranges)
+                        if (hasattr(self, 'lineByLineImageDataWidget')):
+                            if (scan_type is scan_types.PATTERN_GEN):
+                                self.lineByLineImageDataWidget.set_center_at_XY(centers, (ranges[0]*10, ranges[1]*10))
+                            else:
+                                self.lineByLineImageDataWidget.set_center_at_XY(centers, ranges)
 
                 # self.lineByLineImageDataWidget.set_shape_limits(shape=plot_item_type, limit_def=limit_def)
-                self.lineByLineImageDataWidget.setPlotAxisStrs(axis_strs[0], axis_strs[1])
+                if (hasattr(self, 'lineByLineImageDataWidget')):
+                    self.lineByLineImageDataWidget.setPlotAxisStrs(axis_strs[0], axis_strs[1])
 
-        self.lineByLineImageDataWidget.set_max_shape_sizes(max_scan_range)
-        self.lineByLineImageDataWidget.set_enable_multi_region(enable_multi_region)
+        if (hasattr(self, 'lineByLineImageDataWidget')):
+            self.lineByLineImageDataWidget.set_max_shape_sizes(max_scan_range)
+            self.lineByLineImageDataWidget.set_enable_multi_region(enable_multi_region)
 
-        #if (self.scan_panel_idx in non_interactive_plots):
-        if(not scan_pluggin.is_interactive_plot()):
-            # disable all roi selection tools
-            self.lineByLineImageDataWidget.set_shape_limits(shape=None, limit_def=None)
-        else:
-            self.lineByLineImageDataWidget.set_shape_limits(shape=plot_item_type, limit_def=limit_def)
+            #if (self.scan_panel_idx in non_interactive_plots):
+            if(not scan_pluggin.is_interactive_plot()):
+                # disable all roi selection tools
+                self.lineByLineImageDataWidget.set_shape_limits(shape=None, limit_def=None)
+            else:
+                self.lineByLineImageDataWidget.set_shape_limits(shape=plot_item_type, limit_def=limit_def)
 
         if (len(self.scan_tbox_widgets) > 0):
             # some of the params on a particular tool box read pv's so make sure the
@@ -3256,8 +3262,9 @@ class pySTXMWindow(QtWidgets.QMainWindow):
         # _logger.info('scan completed')
         # self.curImgProgBar.setValue(0.0)
         self.totalProgBar.setValue(0.0)
+        if (hasattr(self, 'lineByLineImageDataWidget')):
+            self.lineByLineImageDataWidget.set_lock_aspect_ratio(True)
 
-        self.lineByLineImageDataWidget.set_lock_aspect_ratio(True)
         if (self.executingScan is not None):
             self.disconnect_executingScan_signals()
 

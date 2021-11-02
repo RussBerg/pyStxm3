@@ -8,7 +8,9 @@ from PyQt5 import QtGui, QtWidgets
 from PyQt5.QtCore import pyqtSignal
 from guiqwt.tools import *
 #from guiqwt.config import _
-from guidata.qt.compat import getopenfilenames
+#from guidata.qt.compat import getopenfilenames
+from guiqwt.qthelpers import exec_image_open_dialog
+from cls.appWidgets.dialogs import getOpenFileName
 
 from cls.plotWidgets.guiqwt_config import _
 
@@ -79,15 +81,20 @@ class clsOpenFileTool(CommandTool):
 
         :returns: None
         """
-        saved_in, saved_out, saved_err = sys.stdin, sys.stdout, sys.stderr
-        sys.stdout = None
-        filenames, _f = getopenfilenames(plot, _("Open"),
-                                       self.directory, self.formats)
-        sys.stdin, sys.stdout, sys.stderr = saved_in, saved_out, saved_err
-        filename = str(filenames)
+        #saved_in, saved_out, saved_err = sys.stdin, sys.stdout, sys.stderr
+        #sys.stdout = None
+        # filenames, _f = getopenfilenames(plot, _("Open"),
+        #                                self.directory, self.formats)
+        #exec_image_open_dialog(parent, basedir="", app_name=None, to_grayscale=True, dtype=None
+        #filenames, _f = exec_image_open_dialog(plot, basedir=self.directory, app_name=_("Open"), to_grayscale=True)
+        filename = getOpenFileName("Open", filter_str="Images (%s)" % self.formats, search_path=self.directory)
+
+        #sys.stdin, sys.stdout, sys.stderr = saved_in, saved_out, saved_err
+        #filename = str(filenames)
         #if filename:
         #    self.directory = os.path.dirname(filename)
-        return filenames
+        #return filenames
+        return([filename])
 
     def activate_command(self, plot, checked):
         """

@@ -3472,12 +3472,16 @@ class E712ControlWidget(QtWidgets.QWidget):
         self.curve_plot.create_curve('WaveTbl_%d' % tblid, curve_style=get_basic_line_style('yellow'))
 
         if(data is not None):
-            pnts, = data.shape
-            x_time_pnts = np.arange(float(pnts)) * WAVEFORM_GEN_CYCLE_TIME
-            self.curve_plot.setXYData('WaveTbl_%d' % tblid, x_time_pnts, data, update=True)
-
-        self.curve_plot.setPlotAxisStrs(ystr='um', xstr='seconds')
-        print('done plot data')
+            if type(data) == np.ndarray:
+                pnts, = data.shape
+                x_time_pnts = np.arange(float(pnts)) * WAVEFORM_GEN_CYCLE_TIME
+                self.curve_plot.setXYData('WaveTbl_%d' % tblid, x_time_pnts, data, update=True)
+                self.curve_plot.setPlotAxisStrs(ystr='um', xstr='seconds')
+                print('done plot data')
+            else:
+                _logger.error('plot_data: data is not an ndarray')
+        else:
+            _logger.error('plot_data: data is None')
 
     def plot_ddl_data(self,  e712com_dct):
         self.ddl_curve_plot.clear_plot()

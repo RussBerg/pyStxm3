@@ -143,4 +143,8 @@
     <file>wand.ico</file>
     <file>zoom.ico</file>
   </qresource>
+  <qresource prefix="scan_plugins">
+    <file>icons8-mouse-right-click-50.png</file>
+    <file>helplite.png</file>
+  </qresource>
 </RCC>

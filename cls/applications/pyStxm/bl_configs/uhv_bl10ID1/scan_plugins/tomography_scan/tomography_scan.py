@@ -394,10 +394,10 @@ class TomographyScanParam(ScanParamWidget):
         x_roi = sp_db[SPDB_X]
         y_roi = sp_db[SPDB_Y]
         dwell = sp_db[SPDB_EV_ROIS][0][DWELL]
-        if (self.sub_type == scan_sub_types.POINT_BY_POINT):
-            self.calc_new_scan_time_estemate(True, x_roi, y_roi, dwell)
-        else:
-            self.calc_new_scan_time_estemate(False, x_roi, y_roi, dwell)
+        # if (self.sub_type == scan_sub_types.POINT_BY_POINT):
+        #     self.calc_new_scan_time_estemate(True, x_roi, y_roi, dwell)
+        # else:
+        #     self.calc_new_scan_time_estemate(False, x_roi, y_roi, dwell)
 
     def set_roi(self, roi):
         """
@@ -694,6 +694,12 @@ class TomographyScanParam(ScanParamWidget):
         """
         
         # self.update_type()
+        # the following is really time consumming because it has to query the E712
+        # if (self.sub_type == scan_sub_types.POINT_BY_POINT):
+        #     self.calc_new_scan_time_estemate(True, x_roi, y_roi, dwell)
+        # else:
+        #     self.calc_new_scan_time_estemate(False, x_roi, y_roi, dwell)
+        #
         self.update_last_settings(incl_zpz_adjust=False)
         if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
             self.wdg_com = self.GONI_SCAN_update_data()
@@ -868,6 +874,12 @@ class TomographyScanParam(ScanParamWidget):
         """
         wdg_com = self.update_multi_spatial_wdg_com()
         sub_spatials = self.create_sub_spatial_dbs(wdg_com)
+        # the following is really time consumming because it has to query the E712
+        # if (self.sub_type == scan_sub_types.POINT_BY_POINT):
+        #     self.calc_new_scan_time_estemate(True, x_roi, y_roi, dwell)
+        # else:
+        #     self.calc_new_scan_time_estemate(False, x_roi, y_roi, dwell)
+        #
         if(sub_spatials):
             #for now only support single spatial with multi sub spatial
             sp_id = list(sub_spatials.keys())[0]

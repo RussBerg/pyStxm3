@@ -101,7 +101,11 @@ def get_first_entry_key(entries_dct):
     '''
     # return (entries_dct['entries'].keys()[0])
     #return (list(entries_dct['entries'])[0])
-    return(entries_dct['entries']['default'])
+    # support for older nexus files
+    if 'default' not in list(entries_dct['entries'].keys()):
+        return (list(entries_dct['entries'])[0])
+    else:
+        return(entries_dct['entries']['default'])
 
 
 def get_first_sp_db_from_entry(entry_dct):
@@ -146,7 +150,15 @@ def get_point_spec_data_from_entry(entry_dct, counter=DNM_DEFAULT_COUNTER):
 def get_point_spec_energy_data_from_entry(entry_dct, counter=DNM_DEFAULT_COUNTER):
     if (counter not in list(entry_dct['data'])):
         print('oops')
-    data = entry_dct['data'][counter]['energy']['signal']
+    ekeys = list(entry_dct['data'][counter].keys())
+    for k in ekeys:
+        kstr = str(k)
+        if kstr.find("b\'energy") > -1:
+            data = entry_dct['data'][counter][b'energy']['signal']
+            break
+        elif kstr.find("energy") > -1:
+            data = entry_dct['data'][counter]['energy']['signal']
+            break
     return (data)
 
 
@@ -584,7 +596,11 @@ class ThumbnailWidget(QtWidgets.QGraphicsWidget):
         entry_dct = self.dct['entries'][ekey]
         xdata = get_point_spec_energy_data_from_entry(entry_dct, counter=self.counter)
         # xdata = self.dct['entries'][ekey]['data'][self.counter]['energy']['signal']
-        counter_nm = entry_dct['default']
+        #need support for older nexus files
+        if 'default' in entry_dct.keys():
+            counter_nm = entry_dct['default']
+        else:
+            counter_nm = self.counter
         ydatas = []
         # for ekey in self.dct['entries'].keys():
         ekeys = [k for k,v in self.dct['entries'].items() if k.find('entry') > -1]

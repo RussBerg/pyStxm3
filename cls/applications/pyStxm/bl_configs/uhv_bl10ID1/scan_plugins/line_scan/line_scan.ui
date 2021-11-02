@@ -96,8 +96,8 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset>
-             <normaloff>../../../icons/helplite.png</normaloff>../../../icons/helplite.png</iconset>
+            <iconset resource="../../../../../../icons/icons.qrc">
+             <normaloff>:/scan_plugins/helplite.png</normaloff>:/scan_plugins/helplite.png</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -125,7 +125,7 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap>../../../icons/icons8-mouse-right-click-50.png</pixmap>
+            <pixmap resource="../../../../../../icons/icons.qrc">:/scan_plugins/icons8-mouse-right-click-50.png</pixmap>
            </property>
            <property name="scaledContents">
             <bool>true</bool>
@@ -195,6 +195,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../../../../../icons/icons.qrc"/>
+ </resources>
  <connections/>
 </ui>

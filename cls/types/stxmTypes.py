@@ -55,6 +55,22 @@ scan_types = Enum('detector_image', \
 				'pattern_gen', \
 				'ptychography')
 
+scan_type_to_panel_dct = {}
+scan_type_to_panel_dct['detector_image'] = scan_panel_order.DETECTOR_SCAN
+scan_type_to_panel_dct['osa_image'] = scan_panel_order.OSA_SCAN
+scan_type_to_panel_dct['osa_focus'] = scan_panel_order.OSA_FOCUS_SCAN
+scan_type_to_panel_dct['sample_focus'] = scan_panel_order.FOCUS_SCAN
+scan_type_to_panel_dct['sample_point_spectrum'] = scan_panel_order.POINT_SCAN
+scan_type_to_panel_dct['sample_line_spectrum'] = scan_panel_order.LINE_SCAN
+scan_type_to_panel_dct['sample_image'] = scan_panel_order.IMAGE_SCAN
+scan_type_to_panel_dct['sample_image_stack'] = scan_panel_order.IMAGE_SCAN
+scan_type_to_panel_dct['generic_scan'] = scan_panel_order.POSITIONER_SCAN
+scan_type_to_panel_dct['coarse_image'] = scan_panel_order.COARSE_IMAGE
+scan_type_to_panel_dct['coarse_goni'] = scan_panel_order.COARSE_GONI_IMAGE_SCAN
+scan_type_to_panel_dct['tomography'] = scan_panel_order.TOMOGRAPHY
+scan_type_to_panel_dct['pattern_gen'] = scan_panel_order.PATTERN_GEN
+scan_type_to_panel_dct['ptychography'] = scan_panel_order.PTYCHOGRAPHY
+
 spectra_type_scans = [scan_types.SAMPLE_POINT_SPECTRUM,
 					  scan_types.GENERIC_SCAN]
 

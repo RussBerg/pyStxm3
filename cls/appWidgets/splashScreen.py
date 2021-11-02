@@ -19,8 +19,10 @@ if(strftime("%Y%m%d")[-4:] == '0504'):
     splashPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'applications', 'pyStxm',
                                   'splash_maythefourth.png')
 else:
+    # splashPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'applications', 'pyStxm',
+    #                               'pyStxmSplash.png')
     splashPath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'applications', 'pyStxm',
-                                  'pyStxmSplash.png')
+                              'splash_maythefourth.png')
 
 class CSplashScreen(QtWidgets.QFrame):
     def __init__(self, msg, pixmap_path=splashPath):

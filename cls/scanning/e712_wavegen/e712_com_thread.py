@@ -2,7 +2,7 @@ from PyQt5 import QtCore, QtWidgets
 import queue
 import time
 
-#from epics import PV
+import numpy as np
 from epics import PV
 from cls.scanning.e712_wavegen.e712_com_cmnds import e712_cmds, make_base_e712_com_dict
 from cls.appWidgets.splashScreen import get_splash
@@ -145,7 +145,9 @@ class E712ComThread(QtCore.QThread):
                     xdata = self.wg_dct[self.xaxis_id].get_wav_table()
                     ydata = self.wg_dct[self.yaxis_id].get_wav_table()
                     trigdata = self.get_triggers_table()
-
+                    if type(xdata) or type(ydata) or type(trigdata) != np.ndarray:
+                        print('no wave table data to load')
+                        return
                     x_len, = xdata.shape
                     y_len, = ydata.shape
                     trig_len, = trigdata.shape

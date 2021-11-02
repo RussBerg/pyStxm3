@@ -143,9 +143,11 @@ class FineImageScansParam(ScanParamWidget):
             self.on_multiregion_widget_focus_init_base_values()
 
     def show_hdw_accel_details(self):
-        dark = get_style('dark')
-        self.scan_class.e712_wg.setStyleSheet(dark)
-        self.scan_class.e712_wg.show()
+        #if hasattr(self, 'e712_wg'):
+        if USE_E712_HDW_ACCEL:
+            dark = get_style('dark')
+            self.scan_class.e712_wg.setStyleSheet(dark)
+            self.scan_class.e712_wg.show()
 
     def calc_new_scan_time_estemate(self, is_pxp, x_roi, y_roi, dwell_in_sec):
         '''
@@ -255,10 +257,11 @@ class FineImageScansParam(ScanParamWidget):
         x_roi = sp_db[SPDB_X]
         y_roi = sp_db[SPDB_Y]
         dwell = sp_db[SPDB_EV_ROIS][0][DWELL]
-        if (self.sub_type == scan_sub_types.POINT_BY_POINT):
-            self.calc_new_scan_time_estemate(True, x_roi, y_roi, dwell)
-        else:
-            self.calc_new_scan_time_estemate(False, x_roi, y_roi, dwell)
+        # Moved to update_data() but currently commented
+        # if (self.sub_type == scan_sub_types.POINT_BY_POINT):
+        #     self.calc_new_scan_time_estemate(True, x_roi, y_roi, dwell)
+        # else:
+        #     self.calc_new_scan_time_estemate(False, x_roi, y_roi, dwell)
 
 
     
@@ -298,6 +301,7 @@ class FineImageScansParam(ScanParamWidget):
         :returns: None
       
         """
+
         item_id = dct_get(wdg_com, SPDB_ID_VAL)
         dct_put(wdg_com, SPDB_PLOT_SHAPE_TYPE, self.plot_item_type)
         
@@ -373,12 +377,12 @@ class FineImageScansParam(ScanParamWidget):
                 self.multi_region_widget.sp_widg.modify_row_data(item_id, cur_scan)
 
                 #return
-
-            if (self.sub_type == scan_sub_types.POINT_BY_POINT):
-                self.calc_new_scan_time_estemate(True, _x, _y, _dwell)
-            else:
-                self.calc_new_scan_time_estemate(False, _x, _y, _dwell)
-            return
+            # the following takes waaay to long to execute which ruins the responsiveness of the UI
+            # if (self.sub_type == scan_sub_types.POINT_BY_POINT):
+            #     self.calc_new_scan_time_estemate(True, _x, _y, _dwell)
+            # else:
+            #     self.calc_new_scan_time_estemate(False, _x, _y, _dwell)
+            # return
 
 
         elif(wdg_com[CMND] == widget_com_cmnd_types.DEL_ROI):
@@ -496,7 +500,13 @@ class FineImageScansParam(ScanParamWidget):
         :returns: None
      
         """
-        
+        # the following calc of time estemates is slow because it has to querey the E712
+        # if (self.sub_type == scan_sub_types.POINT_BY_POINT):
+        #     self.calc_new_scan_time_estemate(True, x_roi, y_roi, dwell)
+        # else:
+        #     self.calc_new_scan_time_estemate(False, x_roi, y_roi, dwell)
+
+
         self.update_type()
         if(self.sample_positioning_mode == sample_positioning_modes.GONIOMETER):
             #goniometer_zoneplate mode
@@ -511,7 +521,7 @@ class FineImageScansParam(ScanParamWidget):
         else:
            self.wdg_com = self.update_multi_spatial_wdg_com()
 
-        self.roi_changed.emit(self.wdg_com)    
+        self.roi_changed.emit(self.wdg_com)
         return(self.wdg_com)
     
     

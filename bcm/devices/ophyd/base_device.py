@@ -212,7 +212,8 @@ class BaseDevice(QtCore.QObject):
             if(SIMULATE):
                 print('simulating a put of:  ', self.get_name(), val)
             else:
-                self.signal.put(val)
+                if self.signal.connected:
+                    self.signal.put(val)
 
     def get(self):
         #_logger.debug('GET: [%s]' % self.get_name())

@@ -396,23 +396,32 @@ class ImageWidgetPlot(ImageDialog):
 
         self.show_beam_spot = False
         self.prev_beam_pos = (0.0, 0.0)
-        #
+
         if (options is None):
             options = dict(
                 show_xsection=True,
                 show_ysection=True,
-                xsection_pos="top",
-                ysection_pos="right",
                 xlabel=("um", ""),
                 ylabel=("um", ""),
                 zlabel=None,
                 show_contrast=True,
+                xsection_pos="top",
+                ysection_pos="right",
                 lock_aspect_ratio=True,
                 gridparam=self.gridparam,
-                colormap="gist_gray"
-            )
+                colormap="gist_gray")
+
 
         self.sel_item_id = None
+
+        # ImageDialog.__init__(
+        #     self,
+        #     parent=parent,
+        #     wintitle="",
+        #     edit=False,
+        #     toolbar=True,
+        #     options=options)
+
 
         if (self.type == 'analyze'):
             self.register_tools = self.register_analyze_tools
@@ -695,6 +704,7 @@ class ImageWidgetPlot(ImageDialog):
     def on_sig_axes_changed(self, obj):
         """
         on_sig_axes_changed(): description
+{"file": "S:\\STXM-data\\Cryo-STXM\\2019\\guest\\0613\\C190613003.hdf5", "scan_type_num": 10, "scan_type": "coarse_goni Point_by_Point", "scan_panel_idx": 4, "energy": 815.4, "estart": 815.4, "estop": 815.4, "e_npnts": 1, "polarization": "CircLeft", "offset": 0.0, "angle": 0.0, "dwell": 1.0, "npoints": [5, 5], "date": "2019-06-13", "end_time": "09:48:44", "center": [800.0, 64.0], "range": [50.0, 50.0], "step": [10.0, 10.0], "start": [775.0, 39.0], "stop": [825.0, 89.0], "xpositioner": "GoniX", "ypositioner": "GoniY"}
         :param obj: obj description
         :type obj: obj type
 
@@ -5127,14 +5137,14 @@ class ImageWidgetPlot(ImageDialog):
         if(self.show_image_params):
             self.openfile_mod(fnames, scan_type=scan_type, addimages=True, counter='counter0', dropped=dropped)
         elif (len(fnames) is 1):
-            if scan_type is None:
-                scan_type = 0
             if((len(self.item) is 0) and (fnames[0].find('.png') > -1)):
                 #most likely calib camera
                 self.openfile_mod(fnames, scan_type=scan_type, addimages=True, counter='counter0', dropped=dropped, alpha=1.0)
             else:
                 #most likely adding a VLM image to several data images
                 #self.openfile_mod(fnames, scan_type=scan_type, addimages=True, counter='counter0', dropped=dropped)
+                if scan_type is None:
+                    scan_type = 0
                 self.openfile_mod(fnames, scan_type=scan_type, addimages=True, counter='counter0', dropped=dropped)
         else:
             num_fnames = len(fnames)
@@ -5275,8 +5285,6 @@ class ImageWidgetPlot(ImageDialog):
             entry_dct = data_io.load()
             #ekey = list(entry_dct.keys())[0]
             # support for older nexus files
-            if entry_dct is None:
-                return
             if 'default' not in entry_dct.keys():
                 ekey = list(entry_dct.keys())[0]
             else:
@@ -5899,12 +5907,6 @@ def make_default_stand_alone_stxm_imagewidget(parent=None, data_io=None, _type=N
             show_xsection=True,
             show_ysection=True,
             show_itemlist=False))
-    # win = ImageWidgetPlot(
-    #     parent=parent,
-    #     filtStr=FILTER_STRING,
-    #     type=_type,
-    #     options=dict(gridparam=gridparam,
-    #                  show_itemlist=False))
 
     win.set_enable_multi_region(False)
     win.enable_beam_spot(True)

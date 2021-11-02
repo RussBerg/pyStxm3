@@ -295,6 +295,86 @@ class main_object_base(QtCore.QObject):
         idx = self.get_preset_as_int(scan_mod_name, 'SCAN_PANEL_ORDER')
         return(idx)
 
+    def scan_type_to_module_name(self, scan_type):
+        '''
+        this is a hack until i can refactor this properly, the scan panel order needs to be controlled from the beamline control.ini file but the scan types do not follow the names of the modules
+        somehow here take a scan_type and return teh index panel order for the correct module
+        presets
+            Out[6]:
+            {'det_scan': '0',
+             'osa_scan': '1',
+             'osa_focus_scan': '2',
+             'coarse_goni_scan': '3',
+             'fine_image_scans': '4',
+             'focus_scan': '5',
+             'fine_point_scan': '6',
+             'line_scan': '7',
+             'positioner_scan': '8',
+             'pattern_gen_scan': '9',
+             'ptychography_scan': '10',
+             'tomography_scan': '11'}
+
+             scan_types = Enum('detector_image', \
+				'osa_image', \
+				'osa_focus', \
+				'sample_focus', \
+				'sample_point_spectrum', \
+				'sample_line_spectrum', \
+				'sample_image', \
+				'sample_image_stack', \
+				'generic_scan', \
+				'coarse_image', \
+				'coarse_goni', \
+				'tomography', \
+				'pattern_gen', \
+				'ptychography')
+        '''
+        #get the entire section of SCAN_PABNEL_ORDER items
+        presets = self.main_obj['PRESETS']['SCAN_PANEL_ORDER']
+        #walk teh list and match it to correct module name
+        if scan_type.find('detector_image') > -1:
+            return(int(presets['det_scan']))
+
+        if scan_type.find('osa_image') > -1:
+            return(int(presets['osa_scan']))
+
+        if scan_type.find('osa_focus') > -1:
+            return(int(presets['osa_focus_scan']))
+
+        if scan_type.find('sample_focus') > -1:
+            return(int(presets['focus_scan']))
+
+        if scan_type.find('sample_point_spectrum') > -1:
+            return(int(presets['fine_point_scan']))
+
+        if scan_type.find('sample_line_spectrum') > -1:
+            return(int(presets['line_scan']))
+
+        if scan_type.find('sample_image') > -1:
+            return(int(presets['fine_image_scans']))
+
+        if scan_type.find('sample_image_stack') > -1:
+            return(int(presets['fine_image_scans']))
+
+        if scan_type.find('generic_scan') > -1:
+            return(int(presets['positioner_scan']))
+
+        if scan_type.find('coarse_image') > -1:
+            return(int(presets['coarse_goni_scan']))
+
+        if scan_type.find('coarse_goni') > -1:
+            return(int(presets['coarse_goni_scan']))
+
+        if scan_type.find('tomography') > -1:
+            return(int(presets['tomography_scan']))
+
+        if scan_type.find('pattern_gen') > -1:
+            return (int(presets['pattern_gen_scan']))
+
+        if scan_type.find('ptychography') > -1:
+            return (int(presets['ptychography_scan']))
+
+
     def set_thumbfile_suffix(self, sffx):
         self.thumbfile_suffix = sffx
     

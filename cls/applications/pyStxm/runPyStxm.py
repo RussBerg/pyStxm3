@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets
 from cls.appWidgets.splashScreen import get_splash, del_splash
 from cls.utils.version import get_version
 from cls.utils.log import log_to_qt_and_to_file
+from epics.ca import context_destroy
 
 import profile
 import pstats
@@ -16,6 +17,7 @@ import pstats
 def clean_up():
     from cls.applications.pyStxm.main_obj_init import MAIN_OBJ
     MAIN_OBJ.cleanup()
+
 
 def determine_profile_bias_val():
     """

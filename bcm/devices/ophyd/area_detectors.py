@@ -195,7 +195,7 @@ class GreatEyesCCD(SingleTrigger, GreatEyesDetector):
 
 
 def go():
-    ccd = SimGreatEyesCCD('SIMCCD1610-I10-02:', name='SIM_GE_CCD')
+    ccd = SimGreatEyesCCD('SIM_CCD1610-I10-02:', name='SIM_GE_CCD')
     # ccd = GreatEyesDetector('SIMCCD1610-I10-02:', name='SIM_GE_CCD')
     # ccd.cam.stage()
     # ccd.cam.trigger()
@@ -216,7 +216,7 @@ if __name__ == '__main__':
     db = Broker.named('mongo_databroker')
     RE = RunEngine({})
     RE.subscribe(db.insert)
-    #ccd = SimGreatEyesCCD('SIMCCD1610-I10-02:', name='SIM_GE_CCD')
+    #ccd = SimGreatEyesCCD('SIM_CCD1610-I10-02:', name='SIM_GE_CCD')
     ccd = GreatEyesCCD('CCD1610-01:', name='GE_CCD')
     print(ccd.summary())
     #ccd.read_attrs = ['file_plugin']

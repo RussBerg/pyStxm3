@@ -1,9 +1,8 @@
-@ECHO OFF
-
+REM @ECHO OFF
 REM Command file for Sphinx documentation
 
 if "%SPHINXBUILD%" == "" (
-	set SPHINXBUILD=c:\continuum\anaconda2\scripts\sphinx-build
+	set SPHINXBUILD=C:\Continuum\Anaconda3\Scripts\sphinx-build
 )
 set BUILDDIR=_build
 set ALLSPHINXOPTS=-d %BUILDDIR%/doctrees %SPHINXOPTS% .

@@ -428,11 +428,11 @@ class PtychographyScanParam(ScanParamWidget):
 
                 # return
 
-            if (self.sub_type == scan_sub_types.POINT_BY_POINT):
-                self.calc_new_scan_time_estemate(True, _x, _y, _dwell)
-            else:
-                self.calc_new_scan_time_estemate(False, _x, _y, _dwell)
-            return
+            # if (self.sub_type == scan_sub_types.POINT_BY_POINT):
+            #     self.calc_new_scan_time_estemate(True, _x, _y, _dwell)
+            # else:
+            #     self.calc_new_scan_time_estemate(False, _x, _y, _dwell)
+            # return
 
 
     def update_last_settings(self):
@@ -460,7 +460,12 @@ class PtychographyScanParam(ScanParamWidget):
      
         """
         #update local widget_com dict
-
+        # the follwing is time consuming
+        # if (self.sub_type == scan_sub_types.POINT_BY_POINT):
+        # self.calc_new_scan_time_estemate(True, _x, _y, _dwell)
+        # else:
+        #     self.calc_new_scan_time_estemate(False, _x, _y, _dwell)
+        # return
         #wdg_com = self.update_single_spatial_wdg_com()
         wdg_com = self.update_multi_spatial_wdg_com()
                 

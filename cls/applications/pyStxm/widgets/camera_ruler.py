@@ -8,7 +8,7 @@ import os
 from PyQt5 import QtCore, QtGui, uic, QtWidgets
 
 from cls.applications.pyStxm import abs_path_to_ini_file
-from cls.plotWidgets.imageWidget import ImageWidget
+from cls.plotWidgets.imageWidget import ImageWidgetPlot
 from bcm.devices.device_names import *
 #from cls.applications.pyStxm.stxm_utils.jsonrpc_fleacam_server import RequestHandler
 
@@ -47,7 +47,7 @@ _logger = get_module_logger(__name__)
 
 def make_uhvstxm_distance_verification_window():
     #win = CameraViewerWidget(parent = None, filtStr = "*.hdf5", type=None, options=dict(show_contrast=False, show_xsection=False, show_ysection=False,show_itemlist=False))
-    win = ImageWidget(parent = None, filtStr = "*.hdf5", type='calib_camera', options=dict(show_contrast=False, show_xsection=False, show_ysection=False,show_itemlist=False))
+    win = ImageWidgetPlot(parent = None, filtStr ="*.hdf5", type='calib_camera', options=dict(show_contrast=False, show_xsection=False, show_ysection=False, show_itemlist=False))
     win.set_enable_multi_region(False)
     win.enable_image_param_display(False)
     #win.enable_tool_by_name('StxmOpenFileTool', False)
@@ -86,7 +86,9 @@ class CameraRuler(QtWidgets.QWidget):
         self.scaler_at_full_lens_zoom_out = scaling_factor
 
         self.zpz = self.main_obj.device( DNM_ZONEPLATE_Z_BASE)
+        self.zpz_c = self.main_obj.device(DNM_ZONEPLATE_Z)
         self.osaz = self.main_obj.device( DNM_OSA_Z_BASE)
+        self.osaz_c = self.main_obj.device( DNM_OSA_Z )
         self.detz = self.main_obj.device( DNM_DETECTOR_Z)
         self.camera_client = self.main_obj.device(DNM_CALIB_CAMERA_CLIENT)
 
@@ -213,11 +215,15 @@ class CameraRuler(QtWidgets.QWidget):
     def set_zoneplate(self):
         pos = float(str(self.zoneplateZFld.text()))
         self.zpz.set_position(pos)
+        if self.zpz_c:
+            self.zpz_c.set_position(pos)
 
 
     def set_osa(self):
         pos = float(str(self.osaZFld.text()))
         self.osaz.set_position(pos)
+        if self.osaz_c:
+            self.osaz_c.set_position(pos)
         #set the soft limits of osaz
         #set the soft limits of zpz
 

@@ -8,7 +8,7 @@ import os
 from PyQt5 import QtCore, QtGui, uic, QtWidgets
 
 from cls.applications.pyStxm import abs_path_to_ini_file
-from cls.plotWidgets.imageWidget import ImageWidget
+from cls.plotWidgets.imageWidget import ImageWidgetPlot
 from bcm.devices.device_names import *
 #from cls.applications.pyStxm.stxm_utils.jsonrpc_fleacam_server import RequestHandler
 
@@ -45,7 +45,7 @@ _logger = get_module_logger(__name__)
 
 def make_uhvstxm_distance_verification_window():
     #win = CameraViewerWidget(parent = None, filtStr = "*.hdf5", type=None, options=dict(show_contrast=False, show_xsection=False, show_ysection=False,show_itemlist=False))
-    win = ImageWidget(parent = None, filtStr = "*.hdf5", type='calib_camera', options=dict(show_contrast=False, show_xsection=False, show_ysection=False,show_itemlist=False))
+    win = ImageWidgetPlot(parent = None, filtStr ="*.hdf5", type='calib_camera', options=dict(show_contrast=False, show_xsection=False, show_ysection=False, show_itemlist=False))
     win.set_enable_multi_region(False)
     win.enable_image_param_display(False)
     #win.enable_tool_by_name('StxmOpenFileTool', False)

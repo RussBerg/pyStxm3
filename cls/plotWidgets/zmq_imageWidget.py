@@ -120,7 +120,7 @@ class ZMQImageWidget(ImageDialog):
         :returns: None
         """
         # clear title
-        # print('ImageWidget: initData called, rows=%d, cols=%d' % (rows, cols))
+        # print('ImageWidgetPlot: initData called, rows=%d, cols=%d' % (rows, cols))
 
         plot = self.get_plot()
         plot.set_title('')

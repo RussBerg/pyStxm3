@@ -797,7 +797,8 @@ class CurveViewerWidget(CurveDialog):
             _logger.error('No entry in datafile')
             return
         #remove the 'default' key
-        entry_dct.pop('default')
+        if 'default' in entry_dct.keys():
+            entry_dct.pop('default')
         ekeys = sorted(entry_dct.keys())
 
         for ekey in ekeys:

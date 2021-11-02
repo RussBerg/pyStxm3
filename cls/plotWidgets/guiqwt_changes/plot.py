@@ -19,7 +19,7 @@ The `plot` module provides the following features:
     * :py:class:`guiqwt.plot.CurveDialog`: a ready-to-use dialog box for 
       curve displaying with an integrated and preconfigured `plot manager` 
       providing the `item list panel` and curve-related `tools`
-    * :py:class:`guiqwt.plot.ImageWidget`: a ready-to-use widget for curve 
+    * :py:class:`guiqwt.plot.ImageWidgetPlot`: a ready-to-use widget for curve
       and image displaying with an integrated and preconfigured `plot manager` 
       providing the `item list panel`, the `contrast adjustment` panel, the 
       `cross section panels` (along X and Y axes) and image-related `tools` 
@@ -93,7 +93,7 @@ Reference
    :members:
 .. autoclass:: CurveDialog
    :members:
-.. autoclass:: ImageWidget
+.. autoclass:: ImageWidgetPlot
    :members:
 .. autoclass:: ImageDialog
    :members:
@@ -366,7 +366,7 @@ class PlotManager(object):
         Return the main (parent) widget
         
         Note that for py:class:`guiqwt.plot.CurveWidget` or 
-        :py:class:`guiqwt.plot.ImageWidget` objects, this method will 
+        :py:class:`guiqwt.plot.ImageWidgetPlot` objects, this method will
         return the widget itself because the plot manager is integrated to it.
         """
         return self.main
@@ -407,7 +407,7 @@ class PlotManager(object):
         This is strictly equivalent to the following::
             
             # Here, *widget* is for example a CurveWidget instance
-            # (the same apply for CurvePlot, ImageWidget, ImagePlot or any 
+            # (the same apply for CurvePlot, ImageWidgetPlot, ImagePlot or any
             #  class deriving from PlotManager)
             widget.get_contrast_panel().set_range(zmin, zmax)
         """
@@ -440,7 +440,7 @@ class PlotManager(object):
         This is strictly equivalent to the following::
             
             # Here, *widget* is for example a CurveWidget instance
-            # (the same apply for CurvePlot, ImageWidget, ImagePlot or any 
+            # (the same apply for CurvePlot, ImageWidgetPlot, ImagePlot or any
             #  class deriving from PlotManager)
             widget.get_xcs_panel().update_plot()
             widget.get_ycs_panel().update_plot()
@@ -957,7 +957,7 @@ class BaseImageWidget(QSplitter):
         
     This object does nothing in itself because plot and panels are not 
     connected to each other.
-    See children class :py:class:`guiqwt.plot.ImageWidget`
+    See children class :py:class:`guiqwt.plot.ImageWidgetPlot`
     """
     def __init__(self, parent=None, title="",
                  xlabel=("", ""), ylabel=("", ""), zlabel=None,
@@ -1050,7 +1050,7 @@ class BaseImageWidget(QSplitter):
 
 class ImageWidget(BaseImageWidget, PlotManager):
     """
-    Construct a ImageWidget object: plotting widget with integrated 
+    Construct a ImageWidgetPlot object: plotting widget with integrated
     plot manager
     
         * parent: parent widget

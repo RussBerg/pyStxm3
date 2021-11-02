@@ -50,6 +50,7 @@ from cls.utils.fileUtils import get_file_path_as_parts, creation_date
 
 from cls.applications.pyStxm import abs_path_to_ini_file, abs_path_to_top, abs_path_to_docs, abs_path_of_ddl_file
 from cls.utils.cfgparser import ConfigClass
+from cls.icons import icons
 
 _logger = get_module_logger(__name__)
 
@@ -358,6 +359,7 @@ class ScanParamWidget(QtWidgets.QFrame):
         if(self.isEnabled()):
             # if this plugin has not been disabled because of the scanning mode then execute update_last_settings()
             self.update_last_settings()
+
 
     # def focusInEvent(self, event):
     #     print('focusInEvent: ')
@@ -768,11 +770,15 @@ class ScanParamWidget(QtWidgets.QFrame):
         pass
 
     def dragEnterEvent(self, event):
+        from cls.types.stxmTypes import scan_type_to_panel_dct
         dct = mime_to_dct(event.mimeData())
-        _logger.debug('dragEnterEvent: [%d]' % dct['scan_panel_idx'])
+        idx = self.main_obj.scan_type_to_module_name(dct['scan_type'].split(' ')[0])
+        #idx = scan_type_to_panel_dct[dct['scan_type'].split(' ')[0]]
+        _logger.debug('dragEnterEvent: [%d]' % idx)
+        #self.main_obj.get_scan_panel_order(fname)
         event.acceptProposedAction()
-        # self.dropped.emit(event.mimeData())
-        self.selected.emit(dct['scan_panel_idx'])
+        # self.dropped.emit(event.mimeData()){"file": "C:/controls/stxm-data/single\\C191212195.hdf5", "scan_type_num": 6, "scan_type": "sample_image Line_Unidir", "scan_panel_idx": 5, "energy": 693.9, "estart": 693.9, "estop": 693.9, "e_npnts": 1, "polarization": "CircLeft", "offset": 0.0, "angle": 0.0, "dwell": 1.0, "npoints": [100, 100], "date": "2019-12-12", "end_time": "22:39:30", "center": [-163.51892127843303, -503.91446634377246], "range": [59.999999999999886, 59.999999999999545], "step": [0.606060606060605, 0.6060606060606014], "start": [-193.51892127843297, -533.9144663437722], "stop": [-133.51892127843308, -473.9144663437727], "xpositioner": "GoniX", "ypositioner": "GoniY", "goni_z_cntr": 0.0, "goni_theta_cntr": 0.0}
+        self.selected.emit(idx)
 
     def dragMoveEvent(self, event):
         event.acceptProposedAction()

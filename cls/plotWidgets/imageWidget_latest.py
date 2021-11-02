@@ -3651,7 +3651,7 @@ class ImageWidget(ImageDialog):
         :returns: None
         """
         # clear title
-        #print('ImageWidget: initData called, rows=%d, cols=%d' % (rows, cols))
+        #print('ImageWidgetPlot: initData called, rows=%d, cols=%d' % (rows, cols))
 
         plot = self.get_plot()
         plot.set_title('')
@@ -3720,7 +3720,7 @@ class ImageWidget(ImageDialog):
     #     :returns: None
     #     """
     #     # clear title
-    #     # print('ImageWidget: initData called, rows=%d, cols=%d' % (rows, cols))
+    #     # print('ImageWidgetPlot: initData called, rows=%d, cols=%d' % (rows, cols))
     #
     #     plot = self.get_plot()
     #     plot.set_title('')
@@ -4361,7 +4361,7 @@ class ImageWidget(ImageDialog):
 
         :returns: None
         """
-        # print 'ImageWidget: mouse pressed'
+        # print 'ImageWidgetPlot: mouse pressed'
         btn = ev.button()
         self.inputState.btnisPressed[btn] = True
         if btn == Qt.LeftButton:
@@ -4436,7 +4436,7 @@ class ImageWidget(ImageDialog):
 
         :returns: None
         """
-        # print 'ImageWidget: mouse released'
+        # print 'ImageWidgetPlot: mouse released'
         pass
         # btn = ev.button()
         # self.inputState.btnisPressed[btn] = False
@@ -4507,16 +4507,16 @@ class ImageWidget(ImageDialog):
         btn = ev.button()
         # self.inputState.btnisPressed[btn]
         if btn == Qt.MidButton:
-            #print 'ImageWidget: mouse moved with middle button pressed'
+            #print 'ImageWidgetPlot: mouse moved with middle button pressed'
             return
         elif btn == Qt.LeftButton:
-            #print 'ImageWidget: mouse moved with left button pressed'
+            #print 'ImageWidgetPlot: mouse moved with left button pressed'
             # self.manager.update_cross_sections()
             pass
 
             return
         elif btn == Qt.RightButton:
-            # print 'ImageWidget: mouse moved with right button pressed'
+            # print 'ImageWidgetPlot: mouse moved with right button pressed'
             return
 
     def wheelEvent(self, event):

@@ -44,9 +44,9 @@ blConfig = ConfigClass(os.path.join(os.path.dirname(__file__),'%s.ini' % bl_conf
 scanning_mode = blConfig.get_value('SCANNING_MODE','scanning_mode')
 
 # when simulating un comment the next line
-#DEVPRFX = 'SIM_'
+DEVPRFX = 'SIM_'
 # and comment this one
-DEVPRFX = ''
+#DEVPRFX = ''
 
 
 # def make_basedevice(cat, nm, desc='', units='', rd_only=False, devcfg=None):
@@ -132,8 +132,10 @@ class device_config(dev_config_base):
         self.devices['POSITIONERS'][DNM_OSA_Y] = Motor_Qt('%sIOC:m105' % DEVPRFX, name='%sIOC:m105' % DEVPRFX,
                                                           pos_set=POS_TYPE_ES)
         self.msg_splash("connecting to: [%s]" % DNM_OSA_Z)
+        # self.devices['POSITIONERS'][DNM_OSA_Z] = Motor_Qt('%sIOC:m106C' % DEVPRFX, name='%sIOC:m106C' % DEVPRFX,
+        #                                                   pos_set=POS_TYPE_ES, collision_support=True)
         self.devices['POSITIONERS'][DNM_OSA_Z] = Motor_Qt('%sIOC:m106C' % DEVPRFX, name='%sIOC:m106C' % DEVPRFX,
-                                                          pos_set=POS_TYPE_ES, collision_support=True)
+                                                          pos_set=POS_TYPE_ES, collision_support=False)
         self.msg_splash("connecting to: [%s]" % DNM_OSA_Z_BASE)
         self.devices['POSITIONERS'][DNM_OSA_Z_BASE] = Motor_Qt('%sIOC:m106' % DEVPRFX, name='%sIOC:m106' % DEVPRFX, )
 
@@ -157,8 +159,10 @@ class device_config(dev_config_base):
                                                                          pos_set=POS_TYPE_ES)
         # self.devices['POSITIONERS'][DNM_FINE_ZY] = Motor_Qt('%sIOC:m102', name='%sIOC:m102')
         self.msg_splash("connecting to: [%s]" % DNM_ZONEPLATE_Z)
+        # self.devices['POSITIONERS'][DNM_ZONEPLATE_Z] = Motor_Qt('%sIOC:m111C' % DEVPRFX, name='%sIOC:m111C' % DEVPRFX,
         self.devices['POSITIONERS'][DNM_ZONEPLATE_Z] = Motor_Qt('%sIOC:m111C' % DEVPRFX, name='%sIOC:m111C' % DEVPRFX,
-                                                                pos_set=POS_TYPE_ES, collision_support=True)
+                                                                pos_set=POS_TYPE_ES, collision_support=False)
+        #                                                         pos_set=POS_TYPE_ES, collision_support=True)
         self.msg_splash("connecting to: [%s]" % DNM_ZONEPLATE_Z_BASE)
         self.devices['POSITIONERS'][DNM_ZONEPLATE_Z_BASE] = Motor_Qt('%sIOC:m111' % DEVPRFX,
                                                                      name='%sIOC:m111' % DEVPRFX)
@@ -303,14 +307,14 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
     # dev_dct['DETECTORS']['Det_Cntr'] = EpicsPvCounter('%sPMT:ctr:SingleValue_RBV' % prfx)
     dev_dct['DETECTORS'][DNM_PMT] = make_basedevice('DETECTORS', '%s%sPMT:ctr:SingleValue_RBV' % (DEVPRFX, prfx),
                                                     devcfg=devcfg)
-
-    # dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = SimGreatEyesCCD('SIMCCD1610-I10-02:', name=DNM_GREATEYES_CCD)
-    #
-    dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = GreatEyesCCD('CCD1610-01:', name='GE_CCD')
-    _res = ad_warmed_up(dev_dct['DETECTORS'][DNM_GREATEYES_CCD])
-    det = dev_dct['DETECTORS'][DNM_GREATEYES_CCD]
-    det.cam.acquire.put(1)
-    _res = ad_warmed_up(det)
+    if DEVPRFX.find('SIM') == -1:
+        #dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = SimGreatEyesCCD('%sCCD1610-I10-02:'% (DEVPRFX), name=DNM_GREATEYES_CCD)
+        dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = GreatEyesCCD('CCD1610-01:', name='GE_CCD')
+        # _res = ad_warmed_up(dev_dct['DETECTORS'][DNM_GREATEYES_CCD])
+        #
+        det = dev_dct['DETECTORS'][DNM_GREATEYES_CCD]
+        det.cam.acquire.put(1)
+        _res = ad_warmed_up(det)
     # # if(DEVPRFX.find('SIM')):
     # #     dev_dct['DETECTORS'][DNM_GREATEYES_CCD] = SimGreatEyesCCD('SIMCCD1610-I10-02:', name=DNM_GREATEYES_CCD)
     # # else:
@@ -338,11 +342,11 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
     # dev_dct['DETECTORS']['Ax2InterferVolts'] = EpicsPvCounter('%sAi:ai:ai1_RBV' % prfx)
 
     # dev_dct['PVS'][DNM_IDEAL_A0] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:fbk:tr.K' % (DEVPRFX, prfx), devcfg=devcfg)
-    dev_dct['PVS'][DNM_IDEAL_A0] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:fbk:tr.K' % (DEVPRFX, prfx),
+    dev_dct['PVS'][DNM_IDEAL_A0] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:fbk:tr_K' % (DEVPRFX, prfx),
                                                    devcfg=devcfg)
-    # dev_dct['PVS'][DNM_CALCD_ZPZ] = BaseDevice('%sBL1610-I10:ENERGY:%s:zp:fbk:tr.L' % prfx)
-    # dev_dct['PVS'][DNM_CALCD_ZPZ] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:fbk:tr.I' % (DEVPRFX, prfx), devcfg=devcfg)
-    dev_dct['PVS'][DNM_CALCD_ZPZ] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:fbk:tr.I' % (DEVPRFX, prfx),
+    # dev_dct['PVS'][DNM_CALCD_ZPZ] = BaseDevice('%sBL1610-I10:ENERGY:%s:zp:fbk:tr_L' % prfx)
+    # dev_dct['PVS'][DNM_CALCD_ZPZ] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:fbk:tr_I' % (DEVPRFX, prfx), devcfg=devcfg)
+    dev_dct['PVS'][DNM_CALCD_ZPZ] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:fbk:tr_I' % (DEVPRFX, prfx),
                                                     devcfg=devcfg)
     dev_dct['PVS']['Zpz_adjust'] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:adjust_zpz' % (DEVPRFX, prfx),
                                                    devcfg=devcfg)
@@ -381,20 +385,20 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
                                                      devcfg=devcfg)
     dev_dct['PVS'][DNM_ZPZ_RBV] = make_basedevice('PVS', '%sIOC:m111C.RBV' % (DEVPRFX), units='um', devcfg=devcfg)
 
-    dev_dct['PVS'][DNM_ZP_DEF_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:def.A' % (DEVPRFX, prfx),
+    dev_dct['PVS'][DNM_ZP_DEF_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp:def_A' % (DEVPRFX, prfx),
                                                    devcfg=devcfg)
-    dev_dct['PVS'][DNM_ZP_DEF1_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp1:def.A' % (DEVPRFX, prfx),
+    dev_dct['PVS'][DNM_ZP_DEF1_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp1:def_A' % (DEVPRFX, prfx),
                                                     devcfg=devcfg)
-    dev_dct['PVS'][DNM_ZP_DEF2_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp2:def.A' % (DEVPRFX, prfx),
+    dev_dct['PVS'][DNM_ZP_DEF2_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp2:def_A' % (DEVPRFX, prfx),
                                                     devcfg=devcfg)
-    dev_dct['PVS'][DNM_ZP_DEF3_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp3:def.A' % (DEVPRFX, prfx),
+    dev_dct['PVS'][DNM_ZP_DEF3_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp3:def_A' % (DEVPRFX, prfx),
                                                     devcfg=devcfg)
-    dev_dct['PVS'][DNM_ZP_DEF4_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp4:def.A' % (DEVPRFX, prfx),
+    dev_dct['PVS'][DNM_ZP_DEF4_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp4:def_A' % (DEVPRFX, prfx),
                                                     devcfg=devcfg)
-    dev_dct['PVS'][DNM_ZP_DEF5_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp5:def.A' % (DEVPRFX, prfx),
+    dev_dct['PVS'][DNM_ZP_DEF5_A] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp5:def_A' % (DEVPRFX, prfx),
                                                     devcfg=devcfg)
-    # dev_dct['PVS']['Zp_def6_A'] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp6:def.A' % (DEVPRFX, prfx), devcfg=devcfg)
-    # dev_dct['PVS']['Zp_def7_A'] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp7:def.A' % (DEVPRFX, prfx), devcfg=devcfg)
+    # dev_dct['PVS']['Zp_def6_A'] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp6:def_A' % (DEVPRFX, prfx), devcfg=devcfg)
+    # dev_dct['PVS']['Zp_def7_A'] = make_basedevice('PVS', '%sBL1610-I10:ENERGY:%s:zp7:def_A' % (DEVPRFX, prfx), devcfg=devcfg)
 
     # dev_dct['PVS']['SRStatus_msgL1'] = BaseDevice('SRStatus:msg:tL1')
     # dev_dct['PVS']['SRStatus_msgL2'] = BaseDevice('SRStatus:msg:tL2')
@@ -478,7 +482,8 @@ def connect_devices(dev_dct, prfx='uhv', devcfg=None):
     connect_ES_devices(dev_dct, prfx, devcfg=devcfg)
     connect_BL_devices(dev_dct, prfx, devcfg=devcfg)
     connect_heartbeats(dev_dct, prfx, devcfg=devcfg)
-    connect_e712(dev_dct, prfx, devcfg=devcfg)
+    if blConfig.config.getboolean('BL_CFG_MAIN','USE_E712_HDW_ACCEL'):
+        connect_e712(dev_dct, prfx, devcfg=devcfg)
 
 
 def connect_pressures(dev_dct, prfx='uhv', devcfg=None):
